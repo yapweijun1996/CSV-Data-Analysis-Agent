@@ -75,6 +75,67 @@ const BASE_SKILLS = [
     description: 'Split a column into multiple fields using JavaScript transformation.',
     transformHint: 'Use execute_js_code with a function that maps each row to expanded fields.',
   },
+  {
+    id: 'repair_missing_chart_type',
+    label: 'Fix Missing Chart Type',
+    intents: ['repair'],
+    description: 'Assign a default bar chart when a plan lacks chartType.',
+    repair: {
+      type: 'plan_patch',
+      patch: { chartType: 'bar' },
+      condition: issue =>
+        issue?.details?.cardId && issue.message?.toLowerCase().includes('missing a chart type'),
+    },
+  },
+  {
+    id: 'repair_missing_group_by',
+    label: 'Fix Missing Group-By',
+    intents: ['repair'],
+    description: 'Set the group-by column to the first categorical field when missing.',
+    repair: {
+      type: 'plan_patch',
+      patch: { groupByColumn: '<categoricalFallback>' },
+      condition: issue =>
+        issue?.details?.cardId && issue.message?.toLowerCase().includes('missing a group-by column'),
+    },
+  },
+  {
+    id: 'repair_value_column',
+    label: 'Fix Value Column',
+    intents: ['repair'],
+    description: 'Switch aggregation to count when no numeric value column exists.',
+    repair: {
+      type: 'plan_patch',
+      patch: { aggregation: 'count', valueColumn: null },
+      condition: issue =>
+        issue?.details?.cardId &&
+        issue.message?.toLowerCase().includes('requires a value column'),
+    },
+  },
+  {
+    id: 'repair_missing_column',
+    label: 'Replace Missing Column',
+    intents: ['repair'],
+    description: 'Swap broken columns for available fallbacks based on audit findings.',
+    repair: {
+      type: 'plan_patch',
+      patch: {
+        groupByColumn: '<categoricalFallback>',
+        valueColumn: '<numericFallback>',
+      },
+      condition: issue =>
+        issue?.details?.cardId && issue.message?.toLowerCase().includes('references missing column'),
+    },
+  },
+  {
+    id: 'audit_report',
+    label: 'Explain Audit Findings',
+    intents: ['repair', 'analysis'],
+    description: 'Provide a summarised audit report for the agent to reason about next actions.',
+    repair: {
+      type: 'audit_summary',
+    },
+  },
 ];
 
 export const getSkillCatalog = (intent = 'general') => {
