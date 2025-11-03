@@ -4,12 +4,154 @@ if (!PapaLib) {
   console.warn('PapaParse is not available globally; CSV parsing will fail. Ensure the CDN script is included in index.html.');
 }
 
+const MAX_HEADER_SCAN_ROWS = 15;
+const MIN_TEXT_RATIO_FOR_HEADER = 0.6;
+
 // Prevent CSV formula injection
 const sanitizeValue = value => {
   if (typeof value === 'string' && value.startsWith('=')) {
     return `'${value}`;
   }
   return value;
+};
+
+const normaliseCell = value => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value.trim();
+  return String(value).trim();
+};
+
+const countNonEmptyCells = row =>
+  row.reduce((count, cell) => (normaliseCell(cell) ? count + 1 : count), 0);
+
+const looksNumeric = value => {
+  if (!value) return false;
+  const cleaned = value.replace(/[$%,]/g, '').trim();
+  if (!cleaned) return false;
+  return !Number.isNaN(Number(cleaned));
+};
+
+const determineExpectedColumnCount = rows => {
+  const counter = new Map();
+  rows.forEach(row => {
+    const count = countNonEmptyCells(row);
+    if (count === 0) return;
+    counter.set(count, (counter.get(count) || 0) + 1);
+  });
+  const entries = Array.from(counter.entries());
+  if (!entries.length) return 0;
+  entries.sort((a, b) => {
+    if (b[1] === a[1]) {
+      return b[0] - a[0];
+    }
+    return b[1] - a[1];
+  });
+  return entries[0][0];
+};
+
+const detectHeaderRow = rows => {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return { index: null, headerValues: [] };
+  }
+
+  const expectedColumns = determineExpectedColumnCount(rows);
+
+  const limit = Math.min(rows.length, MAX_HEADER_SCAN_ROWS);
+  for (let index = 0; index < limit; index++) {
+    const row = rows[index];
+    const nonEmpty = countNonEmptyCells(row);
+    if (nonEmpty === 0) continue;
+    if (expectedColumns && nonEmpty !== expectedColumns) {
+      // Allow slightly wider rows (e.g., table title spanning columns), otherwise skip
+      if (nonEmpty < expectedColumns) {
+        continue;
+      }
+    }
+
+    const normalisedRow = row.map(normaliseCell);
+    const textCells = normalisedRow.filter(cell => cell && !looksNumeric(cell));
+    const textRatio = nonEmpty === 0 ? 0 : textCells.length / nonEmpty;
+    const uniqueTokens = new Set(textCells.map(token => token.toLowerCase()));
+
+    if (textCells.length === 0) continue;
+    if (textRatio < MIN_TEXT_RATIO_FOR_HEADER) continue;
+    if (uniqueTokens.size < Math.max(1, Math.min(textCells.length, nonEmpty - 1))) continue;
+    if (normalisedRow.some(cell => /total/i.test(cell)) && textCells.length <= 1) {
+      // Guard against "Total" rows being mistaken as headers
+      continue;
+    }
+
+    return { index, headerValues: normalisedRow };
+  }
+
+  const fallbackIndex = rows.findIndex(row => countNonEmptyCells(row) > 0);
+  if (fallbackIndex === -1) {
+    return { index: null, headerValues: [] };
+  }
+  return { index: fallbackIndex, headerValues: rows[fallbackIndex].map(normaliseCell) };
+};
+
+const buildHeaderNames = (rawHeaderValues, expectedLength) => {
+  const headers = [];
+  const used = new Set();
+  const length = expectedLength || rawHeaderValues.length || 0;
+
+  for (let i = 0; i < length; i++) {
+    const rawValue = normaliseCell(rawHeaderValues[i]);
+    let baseName = rawValue || `Column ${i + 1}`;
+
+    // Normalise spacing and punctuation while keeping it human-readable
+    baseName = baseName.replace(/\s+/g, ' ').trim();
+    if (!baseName) {
+      baseName = `Column ${i + 1}`;
+    }
+
+    let candidate = baseName;
+    let suffix = 2;
+    while (used.has(candidate.toLowerCase())) {
+      candidate = `${baseName} (${suffix})`;
+      suffix += 1;
+    }
+    used.add(candidate.toLowerCase());
+    headers.push(candidate);
+  }
+
+  return headers;
+};
+
+const rowLooksLikeSummary = values => {
+  const trimmedValues = values.map(normaliseCell);
+  if (trimmedValues.every(value => !value)) {
+    return true;
+  }
+
+  const firstCell = trimmedValues[0] || '';
+  const firstCellLower = firstCell.toLowerCase();
+  if (!firstCellLower) {
+    return false;
+  }
+
+  if (/^(report|title|summary|project title|table)\b/.test(firstCellLower) && trimmedValues.slice(1).every(value => !value)) {
+    return true;
+  }
+
+  if (/^(generated on|created on|as of)\b/.test(firstCellLower) && trimmedValues.slice(1).every(value => !value)) {
+    return true;
+  }
+
+  if (/\b(total|subtotal|grand total|overall total)\b/.test(firstCellLower)) {
+    const remaining = trimmedValues.slice(1);
+    const restAreNumericOrEmpty = remaining.every(value => !value || looksNumeric(value));
+    if (restAreNumericOrEmpty) {
+      return true;
+    }
+  }
+
+  if (/^page\s+\d+/i.test(firstCell)) {
+    return true;
+  }
+
+  return false;
 };
 
 export const parseNumericValue = value => {
@@ -80,18 +222,90 @@ export const processCsv = file => {
 
   return new Promise((resolve, reject) => {
     PapaLib.parse(file, {
-      header: true,
-      skipEmptyLines: true,
+      header: false,
+      skipEmptyLines: 'greedy',
       worker: true,
       complete: results => {
-        const sanitizedData = results.data.map(row => {
-          const newRow = {};
-          for (const key in row) {
-            newRow[key] = sanitizeValue(String(row[key]));
+        const rawRows = results.data.map(row => {
+          if (Array.isArray(row)) {
+            return row;
           }
-          return newRow;
+          // Handle unexpected objects by converting to array of values
+          return Object.values(row);
         });
-        resolve({ fileName: file.name, data: sanitizedData });
+
+        const rows = rawRows;
+        const { index: headerIndex, headerValues } = detectHeaderRow(rows);
+        const expectedColumns = determineExpectedColumnCount(rows);
+        const fallbackHeaderSource =
+          headerValues && headerValues.length
+            ? headerValues
+            : rows.find(row => countNonEmptyCells(row) > 0) || [];
+        const headers = buildHeaderNames(fallbackHeaderSource, expectedColumns || fallbackHeaderSource.length);
+
+        const dataRows =
+          headerIndex === null ? rows : rows.slice(headerIndex + 1);
+
+        const structuredRows = [];
+        const originalRows = [];
+        let filteredSummaryRows = 0;
+
+        dataRows.forEach(row => {
+          const normalisedCells = headers.map((header, idx) => {
+            const value = row[idx] !== undefined ? row[idx] : '';
+            return normaliseCell(value);
+          });
+
+          const hasContent = normalisedCells.some(cell => cell);
+          if (!hasContent) {
+            return;
+          }
+
+          const record = {};
+          headers.forEach((header, idx) => {
+            record[header] = sanitizeValue(normalisedCells[idx]);
+          });
+
+          originalRows.push(record);
+
+          if (rowLooksLikeSummary(normalisedCells)) {
+            filteredSummaryRows += 1;
+            return;
+          }
+
+          structuredRows.push(record);
+        });
+
+        if (!structuredRows.length && dataRows.length) {
+          console.warn('CSV parsing produced rows but all were filtered out as non-data. Returning raw rows for debugging.');
+        }
+
+        const leadingRows = headerIndex === null ? [] : rows.slice(0, headerIndex);
+        const leadingRowsNormalised = leadingRows.map(row => row.map(normaliseCell));
+        const reportTitleRow = leadingRowsNormalised.find(row => row.some(cell => cell));
+        const reportTitle = reportTitleRow
+          ? reportTitleRow
+              .map(cell => cell)
+              .filter(cell => cell)
+              .join(' ')
+              .trim()
+          : null;
+
+        const metadata = {
+          headerRow: headers,
+          rawHeaderValues: (headerValues || []).map(normaliseCell),
+          detectedHeaderIndex: headerIndex,
+          totalRowsBeforeFilter: dataRows.length,
+          originalRowCount: originalRows.length,
+          cleanedRowCount: structuredRows.length,
+          removedSummaryRowCount: filteredSummaryRows,
+          leadingRows: leadingRowsNormalised.slice(0, 10),
+          totalLeadingRows: leadingRowsNormalised.length,
+          reportTitle: reportTitle || null,
+          sampleDataRows: structuredRows.slice(0, 10),
+        };
+
+        resolve({ fileName: file.name, data: structuredRows, originalData: originalRows, metadata });
       },
       error: error => {
         reject(error);

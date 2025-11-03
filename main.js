@@ -46,6 +46,9 @@ class CsvDataAnalysisApp extends HTMLElement {
       rawDataFilter: '',
       rawDataWholeWord: false,
       rawDataSort: null,
+      rawDataView: 'cleaned',
+      originalCsvData: null,
+      csvMetadata: null,
     };
     this.settings = getSettings();
     this.chartInstances = new Map();
@@ -55,6 +58,29 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.shouldAutoScrollConversation = true;
     this.conversationLogElement = null;
     this.handleConversationScroll = this.onConversationScroll.bind(this);
+  }
+
+  validatePlanForExecution(plan) {
+    if (!plan || typeof plan !== 'object') {
+      return '分析設定缺失。';
+    }
+    if (!plan.chartType) {
+      return '缺少圖表類型。';
+    }
+    if (plan.chartType === 'scatter') {
+      return null;
+    }
+    const aggregation = typeof plan.aggregation === 'string' ? plan.aggregation.toLowerCase() : '';
+    if (!['sum', 'count', 'avg'].includes(aggregation)) {
+      return '缺少有效的彙總方式（sum / count / avg）。';
+    }
+    if (!plan.groupByColumn) {
+      return '缺少分組欄位。';
+    }
+    if (aggregation !== 'count' && !plan.valueColumn) {
+      return '缺少數值欄位。';
+    }
+    return null;
   }
 
   connectedCallback() {
@@ -216,12 +242,12 @@ class CsvDataAnalysisApp extends HTMLElement {
       .replace(/'/g, '&#39;');
   }
 
-  getProcessedRawData() {
-    const { csvData, rawDataFilter, rawDataWholeWord, rawDataSort } = this.state;
-    if (!csvData || !csvData.data) {
+  getProcessedRawData(dataSource) {
+    const { rawDataFilter, rawDataWholeWord, rawDataSort } = this.state;
+    if (!dataSource || !Array.isArray(dataSource.data)) {
       return [];
     }
-    let rows = [...csvData.data];
+    let rows = [...dataSource.data];
 
     if (rawDataFilter) {
       if (rawDataWholeWord) {
@@ -273,18 +299,42 @@ class CsvDataAnalysisApp extends HTMLElement {
       isBusy: true,
       progressMessages: [],
       csvData: { fileName: file.name, data: [] },
+      originalCsvData: null,
+      csvMetadata: null,
       analysisCards: [],
       finalSummary: null,
       aiCoreAnalysisSummary: null,
       chatHistory: [],
       highlightedCardId: null,
       currentView: 'analysis_dashboard',
+      rawDataView: 'cleaned',
     });
 
     try {
       this.addProgress('Parsing CSV file...');
       const parsedData = await processCsv(file);
       this.addProgress(`Parsed ${parsedData.data.length} rows.`);
+
+      const metadata = parsedData.metadata || null;
+      if (metadata?.reportTitle) {
+        this.addProgress(`偵測到報表標題：「${metadata.reportTitle}」。`);
+      }
+      if (metadata?.totalLeadingRows) {
+        const previewCount = metadata.leadingRows?.length || 0;
+        if (previewCount) {
+          this.addProgress(`已擷取前 ${previewCount} 列作為報表上下文，供 AI 理解資料來源。`);
+        }
+      }
+      if (
+        metadata &&
+        typeof metadata.originalRowCount === 'number' &&
+        typeof metadata.cleanedRowCount === 'number'
+      ) {
+        const removed = Math.max(metadata.originalRowCount - metadata.cleanedRowCount, 0);
+        this.addProgress(
+          `原始資料共有 ${metadata.originalRowCount.toLocaleString()} 列，清理後保留 ${metadata.cleanedRowCount.toLocaleString()} 列${removed > 0 ? `，其中 ${removed.toLocaleString()} 列為標題或總計等非資料列。` : '。'}`
+        );
+      }
 
       let dataForAnalysis = parsedData;
       let profiles = profileData(parsedData.data);
@@ -299,7 +349,8 @@ class CsvDataAnalysisApp extends HTMLElement {
         const prepPlan = await generateDataPreparationPlan(
           profiles,
           dataForAnalysis.data.slice(0, 20),
-          this.settings
+          this.settings,
+          dataForAnalysis.metadata || metadata || null
         );
         if (prepPlan && prepPlan.jsFunctionBody) {
           this.addProgress(prepPlan.explanation || 'AI suggested applying a data transformation.');
@@ -309,6 +360,14 @@ class CsvDataAnalysisApp extends HTMLElement {
             prepPlan.jsFunctionBody
           );
           const newCount = dataForAnalysis.data.length;
+          if (dataForAnalysis.metadata) {
+            dataForAnalysis.metadata = {
+              ...dataForAnalysis.metadata,
+              cleanedRowCount: newCount,
+            };
+          } else {
+            dataForAnalysis.metadata = { cleanedRowCount: newCount };
+          }
           this.addProgress(`Transformation complete. Row count changed from ${originalCount} to ${newCount}.`);
           profiles = prepPlan.outputColumns || profileData(dataForAnalysis.data);
         } else {
@@ -325,6 +384,10 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.setState({
         csvData: dataForAnalysis,
         columnProfiles: profiles,
+        originalCsvData: parsedData.originalData
+          ? { fileName: file.name, data: parsedData.originalData }
+          : null,
+        csvMetadata: dataForAnalysis.metadata || metadata || null,
       });
 
       if (isApiKeySet) {
@@ -350,7 +413,13 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.setState({ isBusy: true });
     this.addProgress('AI is generating analysis plans...');
     try {
-      const plans = await generateAnalysisPlans(profiles, csvData.data.slice(0, 20), this.settings);
+      const metadata = csvData?.metadata || null;
+      const plans = await generateAnalysisPlans(
+        profiles,
+        csvData.data.slice(0, 20),
+        this.settings,
+        metadata
+      );
       this.addProgress(`AI proposed ${plans.length} plan(s).`);
       if (plans.length) {
         await this.runAnalysisPipeline(plans, csvData, false);
@@ -372,7 +441,14 @@ class CsvDataAnalysisApp extends HTMLElement {
   async runAnalysisPipeline(plans, csvData, isChatRequest) {
     let isFirstCard = true;
     const createdCards = [];
+    const metadata = csvData?.metadata || null;
     for (const plan of plans) {
+      const planValidationIssue = this.validatePlanForExecution(plan);
+      if (planValidationIssue) {
+        const title = plan?.title || '未命名分析';
+        this.addProgress(`「${title}」因設定不完整而被跳過：${planValidationIssue}`, 'error');
+        continue;
+      }
       try {
         this.addProgress(`Executing analysis: ${plan.title}...`);
         const aggregatedData = executePlan(csvData, plan);
@@ -381,7 +457,12 @@ class CsvDataAnalysisApp extends HTMLElement {
           continue;
         }
         this.addProgress(`AI is drafting a summary for: ${plan.title}...`);
-        const summary = await generateSummary(plan.title, aggregatedData, this.settings);
+        const summary = await generateSummary(
+          plan.title,
+          aggregatedData,
+          this.settings,
+          metadata
+        );
         const categoryCount = aggregatedData.length;
         const shouldDefaultTopN = plan.chartType !== 'scatter' && categoryCount > 15;
         const defaultTopN = shouldDefaultTopN ? 8 : plan.defaultTopN || null;
@@ -426,7 +507,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       const coreSummary = await generateCoreAnalysisSummary(
         cardContext,
         this.state.columnProfiles,
-        this.settings
+        this.settings,
+        metadata
       );
       this.setState(prev => ({
         aiCoreAnalysisSummary: coreSummary,
@@ -436,7 +518,7 @@ class CsvDataAnalysisApp extends HTMLElement {
         ],
       }));
 
-      const finalSummary = await generateFinalSummary(createdCards, this.settings);
+      const finalSummary = await generateFinalSummary(createdCards, this.settings, metadata);
       this.setState({ finalSummary });
       this.addProgress('Overall summary created.');
     }
@@ -463,13 +545,14 @@ class CsvDataAnalysisApp extends HTMLElement {
     }));
 
     try {
-    this.addProgress('AI is composing a reply...');
+      this.addProgress('AI is composing a reply...');
       const cardContext = this.state.analysisCards.map(card => ({
         id: card.id,
         title: card.plan.title,
         aggregatedDataSample: card.aggregatedData.slice(0, 10),
       }));
       const rawDataSample = this.state.csvData.data.slice(0, 20);
+      const metadata = this.state.csvMetadata || this.state.csvData?.metadata || null;
       const response = await generateChatResponse(
         this.state.columnProfiles,
         this.state.chatHistory,
@@ -478,7 +561,8 @@ class CsvDataAnalysisApp extends HTMLElement {
         this.settings,
         this.state.aiCoreAnalysisSummary,
         this.state.currentView,
-        rawDataSample
+        rawDataSample,
+        metadata
       );
 
       await this.applyChatActions(response.actions || []);
@@ -826,6 +910,11 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.setState(prev => ({ isRawDataVisible: !prev.isRawDataVisible }));
   }
 
+  handleRawDataViewChange(mode) {
+    if (mode !== 'cleaned' && mode !== 'original') return;
+    this.setState({ rawDataView: mode });
+  }
+
   handleRawDataFilterChange(value) {
     this.setState({ rawDataFilter: value });
   }
@@ -883,6 +972,14 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
     const existingPlans = this.state.analysisCards.map(card => card.plan);
     const newCsvData = { ...this.state.csvData, data: newData };
+    if (newCsvData.metadata) {
+      newCsvData.metadata = {
+        ...newCsvData.metadata,
+        cleanedRowCount: newData.length,
+      };
+    } else {
+      newCsvData.metadata = { cleanedRowCount: newData.length };
+    }
     const newProfiles = profileData(newData);
     this.setState({
       csvData: newCsvData,
@@ -890,6 +987,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       analysisCards: [],
       finalSummary: null,
       highlightedCardId: null,
+      csvMetadata: newCsvData.metadata || this.state.csvMetadata || null,
     });
     if (progressMessage) {
       this.addProgress(progressMessage);
@@ -898,7 +996,11 @@ class CsvDataAnalysisApp extends HTMLElement {
     try {
       const regeneratedCards = await this.runAnalysisPipeline(existingPlans, newCsvData, true);
       if (regeneratedCards.length) {
-        const finalSummary = await generateFinalSummary(this.state.analysisCards, this.settings);
+        const finalSummary = await generateFinalSummary(
+          this.state.analysisCards,
+          this.settings,
+          newCsvData.metadata || this.state.csvMetadata || null
+        );
         this.setState({ finalSummary });
         this.addProgress('Updated overall summary generated.');
       } else {
@@ -921,90 +1023,171 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (!this.state.csvData || !Array.isArray(this.state.csvData.data)) {
       return { success: false, error: 'No dataset loaded; please upload a CSV first.' };
     }
-    const { column, values, operator, matchMode, caseSensitive } = domAction || {};
-    if (!column) {
-      return { success: false, error: 'Column is required to remove rows from raw data.' };
-    }
+    const {
+      column,
+      values,
+      operator,
+      matchMode,
+      caseSensitive,
+      rowIndex,
+      rowIndices,
+    } = domAction || {};
     const dataRows = this.state.csvData.data;
+    const originalRows = this.state.originalCsvData?.data
+      ? [...this.state.originalCsvData.data]
+      : null;
     if (!dataRows.length) {
       return { success: true, message: 'No rows available in the raw data table.' };
     }
 
-    const mode = (operator || matchMode || 'equals').toLowerCase();
-    const caseSensitiveMatch = caseSensitive === true;
-    const rawValues =
-      values === undefined || values === null
-        ? []
-        : Array.isArray(values)
-        ? values
-        : [values];
-
-    if (mode !== 'is_empty' && rawValues.length === 0) {
-      return { success: false, error: 'Please provide one or more values to match when removing rows.' };
+    const requestedRowIndices = [];
+    if (Number.isInteger(rowIndex)) {
+      requestedRowIndices.push(rowIndex);
+    }
+    if (Array.isArray(rowIndices)) {
+      for (const idx of rowIndices) {
+        if (Number.isInteger(idx)) {
+          requestedRowIndices.push(idx);
+        }
+      }
     }
 
-    const normalise = value => {
-      if (value === null || value === undefined) return '';
-      const stringValue = String(value);
-      return caseSensitiveMatch ? stringValue : stringValue.toLowerCase();
-    };
+    if (!column && requestedRowIndices.length === 0) {
+      return { success: false, error: 'Please specify a column or provide rowIndex / rowIndices to remove rows.' };
+    }
 
-    const targetValues = rawValues.map(normalise);
+    if (column) {
+      const mode = (operator || matchMode || 'equals').toLowerCase();
+      const caseSensitiveMatch = caseSensitive === true;
+      const rawValues =
+        values === undefined || values === null
+          ? []
+          : Array.isArray(values)
+          ? values
+          : [values];
+
+      if (mode !== 'is_empty' && rawValues.length === 0) {
+        return { success: false, error: 'Please provide one or more values to match when removing rows.' };
+      }
+
+      const normalise = value => {
+        if (value === null || value === undefined) return '';
+        const stringValue = String(value);
+        return caseSensitiveMatch ? stringValue : stringValue.toLowerCase();
+      };
+
+      const targetValues = rawValues.map(normalise);
+
+      let removedCount = 0;
+      const filtered = dataRows.filter(row => {
+        const cellValue = row?.[column];
+        const normalisedCell = normalise(cellValue);
+        let isMatch = false;
+        switch (mode) {
+          case 'is_empty':
+            isMatch = normalisedCell.length === 0;
+            break;
+          case 'contains':
+            isMatch = targetValues.some(value => normalisedCell.includes(value));
+            break;
+          case 'starts_with':
+            isMatch = targetValues.some(value => normalisedCell.startsWith(value));
+            break;
+          case 'ends_with':
+            isMatch = targetValues.some(value => normalisedCell.endsWith(value));
+            break;
+          case 'equals':
+          case 'equal':
+          default:
+            isMatch = targetValues.includes(normalisedCell);
+            break;
+        }
+        if (isMatch) {
+          removedCount += 1;
+          return false;
+        }
+        return true;
+      });
+
+      if (removedCount === 0) {
+        return {
+          success: true,
+          message: `No rows matched the criteria on column "${column}".`,
+        };
+      }
+
+      const operatorLabelRaw = mode === 'equal' ? 'equals' : mode;
+      const operatorLabel = operatorLabelRaw.replace(/_/g, ' ');
+      const valuesPreview =
+        mode === 'is_empty'
+          ? ''
+          : rawValues
+              .slice(0, 3)
+              .map(v => `"${v}"`)
+              .join(', ') + (rawValues.length > 3 ? ', …' : '');
+      const conditionDescription =
+        mode === 'is_empty'
+          ? 'that are empty'
+          : `${operatorLabel} ${valuesPreview}`;
+      const progressMessage = `Removed ${removedCount.toLocaleString()} row(s) where "${column}" ${conditionDescription}.`;
+
+      const result = await this.rebuildAfterDataChange(filtered, progressMessage);
+      if (result.success && Array.isArray(originalRows)) {
+        this.setState({ originalCsvData: { ...this.state.originalCsvData, data: filtered } });
+      }
+      return {
+        success: result.success,
+        message: null,
+        error: result.success ? undefined : result.error,
+      };
+    }
+
+    // Fallback: remove by explicit row index list
+    const maxIndex = dataRows.length - 1;
+    const uniqueValidIndices = Array.from(
+      new Set(
+        requestedRowIndices.filter(idx => idx >= 0 && idx <= maxIndex)
+      )
+    ).sort((a, b) => a - b);
+
+    if (!uniqueValidIndices.length) {
+      return {
+        success: false,
+        error: 'Unable to remove rows because the specified row indices are out of range.',
+      };
+    }
 
     let removedCount = 0;
-    const filtered = dataRows.filter(row => {
-      const cellValue = row?.[column];
-      const normalisedCell = normalise(cellValue);
-      let isMatch = false;
-      switch (mode) {
-        case 'is_empty':
-          isMatch = normalisedCell.length === 0;
-          break;
-        case 'contains':
-          isMatch = targetValues.some(value => normalisedCell.includes(value));
-          break;
-        case 'starts_with':
-          isMatch = targetValues.some(value => normalisedCell.startsWith(value));
-          break;
-        case 'ends_with':
-          isMatch = targetValues.some(value => normalisedCell.endsWith(value));
-          break;
-        case 'equals':
-        case 'equal':
-        default:
-          isMatch = targetValues.includes(normalisedCell);
-          break;
-      }
-      if (isMatch) {
+    const indexSet = new Set(uniqueValidIndices);
+    const filtered = dataRows.filter((_, index) => {
+      if (indexSet.has(index)) {
         removedCount += 1;
         return false;
       }
       return true;
     });
+    let filteredOriginal = null;
+    if (Array.isArray(originalRows)) {
+      filteredOriginal = originalRows.filter((_, index) => !indexSet.has(index));
+    }
 
     if (removedCount === 0) {
       return {
         success: true,
-        message: `No rows matched the criteria on column "${column}".`,
+        message: 'No rows were removed because none of the provided indices matched existing rows.',
       };
     }
 
-    const operatorLabelRaw = mode === 'equal' ? 'equals' : mode;
-    const operatorLabel = operatorLabelRaw.replace(/_/g, ' ');
-    const valuesPreview =
-      mode === 'is_empty'
-        ? ''
-        : rawValues
-            .slice(0, 3)
-            .map(v => `"${v}"`)
-            .join(', ') + (rawValues.length > 3 ? ', …' : '');
-    const conditionDescription =
-      mode === 'is_empty'
-        ? 'that are empty'
-        : `${operatorLabel} ${valuesPreview}`;
-    const progressMessage = `Removed ${removedCount.toLocaleString()} row(s) where "${column}" ${conditionDescription}.`;
+    const humanReadable = uniqueValidIndices
+      .slice(0, 5)
+      .map(idx => `#${(idx + 1).toLocaleString()}`)
+      .join(', ') + (uniqueValidIndices.length > 5 ? ', …' : '');
+    const progressMessage = `Removed ${removedCount.toLocaleString()} row(s) at positions ${humanReadable}.`;
 
     const result = await this.rebuildAfterDataChange(filtered, progressMessage);
+    if (result.success && Array.isArray(filteredOriginal)) {
+      this.setState({ originalCsvData: { ...this.state.originalCsvData, data: filteredOriginal } });
+    }
     return {
       success: result.success,
       message: null,
@@ -1395,6 +1578,15 @@ class CsvDataAnalysisApp extends HTMLElement {
       rawToggle.addEventListener('click', () => this.handleRawDataToggle());
     }
 
+    this.querySelectorAll('[data-raw-view]').forEach(button => {
+      button.addEventListener('click', () => {
+        const mode = button.dataset.rawView;
+        if (mode) {
+          this.handleRawDataViewChange(mode);
+        }
+      });
+    });
+
     const rawSearch = this.querySelector('[data-raw-search]');
     if (rawSearch) {
       rawSearch.addEventListener('input', event => {
@@ -1615,6 +1807,55 @@ class CsvDataAnalysisApp extends HTMLElement {
     `;
   }
 
+  renderCardsLoadingState() {
+    const recentProgress = (this.state.progressMessages || []).slice(-5);
+    const progressItems = recentProgress
+      .map(message => {
+        const text = this.escapeHtml(message.text || '');
+        return `<li class="flex items-center gap-2 text-xs text-slate-500">
+          <span class="h-1.5 w-1.5 rounded-full bg-blue-400"></span>
+          <span class="truncate">${text}</span>
+        </li>`;
+      })
+      .join('');
+    const progressHtml = progressItems
+      ? `<ul class="mt-4 space-y-1">${progressItems}</ul>`
+      : '';
+
+    return `
+      <div class="bg-white border border-slate-200 rounded-xl p-6 flex items-start gap-4 shadow-sm">
+        <div class="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin"></div>
+        <div class="flex-1">
+          <h3 class="text-base font-semibold text-slate-900">AI 正在分析資料</h3>
+          <p class="text-sm text-slate-500">系統會依序完成資料剖析、圖表生成與重點摘要，請稍候。</p>
+          ${progressHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  renderEmptyCardsState() {
+    const hasCsv = Boolean(this.state.csvData);
+    const title = hasCsv ? '目前沒有分析卡片' : '尚未開始分析';
+    const subtitle = hasCsv
+      ? '可透過右側對話請 AI 建立新的分析，或重新上傳資料進行探索。'
+      : '上傳 CSV 後會在此顯示由 AI 產生的分析卡片與洞察。';
+
+    return `
+      <div class="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-sm">
+        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7l9-4 9 4-9 4-9-4z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12l-9 4-9-4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 17l-9 4-9-4" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900">${this.escapeHtml(title)}</h3>
+        <p class="mt-2 text-sm text-slate-500">${this.escapeHtml(subtitle)}</p>
+      </div>
+    `;
+  }
+
   renderDataTable(data) {
     if (!data || data.length === 0) {
       return '<p class="text-xs text-slate-500 p-2">No data available.</p>';
@@ -1778,25 +2019,101 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   renderRawDataPanel() {
-    const { csvData, isRawDataVisible, rawDataFilter, rawDataWholeWord } = this.state;
-    if (!csvData || !csvData.data) {
+    const {
+      csvData,
+      originalCsvData,
+      isRawDataVisible,
+      rawDataFilter,
+      rawDataWholeWord,
+      rawDataView,
+    } = this.state;
+    if (!csvData || !Array.isArray(csvData.data)) {
       return '';
     }
-    const headers = csvData.data.length ? Object.keys(csvData.data[0]) : [];
-    const processedRows = this.getProcessedRawData();
+
+    const metadata = this.state.csvMetadata || csvData.metadata || null;
+    const originalAvailable =
+      Boolean(originalCsvData) && Array.isArray(originalCsvData.data) && originalCsvData.data.length > 0;
+    const resolvedView =
+      rawDataView === 'original' && originalAvailable ? 'original' : 'cleaned';
+    const activeData = resolvedView === 'original' ? originalCsvData : csvData;
+    const headers = activeData?.data?.length
+      ? Object.keys(activeData.data[0])
+      : csvData.data.length
+      ? Object.keys(csvData.data[0])
+      : [];
+    const processedRows = this.getProcessedRawData(activeData);
     const rowLimit = 500;
     const visibleRows = processedRows.slice(0, rowLimit);
     const hasMore = processedRows.length > rowLimit;
 
+    const cleanedCount = metadata?.cleanedRowCount ?? (csvData.data?.length || 0);
+    const originalCount =
+      metadata?.originalRowCount ??
+      (originalCsvData?.data?.length || cleanedCount);
+    const removedCount = Math.max(originalCount - cleanedCount, 0);
+
+    const metadataLines = [];
+    if (metadata?.reportTitle) {
+      metadataLines.push(
+        `<p class="text-xs font-semibold text-slate-600">${this.escapeHtml(metadata.reportTitle)}</p>`
+      );
+    }
+    if (metadata?.leadingRows && metadata.leadingRows.length) {
+      const preview = metadata.leadingRows
+        .map(row => row.filter(cell => cell).join(' | '))
+        .find(text => text);
+      if (preview) {
+        metadataLines.push(
+          `<p class="text-[11px] text-slate-400 mt-0.5">${this.escapeHtml(preview)}</p>`
+        );
+      }
+    }
+    metadataLines.push(
+      `<p class="text-[11px] text-slate-400 mt-0.5">原始 ${originalCount.toLocaleString()} 行 • 清理後 ${cleanedCount.toLocaleString()} 行${removedCount > 0 ? ` • 已移除 ${removedCount.toLocaleString()} 行` : ''}</p>`
+    );
+    metadataLines.push(
+      `<p class="text-[11px] ${resolvedView === 'original' ? 'text-amber-600' : 'text-slate-400'} mt-0.5">目前檢視：${resolvedView === 'original' ? '原始 CSV 內容（包含標題 / 總計列）' : '清理後可供分析的資料'}</p>`
+    );
+    const metadataBlock = metadataLines.join('');
+
+    const viewOptions = [
+      { key: 'cleaned', label: '清理後資料' },
+      { key: 'original', label: '原始資料' },
+    ];
+    const viewButtons = viewOptions
+      .map(option => {
+        const isActive = resolvedView === option.key;
+        const disabled = option.key === 'original' && !originalAvailable;
+        const classes = [
+          'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+          isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white/70',
+          disabled ? 'opacity-50 cursor-not-allowed' : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+        return `<button type="button" class="${classes}" data-raw-view="${option.key}" ${
+          disabled ? 'disabled' : ''
+        }>${option.label}</button>`;
+      })
+      .join('<span class="w-1"></span>');
+
     const tableHeader = headers
-      .map(header => `<th class="px-3 py-2 text-xs font-semibold text-slate-600 cursor-pointer" data-raw-sort="${header}">${this.escapeHtml(header)}</th>`)
+      .map(
+        header =>
+          `<th class="px-3 py-2 text-xs font-semibold text-slate-600 cursor-pointer" data-raw-sort="${header}">${this.escapeHtml(header)}</th>`
+      )
       .join('');
 
     const tableBody = visibleRows
-      .map(row => `
+      .map(
+        row => `
         <tr class="border-t border-slate-100">
-          ${headers.map(header => `<td class="px-3 py-2 text-xs text-slate-700">${this.escapeHtml(row[header])}</td>`).join('')}
-        </tr>`)
+          ${headers
+            .map(header => `<td class="px-3 py-2 text-xs text-slate-700">${this.escapeHtml(row[header])}</td>`)
+            .join('')}
+        </tr>`
+      )
       .join('');
 
     const tableHtml = headers.length
@@ -1816,23 +2133,29 @@ class CsvDataAnalysisApp extends HTMLElement {
           <button type="button" class="flex justify-between items-center w-full px-4 py-3 text-left hover:bg-slate-50" data-raw-toggle>
             <div>
               <h3 class="text-base font-semibold text-slate-900">Raw Data Explorer</h3>
-              <p class="text-xs text-slate-500">${this.escapeHtml(csvData.fileName)} • ${csvData.data.length.toLocaleString()} rows</p>
+              ${metadataBlock}
+              <p class="text-xs text-slate-500">${this.escapeHtml(csvData.fileName)} • ${csvData.data.length.toLocaleString()} 行 (清理後)</p>
             </div>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 transition-transform ${isRawDataVisible ? 'transform rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
           </button>
           ${isRawDataVisible
             ? `<div class="px-4 pb-4 space-y-4">
-                <div class="flex flex-wrap items-center gap-4">
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </div>
-                    <input type="text" data-raw-search data-focus-key="raw-search" class="bg-white border border-slate-300 rounded-md py-1.5 pl-9 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Search table..." value="${this.escapeHtml(rawDataFilter)}" />
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div class="inline-flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-md p-1">
+                    ${viewButtons}
                   </div>
-                  <label class="flex items-center space-x-2 text-xs text-slate-600">
-                    <input type="checkbox" data-raw-whole class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" ${rawDataWholeWord ? 'checked' : ''}>
-                    <span>Match whole word only</span>
-                  </label>
+                  <div class="flex flex-wrap items-center gap-4">
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      </div>
+                      <input type="text" data-raw-search data-focus-key="raw-search" class="bg-white border border-slate-300 rounded-md py-1.5 pl-9 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Search table..." value="${this.escapeHtml(rawDataFilter)}" />
+                    </div>
+                    <label class="flex items-center space-x-2 text-xs text-slate-600">
+                      <input type="checkbox" data-raw-whole class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" ${rawDataWholeWord ? 'checked' : ''}>
+                      <span>Match whole word only</span>
+                    </label>
+                  </div>
                 </div>
                 ${tableHtml}
                 ${hasMore ? '<p class="text-xs text-slate-500">Showing first 500 rows. Refine your filters to view more.</p>' : ''}
@@ -1851,9 +2174,14 @@ class CsvDataAnalysisApp extends HTMLElement {
         : !!this.settings.openAIApiKey;
 
     const cardsHtml = analysisCards.map(card => this.renderAnalysisCard(card)).join('');
-    const cardsSection = cardsHtml
-      ? `<div class="grid gap-6 grid-cols-1 2xl:grid-cols-2">${cardsHtml}</div>`
-      : '<p class="text-sm text-slate-500">No analysis cards yet.</p>';
+    let cardsSection;
+    if (cardsHtml) {
+      cardsSection = `<div class="grid gap-6 grid-cols-1 2xl:grid-cols-2">${cardsHtml}</div>`;
+    } else if (isBusy && csvData) {
+      cardsSection = this.renderCardsLoadingState();
+    } else {
+      cardsSection = this.renderEmptyCardsState();
+    }
     const rawDataPanel = this.renderRawDataPanel();
 
     const conversationEntries = Array.isArray(chatHistory) ? chatHistory.slice(-200) : [];

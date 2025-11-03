@@ -38,6 +38,55 @@ const ensureArray = value => {
   throw new Error('The AI response is not in the expected array format.');
 };
 
+const formatMetadataContext = (metadata, options = {}) => {
+  if (!metadata || typeof metadata !== 'object') {
+    return '';
+  }
+  const {
+    includeLeadingRows = true,
+    leadingRowLimit = 5,
+  } = options;
+
+  const lines = [];
+
+  if (metadata.reportTitle) {
+    lines.push(`Report title: ${metadata.reportTitle}`);
+  }
+
+  if (Array.isArray(metadata.headerRow) && metadata.headerRow.length) {
+    lines.push(`Detected header columns: ${metadata.headerRow.join(', ')}`);
+  } else if (Array.isArray(metadata.rawHeaderValues) && metadata.rawHeaderValues.length) {
+    lines.push(`Header row text: ${metadata.rawHeaderValues.join(', ')}`);
+  }
+
+  if (
+    includeLeadingRows &&
+    Array.isArray(metadata.leadingRows) &&
+    metadata.leadingRows.length
+  ) {
+    const leading = metadata.leadingRows
+      .slice(0, leadingRowLimit)
+      .map((row, index) => {
+        if (!Array.isArray(row)) return '';
+        const text = row.filter(cell => cell).join(' | ');
+        return text ? `Row ${index + 1}: ${text}` : '';
+      })
+      .filter(Boolean);
+    if (leading.length) {
+      lines.push(`Leading rows:\n${leading.join('\n')}`);
+    }
+  }
+
+  if (typeof metadata.totalRowsBeforeFilter === 'number') {
+    lines.push(`Rows before cleaning: ${metadata.totalRowsBeforeFilter}`);
+  }
+  if (typeof metadata.removedSummaryRowCount === 'number' && metadata.removedSummaryRowCount > 0) {
+    lines.push(`Filtered summary rows: ${metadata.removedSummaryRowCount}`);
+  }
+
+  return lines.join('\n');
+};
+
 const callOpenAIJson = async (settings, systemPrompt, userPrompt) => {
   const response = await withRetry(async () => {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -110,7 +159,8 @@ const callGeminiJson = async (settings, prompt) => {
       },
     })
   );
-  return cleanJson(response.text);
+  const rawText = typeof response.text === 'function' ? await response.text() : response.text;
+  return cleanJson(rawText);
 };
 
 const callGeminiText = async (settings, prompt) => {
@@ -125,16 +175,31 @@ const callGeminiText = async (settings, prompt) => {
       contents: prompt,
     })
   );
-  return response.text;
+  const rawText = typeof response.text === 'function' ? await response.text() : response.text;
+  return rawText;
 };
 
 const validatePlan = plan => {
   if (!plan || typeof plan !== 'object') return false;
   if (!plan.chartType || !plan.title) return false;
+  if (plan.chartType === 'scatter') {
+    return true;
+  }
+  const aggregation = typeof plan.aggregation === 'string' ? plan.aggregation.toLowerCase() : '';
+  const supportedAggregations = new Set(['sum', 'count', 'avg']);
+  if (!supportedAggregations.has(aggregation)) {
+    return false;
+  }
+  if (!plan.groupByColumn) {
+    return false;
+  }
+  if (aggregation !== 'count' && !plan.valueColumn) {
+    return false;
+  }
   return true;
 };
 
-export const generateDataPreparationPlan = async (columns, sampleData, settings) => {
+export const generateDataPreparationPlan = async (columns, sampleData, settings, metadata = null) => {
   const provider = settings.provider || 'google';
   if (provider === 'openai' && !settings.openAIApiKey) {
     return { explanation: 'No transformation needed as API key is not set.', jsFunctionBody: null, outputColumns: columns };
@@ -146,7 +211,9 @@ export const generateDataPreparationPlan = async (columns, sampleData, settings)
   const systemPrompt = `You are an expert data engineer. Analyze the raw dataset and decide whether it needs cleaning or reshaping.
 If needed, provide a JavaScript function body that transforms the array of row objects and describe the resulting columns.
 Always respond with JSON: { "explanation": string, "jsFunctionBody": string | null, "outputColumns": [{ "name": string, "type": "numerical" | "categorical" }] }.`;
-  const userPrompt = `Columns: ${JSON.stringify(columns)}
+  const metadataContext = formatMetadataContext(metadata, { leadingRowLimit: 10 });
+  const contextSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
+  const userPrompt = `${contextSection}Columns: ${JSON.stringify(columns)}
 Sample rows: ${JSON.stringify(sampleData.slice(0, 20), null, 2)}
 - Explain the transformation in plain language.
 - If no changes are required, set "jsFunctionBody" to null and keep outputColumns identical.`;
@@ -184,10 +251,13 @@ Sample rows: ${JSON.stringify(sampleData.slice(0, 20), null, 2)}
   return plan;
 };
 
-const buildAnalysisPlanPrompt = (columns, sampleData, numPlans) => {
+const buildAnalysisPlanPrompt = (columns, sampleData, numPlans, metadata) => {
   const categorical = columns.filter(c => c.type === 'categorical').map(c => c.name);
   const numerical = columns.filter(c => c.type === 'numerical').map(c => c.name);
+  const metadataContext = formatMetadataContext(metadata, { leadingRowLimit: 10 });
+  const contextSection = metadataContext ? `Report context:\n${metadataContext}\n` : '';
   return `You are a senior business intelligence analyst.
+${contextSection}
 Columns:
 - Categorical: ${categorical.join(', ') || 'None'}
 - Numerical: ${numerical.join(', ') || 'None'}
@@ -202,9 +272,9 @@ Generate up to ${numPlans} insightful analysis plans as a JSON array. Each plan 
 Prefer high-value aggregations and avoid tiny fonts (too many categories).`;
 };
 
-export const generateAnalysisPlans = async (columns, sampleData, settings) => {
+export const generateAnalysisPlans = async (columns, sampleData, settings, metadata = null) => {
   const provider = settings.provider || 'google';
-  const prompt = buildAnalysisPlanPrompt(columns, sampleData, 10);
+  const prompt = buildAnalysisPlanPrompt(columns, sampleData, 10, metadata);
   let plans;
   if (provider === 'openai') {
     if (!settings.openAIApiKey) return [];
@@ -216,7 +286,7 @@ export const generateAnalysisPlans = async (columns, sampleData, settings) => {
   return plans.filter(validatePlan).slice(0, 10);
 };
 
-export const generateSummary = async (title, data, settings) => {
+export const generateSummary = async (title, data, settings, metadata = null) => {
   const provider = settings.provider || 'google';
   const isApiKeySet =
     provider === 'google' ? !!settings.geminiApiKey : !!settings.openAIApiKey;
@@ -228,7 +298,9 @@ export const generateSummary = async (title, data, settings) => {
 Format: English Summary --- Mandarin Summary`
       : `Provide a concise, insightful summary in ${settings.language}.`;
 
-  const body = `The data below is for a chart titled "${title}".
+  const metadataContext = formatMetadataContext(metadata, { includeLeadingRows: false });
+  const metadataSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
+  const body = `${metadataSection}The data below is for a chart titled "${title}".
 Data sample:
 ${JSON.stringify(data.slice(0, 20), null, 2)}
 ${data.length > 20 ? `...and ${data.length - 20} more rows.` : ''}
@@ -248,7 +320,7 @@ Highlight trends, outliers, or business implications.`;
   );
 };
 
-export const generateCoreAnalysisSummary = async (cardContext, columns, settings) => {
+export const generateCoreAnalysisSummary = async (cardContext, columns, settings, metadata = null) => {
   const provider = settings.provider || 'google';
   const isApiKeySet =
     provider === 'google' ? !!settings.geminiApiKey : !!settings.openAIApiKey;
@@ -256,12 +328,16 @@ export const generateCoreAnalysisSummary = async (cardContext, columns, settings
     return 'Could not generate an initial analysis summary.';
   }
 
+  const metadataContext = formatMetadataContext(metadata, { includeLeadingRows: false });
+  const metadataSection = metadataContext ? `Dataset context:\n${metadataContext}\n` : '';
+
   const prompt = `You are a senior data analyst. Create a concise "Core Analysis Briefing" in ${settings.language}.
 Cover:
 1. Primary subject of the dataset
 2. Key numerical metrics
 3. Core categorical dimensions
 4. Suggested focus for further analysis
+${metadataSection}
 Columns: ${JSON.stringify(columns.map(c => c.name))}
 Analysis cards: ${JSON.stringify(cardContext.slice(0, 6), null, 2)}
 Return a single short paragraph.`;
@@ -276,7 +352,7 @@ Return a single short paragraph.`;
   return callGeminiText(settings, prompt);
 };
 
-export const generateFinalSummary = async (cards, settings) => {
+export const generateFinalSummary = async (cards, settings, metadata = null) => {
   const provider = settings.provider || 'google';
   const isApiKeySet =
     provider === 'google' ? !!settings.geminiApiKey : !!settings.openAIApiKey;
@@ -289,7 +365,11 @@ export const generateFinalSummary = async (cards, settings) => {
     })
     .join('\n\n');
 
+  const metadataContext = formatMetadataContext(metadata, { includeLeadingRows: false });
+  const metadataSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
+
   const prompt = `You are a senior business strategist. Given the summaries below, produce one executive-level overview in ${settings.language}.
+${metadataSection}
 Summaries:
 ${summaries}
 Provide a single paragraph that connects the key insights, risks, or opportunities.`;
@@ -312,7 +392,8 @@ export const generateChatResponse = async (
   settings,
   aiCoreAnalysisSummary,
   currentView,
-  rawDataSample
+  rawDataSample,
+  metadata = null
 ) => {
   const provider = settings.provider || 'google';
   const isApiKeySet =
@@ -325,7 +406,12 @@ export const generateChatResponse = async (
   const numerical = columns.filter(c => c.type === 'numerical').map(c => c.name);
   const history = chatHistory.map(m => `${m.sender}: ${m.text}`).join('\n');
 
-  const context = `**Core Briefing:** ${aiCoreAnalysisSummary || 'None yet.'}
+  const metadataContext = formatMetadataContext(metadata, { leadingRowLimit: 10 });
+  const datasetTitle = metadata?.reportTitle || 'Not detected';
+  const metadataSection = metadataContext ? `**Dataset Context:**\n${metadataContext}\n` : '';
+
+  const context = `**Dataset Title:** ${datasetTitle}
+${metadataSection}**Core Briefing:** ${aiCoreAnalysisSummary || 'None yet.'}
 **Current View:** ${currentView}
 **Columns**
 - Categorical: ${categorical.join(', ') || 'None'}
@@ -348,6 +434,7 @@ export const generateChatResponse = async (
 - setRawDataWholeWord: {"toolName":"setRawDataWholeWord","wholeWord":boolean}
 - setRawDataSort: {"toolName":"setRawDataSort","column":string|null,"direction":"ascending"|"descending"?}
 - removeRawDataRows: {"toolName":"removeRawDataRows","column":string,"values":string|string[],"operator":"equals"|"contains"|"starts_with"|"ends_with"|"is_empty","caseSensitive":boolean?}
+ - removeRawDataRows: {"toolName":"removeRawDataRows","column":string?,"values":string|string[],"operator":"equals"|"contains"|"starts_with"|"ends_with"|"is_empty","caseSensitive":boolean?,"rowIndex":number?,"rowIndices":number[]?}
 Always include a "domAction" object when responseType is "dom_action". If the action cannot be completed, return a text_response explaining why instead.
 Return JSON: { "actions": [ { "responseType": "text_response" | "plan_creation" | "dom_action" | "execute_js_code", ... } ] }.
 When referring to a specific card, include its "cardId".
