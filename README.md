@@ -65,6 +65,13 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 - IndexedDB helpers (`storageService.js`) are wired for saving report history, though the current UI does not expose the feature.
 - Session metadata keys allow future enhancements such as resumable conversations or report galleries.
 
+### Roadmap
+
+- Add client-side retrieval augmented generation (RAG) by storing embeddings of past plans, summaries, and user questions in IndexedDB to improve follow-up answers.
+- Persist uploaded CSVs (original, cleaned, metadata, profiles) as reusable sessions so users can reopen prior analyses without re-uploading files.
+- Introduce curated JavaScript transform snippets that the agent can reuse for common data-cleaning tasks instead of generating fresh code each time.
+- Expose a History panel in the UI for browsing saved sessions, relaunching analyses, and managing stored data quota.
+
 ### Important Notes
 
 - Exposing API keys in the browser inherently reveals them to end users; treat this build as internal tooling only.

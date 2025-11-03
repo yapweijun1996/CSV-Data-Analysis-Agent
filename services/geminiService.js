@@ -202,24 +202,52 @@ const callGeminiText = async (settings, prompt) => {
   return rawText;
 };
 
-const validatePlan = plan => {
-  if (!plan || typeof plan !== 'object') return false;
-  if (!plan.chartType || !plan.title) return false;
-  if (plan.chartType === 'scatter') {
-    return true;
+const SUPPORTED_CHART_TYPES = new Set(['bar', 'line', 'pie', 'doughnut', 'scatter']);
+const SUPPORTED_AGGREGATIONS = new Set(['sum', 'count', 'avg']);
+
+const normalisePlanShape = (plan, columns = []) => {
+  if (!plan || typeof plan !== 'object') {
+    return null;
   }
-  const aggregation = typeof plan.aggregation === 'string' ? plan.aggregation.toLowerCase() : '';
-  const supportedAggregations = new Set(['sum', 'count', 'avg']);
-  if (!supportedAggregations.has(aggregation)) {
-    return false;
+  const normalized = { ...plan };
+  const title = normalized.title || 'Untitled Analysis';
+  normalized.title = title;
+
+  const maybeChartType =
+    typeof normalized.chartType === 'string'
+      ? normalized.chartType.toLowerCase()
+      : '';
+  normalized.chartType = SUPPORTED_CHART_TYPES.has(maybeChartType)
+    ? maybeChartType
+    : 'bar';
+
+  if (normalized.chartType === 'scatter') {
+    return normalized;
   }
-  if (!plan.groupByColumn) {
-    return false;
+
+  const maybeAggregation =
+    typeof normalized.aggregation === 'string'
+      ? normalized.aggregation.toLowerCase()
+      : '';
+  const hasNumericValueColumn = columns.some(
+    column =>
+      column.type === 'numerical' &&
+      column.name &&
+      normalized.valueColumn &&
+      column.name.toLowerCase() === String(normalized.valueColumn).toLowerCase()
+  );
+
+  if (SUPPORTED_AGGREGATIONS.has(maybeAggregation)) {
+    normalized.aggregation = maybeAggregation;
+  } else {
+    normalized.aggregation = hasNumericValueColumn ? 'sum' : 'count';
   }
-  if (aggregation !== 'count' && !plan.valueColumn) {
-    return false;
+
+  if (normalized.aggregation === 'count') {
+    normalized.valueColumn = normalized.valueColumn || null;
   }
-  return true;
+
+  return normalized;
 };
 
 export const generateDataPreparationPlan = async (columns, sampleData, settings, metadata = null) => {
@@ -312,7 +340,10 @@ export const generateAnalysisPlans = async (columns, sampleData, settings, metad
     if (!settings.geminiApiKey) return [];
     plans = ensureArray(await callGeminiJson(settings, prompt));
   }
-  return plans.filter(validatePlan).slice(0, 10);
+  return plans
+    .map(plan => normalisePlanShape(plan, columns))
+    .filter(Boolean)
+    .slice(0, 10);
 };
 
 export const generateSummary = async (title, data, settings, metadata = null) => {
@@ -443,6 +474,14 @@ export const generateChatResponse = async (
   const categorical = columns.filter(c => c.type === 'categorical').map(c => c.name);
   const numerical = columns.filter(c => c.type === 'numerical').map(c => c.name);
   const history = chatHistory.map(m => `${m.sender}: ${m.text}`).join('\n');
+  const recentSystemMessages = chatHistory
+    .filter(msg => msg.sender === 'system')
+    .slice(-12)
+    .map(msg => `- [${msg.type || 'system'}] ${msg.text}`)
+    .join('\n');
+  const systemSection = recentSystemMessages
+    ? `**System Messages (recent):**\n${recentSystemMessages}\n`
+    : '';
 
   const metadataContext = formatMetadataContext(metadata, {
     leadingRowLimit: 10,
@@ -459,8 +498,13 @@ ${metadataSection}**Core Briefing:** ${aiCoreAnalysisSummary || 'None yet.'}
 - Numerical: ${numerical.join(', ') || 'None'}
 **Cards:** ${JSON.stringify(cardContext.slice(0, 6), null, 2)}
 **Sample Data:** ${JSON.stringify(rawDataSample.slice(0, 20), null, 2)}
-**Conversation History:** ${history}
+${systemSection}**Conversation History:** ${history}
 **User:** ${userPrompt}
+**Self-Healing Rules:**
+- When prior system messages indicate validation failures, infer the missing fields and retry automatically.
+- Always provide a complete, executable plan: include chartType (bar|line|pie|doughnut|scatter), aggregation, groupByColumn, and valueColumn when required.
+- If unsure, choose sensible defaults (e.g., bar chart with sum aggregation on a numeric column).
+- Prefer resolving issues without asking the user for clarification when the dataset context allows it.
 **Available DOM Actions (use responseType "dom_action"):**
 - highlightCard: {"toolName":"highlightCard","cardId":string,"scrollIntoView":boolean?}
 - clearHighlight: {"toolName":"clearHighlight"}

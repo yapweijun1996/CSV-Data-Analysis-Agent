@@ -25,6 +25,8 @@ const HIGHLIGHT_COLOR = '#3b82f6';
 const HIGHLIGHT_BORDER_COLOR = '#2563eb';
 const DESELECTED_COLOR = 'rgba(107, 114, 128, 0.2)';
 const DESELECTED_BORDER_COLOR = 'rgba(107, 114, 128, 0.5)';
+const SUPPORTED_CHART_TYPES = new Set(['bar', 'line', 'pie', 'doughnut', 'scatter']);
+const SUPPORTED_AGGREGATIONS = new Set(['sum', 'count', 'avg']);
 let zoomPluginRegistered = false;
 
 class CsvDataAnalysisApp extends HTMLElement {
@@ -58,29 +60,167 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.shouldAutoScrollConversation = true;
     this.conversationLogElement = null;
     this.handleConversationScroll = this.onConversationScroll.bind(this);
+    this.chatDraft = '';
   }
 
   validatePlanForExecution(plan) {
     if (!plan || typeof plan !== 'object') {
-      return '分析設定缺失。';
+      return 'Plan configuration is missing.';
     }
     if (!plan.chartType) {
-      return '缺少圖表類型。';
+      return 'Missing chart type.';
     }
     if (plan.chartType === 'scatter') {
       return null;
     }
     const aggregation = typeof plan.aggregation === 'string' ? plan.aggregation.toLowerCase() : '';
-    if (!['sum', 'count', 'avg'].includes(aggregation)) {
-      return '缺少有效的彙總方式（sum / count / avg）。';
+    if (!SUPPORTED_AGGREGATIONS.has(aggregation)) {
+      return 'Missing valid aggregation (sum/count/avg).';
     }
     if (!plan.groupByColumn) {
-      return '缺少分組欄位。';
+      return 'Missing group-by column.';
     }
     if (aggregation !== 'count' && !plan.valueColumn) {
-      return '缺少數值欄位。';
+      return 'Missing value column.';
     }
     return null;
+  }
+
+  getAvailableColumns() {
+    if (Array.isArray(this.state.columnProfiles) && this.state.columnProfiles.length) {
+      return this.state.columnProfiles.map(profile => profile.name);
+    }
+    const firstRow = this.state.csvData?.data?.[0];
+    return firstRow ? Object.keys(firstRow) : [];
+  }
+
+  getNumericColumns() {
+    if (!Array.isArray(this.state.columnProfiles)) {
+      return [];
+    }
+    return this.state.columnProfiles
+      .filter(profile => profile?.type === 'numerical')
+      .map(profile => profile.name);
+  }
+
+  getCategoricalColumns(availableColumns = [], numericColumns = []) {
+    if (!Array.isArray(this.state.columnProfiles)) {
+      return availableColumns.filter(name => !numericColumns.includes(name));
+    }
+
+    const categorical = this.state.columnProfiles
+      .filter(profile => profile?.type !== 'numerical')
+      .map(profile => profile.name);
+
+    if (categorical.length) {
+      return categorical;
+    }
+
+    if (!availableColumns.length) {
+      availableColumns = this.getAvailableColumns();
+    }
+
+    if (!numericColumns.length) {
+      numericColumns = this.getNumericColumns();
+    }
+
+    const numericSet = new Set(numericColumns);
+    return availableColumns.filter(name => !numericSet.has(name));
+  }
+
+  resolveColumnName(name, availableColumns = null) {
+    if (!name) return null;
+    const columns = Array.isArray(availableColumns) ? availableColumns : this.getAvailableColumns();
+    if (!columns.length) return null;
+    if (columns.includes(name)) {
+      return name;
+    }
+    const target = String(name).toLowerCase();
+    return columns.find(column => column.toLowerCase() === target) || null;
+  }
+
+  preparePlanForExecution(plan) {
+    if (!plan || typeof plan !== 'object') {
+      return { plan: null, adjustments: [], error: 'Plan payload is missing.' };
+    }
+
+    const availableColumns = this.getAvailableColumns();
+    if (!availableColumns.length) {
+      return { plan: null, adjustments: [], error: 'No columns available to build the analysis.' };
+    }
+
+    const normalized = { ...plan };
+    const adjustments = [];
+
+    if (!normalized.title) {
+      normalized.title = 'Untitled Analysis';
+      adjustments.push('Assigned default title "Untitled Analysis".');
+    }
+    const titleLabel = normalized.title;
+
+    if (normalized.chartType) {
+      normalized.chartType = String(normalized.chartType).toLowerCase();
+    }
+    if (!SUPPORTED_CHART_TYPES.has(normalized.chartType)) {
+      normalized.chartType = 'bar';
+      adjustments.push(`${titleLabel}: Missing chart type; defaulted to bar chart.`);
+    }
+
+    if (normalized.chartType === 'scatter') {
+      Object.assign(plan, normalized);
+      return { plan, adjustments, error: null };
+    }
+
+    let aggregation = typeof normalized.aggregation === 'string' ? normalized.aggregation.toLowerCase() : '';
+    if (!SUPPORTED_AGGREGATIONS.has(aggregation)) {
+      aggregation = normalized.valueColumn ? 'sum' : 'count';
+      adjustments.push(`${titleLabel}: Invalid aggregation; switched to ${aggregation}.`);
+    }
+    normalized.aggregation = aggregation;
+
+    const numericColumns = this.getNumericColumns();
+    const categoricalColumns = this.getCategoricalColumns(availableColumns, numericColumns);
+
+    let groupBy = this.resolveColumnName(normalized.groupByColumn, availableColumns);
+    if (!groupBy) {
+      groupBy =
+        categoricalColumns.find(col => col !== normalized.valueColumn) ||
+        availableColumns.find(col => col !== normalized.valueColumn) ||
+        availableColumns[0] ||
+        null;
+
+      if (!groupBy) {
+        return { plan: null, adjustments, error: 'No suitable column available for grouping.' };
+      }
+      adjustments.push(`${titleLabel}: Missing group-by column; defaulted to "${groupBy}".`);
+    }
+    normalized.groupByColumn = groupBy;
+
+    if (normalized.aggregation === 'count') {
+      normalized.valueColumn = null;
+    } else {
+      let valueColumn = this.resolveColumnName(normalized.valueColumn, availableColumns);
+      if (!valueColumn || valueColumn === groupBy) {
+        valueColumn =
+          numericColumns.find(col => col !== groupBy) ||
+          numericColumns[0] ||
+          null;
+      }
+
+      if (!valueColumn || valueColumn === groupBy) {
+        normalized.aggregation = 'count';
+        normalized.valueColumn = null;
+        adjustments.push(`${titleLabel}: No numeric column available; switched aggregation to count.`);
+      } else {
+        normalized.valueColumn = valueColumn;
+        if (!plan.valueColumn || plan.valueColumn !== valueColumn) {
+          adjustments.push(`${titleLabel}: Value column set to "${valueColumn}".`);
+        }
+      }
+    }
+
+    Object.assign(plan, normalized);
+    return { plan, adjustments, error: null };
   }
 
   updateMetadataContext(metadata, dataRows) {
@@ -478,38 +618,50 @@ class CsvDataAnalysisApp extends HTMLElement {
     const createdCards = [];
     const metadata = csvData?.metadata || null;
     for (const plan of plans) {
-      const planValidationIssue = this.validatePlanForExecution(plan);
+      const preparation = this.preparePlanForExecution(plan);
+      const normalizedPlan = preparation.plan || plan;
+      const planTitle = normalizedPlan?.title || plan?.title || 'Untitled Analysis';
+
+      if (preparation.adjustments && preparation.adjustments.length) {
+        preparation.adjustments.forEach(message => this.addProgress(message));
+      }
+
+      if (preparation.error) {
+        this.addProgress(`"${planTitle}" skipped: ${preparation.error}`, 'error');
+        continue;
+      }
+
+      const planValidationIssue = this.validatePlanForExecution(normalizedPlan);
       if (planValidationIssue) {
-        const title = plan?.title || '未命名分析';
-        this.addProgress(`「${title}」因設定不完整而被跳過：${planValidationIssue}`, 'error');
+        this.addProgress(`"${planTitle}" skipped: ${planValidationIssue}`, 'error');
         continue;
       }
       try {
-        this.addProgress(`Executing analysis: ${plan.title}...`);
-        const aggregatedData = executePlan(csvData, plan);
+        this.addProgress(`Executing analysis: ${planTitle}...`);
+        const aggregatedData = executePlan(csvData, normalizedPlan);
         if (!aggregatedData.length) {
-          this.addProgress(`"${plan.title}" produced no results and was skipped.`, 'error');
+          this.addProgress(`"${planTitle}" produced no results and was skipped.`, 'error');
           continue;
         }
-        this.addProgress(`AI is drafting a summary for: ${plan.title}...`);
+        this.addProgress(`AI is drafting a summary for: ${planTitle}...`);
         const summary = await generateSummary(
-          plan.title,
+          planTitle,
           aggregatedData,
           this.settings,
           metadata
         );
         const categoryCount = aggregatedData.length;
-        const shouldDefaultTopN = plan.chartType !== 'scatter' && categoryCount > 15;
-        const defaultTopN = shouldDefaultTopN ? 8 : plan.defaultTopN || null;
+        const shouldDefaultTopN = normalizedPlan.chartType !== 'scatter' && categoryCount > 15;
+        const defaultTopN = shouldDefaultTopN ? 8 : normalizedPlan.defaultTopN || null;
         const newCard = {
           id: `card-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-          plan,
+          plan: normalizedPlan,
           aggregatedData,
           summary,
-          displayChartType: plan.chartType,
+          displayChartType: normalizedPlan.chartType,
           isDataVisible: false,
           topN: defaultTopN,
-          hideOthers: shouldDefaultTopN ? true : Boolean(plan.defaultHideOthers),
+          hideOthers: shouldDefaultTopN ? true : Boolean(normalizedPlan.defaultHideOthers),
           hiddenLabels: [],
           filter: null,
           disableAnimation: isChatRequest || !isFirstCard || (this.state.analysisCards?.length ?? 0) > 0,
@@ -522,11 +674,11 @@ class CsvDataAnalysisApp extends HTMLElement {
           analysisCards: [...prev.analysisCards, newCard],
         }));
         isFirstCard = false;
-        this.addProgress(`Analysis card created: ${plan.title}`);
+        this.addProgress(`Analysis card created: ${planTitle}`);
       } catch (error) {
         console.error(error);
         this.addProgress(
-          `Analysis "${plan.title}" failed: ${error instanceof Error ? error.message : String(error)}`,
+          `Analysis "${planTitle}" failed: ${error instanceof Error ? error.message : String(error)}`,
           'error'
         );
       }
@@ -1514,13 +1666,33 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
 
     const chatForm = this.querySelector('#chat-form');
+    const chatInput = this.querySelector('#chat-input');
+    if (chatInput) {
+      chatInput.value = this.chatDraft || '';
+    }
+    const submitChatMessage = () => {
+      if (!chatInput || chatInput.disabled) return;
+      const value = chatInput.value || this.chatDraft || '';
+      if (!value.trim()) return;
+      this.chatDraft = '';
+      chatInput.value = '';
+      this.handleChatSubmit(value);
+    };
     if (chatForm) {
       chatForm.addEventListener('submit', e => {
         e.preventDefault();
-        const input = this.querySelector('#chat-input');
-        const value = input?.value || '';
-        if (input) input.value = '';
-        this.handleChatSubmit(value);
+        submitChatMessage();
+      });
+    }
+    if (chatInput) {
+      chatInput.addEventListener('input', () => {
+        this.chatDraft = chatInput.value;
+      });
+      chatInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          submitChatMessage();
+        }
       });
     }
 
@@ -2308,7 +2480,7 @@ class CsvDataAnalysisApp extends HTMLElement {
             </section>
 
             <aside class="lg:col-span-1 space-y-6">
-              <section class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col h-[40rem]">
+              <section class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col h-[40rem] sticky top-6">
                 <h2 class="text-sm font-semibold text-slate-700 mb-3">Conversation Log</h2>
                 <div class="flex-1 overflow-y-auto space-y-3 pr-1" data-conversation-log>${
                   conversationHtml ||
