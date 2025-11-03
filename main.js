@@ -44,6 +44,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.state = {
       currentView: 'file_upload',
       isBusy: false,
+      isThinking: false,
       progressMessages: [],
       csvData: null,
       columnProfiles: [],
@@ -918,6 +919,9 @@ class CsvDataAnalysisApp extends HTMLElement {
       return;
     }
 
+    // Disable chat UI while agent is working
+    this.setState({ isThinking: true });
+
     const userMessage = {
       sender: 'user',
       text: message,
@@ -974,6 +978,9 @@ class CsvDataAnalysisApp extends HTMLElement {
         `AI response failed: ${error instanceof Error ? error.message : String(error)}`,
         'error'
       );
+    } finally {
+      // Re-enable chat UI after agent completes work
+      this.setState({ isThinking: false });
     }
   }
 
@@ -1738,7 +1745,9 @@ class CsvDataAnalysisApp extends HTMLElement {
         },
       },
       zoom: {
-        wheel: { enabled: true },
+        // Disable mouse wheel zoom to prevent scroll from changing chart layout
+        wheel: { enabled: false },
+        // Keep pinch zoom for touch devices (does not trigger on mouse scroll)
         pinch: { enabled: true },
         mode: 'xy',
         onZoomComplete: ({ chart: chartInstance }) => {
@@ -2661,11 +2670,12 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.settings.provider === 'google'
         ? !!this.settings.geminiApiKey
         : !!this.settings.openAIApiKey;
-
+    const isChatDisabled = !isApiKeySet || isBusy || this.state.isThinking;
+ 
     const cardsHtml = analysisCards.map(card => this.renderAnalysisCard(card)).join('');
     let cardsSection;
     if (cardsHtml) {
-      cardsSection = `<div class="grid gap-6 grid-cols-1 2xl:grid-cols-2">${cardsHtml}</div>`;
+      cardsSection = `<div class="grid gap-6 grid-cols-1 xl:grid-cols-2">${cardsHtml}</div>`;
     } else if (isBusy && csvData) {
       cardsSection = this.renderCardsLoadingState();
     } else {
@@ -2808,11 +2818,22 @@ class CsvDataAnalysisApp extends HTMLElement {
                 }</div>
                 <form id="chat-form" class="mt-3 flex gap-2">
                   <textarea id="chat-input" data-focus-key="chat-input" rows="2" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm resize-y" placeholder="${
-                    isApiKeySet ? 'Type a message...' : 'Set an API key first'
-                  }" ${isApiKeySet ? '' : 'disabled'}></textarea>
+                    isApiKeySet
+                      ? (isChatDisabled ? 'Agent is working...' : 'Type a message...')
+                      : 'Set an API key first'
+                  }" ${isChatDisabled ? 'disabled' : ''}></textarea>
                   <button type="submit" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg ${
-                    isApiKeySet ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'
-                  }" ${isApiKeySet ? '' : 'disabled'}>Send</button>
+                    !isChatDisabled ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'
+                  }" ${isChatDisabled ? 'disabled' : ''}>
+                    ${
+                      isChatDisabled
+                        ? `<span class="inline-flex items-center gap-2">
+                             <span class="h-4 w-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
+                             <span>${this.state.isThinking ? 'Working...' : 'Busy...'}</span>
+                           </span>`
+                        : 'Send'
+                    }
+                  </button>
                 </form>
               </section>
               <section class="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
