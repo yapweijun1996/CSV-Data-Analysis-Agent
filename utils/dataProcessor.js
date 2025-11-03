@@ -32,6 +32,19 @@ const looksNumeric = value => {
   return !Number.isNaN(Number(cleaned));
 };
 
+const looksLikeDate = value => {
+  if (typeof value !== 'string' && typeof value !== 'number') {
+    return false;
+  }
+  const stringValue = String(value).trim();
+  if (!stringValue) return false;
+  if (!/[0-9]{1,4}[-/][0-9]{1,2}[-/][0-9]{1,4}/.test(stringValue)) {
+    return false;
+  }
+  const parsed = Date.parse(stringValue);
+  return !Number.isNaN(parsed);
+};
+
 const determineExpectedColumnCount = rows => {
   const counter = new Map();
   rows.forEach(row => {
@@ -944,15 +957,33 @@ export const executePlan = (csvData, plan) => {
         throw new Error(`Unsupported aggregation type: ${aggregation}`);
     }
 
+    const targetValueKey = valueColumn || (aggregation === 'count' ? 'count' : 'value');
     aggregatedResult.push({
       [groupByColumn]: key,
-      value: resultValue,
+      [targetValueKey]: resultValue,
     });
   }
 
-  aggregatedResult.sort(
-    (a, b) => (Number(b.value) || 0) - (Number(a.value) || 0)
-  );
+  const finalValueKey = valueColumn || (aggregation === 'count' ? 'count' : 'value');
+  if (!plan.valueColumn) {
+    plan.valueColumn = finalValueKey;
+  }
+
+  if (
+    plan.chartType === 'line' &&
+    aggregatedResult.length > 0 &&
+    looksLikeDate(aggregatedResult[0][groupByColumn])
+  ) {
+    aggregatedResult.sort(
+      (a, b) =>
+        new Date(String(a[groupByColumn])).getTime() -
+        new Date(String(b[groupByColumn])).getTime()
+    );
+  } else {
+    aggregatedResult.sort(
+      (a, b) => (Number(b[finalValueKey]) || 0) - (Number(a[finalValueKey]) || 0)
+    );
+  }
 
   return aggregatedResult;
 };

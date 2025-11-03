@@ -31,6 +31,7 @@ import {
   summariseRepairActions,
   hasCriticalIssues,
 } from './utils/repairEngine.js';
+import { exportToPng, exportToCsv, exportToHtml } from './utils/exportUtils.js';
 
 const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'];
 const BORDER_COLORS = COLORS.map(color => `${color}B3`);
@@ -44,6 +45,8 @@ const SUPPORTED_AGGREGATIONS = new Set(['sum', 'count', 'avg']);
 const MIN_ASIDE_WIDTH = 320;
 const MAX_ASIDE_WIDTH = 800;
 let zoomPluginRegistered = false;
+const ENABLE_MEMORY_FEATURES = false;
+const ENABLE_PIPELINE_REPAIR = false;
 
 class CsvDataAnalysisApp extends HTMLElement {
   constructor() {
@@ -98,6 +101,9 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.isResizingAside = false;
     this.boundAsideMouseMove = this.handleAsideMouseMove.bind(this);
     this.boundAsideMouseUp = this.handleAsideMouseUp.bind(this);
+    this.mainScrollElement = null;
+    this.savedMainScrollTop = null;
+    this.boundDocumentClick = this.onDocumentClick.bind(this);
   }
 
   captureSerializableAppState() {
@@ -171,6 +177,17 @@ class CsvDataAnalysisApp extends HTMLElement {
       reportsList: Array.isArray(this.state.reportsList) ? this.state.reportsList : [],
       isHistoryPanelOpen: false,
     };
+
+    if (Array.isArray(restored.analysisCards)) {
+      restored.analysisCards = restored.analysisCards.map(card => ({
+        ...card,
+        showSelectionDetails:
+          card && Object.prototype.hasOwnProperty.call(card, 'showSelectionDetails')
+            ? card.showSelectionDetails
+            : true,
+        isExporting: false,
+      }));
+    }
 
     if (!restored.currentView) {
       restored.currentView =
@@ -621,6 +638,9 @@ class CsvDataAnalysisApp extends HTMLElement {
   connectedCallback() {
     this.isMounted = true;
     this.render();
+    if (typeof document !== 'undefined') {
+      document.addEventListener('click', this.boundDocumentClick, true);
+    }
     this.initializeAppState().catch(error =>
       console.error('Failed during initial app state restoration:', error)
     );
@@ -640,6 +660,9 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (this.isResizingAside) {
       this.handleAsideMouseUp();
     }
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('click', this.boundDocumentClick, true);
+    }
   }
 
   setState(updater) {
@@ -648,6 +671,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (!nextPartial || typeof nextPartial !== 'object') {
       return;
     }
+    this.captureMainScrollPosition();
     this.state = { ...prevState, ...nextPartial };
     this.captureFocus();
     this.scheduleRender();
@@ -728,8 +752,15 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   getCardValueKey(card) {
+    if (!card || !card.plan) return 'value';
     if (card.plan.chartType === 'scatter') {
-      return card.plan.valueColumn || 'value';
+      return card.plan.valueColumn || card.plan.yValueColumn || 'value';
+    }
+    if (card.plan.valueColumn) {
+      return card.plan.valueColumn;
+    }
+    if (card.plan.aggregation === 'count') {
+      return 'count';
     }
     return 'value';
   }
@@ -741,7 +772,8 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
     let data = [...aggregatedData];
     if (topN) {
-      data = applyTopNWithOthers(data, plan.groupByColumn, 'value', topN);
+      const valueKey = this.getCardValueKey(card);
+      data = applyTopNWithOthers(data, plan.groupByColumn, valueKey, topN);
     }
     return data;
   }
@@ -767,7 +799,8 @@ class CsvDataAnalysisApp extends HTMLElement {
 
   getCardTotalValue(card) {
     const legendData = this.getCardLegendData(card);
-    return legendData.reduce((sum, row) => sum + (Number(row.value) || 0), 0);
+    const valueKey = this.getCardValueKey(card);
+    return legendData.reduce((sum, row) => sum + (Number(row?.[valueKey]) || 0), 0);
   }
 
   splitSummary(summary) {
@@ -898,10 +931,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       let dataForAnalysis = parsedData;
       let profiles = profileData(parsedData.data);
 
-      const isApiKeySet =
-        this.settings.provider === 'google'
-          ? !!this.settings.geminiApiKey
-          : !!this.settings.openAIApiKey;
+      const isApiKeySet = this.hasConfiguredApiKey();
 
       if (isApiKeySet) {
         this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
@@ -940,7 +970,10 @@ class CsvDataAnalysisApp extends HTMLElement {
           this.addProgress('AI determined no additional transformation is required.');
         }
       } else {
-        this.addProgress('API key is missing. Skipping AI-driven preprocessing and analysis.', 'error');
+        this.ensureApiCredentials({
+          reason:
+            'API key is missing. Skipping AI-driven preprocessing and analysis while settings open for update.',
+        });
       }
 
       if (!dataForAnalysis.data.length) {
@@ -1072,22 +1105,26 @@ class CsvDataAnalysisApp extends HTMLElement {
           disableAnimation: isChatRequest || !isFirstCard || (this.state.analysisCards?.length ?? 0) > 0,
           selectedIndices: [],
           isZoomed: false,
+          showSelectionDetails: true,
+          isExporting: false,
         };
 
         createdCards.push(newCard);
-        try {
-          await storeMemory(datasetId, {
-            kind: 'analysis_plan',
-            intent: normalizedPlan?.aggregation ? 'analysis' : 'general',
-            text: `${planTitle}: ${summary}`,
-            summary,
-            metadata: {
-              plan: normalizedPlan,
-              sampleRows: aggregatedData.slice(0, 10),
-            },
-          });
-        } catch (memoryError) {
-          console.warn('Failed to store analysis memory entry.', memoryError);
+        if (ENABLE_MEMORY_FEATURES) {
+          try {
+            await storeMemory(datasetId, {
+              kind: 'analysis_plan',
+              intent: normalizedPlan?.aggregation ? 'analysis' : 'general',
+              text: `${planTitle}: ${summary}`,
+              summary,
+              metadata: {
+                plan: normalizedPlan,
+                sampleRows: aggregatedData.slice(0, 10),
+              },
+            });
+          } catch (memoryError) {
+            console.warn('Failed to store analysis memory entry.', memoryError);
+          }
         }
         this.setState(prev => ({
           analysisCards: [...prev.analysisCards, newCard],
@@ -1131,27 +1168,31 @@ class CsvDataAnalysisApp extends HTMLElement {
       const finalSummary = await generateFinalSummary(createdCards, this.settings, metadata);
       this.setState({ finalSummary });
       this.addProgress('Overall summary created.');
-      try {
-        await storeMemory(datasetId, {
-          kind: 'summary',
-          intent: 'narrative',
-          text: finalSummary,
-          summary: finalSummary,
-          metadata: {
-            cards: createdCards.map(card => ({
-              title: card.plan.title,
-              chartType: card.plan.chartType,
-            })),
-          },
-        });
-      } catch (memoryError) {
-        console.warn('Failed to store final summary memory entry.', memoryError);
+      if (ENABLE_MEMORY_FEATURES) {
+        try {
+          await storeMemory(datasetId, {
+            kind: 'summary',
+            intent: 'narrative',
+            text: finalSummary,
+            summary: finalSummary,
+            metadata: {
+              cards: createdCards.map(card => ({
+                title: card.plan.title,
+                chartType: card.plan.chartType,
+              })),
+            },
+          });
+        } catch (memoryError) {
+          console.warn('Failed to store final summary memory entry.', memoryError);
+        }
       }
     }
 
-    const auditReport = await this.runPipelineAudit({ log: !isChatRequest });
-    if (!options.skipAutoRepair) {
-      await this.autoRepairIfNeeded(auditReport);
+    if (ENABLE_PIPELINE_REPAIR) {
+      const auditReport = await this.runPipelineAudit({ log: !isChatRequest });
+      if (!options.skipAutoRepair) {
+        await this.autoRepairIfNeeded(auditReport);
+      }
     }
 
     return createdCards;
@@ -1161,6 +1202,12 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (!message.trim()) return;
     if (!this.state.csvData) {
       this.addProgress('Please upload a CSV file before chatting with the assistant.', 'error');
+      return;
+    }
+    if (!this.hasConfiguredApiKey()) {
+      this.ensureApiCredentials({
+        reason: 'API key is missing. Opening settings so you can add it before chatting.',
+      });
       return;
     }
 
@@ -1182,15 +1229,17 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.addProgress('AI is composing a reply...');
       const userIntent = detectIntent(message, this.state.columnProfiles);
       const datasetId = this.getCurrentDatasetId();
-      try {
-        await storeMemory(datasetId, {
-          kind: 'user_prompt',
-          intent: userIntent,
-          text: message,
-          summary: message.slice(0, 220),
-        });
-      } catch (memoryError) {
-        console.warn('Failed to store user prompt memory entry.', memoryError);
+      if (ENABLE_MEMORY_FEATURES) {
+        try {
+          await storeMemory(datasetId, {
+            kind: 'user_prompt',
+            intent: userIntent,
+            text: message,
+            summary: message.slice(0, 220),
+          });
+        } catch (memoryError) {
+          console.warn('Failed to store user prompt memory entry.', memoryError);
+        }
       }
       const skillCatalog = getSkillCatalog(userIntent);
       const cardContext = this.state.analysisCards.map(card => ({
@@ -1200,7 +1249,9 @@ class CsvDataAnalysisApp extends HTMLElement {
       }));
       const rawDataSample = this.state.csvData.data.slice(0, 20);
       const metadata = this.state.csvMetadata || this.state.csvData?.metadata || null;
-      const memoryContext = await retrieveRelevantMemories(datasetId, message, 6);
+      const memoryContext = ENABLE_MEMORY_FEATURES
+        ? await retrieveRelevantMemories(datasetId, message, 6)
+        : [];
       const response = await generateChatResponse(
         this.state.columnProfiles,
         this.state.chatHistory,
@@ -1356,7 +1407,7 @@ class CsvDataAnalysisApp extends HTMLElement {
               },
             ],
           }));
-          if (action.text) {
+          if (action.text && ENABLE_MEMORY_FEATURES) {
             try {
               await storeMemory(datasetId, {
                 kind: 'chat_response',
@@ -1387,7 +1438,7 @@ class CsvDataAnalysisApp extends HTMLElement {
                 transformed,
                 'Data updated after applying AI transformation.'
               );
-              if (result.success) {
+              if (result.success && ENABLE_MEMORY_FEATURES) {
                 try {
                   await storeMemory(datasetId, {
                     kind: 'transformation',
@@ -1418,16 +1469,18 @@ class CsvDataAnalysisApp extends HTMLElement {
               if (result.message) {
                 this.addProgress(result.message);
               }
-              try {
-                await storeMemory(datasetId, {
-                  kind: 'dom_action',
-                  intent: 'interaction',
-                  text: result.message,
-                  summary: result.message,
-                  metadata: { domAction: action.domAction },
-                });
-              } catch (memoryError) {
-                console.warn('Failed to store DOM action memory entry.', memoryError);
+              if (ENABLE_MEMORY_FEATURES) {
+                try {
+                  await storeMemory(datasetId, {
+                    kind: 'dom_action',
+                    intent: 'interaction',
+                    text: result.message,
+                    summary: result.message,
+                    metadata: { domAction: action.domAction },
+                  });
+                } catch (memoryError) {
+                  console.warn('Failed to store DOM action memory entry.', memoryError);
+                }
               }
             } else {
               this.addProgress(result.error || 'AI UI action failed.', 'error');
@@ -1445,6 +1498,135 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.settings = { ...this.settings, ...newSettings };
     saveSettings(this.settings);
     this.setState({ showSettings: false });
+  }
+
+  onDocumentClick(event) {
+    if (!this.isMounted || !event) return;
+    const target = event.target;
+    if (target && this.contains(target)) {
+      if (target.closest('[data-export-menu-container]')) {
+        return;
+      }
+      if (target.closest('[data-export-menu-toggle]')) {
+        return;
+      }
+    }
+    this.closeExportMenus();
+  }
+
+  closeExportMenus() {
+    this.querySelectorAll('[data-export-menu]').forEach(menu => menu.classList.add('hidden'));
+    this.querySelectorAll('[data-export-menu-toggle]').forEach(button =>
+      button.setAttribute('aria-expanded', 'false')
+    );
+  }
+
+  toggleExportMenu(button) {
+    if (!button) return;
+    const container = button.closest('[data-export-menu-container]');
+    if (!container) return;
+    const menu = container.querySelector('[data-export-menu]');
+    if (!menu) return;
+    const willOpen = menu.classList.contains('hidden');
+    this.closeExportMenus();
+    if (willOpen) {
+      menu.classList.remove('hidden');
+      button.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  toggleSelectionDetails(cardId) {
+    if (!cardId) return;
+    this.updateCard(cardId, card => ({
+      showSelectionDetails: card.showSelectionDetails === false,
+    }));
+  }
+
+  handleRawDataReset() {
+    this.setState({
+      rawDataFilter: '',
+      rawDataWholeWord: false,
+      rawDataSort: null,
+    });
+  }
+
+  async handleCardExport(cardId, format) {
+    const card = this.state.analysisCards.find(item => item.id === cardId);
+    if (!card) {
+      this.addProgress(`Cannot export: card ${cardId || ''} not found.`, 'error');
+      return;
+    }
+    const cardElement = this.querySelector(`[data-card-id="${cardId}"]`);
+    if (!cardElement) {
+      this.addProgress('Cannot export because the card element is missing.', 'error');
+      return;
+    }
+    const title = card.plan?.title || 'analysis-card';
+    const dataRows = this.getCardDisplayData(card);
+    const hasRows = Array.isArray(dataRows) && dataRows.length > 0;
+    if ((format === 'csv' || format === 'html') && !hasRows) {
+      this.closeExportMenus();
+      this.addProgress(`Cannot export "${title}" — no table data is available yet.`, 'error');
+      return;
+    }
+    this.updateCard(cardId, () => ({ isExporting: true }));
+    try {
+      switch (format) {
+        case 'png':
+          await exportToPng(cardElement, title);
+          break;
+        case 'csv':
+          exportToCsv(dataRows, title);
+          break;
+        case 'html':
+          await exportToHtml(cardElement, title, dataRows, card.summary);
+          break;
+        default:
+          throw new Error(`Unsupported export format: ${format}`);
+      }
+    } catch (error) {
+      console.error('Card export failed:', error);
+      this.addProgress(
+        `Failed to export "${title}" as ${format.toUpperCase()}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        'error'
+      );
+    } finally {
+      this.closeExportMenus();
+      this.updateCard(cardId, () => ({ isExporting: false }));
+    }
+  }
+
+  hasConfiguredApiKey() {
+    const provider = this.settings.provider || 'google';
+    return provider === 'google'
+      ? Boolean(this.settings.geminiApiKey)
+      : Boolean(this.settings.openAIApiKey);
+  }
+
+  ensureApiCredentials(options = {}) {
+    const config = typeof options === 'string' ? { reason: options } : options;
+    const provider = this.settings.provider || 'google';
+    if (this.hasConfiguredApiKey()) {
+      return true;
+    }
+    const providerLabel = provider === 'google' ? 'Google Gemini' : 'OpenAI';
+    const message =
+      config?.reason ||
+      `${providerLabel} API key is missing. Opening settings so you can add it and retry.`;
+    this.addProgress(message, 'error');
+    this.setState({ showSettings: true });
+    const focusField =
+      config?.focusField || (provider === 'google' ? 'settings-gemini-key' : 'settings-openai-key');
+    this.pendingFocus = {
+      focusKey: focusField,
+      useDataset: false,
+      selectionStart: null,
+      selectionEnd: null,
+      scrollTop: null,
+    };
+    return false;
   }
 
   toggleHistoryPanel(forceOpen) {
@@ -2436,33 +2618,6 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     }
 
-    const runAuditButton = this.querySelector('[data-run-audit]');
-    if (runAuditButton) {
-      runAuditButton.addEventListener('click', async () => {
-        if (!this.state.csvData) {
-          this.addProgress('Upload a dataset before running an audit.', 'error');
-          return;
-        }
-        if (runAuditButton.disabled) return;
-        runAuditButton.disabled = true;
-        runAuditButton.classList.add('opacity-60', 'cursor-not-allowed');
-        try {
-      this.addProgress('Manual audit requested...');
-      console.info('Manual audit triggered by user.');
-      const report = await this.runPipelineAudit({ log: true });
-      await this.autoRepairIfNeeded(report);
-        } catch (error) {
-          this.addProgress(
-            `Manual audit failed: ${error instanceof Error ? error.message : String(error)}`,
-            'error'
-          );
-        } finally {
-          runAuditButton.disabled = false;
-          runAuditButton.classList.remove('opacity-60', 'cursor-not-allowed');
-        }
-      });
-    }
-
     this.querySelectorAll('[data-toggle-settings]').forEach(btn => {
       btn.addEventListener('click', () => {
         this.setState(prev => ({ showSettings: !prev.showSettings }));
@@ -2475,6 +2630,34 @@ class CsvDataAnalysisApp extends HTMLElement {
         const type = btn.dataset.chartType;
         if (cardId && type) {
           this.handleChartTypeChange(cardId, type);
+        }
+      });
+    });
+
+    this.querySelectorAll('[data-export-menu-toggle]').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.toggleExportMenu(btn);
+      });
+    });
+
+    this.querySelectorAll('[data-export-card]').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.preventDefault();
+        const cardId = btn.dataset.card;
+        const format = btn.dataset.exportCard;
+        if (cardId && format) {
+          this.handleCardExport(cardId, format);
+        }
+      });
+    });
+
+    this.querySelectorAll('[data-toggle-selection]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cardId = btn.dataset.toggleSelection;
+        if (cardId) {
+          this.toggleSelectionDetails(cardId);
         }
       });
     });
@@ -2562,6 +2745,11 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     }
 
+    const rawReset = this.querySelector('[data-raw-reset]');
+    if (rawReset) {
+      rawReset.addEventListener('click', () => this.handleRawDataReset());
+    }
+
     this.querySelectorAll('[data-raw-sort]').forEach(header => {
       header.addEventListener('click', () => {
         const column = header.dataset.rawSort;
@@ -2625,6 +2813,26 @@ class CsvDataAnalysisApp extends HTMLElement {
       requestAnimationFrame(scroll);
     } else {
       setTimeout(scroll, 0);
+    }
+  }
+
+  captureMainScrollPosition() {
+    const container = this.mainScrollElement || this.querySelector('[data-main-scroll]');
+    if (container) {
+      this.savedMainScrollTop = container.scrollTop;
+    }
+  }
+
+  setupMainScrollElement() {
+    const container = this.querySelector('[data-main-scroll]');
+    this.mainScrollElement = container || null;
+  }
+
+  restoreMainScrollPosition() {
+    if (!this.mainScrollElement) return;
+    if (this.savedMainScrollTop !== null) {
+      this.mainScrollElement.scrollTop = this.savedMainScrollTop;
+      this.savedMainScrollTop = null;
     }
   }
 
@@ -2799,9 +3007,7 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   renderAssistantPanel(options = {}) {
-    const isApiKeySet = options.isApiKeySet ?? (this.settings.provider === 'google'
-      ? !!this.settings.geminiApiKey
-      : !!this.settings.openAIApiKey);
+    const isApiKeySet = options.isApiKeySet ?? this.hasConfiguredApiKey();
     const timeline = this.buildConversationTimeline();
     const isBusy = this.state.isBusy;
     const isChatDisabled = !isApiKeySet || isBusy || this.state.isThinking;
@@ -2841,6 +3047,31 @@ class CsvDataAnalysisApp extends HTMLElement {
             </div>`;
         }
 
+        if (sender === 'system') {
+          const badge = timeLabel
+            ? `<span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 font-semibold">${this.escapeHtml(timeLabel)}</span>`
+            : '';
+          return `
+            <div class="flex justify-start w-full">
+              <div class="flex items-start gap-2 max-w-full text-left">
+                <span class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 7a1 1 0 112 0v1a1 1 0 01-2 0V7zm2 3a1 1 0 10-2 0v4a1 1 0 102 0v-4z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+                <div class="flex flex-col items-start gap-1 min-w-0">
+                  <div class="flex items-center gap-2 text-[10px] uppercase tracking-wide text-amber-500">
+                    ${badge}
+                    <span class="px-1.5 py-0.5 rounded-full bg-amber-50 font-semibold text-amber-600">System</span>
+                  </div>
+                  <div class="inline-block max-w-[28rem] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
+                    ${this.escapeHtml(entry.text || '')}
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        }
+
         const alignmentClass = sender === 'user' ? 'justify-end' : 'justify-start';
         const orientationClass = sender === 'user' ? 'items-end text-right' : 'items-start text-left';
         let bubbleClass;
@@ -2848,20 +3079,20 @@ class CsvDataAnalysisApp extends HTMLElement {
           bubbleClass = 'bg-rose-100 text-rose-800 border border-rose-200';
         } else if (sender === 'user') {
           bubbleClass = 'bg-blue-600 text-white shadow-sm';
-        } else if (sender === 'system') {
-          bubbleClass = 'bg-amber-50 text-amber-800 border border-amber-200';
         } else {
           bubbleClass = 'bg-slate-200 text-slate-800';
         }
 
         const metaParts = [];
         if (timeLabel) metaParts.push(timeLabel);
-        if (sender === 'user') metaParts.push('You');
-        else if (sender === 'ai') metaParts.push('AI');
-        else if (sender === 'system') metaParts.push('System');
-        else metaParts.push(sender || '');
         if (entry.cardId) metaParts.push(`Card ${entry.cardId}`);
         const metaLine = metaParts.filter(Boolean).map(part => this.escapeHtml(part)).join(' • ');
+
+        const senderBadge = sender === 'user'
+          ? '<span class="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 font-semibold text-[10px] uppercase tracking-wide">You</span>'
+          : sender === 'ai'
+          ? '<span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold text-[10px] uppercase tracking-wide">AI</span>'
+          : '';
 
         const cardButton = entry.cardId && !entry.isError
           ? `<button type="button" class="mt-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md hover:bg-blue-200 transition-colors w-full text-left font-medium" data-show-card="${this.escapeHtml(entry.cardId)}">
@@ -2872,7 +3103,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         return `
           <div class="flex ${alignmentClass} w-full">
             <div class="flex flex-col ${orientationClass} max-w-full gap-1">
-              <div class="text-[10px] uppercase tracking-wide text-slate-400">${metaLine}</div>
+              <div class="flex items-center gap-2 text-[10px] uppercase tracking-wide text-slate-400">
+                ${senderBadge}
+                ${metaLine ? `<span>${metaLine}</span>` : ''}
+              </div>
               <div class="inline-block max-w-[28rem] rounded-xl px-3 py-2 text-sm whitespace-pre-wrap ${bubbleClass}">
                 ${this.escapeHtml(entry.text || '')}
                 ${cardButton}
@@ -2885,47 +3119,6 @@ class CsvDataAnalysisApp extends HTMLElement {
     const timelineFallback = isBusy
       ? '<p class="text-xs text-slate-400">Processing... The assistant will respond shortly.</p>'
       : '<p class="text-xs text-slate-400">No activity yet. Upload a CSV or start chatting to begin.</p>';
-
-    const auditReport = this.state.lastAuditReport;
-    const auditSummary = auditReport?.summary
-      ? this.escapeHtml(auditReport.summary)
-      : 'Audit not run yet.';
-    const auditIssuesPreview = Array.isArray(auditReport?.issues)
-      ? auditReport.issues.slice(0, 4)
-      : [];
-    const auditIssuesHtml = auditIssuesPreview.length
-      ? auditIssuesPreview
-          .map(issue => {
-            const badgeClass =
-              issue.severity === 'critical'
-                ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                : issue.severity === 'warning'
-                ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                : 'bg-slate-100 text-slate-600 border border-slate-200';
-            return `<li class="flex items-start gap-2 text-xs text-slate-600">
-              <span class="shrink-0 mt-0.5 px-2 py-0.5 rounded-full ${badgeClass}">${this.escapeHtml(
-                (issue.severity || '').toUpperCase()
-              )}</span>
-              <span class="flex-1">${this.escapeHtml(issue.message || '')}</span>
-            </li>`;
-          })
-          .join('')
-      : '<li class="text-xs text-slate-400">No outstanding issues.</li>';
-
-    const repairSummary = this.state.lastRepairSummary
-      ? this.escapeHtml(this.state.lastRepairSummary)
-      : 'No auto-repair actions executed yet.';
-    const repairTimestamp = this.state.lastRepairTimestamp
-      ? new Date(this.state.lastRepairTimestamp)
-      : null;
-    const repairTimeLabel =
-      repairTimestamp && !Number.isNaN(repairTimestamp.getTime())
-        ? `Last updated at ${repairTimestamp.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          })}`
-        : '';
 
     return `
       <div class="flex flex-col h-full">
@@ -2957,19 +3150,6 @@ class CsvDataAnalysisApp extends HTMLElement {
               : ''
           }</p>
         </div>
-        <div class="p-4 border-t border-slate-200 bg-white space-y-3">
-          <div class="flex items-center justify-between gap-2">
-            <h3 class="text-sm font-semibold text-slate-700">Audit & Repairs</h3>
-            <button class="text-xs px-2 py-1 border border-slate-300 rounded-md hover:bg-slate-100" data-run-audit>Run Audit</button>
-          </div>
-          <p class="text-xs text-slate-600 leading-relaxed">${auditSummary}</p>
-          <ul class="space-y-2 max-h-32 overflow-y-auto">${auditIssuesHtml}</ul>
-          <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-            <p class="text-xs font-semibold text-slate-700 mb-1">Auto-repair status</p>
-            <p class="text-xs text-slate-600 whitespace-pre-line">${repairSummary}</p>
-            ${repairTimeLabel ? `<p class="text-[10px] uppercase tracking-wide text-slate-400 mt-2">${this.escapeHtml(repairTimeLabel)}</p>` : ''}
-          </div>
-        </div>
       </div>
     `;
   }
@@ -3000,6 +3180,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       return '';
     }
     const hidden = new Set(card.hiddenLabels || []);
+    const valueKey = this.getCardValueKey(card);
     return `
       <div class="flex flex-col">
         <div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Legend</div>
@@ -3007,7 +3188,7 @@ class CsvDataAnalysisApp extends HTMLElement {
           ${legendData
             .map((item, index) => {
               const label = String(item[groupKey]);
-              const value = Number(item.value) || 0;
+              const value = Number(item?.[valueKey]) || 0;
               const percentage = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0';
               const isHidden = hidden.has(label);
               const color = COLORS[index % COLORS.length];
@@ -3123,7 +3304,10 @@ class CsvDataAnalysisApp extends HTMLElement {
     const totalValue = this.getCardTotalValue(card);
     const summary = this.splitSummary(card.summary || '');
     const selectedData = (card.selectedIndices || []).map(index => displayData[index]).filter(Boolean);
+    const selectionExpanded = card.showSelectionDetails !== false;
+    const isExporting = Boolean(card.isExporting);
     const showTopNControls = plan.chartType !== 'scatter' && legendData.length > 5;
+    const valueKey = this.getCardValueKey(card);
 
     const topNValue = card.topN ? String(card.topN) : 'all';
     const topNOptions = ['all', '5', '8', '10', '20']
@@ -3140,10 +3324,16 @@ class CsvDataAnalysisApp extends HTMLElement {
     const selectionDetails = selectedData.length
       ? `
         <div class="mt-4 bg-slate-50 p-3 rounded-md text-sm border border-slate-200">
-          <button type="button" class="w-full text-left font-semibold text-blue-600 mb-2" data-clear-selection="${card.id}">
-            Clear selection (${selectedData.length})
-          </button>
-          ${this.renderDataTable(selectedData)}
+          <div class="flex items-center justify-between gap-3">
+            <button type="button" class="font-semibold text-blue-600 flex items-center gap-1" data-toggle-selection="${card.id}">
+              <span>${selectionExpanded ? '▾' : '▸'}</span>
+              <span>Selection details (${selectedData.length})</span>
+            </button>
+            <button type="button" class="text-xs text-slate-500 hover:text-slate-700" data-clear-selection="${card.id}">
+              Clear selection
+            </button>
+          </div>
+          ${selectionExpanded ? `<div class="mt-2 border border-slate-200 rounded-md max-h-48 overflow-auto">${this.renderDataTable(selectedData)}</div>` : ''}
         </div>
       `
       : '';
@@ -3169,19 +3359,51 @@ class CsvDataAnalysisApp extends HTMLElement {
             <h3 class="text-lg font-semibold text-slate-900">${this.escapeHtml(plan.title)}</h3>
             <p class="text-sm text-slate-500">${this.escapeHtml(plan.description || '')}</p>
           </div>
-          <div class="flex items-center bg-slate-100 rounded-md p-0.5 space-x-0.5">
-            ${['bar', 'line', 'pie', 'doughnut', 'scatter']
-              .map(type => `
-                <button
-                  type="button"
-                  class="p-1.5 rounded-md transition-colors ${displayType === type ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-200'}"
-                  data-chart-type="${type}"
-                  data-card="${card.id}"
-                  title="Switch to ${type} chart"
-                >
-                  ${this.renderChartTypeIcon(type)}
-                </button>`)
-              .join('')}
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="flex items-center bg-slate-100 rounded-md p-0.5 space-x-0.5">
+              ${['bar', 'line', 'pie', 'doughnut', 'scatter']
+                .map(type => `
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-md transition-colors ${displayType === type ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-200'}"
+                    data-chart-type="${type}"
+                    data-card="${card.id}"
+                    title="Switch to ${type} chart"
+                  >
+                    ${this.renderChartTypeIcon(type)}
+                  </button>`)
+                .join('')}
+            </div>
+            <div class="relative" data-export-menu-container>
+              <button
+                type="button"
+                class="p-1.5 rounded-md border border-transparent transition-colors ${isExporting ? 'opacity-60 cursor-wait text-slate-400' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}"
+                data-export-menu-toggle
+                data-card="${card.id}"
+                aria-haspopup="true"
+                aria-expanded="false"
+                ${isExporting ? 'disabled' : ''}
+                title="Export card"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </button>
+              <div class="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-md shadow-lg hidden z-20" data-export-menu>
+                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" data-export-card="png" data-card="${card.id}">
+                  <span>Export as PNG</span>
+                  <span class="text-xs text-slate-400">.png</span>
+                </button>
+                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" data-export-card="csv" data-card="${card.id}">
+                  <span>Export data (CSV)</span>
+                  <span class="text-xs text-slate-400">.csv</span>
+                </button>
+                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-b-md" data-export-card="html" data-card="${card.id}">
+                  <span>Export report (HTML)</span>
+                  <span class="text-xs text-slate-400">.html</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -3271,10 +3493,23 @@ class CsvDataAnalysisApp extends HTMLElement {
       : csvData.data.length
       ? Object.keys(csvData.data[0])
       : [];
+    const sortState = this.state.rawDataSort || null;
     const processedRows = this.getProcessedRawData(activeData);
     const rowLimit = 500;
     const visibleRows = processedRows.slice(0, rowLimit);
     const hasMore = processedRows.length > rowLimit;
+    const totalRowsInView = Array.isArray(activeData?.data) ? activeData.data.length : csvData.data.length;
+    const filteredRowCount = processedRows.length;
+    const filterActive = Boolean(rawDataFilter || rawDataWholeWord || sortState);
+    const filterSummaryText = filterActive
+      ? `Showing ${visibleRows.length.toLocaleString()} of ${filteredRowCount.toLocaleString()} matching rows`
+      : `Showing ${visibleRows.length.toLocaleString()} of ${totalRowsInView.toLocaleString()} rows`;
+    const filterSummary = hasMore
+      ? `${filterSummaryText} (first ${rowLimit.toLocaleString()} rows displayed)`
+      : filterSummaryText;
+    const sortSummary = sortState
+      ? `Sorted by ${sortState.key} (${sortState.direction === 'ascending' ? 'ascending' : 'descending'})`
+      : '';
 
     const cleanedCount = metadata?.cleanedRowCount ?? (csvData.data?.length || 0);
     const originalCount =
@@ -3339,27 +3574,41 @@ class CsvDataAnalysisApp extends HTMLElement {
       .join('<span class="w-1"></span>');
 
     const tableHeader = headers
-      .map(
-        header =>
-          `<th class="px-3 py-2 text-xs font-semibold text-slate-600 cursor-pointer" data-raw-sort="${header}">${this.escapeHtml(header)}</th>`
-      )
+      .map(header => {
+        const label = this.escapeHtml(header);
+        const isSorted = sortState && sortState.key === header;
+        const direction = isSorted ? sortState.direction : null;
+        const indicator = direction
+          ? `<span class="text-[10px] ${isSorted ? 'text-blue-600' : 'text-slate-400'}">${direction === 'ascending' ? '&#9650;' : '&#9660;'}</span>`
+          : '<span class="text-[10px] text-slate-300">&#8597;</span>';
+        const cellClasses = [
+          'px-3 py-2 text-xs font-semibold select-none',
+          isSorted ? 'text-blue-600 bg-blue-50/60' : 'text-slate-600',
+        ].join(' ');
+        return `
+          <th class="${cellClasses}">
+            <button type="button" class="w-full flex items-center justify-between gap-1 text-left" data-raw-sort="${header}" title="Sort by ${label}">
+              <span class="truncate">${label}</span>
+              ${indicator}
+            </button>
+          </th>`;
+      })
       .join('');
 
     const tableBody = visibleRows
-      .map(
-        row => `
-        <tr class="border-t border-slate-100">
-          ${headers
-            .map(header => `<td class="px-3 py-2 text-xs text-slate-700">${this.escapeHtml(row[header])}</td>`)
-            .join('')}
-        </tr>`
-      )
+      .map((row, rowIndex) => {
+        const rowClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
+        const cells = headers
+          .map(header => `<td class="px-3 py-2 text-xs text-slate-700 whitespace-nowrap">${this.escapeHtml(row[header])}</td>`)
+          .join('');
+        return `<tr class="border-t border-slate-100 ${rowClass} hover:bg-blue-50/40 transition-colors">${cells}</tr>`;
+      })
       .join('');
 
     const tableHtml = headers.length
-      ? `<div class="overflow-auto border border-slate-200 rounded-md" style="max-height: 60vh;">
-          <table class="min-w-full text-left">
-            <thead class="bg-slate-100">
+      ? `<div class="overflow-auto border border-slate-200 rounded-md shadow-sm" style="max-height: 60vh;">
+          <table class="min-w-full text-left text-xs">
+            <thead class="bg-slate-100 sticky top-0 z-10 shadow-sm">
               <tr>${tableHeader}</tr>
             </thead>
             <tbody>${tableBody}</tbody>
@@ -3395,7 +3644,12 @@ class CsvDataAnalysisApp extends HTMLElement {
                       <input type="checkbox" data-raw-whole class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" ${rawDataWholeWord ? 'checked' : ''}>
                       <span>Match whole word only</span>
                     </label>
+                    ${filterActive ? '<button type="button" class="text-xs text-slate-500 hover:text-slate-700 underline" data-raw-reset>Reset filters</button>' : ''}
                   </div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                  <span>${this.escapeHtml(filterSummary)}</span>
+                  ${sortSummary ? `<span>${this.escapeHtml(sortSummary)}</span>` : ''}
                 </div>
                 ${tableHtml}
                 ${hasMore ? '<p class="text-xs text-slate-500">Showing first 500 rows. Refine your filters to view more.</p>' : ''}
@@ -3408,10 +3662,7 @@ class CsvDataAnalysisApp extends HTMLElement {
 
   render() {
     const { isBusy, csvData, analysisCards, finalSummary } = this.state;
-    const isApiKeySet =
-      this.settings.provider === 'google'
-        ? !!this.settings.geminiApiKey
-        : !!this.settings.openAIApiKey;
+    const isApiKeySet = this.hasConfiguredApiKey();
     const cardsHtml = analysisCards.map(card => this.renderAnalysisCard(card)).join('');
     let cardsSection;
     if (cardsHtml) {
@@ -3478,7 +3729,7 @@ class CsvDataAnalysisApp extends HTMLElement {
               </label>
             </div>
           </header>
-          <div class="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 lg:px-8 py-6 space-y-6">
+          <div class="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 lg:px-8 py-6 space-y-6" data-main-scroll>
             ${mainContent}
           </div>
         </main>
@@ -3491,6 +3742,8 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.bindEvents();
     this.bindSettingsEvents();
     this.renderCharts();
+    this.setupMainScrollElement();
+    this.restoreMainScrollPosition();
     this.setupConversationLogAutoScroll();
     this.restoreFocus();
   }

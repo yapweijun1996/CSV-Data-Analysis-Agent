@@ -1,5 +1,34 @@
-import { GoogleGenAI } from '@google/genai';
 import { executePlan } from '../utils/dataProcessor.js';
+
+const GENAI_MODULE_URL = 'https://aistudiocdn.com/@google/genai@1.28.0';
+let googleModulePromise = null;
+let GoogleGenAIClass = null;
+let GeminiType = null;
+let planArraySchema = null;
+let singlePlanSchema = null;
+let dataPreparationSchemaCache = null;
+let multiActionChatResponseSchemaCache = null;
+
+const loadGoogleModule = async () => {
+  if (!googleModulePromise) {
+    googleModulePromise = import(/* @vite-ignore */ GENAI_MODULE_URL);
+  }
+  return googleModulePromise;
+};
+
+const getGoogleGenAI = async () => {
+  if (GoogleGenAIClass) return GoogleGenAIClass;
+  const mod = await loadGoogleModule();
+  const ctor = mod?.GoogleGenAI || mod?.default?.GoogleGenAI || mod?.default;
+  if (!GeminiType) {
+    GeminiType = mod?.Type || mod?.default?.Type || null;
+  }
+  if (!ctor) {
+    throw new Error('Failed to load Google Gemini client library.');
+  }
+  GoogleGenAIClass = ctor;
+  return GoogleGenAIClass;
+};
 
 const withRetry = async (fn, retries = 2) => {
   let lastError;
@@ -36,6 +65,189 @@ const ensureArray = value => {
     if (firstArray) return firstArray;
   }
   throw new Error('The AI response is not in the expected array format.');
+};
+
+const getSinglePlanSchema = () => {
+  if (!GeminiType) return null;
+  if (!singlePlanSchema) {
+    singlePlanSchema = {
+      type: GeminiType.OBJECT,
+      properties: {
+        chartType: {
+          type: GeminiType.STRING,
+          enum: ['bar', 'line', 'pie', 'doughnut', 'scatter'],
+          description: 'Type of chart to generate.',
+        },
+        title: {
+          type: GeminiType.STRING,
+          description: 'A concise title for the analysis.',
+        },
+        description: {
+          type: GeminiType.STRING,
+          description: 'A brief explanation of what the analysis shows.',
+        },
+        aggregation: {
+          type: GeminiType.STRING,
+          enum: ['sum', 'count', 'avg'],
+          description: 'Aggregation to apply; omit for scatter plots.',
+        },
+        groupByColumn: {
+          type: GeminiType.STRING,
+          description: 'Categorical column to group by; omit for scatter plots.',
+        },
+        valueColumn: {
+          type: GeminiType.STRING,
+          description: 'Numeric column for aggregation. Optional for count.',
+        },
+        xValueColumn: {
+          type: GeminiType.STRING,
+          description: 'Numeric column for scatter plot X axis.',
+        },
+        yValueColumn: {
+          type: GeminiType.STRING,
+          description: 'Numeric column for scatter plot Y axis.',
+        },
+        defaultTopN: {
+          type: GeminiType.INTEGER,
+          description: 'Optional Top-N default for charts with many categories.',
+        },
+        defaultHideOthers: {
+          type: GeminiType.BOOLEAN,
+          description: 'Whether to hide the "Others" bucket when Top-N is used.',
+        },
+      },
+      required: ['chartType', 'title', 'description'],
+    };
+  }
+  return singlePlanSchema;
+};
+
+const getPlanArraySchema = () => {
+  if (!GeminiType) return null;
+  if (!planArraySchema) {
+    planArraySchema = {
+      type: GeminiType.ARRAY,
+      items: getSinglePlanSchema(),
+    };
+  }
+  return planArraySchema;
+};
+
+const getDataPreparationSchema = () => {
+  if (!GeminiType) return null;
+  if (!dataPreparationSchemaCache) {
+    dataPreparationSchemaCache = {
+      type: GeminiType.OBJECT,
+      properties: {
+        explanation: {
+          type: GeminiType.STRING,
+          description: 'Plain-language explanation of the transformation.',
+        },
+        jsFunctionBody: {
+          type: GeminiType.STRING,
+          description:
+            'JavaScript function body that transforms the data array. Use null when no change is required.',
+        },
+        outputColumns: {
+          type: GeminiType.ARRAY,
+          description: 'Column profiles describing the transformed data.',
+          items: {
+            type: GeminiType.OBJECT,
+            properties: {
+              name: { type: GeminiType.STRING, description: 'Column name.' },
+              type: {
+                type: GeminiType.STRING,
+                enum: ['numerical', 'categorical'],
+                description: 'Column data type.',
+              },
+            },
+            required: ['name', 'type'],
+          },
+        },
+      },
+      required: ['explanation', 'outputColumns'],
+    };
+  }
+  return dataPreparationSchemaCache;
+};
+
+const getMultiActionChatResponseSchema = () => {
+  if (!GeminiType) return null;
+  if (!multiActionChatResponseSchemaCache) {
+    const actionSchema = {
+      type: GeminiType.OBJECT,
+      properties: {
+        responseType: {
+          type: GeminiType.STRING,
+          enum: ['text_response', 'plan_creation', 'dom_action', 'execute_js_code', 'proceed_to_analysis'],
+        },
+        text: {
+          type: GeminiType.STRING,
+          description: 'Conversational reply to the user. Required for text_response.',
+        },
+        cardId: {
+          type: GeminiType.STRING,
+          description: 'ID of the related analysis card, when applicable.',
+        },
+        plan: getSinglePlanSchema(),
+        domAction: {
+          type: GeminiType.OBJECT,
+          description: 'DOM manipulation payload. Required for dom_action.',
+          properties: {
+            toolName: {
+              type: GeminiType.STRING,
+              enum: [
+                'highlightCard',
+                'clearHighlight',
+                'changeCardChartType',
+                'toggleCardData',
+                'showCardData',
+                'setCardTopN',
+                'setCardHideOthers',
+                'clearCardSelection',
+                'resetCardZoom',
+                'setRawDataVisibility',
+                'setRawDataFilter',
+                'setRawDataWholeWord',
+                'setRawDataSort',
+                'removeRawDataRows',
+              ],
+            },
+          },
+          required: ['toolName'],
+        },
+        code: {
+          type: GeminiType.OBJECT,
+          description: 'Executable JavaScript transformation for execute_js_code.',
+          properties: {
+            explanation: {
+              type: GeminiType.STRING,
+              description: 'Human-readable explanation of the code.',
+            },
+            jsFunctionBody: {
+              type: GeminiType.STRING,
+              description: 'Body of a function(data) that returns the transformed data array.',
+            },
+          },
+          required: ['explanation', 'jsFunctionBody'],
+        },
+      },
+      required: ['responseType'],
+    };
+
+    multiActionChatResponseSchemaCache = {
+      type: GeminiType.OBJECT,
+      properties: {
+        actions: {
+          type: GeminiType.ARRAY,
+          description: 'Sequence of actions for the assistant to perform.',
+          items: actionSchema,
+        },
+      },
+      required: ['actions'],
+    };
+  }
+  return multiActionChatResponseSchemaCache;
 };
 
 const formatMetadataContext = (metadata, options = {}) => {
@@ -161,25 +373,30 @@ const callOpenAIText = async (settings, systemPrompt, userPrompt) => {
   return response.choices[0].message.content;
 };
 
-const callGeminiClient = settings => {
+const callGeminiClient = async settings => {
   const key = settings.geminiApiKey;
   if (!key) throw new Error('Gemini API key is missing.');
+  const GoogleGenAI = await getGoogleGenAI();
   return new GoogleGenAI({ apiKey: key });
 };
 
-const callGeminiJson = async (settings, prompt) => {
+const callGeminiJson = async (settings, prompt, options = {}) => {
   const modelId =
     settings.model === 'gemini-2.5-flash' || settings.model === 'gemini-2.5-pro'
       ? settings.model
       : 'gemini-2.5-pro';
-  const ai = callGeminiClient(settings);
+  const ai = await callGeminiClient(settings);
+  const config = {
+    responseMimeType: 'application/json',
+  };
+  if (options?.schema) {
+    config.responseSchema = options.schema;
+  }
   const response = await withRetry(() =>
     ai.models.generateContent({
       model: modelId,
       contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-      },
+      config,
     })
   );
   const rawText = typeof response.text === 'function' ? await response.text() : response.text;
@@ -191,7 +408,7 @@ const callGeminiText = async (settings, prompt) => {
     settings.model === 'gemini-2.5-flash' || settings.model === 'gemini-2.5-pro'
       ? settings.model
       : 'gemini-2.5-pro';
-  const ai = callGeminiClient(settings);
+  const ai = await callGeminiClient(settings);
   const response = await withRetry(() =>
     ai.models.generateContent({
       model: modelId,
@@ -273,10 +490,11 @@ Sample rows: ${JSON.stringify(sampleData.slice(0, 20), null, 2)}
 - If no changes are required, set "jsFunctionBody" to null and keep outputColumns identical.`;
 
   let plan;
+  const schema = getDataPreparationSchema();
   if (provider === 'openai') {
     plan = await callOpenAIJson(settings, systemPrompt, userPrompt);
   } else {
-    plan = await callGeminiJson(settings, `${systemPrompt}\n${userPrompt}`);
+    plan = await callGeminiJson(settings, `${systemPrompt}\n${userPrompt}`, { schema });
   }
 
   if (!plan) {
@@ -338,7 +556,7 @@ export const generateAnalysisPlans = async (columns, sampleData, settings, metad
     plans = ensureArray(await callOpenAIJson(settings, 'Return only valid JSON.', prompt));
   } else {
     if (!settings.geminiApiKey) return [];
-    plans = ensureArray(await callGeminiJson(settings, prompt));
+    plans = ensureArray(await callGeminiJson(settings, prompt, { schema: getPlanArraySchema() }));
   }
   return plans
     .map(plan => normalisePlanShape(plan, columns))
@@ -474,90 +692,130 @@ export const generateChatResponse = async (
     return { actions: [{ responseType: 'text_response', text: 'Cloud AI is disabled. API Key not provided.' }] };
   }
 
-  const categorical = columns.filter(c => c.type === 'categorical').map(c => c.name);
-  const numerical = columns.filter(c => c.type === 'numerical').map(c => c.name);
+  const categoricalCols = columns.filter(c => c.type === 'categorical').map(c => c.name);
+  const numericalCols = columns.filter(c => c.type === 'numerical').map(c => c.name);
   const history = chatHistory.map(m => `${m.sender}: ${m.text}`).join('\n');
   const recentSystemMessages = chatHistory
     .filter(msg => msg.sender === 'system')
-    .slice(-12)
+    .slice(-10)
     .map(msg => `- [${msg.type || 'system'}] ${msg.text}`)
     .join('\n');
-  const systemSection = recentSystemMessages
-    ? `**System Messages (recent):**\n${recentSystemMessages}\n`
-    : '';
+  const systemSection = recentSystemMessages ? `**Recent System Messages:**\n${recentSystemMessages}\n` : '';
 
   const metadataContext = formatMetadataContext(metadata, {
     leadingRowLimit: 10,
     contextRowLimit: 15,
   });
-  const datasetTitle = metadata?.reportTitle || 'Not detected';
   const metadataSection = metadataContext ? `**Dataset Context:**\n${metadataContext}\n` : '';
-  const skillSection = skillCatalog.length
+  const datasetTitle = metadata?.reportTitle || 'Not detected';
+
+  const skillSection = Array.isArray(skillCatalog) && skillCatalog.length
     ? `**Skill Library (${skillCatalog.length} available):**
 ${skillCatalog
   .map(skill => `- [${skill.id}] ${skill.label}: ${skill.description}`)
   .join('\n')}
 `
     : '';
-  const memorySection = memoryContext.length
-    ? `**Memory Context (top matches):**
+
+  const memorySection = Array.isArray(memoryContext) && memoryContext.length
+    ? `**Memory Context (Top Matches):**
 ${memoryContext
-  .map(
-    item =>
-      `- (${item.kind || 'note'} | score ${item.score.toFixed(2)}) ${item.summary || item.text}`
-  )
+  .map(item => {
+    const score = typeof item.score === 'number' ? item.score.toFixed(2) : 'n/a';
+    return `- (${item.kind || 'note'} | score ${score}) ${item.summary || item.text}`;
+  })
   .join('\n')}
 `
     : '';
 
-  const context = `**Dataset Title:** ${datasetTitle}
-${metadataSection}**Core Briefing:** ${aiCoreAnalysisSummary || 'None yet.'}
-**Current View:** ${currentView}
-**Detected Intent:** ${intent}
-${skillSection}${memorySection}**Columns**
-- Categorical: ${categorical.join(', ') || 'None'}
-- Numerical: ${numerical.join(', ') || 'None'}
-**Cards:** ${JSON.stringify(cardContext.slice(0, 6), null, 2)}
-**Sample Data:** ${JSON.stringify(rawDataSample.slice(0, 20), null, 2)}
-${systemSection}**Conversation History:** ${history}
-**User:** ${userPrompt}
-**Self-Healing Rules:**
-- When prior system messages indicate validation failures, infer the missing fields and retry automatically.
-- Always provide a complete, executable plan: include chartType (bar|line|pie|doughnut|scatter), aggregation, groupByColumn, and valueColumn when required.
-- If unsure, choose sensible defaults (e.g., bar chart with sum aggregation on a numeric column).
-- Prefer resolving issues without asking the user for clarification when the dataset context allows it.
-**Available DOM Actions (use responseType "dom_action"):**
-- highlightCard: {"toolName":"highlightCard","cardId":string,"scrollIntoView":boolean?}
-- clearHighlight: {"toolName":"clearHighlight"}
-- changeCardChartType: {"toolName":"changeCardChartType","cardId":string,"chartType":"bar"|"line"|"pie"|"doughnut"|"scatter"}
-- toggleCardData / showCardData: {"toolName":"toggleCardData","cardId":string,"visible":boolean?}
-- setCardTopN: {"toolName":"setCardTopN","cardId":string,"topN":number|"all","hideOthers":boolean?}
-- setCardHideOthers: {"toolName":"setCardHideOthers","cardId":string,"hideOthers":boolean}
-- clearCardSelection: {"toolName":"clearCardSelection","cardId":string}
-- resetCardZoom: {"toolName":"resetCardZoom","cardId":string}
-- setRawDataVisibility: {"toolName":"setRawDataVisibility","visible":boolean}
-- setRawDataFilter: {"toolName":"setRawDataFilter","query":string,"wholeWord":boolean?}
-- setRawDataWholeWord: {"toolName":"setRawDataWholeWord","wholeWord":boolean}
-- setRawDataSort: {"toolName":"setRawDataSort","column":string|null,"direction":"ascending"|"descending"?}
-- removeRawDataRows: {"toolName":"removeRawDataRows","column":string,"values":string|string[],"operator":"equals"|"contains"|"starts_with"|"ends_with"|"is_empty","caseSensitive":boolean?}
- - removeRawDataRows: {"toolName":"removeRawDataRows","column":string?,"values":string|string[],"operator":"equals"|"contains"|"starts_with"|"ends_with"|"is_empty","caseSensitive":boolean?,"rowIndex":number?,"rowIndices":number[]?}
-Always include a "domAction" object when responseType is "dom_action". If the action cannot be completed, return a text_response explaining why instead.
-Return JSON: { "actions": [ { "responseType": "text_response" | "plan_creation" | "dom_action" | "execute_js_code", ... } ] }.
-When referring to a specific card, include its "cardId".
-If creating a plan, include the plan object with required fields.
-You may include multiple actions to fulfill complex requests.`;
+  const cardsPreview = cardContext && cardContext.length
+    ? JSON.stringify(cardContext.slice(0, 6), null, 2)
+    : 'No analysis cards yet.';
+
+  const rawDataPreview = rawDataSample && rawDataSample.length
+    ? JSON.stringify(rawDataSample.slice(0, 20), null, 2)
+    : 'No raw data available.';
+
+  const coreBriefing = aiCoreAnalysisSummary || 'No core analysis has been performed yet. This is your first look at the data.';
+  const coreBriefingSection = `**CORE ANALYSIS BRIEFING (Your Memory):**
+${coreBriefing}
+`;
+
+  const guidingPrinciples = `**Guiding Principles & Common Sense:**
+1. Synthesize and interpret: connect insights and explain the business implications—the "so what?".
+2. Understand intent and sanity-check requests; if the data cannot support an ask, clarify and suggest alternatives.
+3. Be proactive: surface key trends, outliers, risks, or opportunities.
+4. Use business language focused on performance, contribution, and impact.
+`;
+
+  const datasetOverview = `**Dataset Overview**
+- Title: ${datasetTitle}
+- Current View: ${currentView}
+- Detected Intent: ${intent}
+- Categorical Columns: ${categoricalCols.join(', ') || 'None'}
+- Numerical Columns: ${numericalCols.join(', ') || 'None'}
+${metadataSection}`;
+
+  const actionsInstructions = `**Available Actions & Tools**
+1. \`text_response\`: Conversational reply. If the text references a specific card, include its \`cardId\`.
+2. \`plan_creation\`: Propose a NEW chart. Provide a full plan object. For wide categorical charts, set \`defaultTopN\` (e.g., 8) and \`defaultHideOthers\` to \`true\` to keep charts readable.
+3. \`dom_action\`: Interact with existing UI elements. Provide objects like:
+   - {"toolName":"highlightCard","cardId":"card-123","scrollIntoView":true}
+   - {"toolName":"changeCardChartType","cardId":"card-123","chartType":"line"}
+   - {"toolName":"toggleCardData","cardId":"card-123","visible":true}
+   - {"toolName":"setCardTopN","cardId":"card-123","topN":8,"hideOthers":true}
+   - {"toolName":"setCardHideOthers","cardId":"card-123","hideOthers":false}
+   - {"toolName":"clearCardSelection","cardId":"card-123"}
+   - {"toolName":"resetCardZoom","cardId":"card-123"}
+   - {"toolName":"setRawDataVisibility","visible":false}
+   - {"toolName":"setRawDataFilter","query":"Asia","wholeWord":false}
+   - {"toolName":"setRawDataWholeWord","wholeWord":true}
+   - {"toolName":"setRawDataSort","column":"Region","direction":"ascending"}
+   - {"toolName":"removeRawDataRows","column":"Status","values":["Cancelled"],"operator":"equals"}
+4. \`execute_js_code\`: Supply complex JavaScript transformations for data cleansing/prep. Always accompany with a \`text_response\` describing the change.
+
+**Execution Notes**
+- Think step-by-step; a single user request may require multiple coordinated actions.
+- When you modify data or charts, confirm the outcome with a \`text_response\`.
+- Respond strictly with a single JSON object: {"actions":[ ... ]}. No extra commentary outside JSON.
+- Unless absolutely necessary, do not use \`proceed_to_analysis\`; it is deprecated.
+`;
+
+  const conversationSection = `**Conversation History:**
+${history || 'No previous messages.'}
+`;
+
+  const userPromptWithContext = `
+${coreBriefingSection}
+${guidingPrinciples}
+${datasetOverview}
+**Analysis Cards on Screen:**
+${cardsPreview}
+
+**Raw Data Sample (first 20 rows for context):**
+${rawDataPreview}
+
+${skillSection}${memorySection}${systemSection}${conversationSection}
+**Latest User Message:** "${userPrompt}"
+
+${actionsInstructions}
+`;
+
+  const systemPrompt = `You are an expert data analyst and business strategist. Respond in ${settings.language}. You must produce a single JSON object with an "actions" array describing how to satisfy the user.`;
 
   let result;
+  const geminiSchema = provider === 'google' ? getMultiActionChatResponseSchema() : null;
   if (provider === 'openai') {
     result = await callOpenAIJson(
       settings,
-      'You are a proactive BI copilot. Always respond with valid JSON.',
-      context
+      systemPrompt,
+      userPromptWithContext
     );
   } else {
     result = await callGeminiJson(
       settings,
-      `You are a proactive BI copilot. Always respond with valid JSON.\n${context}`
+      `${systemPrompt}\n${userPromptWithContext}`,
+      { schema: geminiSchema }
     );
   }
 
