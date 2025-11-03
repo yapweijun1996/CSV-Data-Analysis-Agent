@@ -1,0 +1,5 @@
+{
+  "name": "CSV Data Analysis Agent",
+  "description": "An intelligent web-based AI assistant that automates CSV data analysis. Upload a .csv file and let the agent auto-read, understand, and generate multiple aggregated views, interactive charts, and ERP-style reports — all locally in your browser for maximum privacy.",
+  "requestFramePermissions": []
+}
