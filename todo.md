@@ -9,10 +9,10 @@
   - [x] 在 `bindEvents` 中创建事件处理程序以捕获单元格更改（例如，在 `blur` 或 `keydown` 事件上）。
   - [x] 实现一个“保存更改”按钮，该按钮将所有编辑收集到一个新的数据数组中，并调用 `rebuildAfterDataChange` 以重新运行分析流程。
 
-- [ ] **实现导出功能**
-  - [ ] 在 `renderAnalysisCard` 的每个分析卡中添加“导出”按钮/菜单（PNG, CSV）。
-  - [ ] 使用 `html-to-image` 库实现 `handleExportPNG` 以捕获卡片的画布/容器。
-  - [ ] 实现 `handleExportCSV` 以将 `card.aggregatedData` 序列化为 CSV 字符串并触发文件下载。
+- [x] **实现导出功能**
+  - [x] 在 `renderAnalysisCard` 的每个分析卡中添加“导出”按钮/菜单（PNG, CSV）。
+  - [x] 使用 `html-to-image` 库实现 `handleExportPNG` 以捕获卡片的画布/容器。
+  - [x] 实现 `handleExportCSV` 以将 `card.aggregatedData` 序列化为 CSV 字符串并触发文件下载。
 
 - [ ] **恢复卡片筛选功能**
   - [ ] 支持 `filterCard` DOM 操作并持久化每个卡片的筛选状态。
