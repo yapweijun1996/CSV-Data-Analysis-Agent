@@ -7,23 +7,180 @@ const ensureGlobal = (name, fallback = null) => {
   return fallback;
 };
 
-const htmlToImage = ensureGlobal('htmlToImage');
+const scriptPromises = new Map();
+
+const HTML_TO_IMAGE_URL = 'https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js';
+const HTML2CANVAS_URL = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+
 const Papa = ensureGlobal('Papa');
 
-export const exportToPng = async (element, title) => {
-  if (!element || !htmlToImage) {
-    throw new Error('PNG export is unavailable in this environment.');
+const loadScriptOnce = url => {
+  if (typeof document === 'undefined') {
+    return Promise.reject(new Error('Cannot load scripts outside of the browser environment.'));
   }
-
-  const safeTitle = String(title || 'analysis-card').replace(/\s+/g, '_');
-  const dataUrl = await htmlToImage.toPng(element, {
-    backgroundColor: '#ffffff',
-    pixelRatio: 2,
+  if (scriptPromises.has(url)) {
+    return scriptPromises.get(url);
+  }
+  const promise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = url;
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.onload = () => resolve();
+    script.onerror = event => reject(event instanceof ErrorEvent ? event.error || event : event);
+    document.head.appendChild(script);
   });
+  scriptPromises.set(url, promise);
+  return promise;
+};
+
+let htmlToImagePromise = null;
+const getHtmlToImage = async () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  if (window.htmlToImage) {
+    return window.htmlToImage;
+  }
+  if (!htmlToImagePromise) {
+    htmlToImagePromise = loadScriptOnce(HTML_TO_IMAGE_URL)
+      .then(() => window.htmlToImage || null)
+      .catch(error => {
+        htmlToImagePromise = null;
+        throw error;
+      });
+  }
+  return htmlToImagePromise;
+};
+
+let html2canvasPromise = null;
+const getHtml2Canvas = async () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  if (window.html2canvas) {
+    return window.html2canvas;
+  }
+  if (!html2canvasPromise) {
+    html2canvasPromise = loadScriptOnce(HTML2CANVAS_URL)
+      .then(() => window.html2canvas || null)
+      .catch(error => {
+        html2canvasPromise = null;
+        throw error;
+      });
+  }
+  return html2canvasPromise;
+};
+
+const makeSafeFilename = (title, extension) => {
+  const base = String(title || 'analysis-card')
+    .trim()
+    .replace(/[^a-z0-9-_]+/gi, '_')
+    .replace(/_{2,}/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return `${base || 'analysis-card'}.${extension}`;
+};
+
+const downloadDataUrl = (dataUrl, filename) => {
   const link = document.createElement('a');
-  link.download = `${safeTitle}.png`;
+  link.download = filename;
   link.href = dataUrl;
   link.click();
+};
+
+const handleExportError = error => {
+  if (!error) {
+    return new Error('Unknown error occurred while exporting the card.');
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  if (typeof window !== 'undefined' && error instanceof window.Event) {
+    const reason = error?.target?.src
+      ? `Failed to load generated image (${error.target.src.slice(0, 64)}...)`
+      : 'Rendered image could not be loaded (possible cross-origin or styling issue).';
+    return new Error(reason);
+  }
+  return new Error(typeof error === 'string' ? error : 'An unexpected export error occurred.');
+};
+
+const exportWithHtml2Canvas = async (element, title) => {
+  const html2canvas = await getHtml2Canvas();
+  if (!html2canvas) {
+    throw new Error('PNG export fallback is unavailable because html2canvas failed to load.');
+  }
+
+  const canvas = await html2canvas(element, {
+    backgroundColor: '#ffffff',
+    scale: Math.min((window.devicePixelRatio || 1) * 1.5, 3),
+    useCORS: true,
+    logging: false,
+    removeContainer: true,
+    scrollX: 0,
+    scrollY: -window.scrollY || 0,
+    onclone: clonedDocument => {
+      clonedDocument.querySelectorAll('[data-export-menu]').forEach(menu => {
+        menu.classList.add('hidden');
+      });
+      clonedDocument.querySelectorAll('[data-export-ignore]').forEach(node => {
+        node.remove();
+      });
+    },
+  });
+  const dataUrl = canvas.toDataURL('image/png', 1.0);
+  downloadDataUrl(dataUrl, makeSafeFilename(title, 'png'));
+};
+
+export const exportToPng = async (element, title) => {
+  if (!element) {
+    throw new Error('PNG export requires a valid card element.');
+  }
+
+  const options = {
+    backgroundColor: '#ffffff',
+    pixelRatio: Math.min(window.devicePixelRatio ? window.devicePixelRatio * 2 : 2, 4),
+    cacheBust: true,
+    useCORS: true,
+    style: {
+      transform: 'scale(1)',
+      transformOrigin: 'top left',
+    },
+    filter: node => {
+      if (!(node instanceof Element)) return true;
+      if (node.hasAttribute('data-export-ignore')) {
+        return false;
+      }
+      return true;
+    },
+  };
+
+  let primaryError = null;
+  const htmlToImage = await getHtmlToImage().catch(error => {
+    primaryError = handleExportError(error);
+    return null;
+  });
+
+  if (htmlToImage) {
+    try {
+      const dataUrl = await htmlToImage.toPng(element, options);
+      downloadDataUrl(dataUrl, makeSafeFilename(title, 'png'));
+      return;
+    } catch (error) {
+      primaryError = handleExportError(error);
+      console.warn('html-to-image PNG export failed; attempting html2canvas fallback.', primaryError);
+    }
+  } else {
+    primaryError = new Error(
+      'html-to-image library is unavailable; attempting html2canvas fallback.'
+    );
+  }
+
+  try {
+    await exportWithHtml2Canvas(element, title);
+  } catch (fallbackError) {
+    const normalisedFallbackError = handleExportError(fallbackError);
+    throw primaryError || normalisedFallbackError;
+  }
 };
 
 export const exportToCsv = (rows, title) => {
@@ -33,12 +190,11 @@ export const exportToCsv = (rows, title) => {
   if (!Papa) {
     throw new Error('PapaParse is unavailable for CSV export.');
   }
-  const safeTitle = String(title || 'analysis-card').replace(/\s+/g, '_');
   const csv = Papa.unparse(rows);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.setAttribute('download', `${safeTitle}.csv`);
+  link.setAttribute('download', makeSafeFilename(title, 'csv'));
   link.click();
 };
 
@@ -77,7 +233,7 @@ export const exportToHtml = async (element, title, rows, summaryText) => {
   `;
 
   const safeTitle = String(title || 'analysis-card').trim();
-  const normalisedTitle = safeTitle.replace(/\s+/g, '_');
+  const normalisedTitle = makeSafeFilename(safeTitle, 'html').replace(/\.html$/i, '');
   const summaryHtml = String(summaryText || '')
     .replace(/\n/g, '<br>')
     .replace(/---/g, '<hr>');

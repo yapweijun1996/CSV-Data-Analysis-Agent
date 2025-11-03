@@ -104,6 +104,8 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.mainScrollElement = null;
     this.savedMainScrollTop = null;
     this.boundDocumentClick = this.onDocumentClick.bind(this);
+    this.pendingRawEdits = new Map();
+    this.rawEditDatasetId = this.getCurrentDatasetId();
   }
 
   captureSerializableAppState() {
@@ -824,6 +826,202 @@ class CsvDataAnalysisApp extends HTMLElement {
       .replace(/'/g, '&#39;');
   }
 
+  normalizeRawCellValue(value) {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).replace(/\u00a0/g, ' ').replace(/\r?\n/g, ' ').trim();
+  }
+
+  normaliseComparisonValue(value) {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).trim();
+  }
+
+  ensureRawEditContext() {
+    const datasetId = this.getCurrentDatasetId();
+    if (this.rawEditDatasetId !== datasetId) {
+      this.pendingRawEdits = new Map();
+      this.rawEditDatasetId = datasetId;
+      this.updateRawEditControls();
+    }
+  }
+
+  clearPendingRawEdits() {
+    this.pendingRawEdits = new Map();
+    this.rawEditDatasetId = this.getCurrentDatasetId();
+    this.updateRawEditControls();
+  }
+
+  hasPendingRawEdits() {
+    if (!this.pendingRawEdits || !(this.pendingRawEdits instanceof Map)) {
+      return false;
+    }
+    for (const entry of this.pendingRawEdits.values()) {
+      if (entry && Object.keys(entry).length > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  getPendingRawEditCount() {
+    if (!this.pendingRawEdits || !(this.pendingRawEdits instanceof Map)) {
+      return 0;
+    }
+    let count = 0;
+    for (const entry of this.pendingRawEdits.values()) {
+      count += Object.keys(entry || {}).length;
+    }
+    return count;
+  }
+
+  getPendingRawRow(rowIndex) {
+    if (!Number.isInteger(rowIndex) || rowIndex < 0) {
+      return null;
+    }
+    const key = String(rowIndex);
+    return this.pendingRawEdits?.get(key) || null;
+  }
+
+  getPendingRawValue(rowIndex, column, fallback) {
+    const rowUpdates = this.getPendingRawRow(rowIndex);
+    if (rowUpdates && Object.prototype.hasOwnProperty.call(rowUpdates, column)) {
+      return rowUpdates[column];
+    }
+    return fallback;
+  }
+
+  getBaseRawValue(rowIndex, column) {
+    const dataRows = this.state?.csvData?.data;
+    if (!Array.isArray(dataRows) || !Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= dataRows.length) {
+      return '';
+    }
+    const baseValue = dataRows[rowIndex]?.[column];
+    if (baseValue === null || baseValue === undefined) {
+      return '';
+    }
+    return baseValue;
+  }
+
+  setPendingRawEdit(rowIndex, column, newValue) {
+    if (!Number.isInteger(rowIndex) || rowIndex < 0 || !column) {
+      return 'unchanged';
+    }
+    const key = String(rowIndex);
+    const baseValue = this.getBaseRawValue(rowIndex, column);
+
+    const baseComparison = this.normaliseComparisonValue(baseValue);
+    const newComparison = this.normaliseComparisonValue(newValue);
+
+    if (newComparison === baseComparison) {
+      if (this.pendingRawEdits?.has(key)) {
+        const existing = { ...this.pendingRawEdits.get(key) };
+        if (Object.prototype.hasOwnProperty.call(existing, column)) {
+          delete existing[column];
+          if (Object.keys(existing).length === 0) {
+            this.pendingRawEdits.delete(key);
+          } else {
+            this.pendingRawEdits.set(key, existing);
+          }
+          this.updateRawEditControls();
+          return 'removed';
+        }
+      }
+      this.updateRawEditControls();
+      return 'unchanged';
+    }
+
+    const currentUpdates = this.pendingRawEdits?.get(key) || {};
+    const updated = { ...currentUpdates, [column]: newValue };
+    this.pendingRawEdits.set(key, updated);
+    this.updateRawEditControls();
+    return 'added';
+  }
+
+  discardPendingRawEdits() {
+    this.clearPendingRawEdits();
+    this.scheduleRender();
+  }
+
+  coerceRawCellValue(baseValue, newValue) {
+    if (newValue === null || newValue === undefined) {
+      return '';
+    }
+    if (typeof baseValue === 'number') {
+      const normalised = String(newValue).replace(/,/g, '').trim();
+      const parsed = Number(normalised);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    if (typeof baseValue === 'boolean') {
+      const lower = String(newValue).trim().toLowerCase();
+      if (lower === 'true' || lower === '1') return true;
+      if (lower === 'false' || lower === '0') return false;
+    }
+    return newValue;
+  }
+
+  applyPendingRawEditsToDataset() {
+    const currentData = this.state?.csvData;
+    if (!currentData || !Array.isArray(currentData.data)) {
+      return null;
+    }
+    if (!this.hasPendingRawEdits()) {
+      return currentData.data;
+    }
+    const cloned = currentData.data.map(row => ({ ...row }));
+    for (const [key, updates] of this.pendingRawEdits.entries()) {
+      const rowIndex = Number(key);
+      if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= cloned.length) {
+        continue;
+      }
+      const originalRow = cloned[rowIndex];
+      const sourceRow = currentData.data[rowIndex] || {};
+      const nextRow = { ...originalRow };
+      for (const [column, value] of Object.entries(updates)) {
+        const coerced = this.coerceRawCellValue(sourceRow[column], value);
+        nextRow[column] = coerced;
+      }
+      cloned[rowIndex] = nextRow;
+    }
+    return cloned;
+  }
+
+  updateRawEditControls() {
+    if (typeof document === 'undefined' || !this.isConnected) {
+      return;
+    }
+    const saveButton = this.querySelector('[data-raw-save]');
+    const discardButton = this.querySelector('[data-raw-discard]');
+    const label = this.querySelector('[data-raw-unsaved-label]');
+    const count = this.getPendingRawEditCount();
+    const hasEdits = count > 0;
+
+    if (saveButton) {
+      saveButton.disabled = !hasEdits;
+      saveButton.classList.toggle('opacity-60', !hasEdits);
+      saveButton.classList.toggle('cursor-not-allowed', !hasEdits);
+      saveButton.classList.toggle('hover:bg-blue-700', hasEdits);
+    }
+    if (discardButton) {
+      discardButton.disabled = !hasEdits;
+      discardButton.classList.toggle('opacity-40', !hasEdits);
+      discardButton.classList.toggle('cursor-not-allowed', !hasEdits);
+      discardButton.classList.toggle('hover:text-slate-700', hasEdits);
+    }
+    if (label) {
+      label.textContent = hasEdits
+        ? `${count} unsaved ${count === 1 ? 'cell' : 'cells'}`
+        : 'No unsaved changes';
+      label.classList.toggle('text-amber-600', hasEdits);
+      label.classList.toggle('text-slate-500', !hasEdits);
+    }
+  }
+
   getProcessedRawData(dataSource) {
     const { rawDataFilter, rawDataWholeWord, rawDataSort } = this.state;
     if (!dataSource || !Array.isArray(dataSource.data)) {
@@ -876,6 +1074,7 @@ class CsvDataAnalysisApp extends HTMLElement {
 
   async handleFileInput(file) {
     if (!file) return;
+    this.clearPendingRawEdits();
     const prevCsv = this.state.csvData;
     if (prevCsv && Array.isArray(prevCsv.data) && prevCsv.data.length) {
       await this.archiveCurrentSession();
@@ -1556,6 +1755,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.addProgress(`Cannot export: card ${cardId || ''} not found.`, 'error');
       return;
     }
+    this.closeExportMenus();
     const cardElement = this.querySelector(`[data-card-id="${cardId}"]`);
     if (!cardElement) {
       this.addProgress('Cannot export because the card element is missing.', 'error');
@@ -2000,6 +2200,132 @@ class CsvDataAnalysisApp extends HTMLElement {
     return true;
   }
 
+  processRawCellChange(cell, options = {}) {
+    if (!(cell instanceof HTMLElement)) {
+      return;
+    }
+    const { commit = false } = options || {};
+    const rowIndexRaw = cell.dataset.rowIndex;
+    const columnKey = cell.dataset.colKey;
+    if (columnKey === undefined) {
+      return;
+    }
+    const rowIndex = Number(rowIndexRaw);
+    const newValue = this.normalizeRawCellValue(cell.textContent);
+    if (commit && cell.textContent !== newValue) {
+      cell.textContent = newValue;
+    }
+    const action = this.setPendingRawEdit(rowIndex, columnKey, newValue);
+    if (action === 'added') {
+      cell.classList.add('bg-amber-50', 'ring-2', 'ring-amber-200', 'rounded-sm', 'shadow-inner');
+      cell.setAttribute('data-edited', 'true');
+    } else if (action === 'removed') {
+      cell.classList.remove('bg-amber-50', 'ring-2', 'ring-amber-200', 'rounded-sm', 'shadow-inner');
+      cell.removeAttribute('data-edited');
+    }
+    cell.dataset.currentValue = newValue;
+  }
+
+  resetRawCellToBaseValue(cell) {
+    if (!(cell instanceof HTMLElement)) {
+      return;
+    }
+    const rowIndex = Number(cell.dataset.rowIndex);
+    const columnKey = cell.dataset.colKey;
+    const baseValue = this.getBaseRawValue(rowIndex, columnKey);
+    const baseString = baseValue === null || baseValue === undefined ? '' : String(baseValue);
+    cell.textContent = baseString;
+    cell.dataset.currentValue = baseString;
+    this.setPendingRawEdit(rowIndex, columnKey, baseString);
+    cell.classList.remove('bg-amber-50', 'ring-2', 'ring-amber-200', 'rounded-sm', 'shadow-inner');
+    cell.removeAttribute('data-edited');
+  }
+
+  handleRawCellInput(event) {
+    const cell = event.currentTarget;
+    this.processRawCellChange(cell);
+  }
+
+  handleRawCellBlur(event) {
+    const cell = event.currentTarget;
+    this.processRawCellChange(cell, { commit: true });
+  }
+
+  handleRawCellKeydown(event) {
+    const cell = event.currentTarget;
+    if (!(cell instanceof HTMLElement)) {
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      cell.blur();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.resetRawCellToBaseValue(cell);
+      cell.blur();
+    }
+  }
+
+  async handleRawDataSave(trigger) {
+    if (!this.hasPendingRawEdits()) {
+      return;
+    }
+    if (this.state.rawDataView !== 'cleaned') {
+      this.addProgress('Please switch to the cleaned dataset before saving inline edits.', 'error');
+      return;
+    }
+    const button =
+      trigger instanceof HTMLElement ? trigger : this.querySelector('[data-raw-save]');
+    let originalLabel = null;
+    if (button) {
+      originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Saving...';
+      button.classList.add('opacity-60');
+    }
+    try {
+      const updatedRows = this.applyPendingRawEditsToDataset();
+      if (!updatedRows) {
+        this.addProgress('Cannot apply edits because the dataset is unavailable.', 'error');
+        return;
+      }
+      this.addProgress('Applying inline spreadsheet edits to the dataset...');
+      const result = await this.rebuildAfterDataChange(
+        updatedRows,
+        'Inline spreadsheet edits saved; refreshing analysis.'
+      );
+      if (!result?.success) {
+        this.addProgress(
+          result?.error || 'Failed to refresh analysis after applying inline edits.',
+          'error'
+        );
+        return;
+      }
+      this.clearPendingRawEdits();
+      this.addProgress('Inline edits saved successfully.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.addProgress(`Failed to save inline edits: ${message}`, 'error');
+    } finally {
+      if (button) {
+        button.disabled = false;
+        if (originalLabel !== null) {
+          button.textContent = originalLabel;
+        }
+        button.classList.remove('opacity-60');
+        this.updateRawEditControls();
+      }
+    }
+  }
+
+  handleRawDataDiscard() {
+    if (!this.hasPendingRawEdits()) {
+      return;
+    }
+    this.discardPendingRawEdits();
+    this.addProgress('Inline edits discarded.');
+  }
+
   async rebuildAfterDataChange(newData, progressMessage) {
     if (!this.state.csvData) {
       return { success: false, error: 'No dataset is loaded yet.' };
@@ -2027,6 +2353,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       csvMetadata: newCsvData.metadata || this.state.csvMetadata || null,
       currentDatasetId: datasetId,
     });
+    this.clearPendingRawEdits();
     if (progressMessage) {
       this.addProgress(progressMessage);
     }
@@ -2758,6 +3085,26 @@ class CsvDataAnalysisApp extends HTMLElement {
         }
       });
     });
+
+    const rawSaveButton = this.querySelector('[data-raw-save]');
+    if (rawSaveButton) {
+      rawSaveButton.addEventListener('click', () => this.handleRawDataSave(rawSaveButton));
+    }
+
+    const rawDiscardButton = this.querySelector('[data-raw-discard]');
+    if (rawDiscardButton) {
+      rawDiscardButton.addEventListener('click', () => this.handleRawDataDiscard());
+    }
+
+    this.querySelectorAll('[data-raw-cell]').forEach(cell => {
+      if (cell.getAttribute('contenteditable') === 'true') {
+        cell.addEventListener('keydown', event => this.handleRawCellKeydown(event));
+        cell.addEventListener('input', event => this.handleRawCellInput(event));
+        cell.addEventListener('blur', event => this.handleRawCellBlur(event));
+      }
+    });
+
+    this.updateRawEditControls();
   }
 
   renderCharts() {
@@ -3374,7 +3721,7 @@ class CsvDataAnalysisApp extends HTMLElement {
                   </button>`)
                 .join('')}
             </div>
-            <div class="relative" data-export-menu-container>
+            <div class="relative" data-export-menu-container data-export-ignore>
               <button
                 type="button"
                 class="p-1.5 rounded-md border border-transparent transition-colors ${isExporting ? 'opacity-60 cursor-wait text-slate-400' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}"
@@ -3384,21 +3731,22 @@ class CsvDataAnalysisApp extends HTMLElement {
                 aria-expanded="false"
                 ${isExporting ? 'disabled' : ''}
                 title="Export card"
+                data-export-ignore
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
               </button>
-              <div class="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-md shadow-lg hidden z-20" data-export-menu>
-                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" data-export-card="png" data-card="${card.id}">
+              <div class="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-md shadow-lg hidden z-20" data-export-menu data-export-ignore>
+                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" data-export-card="png" data-card="${card.id}" data-export-ignore>
                   <span>Export as PNG</span>
                   <span class="text-xs text-slate-400">.png</span>
                 </button>
-                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" data-export-card="csv" data-card="${card.id}">
+                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" data-export-card="csv" data-card="${card.id}" data-export-ignore>
                   <span>Export data (CSV)</span>
                   <span class="text-xs text-slate-400">.csv</span>
                 </button>
-                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-b-md" data-export-card="html" data-card="${card.id}">
+                <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-b-md" data-export-card="html" data-card="${card.id}" data-export-ignore>
                   <span>Export report (HTML)</span>
                   <span class="text-xs text-slate-400">.html</span>
                 </button>
@@ -3517,6 +3865,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       (originalCsvData?.data?.length || cleanedCount);
     const removedCount = Math.max(originalCount - cleanedCount, 0);
 
+    this.ensureRawEditContext();
     const metadataLines = [];
     if (metadata?.reportTitle) {
       metadataLines.push(
@@ -3595,13 +3944,46 @@ class CsvDataAnalysisApp extends HTMLElement {
       })
       .join('');
 
+    const datasetRows = Array.isArray(activeData?.data) ? activeData.data : [];
+    const editingEnabled = resolvedView === 'cleaned';
+    const pendingEditCount = this.getPendingRawEditCount();
+    const hasPendingEdits = pendingEditCount > 0;
+
     const tableBody = visibleRows
       .map((row, rowIndex) => {
         const rowClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
+        const datasetIndex = datasetRows.indexOf(row);
+        const resolvedRowIndex = datasetIndex >= 0 ? datasetIndex : rowIndex;
+        const rowUpdates = this.getPendingRawRow(resolvedRowIndex);
         const cells = headers
-          .map(header => `<td class="px-3 py-2 text-xs text-slate-700 whitespace-nowrap">${this.escapeHtml(row[header])}</td>`)
+          .map(header => {
+            const baseValue = row?.[header];
+            const displayValue = this.getPendingRawValue(resolvedRowIndex, header, baseValue);
+            const isEdited =
+              Boolean(rowUpdates) && Object.prototype.hasOwnProperty.call(rowUpdates, header);
+            const cellClasses = [
+              'px-3 py-2 text-xs whitespace-nowrap align-top text-slate-700',
+              editingEnabled ? 'focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-400' : '',
+              isEdited ? 'bg-amber-50 ring-2 ring-amber-200 rounded-sm shadow-inner' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            const originalString =
+              baseValue === null || baseValue === undefined ? '' : String(baseValue);
+            const displayString =
+              displayValue === null || displayValue === undefined ? '' : String(displayValue);
+            const editableAttrs = editingEnabled
+              ? ` contenteditable="true" spellcheck="false" data-raw-cell data-row-index="${resolvedRowIndex}" data-col-key="${this.escapeHtml(
+                  header
+                )}" data-original-value="${this.escapeHtml(originalString)}"`
+              : '';
+            const editedAttr = isEdited ? ' data-edited="true"' : '';
+            return `<td class="${cellClasses}"${editableAttrs}${editedAttr}>${this.escapeHtml(
+              displayString
+            )}</td>`;
+          })
           .join('');
-        return `<tr class="border-t border-slate-100 ${rowClass} hover:bg-blue-50/40 transition-colors">${cells}</tr>`;
+        return `<tr class="border-t border-slate-100 ${rowClass} hover:bg-blue-50/40 transition-colors" data-row-source="${resolvedRowIndex}">${cells}</tr>`;
       })
       .join('');
 
@@ -3615,6 +3997,24 @@ class CsvDataAnalysisApp extends HTMLElement {
           </table>
         </div>`
       : '<p class="text-xs text-slate-500">No data rows available.</p>';
+
+    const editToolbar = editingEnabled
+      ? `<div class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+          <span class="${hasPendingEdits ? 'text-amber-600 font-medium' : 'text-slate-500'}" data-raw-unsaved-label>
+            ${hasPendingEdits ? `${pendingEditCount} unsaved ${pendingEditCount === 1 ? 'cell' : 'cells'}` : 'No unsaved changes'}
+          </span>
+          <div class="flex items-center gap-2">
+            <button type="button" class="px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white transition disabled:opacity-60 disabled:cursor-not-allowed${hasPendingEdits ? ' hover:bg-blue-700' : ''}" data-raw-save ${hasPendingEdits ? '' : 'disabled'}>
+              Save changes
+            </button>
+            <button type="button" class="text-xs text-slate-500 transition disabled:opacity-40 disabled:cursor-not-allowed${hasPendingEdits ? ' hover:text-slate-700' : ''}" data-raw-discard ${hasPendingEdits ? '' : 'disabled'}>
+              Discard
+            </button>
+          </div>
+        </div>`
+      : `<div class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          Switch to the cleaned dataset to make inline edits.
+        </div>`;
 
     return `
       <section class="mx-auto max-w-6xl px-6 pb-8">
@@ -3651,6 +4051,7 @@ class CsvDataAnalysisApp extends HTMLElement {
                   <span>${this.escapeHtml(filterSummary)}</span>
                   ${sortSummary ? `<span>${this.escapeHtml(sortSummary)}</span>` : ''}
                 </div>
+                ${editToolbar}
                 ${tableHtml}
                 ${hasMore ? '<p class="text-xs text-slate-500">Showing first 500 rows. Refine your filters to view more.</p>' : ''}
               </div>`

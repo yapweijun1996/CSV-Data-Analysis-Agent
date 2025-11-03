@@ -4,10 +4,10 @@
 
 ## P0：关键的用户功能
 
-- [ ] **实现可编辑的电子表格**
-  - [ ] 在 `renderRawDataPanel` 的原始数据表格中添加 `contenteditable` 单元格或输入字段。
-  - [ ] 在 `bindEvents` 中创建事件处理程序以捕获单元格更改（例如，在 `blur` 或 `keydown` 事件上）。
-  - [ ] 实现一个“保存更改”按钮，该按钮将所有编辑收集到一个新的数据数组中，并调用 `rebuildAfterDataChange` 以重新运行分析流程。
+- [x] **实现可编辑的电子表格**
+  - [x] 在 `renderRawDataPanel` 的原始数据表格中添加 `contenteditable` 单元格或输入字段。
+  - [x] 在 `bindEvents` 中创建事件处理程序以捕获单元格更改（例如，在 `blur` 或 `keydown` 事件上）。
+  - [x] 实现一个“保存更改”按钮，该按钮将所有编辑收集到一个新的数据数组中，并调用 `rebuildAfterDataChange` 以重新运行分析流程。
 
 - [ ] **实现导出功能**
   - [ ] 在 `renderAnalysisCard` 的每个分析卡中添加“导出”按钮/菜单（PNG, CSV）。
