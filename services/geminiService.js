@@ -462,7 +462,10 @@ export const generateChatResponse = async (
   aiCoreAnalysisSummary,
   currentView,
   rawDataSample,
-  metadata = null
+  metadata = null,
+  intent = 'general',
+  skillCatalog = [],
+  memoryContext = []
 ) => {
   const provider = settings.provider || 'google';
   const isApiKeySet =
@@ -489,11 +492,29 @@ export const generateChatResponse = async (
   });
   const datasetTitle = metadata?.reportTitle || 'Not detected';
   const metadataSection = metadataContext ? `**Dataset Context:**\n${metadataContext}\n` : '';
+  const skillSection = skillCatalog.length
+    ? `**Skill Library (${skillCatalog.length} available):**
+${skillCatalog
+  .map(skill => `- [${skill.id}] ${skill.label}: ${skill.description}`)
+  .join('\n')}
+`
+    : '';
+  const memorySection = memoryContext.length
+    ? `**Memory Context (top matches):**
+${memoryContext
+  .map(
+    item =>
+      `- (${item.kind || 'note'} | score ${item.score.toFixed(2)}) ${item.summary || item.text}`
+  )
+  .join('\n')}
+`
+    : '';
 
   const context = `**Dataset Title:** ${datasetTitle}
 ${metadataSection}**Core Briefing:** ${aiCoreAnalysisSummary || 'None yet.'}
 **Current View:** ${currentView}
-**Columns**
+**Detected Intent:** ${intent}
+${skillSection}${memorySection}**Columns**
 - Categorical: ${categorical.join(', ') || 'None'}
 - Numerical: ${numerical.join(', ') || 'None'}
 **Cards:** ${JSON.stringify(cardContext.slice(0, 6), null, 2)}

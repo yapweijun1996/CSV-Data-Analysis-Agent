@@ -50,7 +50,15 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 - `generateAnalysisPlans` proposes chart-ready plans that `executePlan` runs locally, yielding datasets for Chart.js visualizations.
 - Each plan receives an AI-authored summary plus an optional top-N/Others breakdown when categories are numerous.
 - After the initial batch, the agent calls `generateCoreAnalysisSummary` and `generateFinalSummary` to synthesize overall findings injected into the conversation.
+- Lightweight intent detection chooses prompt templates and exposes a curated skill catalog so the model knows which reusable transforms/actions are available.
+- A local memory service retrieves the most relevant prior chats, plans, and summaries (stored in IndexedDB) and feeds them back into each request.
 - The chat panel streams status updates, accepts freeform questions, and routes AI responses into actions: new plans, JavaScript transforms, DOM/UI adjustments, or plain text replies.
+
+### Skill Catalog & Intent Handling
+
+- `utils/intentClassifier.js` tags each prompt as analysis, cleaning, narrative, or general based on keywords and column metadata.
+- `services/skillLibrary.js` lists reusable skills (group sums, Top-N, time trends, cleaning actions) that the LLM can reference instead of writing raw code.
+- `services/geminiService.js` injects the detected intent and available skills into the system prompt so the agent can self-correct before asking users for clarification.
 
 ### Raw Data Explorer
 
@@ -62,12 +70,12 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 ### Persistence Hooks
 
 - Settings, provider choice, API keys, and language preference persist in `localStorage`.
-- IndexedDB helpers (`storageService.js`) are wired for saving report history, though the current UI does not expose the feature.
+- IndexedDB helpers (`storageService.js`) now store AI memories (plans, summaries, chats) and are wired for saving report history, though the current UI does not expose the history browser yet.
 - Session metadata keys allow future enhancements such as resumable conversations or report galleries.
 
 ### Roadmap
 
-- Add client-side retrieval augmented generation (RAG) by storing embeddings of past plans, summaries, and user questions in IndexedDB to improve follow-up answers.
+- Enhance the client-side retrieval augmented generation (RAG) stack with richer embeddings and cross-session sharing of insights stored in IndexedDB.
 - Persist uploaded CSVs (original, cleaned, metadata, profiles) as reusable sessions so users can reopen prior analyses without re-uploading files.
 - Introduce curated JavaScript transform snippets that the agent can reuse for common data-cleaning tasks instead of generating fresh code each time.
 - Expose a History panel in the UI for browsing saved sessions, relaunching analyses, and managing stored data quota.

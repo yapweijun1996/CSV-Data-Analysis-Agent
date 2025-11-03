@@ -17,6 +17,9 @@ import {
   getSettings,
   saveSettings,
 } from './storageService.js';
+import { getSkillCatalog } from './services/skillLibrary.js';
+import { detectIntent } from './utils/intentClassifier.js';
+import { storeMemory, retrieveRelevantMemories } from './services/memoryService.js';
 
 const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'];
 const BORDER_COLORS = COLORS.map(color => `${color}B3`);
@@ -51,6 +54,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       rawDataView: 'cleaned',
       originalCsvData: null,
       csvMetadata: null,
+      currentDatasetId: null,
     };
     this.settings = getSettings();
     this.chartInstances = new Map();
@@ -221,6 +225,23 @@ class CsvDataAnalysisApp extends HTMLElement {
 
     Object.assign(plan, normalized);
     return { plan, adjustments, error: null };
+  }
+
+  generateDatasetId(fileName, metadata = null) {
+    const baseName = (fileName || 'dataset').toLowerCase().replace(/\s+/g, '-');
+    const totalRows =
+      metadata?.originalRowCount ??
+      metadata?.totalRowsBeforeFilter ??
+      this.state.csvData?.data?.length ??
+      0;
+    const headerHash = metadata?.headerRow
+      ? metadata.headerRow.join('|').toLowerCase().slice(0, 32)
+      : 'noheader';
+    return `${baseName}-${totalRows}-${headerHash}`;
+  }
+
+  getCurrentDatasetId() {
+    return this.state.currentDatasetId || 'session';
   }
 
   updateMetadataContext(metadata, dataRows) {
@@ -556,6 +577,18 @@ class CsvDataAnalysisApp extends HTMLElement {
         throw new Error('Dataset is empty; analysis cannot continue.');
       }
 
+      const datasetId = this.generateDatasetId(file.name, dataForAnalysis.metadata || metadata || null);
+      if (dataForAnalysis.metadata) {
+        dataForAnalysis.metadata = {
+          ...dataForAnalysis.metadata,
+          datasetId,
+        };
+      } else {
+        dataForAnalysis.metadata = {
+          datasetId,
+        };
+      }
+
       this.setState({
         csvData: dataForAnalysis,
         columnProfiles: profiles,
@@ -563,6 +596,7 @@ class CsvDataAnalysisApp extends HTMLElement {
           ? { fileName: file.name, data: parsedData.originalData }
           : null,
         csvMetadata: dataForAnalysis.metadata || metadata || null,
+        currentDatasetId: datasetId,
       });
 
       if (isApiKeySet) {
@@ -617,6 +651,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     let isFirstCard = true;
     const createdCards = [];
     const metadata = csvData?.metadata || null;
+    const datasetId = this.getCurrentDatasetId();
     for (const plan of plans) {
       const preparation = this.preparePlanForExecution(plan);
       const normalizedPlan = preparation.plan || plan;
@@ -670,6 +705,20 @@ class CsvDataAnalysisApp extends HTMLElement {
         };
 
         createdCards.push(newCard);
+        try {
+          await storeMemory(datasetId, {
+            kind: 'analysis_plan',
+            intent: normalizedPlan?.aggregation ? 'analysis' : 'general',
+            text: `${planTitle}: ${summary}`,
+            summary,
+            metadata: {
+              plan: normalizedPlan,
+              sampleRows: aggregatedData.slice(0, 10),
+            },
+          });
+        } catch (memoryError) {
+          console.warn('Failed to store analysis memory entry.', memoryError);
+        }
         this.setState(prev => ({
           analysisCards: [...prev.analysisCards, newCard],
         }));
@@ -708,6 +757,22 @@ class CsvDataAnalysisApp extends HTMLElement {
       const finalSummary = await generateFinalSummary(createdCards, this.settings, metadata);
       this.setState({ finalSummary });
       this.addProgress('Overall summary created.');
+      try {
+        await storeMemory(datasetId, {
+          kind: 'summary',
+          intent: 'narrative',
+          text: finalSummary,
+          summary: finalSummary,
+          metadata: {
+            cards: createdCards.map(card => ({
+              title: card.plan.title,
+              chartType: card.plan.chartType,
+            })),
+          },
+        });
+      } catch (memoryError) {
+        console.warn('Failed to store final summary memory entry.', memoryError);
+      }
     }
 
     return createdCards;
@@ -733,6 +798,19 @@ class CsvDataAnalysisApp extends HTMLElement {
 
     try {
       this.addProgress('AI is composing a reply...');
+      const userIntent = detectIntent(message, this.state.columnProfiles);
+      const datasetId = this.getCurrentDatasetId();
+      try {
+        await storeMemory(datasetId, {
+          kind: 'user_prompt',
+          intent: userIntent,
+          text: message,
+          summary: message.slice(0, 220),
+        });
+      } catch (memoryError) {
+        console.warn('Failed to store user prompt memory entry.', memoryError);
+      }
+      const skillCatalog = getSkillCatalog(userIntent);
       const cardContext = this.state.analysisCards.map(card => ({
         id: card.id,
         title: card.plan.title,
@@ -740,6 +818,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       }));
       const rawDataSample = this.state.csvData.data.slice(0, 20);
       const metadata = this.state.csvMetadata || this.state.csvData?.metadata || null;
+      const memoryContext = await retrieveRelevantMemories(datasetId, message, 6);
       const response = await generateChatResponse(
         this.state.columnProfiles,
         this.state.chatHistory,
@@ -749,7 +828,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         this.state.aiCoreAnalysisSummary,
         this.state.currentView,
         rawDataSample,
-        metadata
+        metadata,
+        userIntent,
+        skillCatalog,
+        memoryContext
       );
 
       await this.applyChatActions(response.actions || []);
@@ -873,6 +955,7 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   async applyChatActions(actions) {
+    const datasetId = this.getCurrentDatasetId();
     for (const action of actions) {
       switch (action.responseType) {
         case 'text_response':
@@ -888,6 +971,19 @@ class CsvDataAnalysisApp extends HTMLElement {
               },
             ],
           }));
+          if (action.text) {
+            try {
+              await storeMemory(datasetId, {
+                kind: 'chat_response',
+                intent: 'narrative',
+                text: action.text,
+                summary: action.text.slice(0, 220),
+                metadata: { cardId: action.cardId },
+              });
+            } catch (memoryError) {
+              console.warn('Failed to store AI chat memory entry.', memoryError);
+            }
+          }
           break;
         case 'plan_creation':
           if (action.plan && this.state.csvData) {
@@ -906,6 +1002,19 @@ class CsvDataAnalysisApp extends HTMLElement {
                 transformed,
                 'Data updated after applying AI transformation.'
               );
+              if (result.success) {
+                try {
+                  await storeMemory(datasetId, {
+                    kind: 'transformation',
+                    intent: 'cleaning',
+                    text: action.code.jsFunctionBody,
+                    summary: 'AI transformation applied to dataset.',
+                    metadata: { codePreview: action.code.jsFunctionBody.slice(0, 200) },
+                  });
+                } catch (memoryError) {
+                  console.warn('Failed to store transformation memory entry.', memoryError);
+                }
+              }
               if (!result.success && result.error) {
                 this.addProgress(result.error, 'error');
               }
@@ -923,6 +1032,17 @@ class CsvDataAnalysisApp extends HTMLElement {
             if (result.success) {
               if (result.message) {
                 this.addProgress(result.message);
+              }
+              try {
+                await storeMemory(datasetId, {
+                  kind: 'dom_action',
+                  intent: 'interaction',
+                  text: result.message,
+                  summary: result.message,
+                  metadata: { domAction: action.domAction },
+                });
+              } catch (memoryError) {
+                console.warn('Failed to store DOM action memory entry.', memoryError);
               }
             } else {
               this.addProgress(result.error || 'AI UI action failed.', 'error');
@@ -1159,13 +1279,15 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
     const existingPlans = this.state.analysisCards.map(card => card.plan);
     const newCsvData = { ...this.state.csvData, data: newData };
+    const datasetId = this.getCurrentDatasetId();
     if (newCsvData.metadata) {
       newCsvData.metadata = {
         ...newCsvData.metadata,
         cleanedRowCount: newData.length,
+        datasetId,
       };
     } else {
-      newCsvData.metadata = { cleanedRowCount: newData.length };
+      newCsvData.metadata = { cleanedRowCount: newData.length, datasetId };
     }
     newCsvData.metadata = this.updateMetadataContext(newCsvData.metadata, newData);
     const newProfiles = profileData(newData);
@@ -1176,6 +1298,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       finalSummary: null,
       highlightedCardId: null,
       csvMetadata: newCsvData.metadata || this.state.csvMetadata || null,
+      currentDatasetId: datasetId,
     });
     if (progressMessage) {
       this.addProgress(progressMessage);
