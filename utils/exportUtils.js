@@ -162,7 +162,8 @@ export const exportToPng = async (element, title) => {
 
   if (htmlToImage) {
     try {
-      const dataUrl = await htmlToImage.toPng(element, options);
+      const canvas = await htmlToImage.toCanvas(element, options);
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
       downloadDataUrl(dataUrl, makeSafeFilename(title, 'png'));
       return;
     } catch (error) {
@@ -179,7 +180,10 @@ export const exportToPng = async (element, title) => {
     await exportWithHtml2Canvas(element, title);
   } catch (fallbackError) {
     const normalisedFallbackError = handleExportError(fallbackError);
-    throw primaryError || normalisedFallbackError;
+    if (primaryError) {
+      throw new Error(`${primaryError.message} (fallback error: ${normalisedFallbackError.message})`);
+    }
+    throw normalisedFallbackError;
   }
 };
 

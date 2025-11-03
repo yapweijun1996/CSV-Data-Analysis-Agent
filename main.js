@@ -734,6 +734,16 @@ class CsvDataAnalysisApp extends HTMLElement {
     });
   }
 
+  waitForNextFrame() {
+    return new Promise(resolve => {
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => resolve());
+      } else {
+        setTimeout(resolve, 16);
+      }
+    });
+  }
+
   addProgress(text, type = 'system') {
     const timestamp = new Date();
     const newMessage = {
@@ -1755,12 +1765,6 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.addProgress(`Cannot export: card ${cardId || ''} not found.`, 'error');
       return;
     }
-    this.closeExportMenus();
-    const cardElement = this.querySelector(`[data-card-id="${cardId}"]`);
-    if (!cardElement) {
-      this.addProgress('Cannot export because the card element is missing.', 'error');
-      return;
-    }
     const title = card.plan?.title || 'analysis-card';
     const dataRows = this.getCardDisplayData(card);
     const hasRows = Array.isArray(dataRows) && dataRows.length > 0;
@@ -1769,7 +1773,15 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.addProgress(`Cannot export "${title}" — no table data is available yet.`, 'error');
       return;
     }
+    this.closeExportMenus();
     this.updateCard(cardId, () => ({ isExporting: true }));
+    await this.waitForNextFrame();
+    const cardElement = this.querySelector(`[data-card-id="${cardId}"]`);
+    if (!cardElement) {
+      this.addProgress('Cannot export because the card element is missing.', 'error');
+      this.updateCard(cardId, () => ({ isExporting: false }));
+      return;
+    }
     try {
       switch (format) {
         case 'png':
@@ -1793,8 +1805,9 @@ class CsvDataAnalysisApp extends HTMLElement {
         'error'
       );
     } finally {
-      this.closeExportMenus();
       this.updateCard(cardId, () => ({ isExporting: false }));
+      await this.waitForNextFrame();
+      this.closeExportMenus();
     }
   }
 
