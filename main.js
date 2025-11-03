@@ -21,6 +21,11 @@ import { getSkillCatalog } from './services/skillLibrary.js';
 import { detectIntent } from './utils/intentClassifier.js';
 import { storeMemory, retrieveRelevantMemories } from './services/memoryService.js';
 import { auditAnalysisState } from './utils/pipelineAudit.js';
+import {
+  determineRepairActions,
+  summariseRepairActions,
+  hasCriticalIssues,
+} from './utils/repairEngine.js';
 
 const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'];
 const BORDER_COLORS = COLORS.map(color => `${color}B3`);
@@ -257,6 +262,74 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
 
     return report;
+  }
+
+  removeCardById(cardId) {
+    if (!cardId) return;
+    this.setState(prev => ({
+      analysisCards: prev.analysisCards.filter(card => card.id !== cardId),
+    }));
+  }
+
+  async rebuildCardWithPlan(cardId, newPlan) {
+    if (!this.state.csvData || !newPlan) {
+      return { success: false, error: 'Cannot rebuild card without dataset or plan.' };
+    }
+    this.removeCardById(cardId);
+    const resultCards = await this.runAnalysisPipeline([newPlan], this.state.csvData, true, {
+      skipAutoRepair: true,
+    });
+    if (resultCards.length) {
+      const newCard = resultCards[resultCards.length - 1];
+      this.addProgress(`Card ${cardId} rebuilt using repair plan.`);
+      return { success: true, card: newCard };
+    }
+    return { success: false, error: 'Repair plan produced no card.' };
+  }
+
+  async autoRepairIfNeeded(auditReport) {
+    if (!auditReport) return null;
+    const repairPlan = determineRepairActions(
+      {
+        csvData: this.state.csvData,
+        columnProfiles: this.state.columnProfiles,
+        analysisCards: this.state.analysisCards,
+        chatHistory: this.state.chatHistory,
+        csvMetadata: this.state.csvMetadata,
+        currentDatasetId: this.getCurrentDatasetId(),
+      },
+      { auditReport }
+    );
+
+    if (!repairPlan.actions.length) {
+      if (hasCriticalIssues(auditReport)) {
+        this.addProgress('Audit found critical issues but no automated repair actions are available.', 'error');
+      }
+      return repairPlan;
+    }
+
+    this.addProgress('Auto-repair starting...');
+    this.addProgress(summariseRepairActions(repairPlan));
+
+    for (const action of repairPlan.actions) {
+      if (action.type === 'system_message') {
+        this.addProgress(`Audit summary: ${action.summary}`);
+        continue;
+      }
+      if (action.type === 'plan_patch') {
+        try {
+          await this.rebuildCardWithPlan(action.cardId, action.patchedPlan);
+        } catch (error) {
+          this.addProgress(
+            `Failed to apply repair to card ${action.cardId}: ${error instanceof Error ? error.message : String(error)}`,
+            'error'
+          );
+        }
+      }
+    }
+
+    const postAudit = await this.runPipelineAudit({ log: true });
+    return { ...repairPlan, postAudit };
   }
 
   generateDatasetId(fileName, metadata = null) {
@@ -679,7 +752,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
   }
 
-  async runAnalysisPipeline(plans, csvData, isChatRequest) {
+  async runAnalysisPipeline(plans, csvData, isChatRequest, options = {}) {
     let isFirstCard = true;
     const createdCards = [];
     const metadata = csvData?.metadata || null;
@@ -807,7 +880,10 @@ class CsvDataAnalysisApp extends HTMLElement {
       }
     }
 
-    await this.runPipelineAudit({ log: !isChatRequest });
+    const auditReport = await this.runPipelineAudit({ log: !isChatRequest });
+    if (!options.skipAutoRepair) {
+      await this.autoRepairIfNeeded(auditReport);
+    }
 
     return createdCards;
   }

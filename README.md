@@ -54,6 +54,7 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 - A local memory service retrieves the most relevant prior chats, plans, and summaries (stored in IndexedDB) and feeds them back into each request.
 - A pipeline auditor inspects chart configurations against the current dataset after each run, highlighting critical or warning issues for upcoming self-healing steps.
 - Repair skills pair audit findings with reusable plan patches so the agent can automatically correct missing chart types, group-by columns, and value aggregations.
+- Automatic remediation runs after each audit: detected issues trigger plan patches, chart rebuilds, and a follow-up audit so the dashboard stabilises without manual guidance.
 - The chat panel streams status updates, accepts freeform questions, and routes AI responses into actions: new plans, JavaScript transforms, DOM/UI adjustments, or plain text replies.
 
 ### Skill Catalog & Intent Handling
