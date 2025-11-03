@@ -53,6 +53,7 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 - Lightweight intent detection chooses prompt templates and exposes a curated skill catalog so the model knows which reusable transforms/actions are available.
 - A local memory service retrieves the most relevant prior chats, plans, and summaries (stored in IndexedDB) and feeds them back into each request.
 - A pipeline auditor inspects chart configurations against the current dataset after each run, highlighting critical or warning issues for upcoming self-healing steps.
+- Repair skills pair audit findings with reusable plan patches so the agent can automatically correct missing chart types, group-by columns, and value aggregations.
 - The chat panel streams status updates, accepts freeform questions, and routes AI responses into actions: new plans, JavaScript transforms, DOM/UI adjustments, or plain text replies.
 
 ### Skill Catalog & Intent Handling

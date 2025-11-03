@@ -143,4 +143,6 @@ export const getSkillCatalog = (intent = 'general') => {
   return BASE_SKILLS.filter(skill => !skill.intents || skill.intents.includes(target));
 };
 
+export const getRepairSkills = () => BASE_SKILLS.filter(skill => skill.repair);
+
 export const listAllSkills = () => [...BASE_SKILLS];
