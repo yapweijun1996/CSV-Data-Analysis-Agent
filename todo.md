@@ -25,3 +25,5 @@
 - [x] Match chat pipeline & AI prompts  
   - Sync prompt structure, action schema, and chat handling to React baseline  
   - Default audit/repair & memory features to off for parity while keeping code paths available
+
+All React parity tasks are now complete. Add new items here when further enhancements are needed.
