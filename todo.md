@@ -26,4 +26,10 @@
   - Sync prompt structure, action schema, and chat handling to React baseline  
   - Default audit/repair & memory features to off for parity while keeping code paths available
 
-All React parity tasks are now complete. Add new items here when further enhancements are needed.
+- [ ] Restore card filtering parity  
+  - Support `filterCard` DOM action and persist per-card filter state  
+  - Show active-filter banner and allow AI/user to clear filters
+
+- [ ] Re-enable API-key gate for uploads  
+  - Block file parsing when credentials missing  
+  - Mirror React UX that highlights settings requirement before ingest
