@@ -1,12 +1,42 @@
-import { getSkillCatalog } from '../services/skillLibrary.js';
-import { detectIntent } from './intentClassifier.js';
+import { getRepairSkills } from '../services/skillLibrary.js';
 import { auditAnalysisState } from './pipelineAudit.js';
 
-const selectFallbackColumn = (columns, predicate) => {
-  if (!Array.isArray(columns)) return null;
-  const match = columns.find(predicate);
-  if (match) return match;
-  return columns.length ? columns[0] : null;
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const scoreCategoricalProfile = profile => {
+  const unique = typeof profile?.uniqueValues === 'number' ? profile.uniqueValues : 0;
+  const missing = clamp(typeof profile?.missingPercentage === 'number' ? profile.missingPercentage : 0, 0, 100);
+  if (unique <= 1) return 0;
+  const coverageScore = 100 - missing;
+  const idealUnique = 12;
+  const uniquenessPenalty = Math.abs(unique - idealUnique);
+  const uniquenessScore = clamp(50 - uniquenessPenalty * 2, 0, 50);
+  return coverageScore * 0.6 + uniquenessScore * 0.4;
+};
+
+const scoreNumericProfile = profile => {
+  const missing = clamp(typeof profile?.missingPercentage === 'number' ? profile.missingPercentage : 0, 0, 100);
+  const range = Array.isArray(profile?.valueRange)
+    ? Math.abs((profile.valueRange[1] ?? 0) - (profile.valueRange[0] ?? 0))
+    : 0;
+  const coverageScore = 100 - missing;
+  const rangeScore = Math.log10(range + 1) * 25;
+  return coverageScore * 0.6 + rangeScore * 0.4;
+};
+
+const buildFallbackSelector = (orderedNames = []) => {
+  let cursor = 0;
+  return current => {
+    while (cursor < orderedNames.length) {
+      const candidate = orderedNames[cursor++];
+      if (!candidate) continue;
+      if (candidate === current) {
+        continue;
+      }
+      return candidate;
+    }
+    return current || orderedNames[0] || null;
+  };
 };
 
 const buildPlanPatch = (plan, patch, context) => {
@@ -15,9 +45,9 @@ const buildPlanPatch = (plan, patch, context) => {
     if (typeof value === 'string' && value.startsWith('<') && value.endsWith('>')) {
       const token = value.slice(1, -1);
       if (token === 'categoricalFallback') {
-        result[key] = context.categoricalFallback || plan[key] || result[key];
+        result[key] = context.nextCategorical(plan[key] || result[key]);
       } else if (token === 'numericFallback') {
-        result[key] = context.numericFallback || plan[key] || result[key];
+        result[key] = context.nextNumeric(plan[key] || result[key]);
       } else {
         result[key] = plan[key] || result[key];
       }
@@ -32,22 +62,23 @@ export const determineRepairActions = (state, options = {}) => {
   const audit = options.auditReport || auditAnalysisState(state);
   const datasetId = state?.currentDatasetId || 'session';
   const columnProfiles = state?.columnProfiles || [];
-  const categoricalColumns = columnProfiles
-    .filter(profile => profile?.type !== 'numerical')
-    .map(profile => profile.name)
-    .filter(Boolean);
-  const numericColumns = columnProfiles
-    .filter(profile => profile?.type === 'numerical')
-    .map(profile => profile.name)
-    .filter(Boolean);
+  const categoricalRanked = columnProfiles
+    .filter(profile => profile?.type !== 'numerical' && profile?.name)
+    .map(profile => ({ name: profile.name, score: scoreCategoricalProfile(profile) }))
+    .sort((a, b) => b.score - a.score)
+    .map(entry => entry.name);
+  const numericRanked = columnProfiles
+    .filter(profile => profile?.type === 'numerical' && profile?.name)
+    .map(profile => ({ name: profile.name, score: scoreNumericProfile(profile) }))
+    .sort((a, b) => b.score - a.score)
+    .map(entry => entry.name);
 
   const fallbackContext = {
-    categoricalFallback: selectFallbackColumn(categoricalColumns, () => true),
-    numericFallback: selectFallbackColumn(numericColumns, () => true),
+    nextCategorical: buildFallbackSelector(categoricalRanked),
+    nextNumeric: buildFallbackSelector(numericRanked),
   };
 
-  const repairIntent = detectIntent('repair missing charts', columnProfiles);
-  const repairSkills = getSkillCatalog(repairIntent).filter(skill => skill.repair);
+  const repairSkills = getRepairSkills();
 
   const actions = [];
 

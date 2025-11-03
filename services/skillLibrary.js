@@ -4,6 +4,7 @@ const BASE_SKILLS = [
     label: 'Sum by Category',
     intents: ['analysis'],
     description: 'Aggregate a numeric value by a categorical column (default to bar chart).',
+    priority: 30,
     planTemplate: {
       chartType: 'bar',
       aggregation: 'sum',
@@ -18,6 +19,7 @@ const BASE_SKILLS = [
     label: 'Count Records',
     intents: ['analysis', 'monitoring'],
     description: 'Count rows per categorical field for distribution overviews.',
+    priority: 35,
     planTemplate: {
       chartType: 'bar',
       aggregation: 'count',
@@ -31,6 +33,7 @@ const BASE_SKILLS = [
     label: 'Top-N Breakdown',
     intents: ['analysis', 'insight'],
     description: 'Highlight the top categories by a numeric metric with automatic Others bucket.',
+    priority: 40,
     planTemplate: {
       chartType: 'bar',
       aggregation: 'sum',
@@ -47,6 +50,7 @@ const BASE_SKILLS = [
     label: 'Time Series Trend',
     intents: ['analysis', 'forecast'],
     description: 'Plot numeric values across a temporal axis (line chart).',
+    priority: 45,
     planTemplate: {
       chartType: 'line',
       aggregation: 'sum',
@@ -61,6 +65,7 @@ const BASE_SKILLS = [
     label: 'Remove Rows',
     intents: ['cleaning'],
     description: 'Remove rows that match a value or pattern in a column.',
+    priority: 20,
     domActionTemplate: {
       toolName: 'removeRawDataRows',
       column: '<column>',
@@ -73,6 +78,7 @@ const BASE_SKILLS = [
     label: 'Split Column',
     intents: ['cleaning'],
     description: 'Split a column into multiple fields using JavaScript transformation.',
+    priority: 25,
     transformHint: 'Use execute_js_code with a function that maps each row to expanded fields.',
   },
   {
@@ -80,6 +86,7 @@ const BASE_SKILLS = [
     label: 'Fix Missing Chart Type',
     intents: ['repair'],
     description: 'Assign a default bar chart when a plan lacks chartType.',
+    priority: 5,
     repair: {
       type: 'plan_patch',
       patch: { chartType: 'bar' },
@@ -92,6 +99,7 @@ const BASE_SKILLS = [
     label: 'Fix Missing Group-By',
     intents: ['repair'],
     description: 'Set the group-by column to the first categorical field when missing.',
+    priority: 6,
     repair: {
       type: 'plan_patch',
       patch: { groupByColumn: '<categoricalFallback>' },
@@ -104,6 +112,7 @@ const BASE_SKILLS = [
     label: 'Fix Value Column',
     intents: ['repair'],
     description: 'Switch aggregation to count when no numeric value column exists.',
+    priority: 7,
     repair: {
       type: 'plan_patch',
       patch: { aggregation: 'count', valueColumn: null },
@@ -117,6 +126,7 @@ const BASE_SKILLS = [
     label: 'Replace Missing Column',
     intents: ['repair'],
     description: 'Swap broken columns for available fallbacks based on audit findings.',
+    priority: 8,
     repair: {
       type: 'plan_patch',
       patch: {
@@ -132,6 +142,7 @@ const BASE_SKILLS = [
     label: 'Explain Audit Findings',
     intents: ['repair', 'analysis'],
     description: 'Provide a summarised audit report for the agent to reason about next actions.',
+    priority: 15,
     repair: {
       type: 'audit_summary',
     },
@@ -140,9 +151,14 @@ const BASE_SKILLS = [
 
 export const getSkillCatalog = (intent = 'general') => {
   const target = intent.toLowerCase();
-  return BASE_SKILLS.filter(skill => !skill.intents || skill.intents.includes(target));
+  return BASE_SKILLS.filter(skill => !skill.intents || skill.intents.includes(target)).sort(
+    (a, b) => (a.priority ?? 50) - (b.priority ?? 50)
+  );
 };
 
-export const getRepairSkills = () => BASE_SKILLS.filter(skill => skill.repair);
+export const getRepairSkills = () =>
+  BASE_SKILLS.filter(skill => skill.repair).sort(
+    (a, b) => (a.priority ?? 50) - (b.priority ?? 50)
+  );
 
 export const listAllSkills = () => [...BASE_SKILLS];

@@ -55,6 +55,7 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 - A pipeline auditor inspects chart configurations against the current dataset after each run, highlighting critical or warning issues for upcoming self-healing steps.
 - Repair skills pair audit findings with reusable plan patches so the agent can automatically correct missing chart types, group-by columns, and value aggregations.
 - Automatic remediation runs after each audit: detected issues trigger plan patches, chart rebuilds, and a follow-up audit so the dashboard stabilises without manual guidance.
+- The sidebar surfaces the latest audit summary, outstanding issues, and recent auto-repair notes for quick diagnostics.
 - The chat panel streams status updates, accepts freeform questions, and routes AI responses into actions: new plans, JavaScript transforms, DOM/UI adjustments, or plain text replies.
 
 ### Skill Catalog & Intent Handling
@@ -62,6 +63,7 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 - `utils/intentClassifier.js` tags each prompt as analysis, cleaning, narrative, or general based on keywords and column metadata.
 - `services/skillLibrary.js` lists reusable skills (group sums, Top-N, time trends, cleaning actions) that the LLM can reference instead of writing raw code.
 - `services/geminiService.js` injects the detected intent and available skills into the system prompt so the agent can self-correct before asking users for clarification.
+- `utils/repairEngine.js` ranks fallback categorical/numeric columns by coverage and variance so repaired plans default to meaningful dimensions.
 
 ### Raw Data Explorer
 

@@ -62,6 +62,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       csvMetadata: null,
       currentDatasetId: null,
       lastAuditReport: null,
+      lastRepairSummary: null,
+      lastRepairTimestamp: null,
     };
     this.settings = getSettings();
     this.chartInstances = new Map();
@@ -302,14 +304,25 @@ class CsvDataAnalysisApp extends HTMLElement {
     );
 
     if (!repairPlan.actions.length) {
+      let summaryText = 'Audit clean; no repair actions required.';
       if (hasCriticalIssues(auditReport)) {
-        this.addProgress('Audit found critical issues but no automated repair actions are available.', 'error');
+        summaryText = 'Audit found critical issues but no automated repair actions are available.';
+        this.addProgress(summaryText, 'error');
       }
+      this.setState({
+        lastRepairSummary: summaryText,
+        lastRepairTimestamp: new Date().toISOString(),
+      });
       return repairPlan;
     }
 
     this.addProgress('Auto-repair starting...');
-    this.addProgress(summariseRepairActions(repairPlan));
+    const repairSummaryText = summariseRepairActions(repairPlan);
+    this.addProgress(repairSummaryText);
+    this.setState({
+      lastRepairSummary: repairSummaryText,
+      lastRepairTimestamp: new Date().toISOString(),
+    });
 
     for (const action of repairPlan.actions) {
       if (action.type === 'system_message') {
@@ -1929,6 +1942,32 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     }
 
+    const runAuditButton = this.querySelector('[data-run-audit]');
+    if (runAuditButton) {
+      runAuditButton.addEventListener('click', async () => {
+        if (!this.state.csvData) {
+          this.addProgress('Upload a dataset before running an audit.', 'error');
+          return;
+        }
+        if (runAuditButton.disabled) return;
+        runAuditButton.disabled = true;
+        runAuditButton.classList.add('opacity-60', 'cursor-not-allowed');
+        try {
+          this.addProgress('Manual audit requested...');
+          const report = await this.runPipelineAudit({ log: true });
+          await this.autoRepairIfNeeded(report);
+        } catch (error) {
+          this.addProgress(
+            `Manual audit failed: ${error instanceof Error ? error.message : String(error)}`,
+            'error'
+          );
+        } finally {
+          runAuditButton.disabled = false;
+          runAuditButton.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+      });
+    }
+
     this.querySelectorAll('[data-toggle-settings]').forEach(btn => {
       btn.addEventListener('click', () => {
         this.setState(prev => ({ showSettings: !prev.showSettings }));
@@ -2668,6 +2707,42 @@ class CsvDataAnalysisApp extends HTMLElement {
       })
       .join('');
 
+    const auditReport = this.state.lastAuditReport;
+    const auditSummary = auditReport?.summary
+      ? this.escapeHtml(auditReport.summary)
+      : 'Audit not run yet.';
+    const auditIssuesPreview = Array.isArray(auditReport?.issues)
+      ? auditReport.issues.slice(0, 4)
+      : [];
+    const auditIssuesHtml = auditIssuesPreview.length
+      ? auditIssuesPreview
+          .map(issue => {
+            const badgeClass =
+              issue.severity === 'critical'
+                ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                : issue.severity === 'warning'
+                ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                : 'bg-slate-100 text-slate-600 border border-slate-200';
+            return `<li class="flex items-start gap-2 text-xs text-slate-600">
+              <span class="shrink-0 mt-0.5 px-2 py-0.5 rounded-full ${badgeClass}">${this.escapeHtml(
+                issue.severity.toUpperCase()
+              )}</span>
+              <span class="flex-1">${this.escapeHtml(issue.message)}</span>
+            </li>`;
+          })
+          .join('')
+      : '<li class="text-xs text-slate-400">No outstanding issues.</li>';
+    const repairSummary = this.state.lastRepairSummary
+      ? this.escapeHtml(this.state.lastRepairSummary)
+      : 'No auto-repair actions executed yet.';
+    const repairTimestamp = this.state.lastRepairTimestamp
+      ? new Date(this.state.lastRepairTimestamp)
+      : null;
+    const repairTimeLabel =
+      repairTimestamp && !Number.isNaN(repairTimestamp.getTime())
+        ? `Last updated at ${repairTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+        : '';
+
     this.innerHTML = `
       <div class="min-h-screen flex flex-col">
         <header class="bg-white border-b border-slate-200">
@@ -2727,6 +2802,25 @@ class CsvDataAnalysisApp extends HTMLElement {
                     isApiKeySet ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'
                   }" ${isApiKeySet ? '' : 'disabled'}>Send</button>
                 </form>
+              </section>
+              <section class="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <h2 class="text-sm font-semibold text-slate-700">Audit & Repairs</h2>
+                  <button class="text-xs px-2 py-1 border border-slate-300 rounded-md hover:bg-slate-100" data-run-audit>Run Audit</button>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">${auditSummary}</p>
+                <ul class="space-y-2">${auditIssuesHtml}</ul>
+                <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                  <p class="text-xs font-semibold text-slate-700 mb-1">Auto-repair status</p>
+                  <p class="text-xs text-slate-600 whitespace-pre-line">${repairSummary}</p>
+                  ${
+                    repairTimeLabel
+                      ? `<p class="text-[10px] uppercase tracking-wide text-slate-400 mt-2">${this.escapeHtml(
+                          repairTimeLabel
+                        )}</p>`
+                      : ''
+                  }
+                </div>
               </section>
             </aside>
           </div>
