@@ -45,6 +45,8 @@ const formatMetadataContext = (metadata, options = {}) => {
   const {
     includeLeadingRows = true,
     leadingRowLimit = 5,
+    includeContextRows = true,
+    contextRowLimit = 10,
   } = options;
 
   const lines = [];
@@ -59,7 +61,35 @@ const formatMetadataContext = (metadata, options = {}) => {
     lines.push(`Header row text: ${metadata.rawHeaderValues.join(', ')}`);
   }
 
+  if (typeof metadata.totalRowsBeforeFilter === 'number') {
+    lines.push(`Rows before cleaning: ${metadata.totalRowsBeforeFilter}`);
+  }
+  if (typeof metadata.cleanedRowCount === 'number') {
+    lines.push(`Rows after cleaning: ${metadata.cleanedRowCount}`);
+  }
+  if (typeof metadata.removedSummaryRowCount === 'number' && metadata.removedSummaryRowCount > 0) {
+    lines.push(`Filtered summary rows: ${metadata.removedSummaryRowCount}`);
+  }
+
   if (
+    includeContextRows &&
+    Array.isArray(metadata.contextRows) &&
+    metadata.contextRows.length
+  ) {
+    const limit = Math.max(1, contextRowLimit);
+    const contextPreview = metadata.contextRows
+      .slice(0, limit)
+      .map((row, index) => {
+        if (!Array.isArray(row)) return '';
+        const text = row.filter(cell => cell).join(' | ');
+        const label = `Row ${index + 1}`;
+        return text ? `${label}: ${text}` : '';
+      })
+      .filter(Boolean);
+    if (contextPreview.length) {
+      lines.push(`Context rows:\n${contextPreview.join('\n')}`);
+    }
+  } else if (
     includeLeadingRows &&
     Array.isArray(metadata.leadingRows) &&
     metadata.leadingRows.length
@@ -69,19 +99,12 @@ const formatMetadataContext = (metadata, options = {}) => {
       .map((row, index) => {
         if (!Array.isArray(row)) return '';
         const text = row.filter(cell => cell).join(' | ');
-        return text ? `Row ${index + 1}: ${text}` : '';
+        return text ? `Leading row ${index + 1}: ${text}` : '';
       })
       .filter(Boolean);
     if (leading.length) {
       lines.push(`Leading rows:\n${leading.join('\n')}`);
     }
-  }
-
-  if (typeof metadata.totalRowsBeforeFilter === 'number') {
-    lines.push(`Rows before cleaning: ${metadata.totalRowsBeforeFilter}`);
-  }
-  if (typeof metadata.removedSummaryRowCount === 'number' && metadata.removedSummaryRowCount > 0) {
-    lines.push(`Filtered summary rows: ${metadata.removedSummaryRowCount}`);
   }
 
   return lines.join('\n');
@@ -211,7 +234,10 @@ export const generateDataPreparationPlan = async (columns, sampleData, settings,
   const systemPrompt = `You are an expert data engineer. Analyze the raw dataset and decide whether it needs cleaning or reshaping.
 If needed, provide a JavaScript function body that transforms the array of row objects and describe the resulting columns.
 Always respond with JSON: { "explanation": string, "jsFunctionBody": string | null, "outputColumns": [{ "name": string, "type": "numerical" | "categorical" }] }.`;
-  const metadataContext = formatMetadataContext(metadata, { leadingRowLimit: 10 });
+  const metadataContext = formatMetadataContext(metadata, {
+    leadingRowLimit: 10,
+    contextRowLimit: 20,
+  });
   const contextSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
   const userPrompt = `${contextSection}Columns: ${JSON.stringify(columns)}
 Sample rows: ${JSON.stringify(sampleData.slice(0, 20), null, 2)}
@@ -254,7 +280,10 @@ Sample rows: ${JSON.stringify(sampleData.slice(0, 20), null, 2)}
 const buildAnalysisPlanPrompt = (columns, sampleData, numPlans, metadata) => {
   const categorical = columns.filter(c => c.type === 'categorical').map(c => c.name);
   const numerical = columns.filter(c => c.type === 'numerical').map(c => c.name);
-  const metadataContext = formatMetadataContext(metadata, { leadingRowLimit: 10 });
+  const metadataContext = formatMetadataContext(metadata, {
+    leadingRowLimit: 10,
+    contextRowLimit: 20,
+  });
   const contextSection = metadataContext ? `Report context:\n${metadataContext}\n` : '';
   return `You are a senior business intelligence analyst.
 ${contextSection}
@@ -298,7 +327,10 @@ export const generateSummary = async (title, data, settings, metadata = null) =>
 Format: English Summary --- Mandarin Summary`
       : `Provide a concise, insightful summary in ${settings.language}.`;
 
-  const metadataContext = formatMetadataContext(metadata, { includeLeadingRows: false });
+  const metadataContext = formatMetadataContext(metadata, {
+    includeLeadingRows: false,
+    contextRowLimit: 12,
+  });
   const metadataSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
   const body = `${metadataSection}The data below is for a chart titled "${title}".
 Data sample:
@@ -328,7 +360,10 @@ export const generateCoreAnalysisSummary = async (cardContext, columns, settings
     return 'Could not generate an initial analysis summary.';
   }
 
-  const metadataContext = formatMetadataContext(metadata, { includeLeadingRows: false });
+  const metadataContext = formatMetadataContext(metadata, {
+    includeLeadingRows: false,
+    contextRowLimit: 12,
+  });
   const metadataSection = metadataContext ? `Dataset context:\n${metadataContext}\n` : '';
 
   const prompt = `You are a senior data analyst. Create a concise "Core Analysis Briefing" in ${settings.language}.
@@ -365,7 +400,10 @@ export const generateFinalSummary = async (cards, settings, metadata = null) => 
     })
     .join('\n\n');
 
-  const metadataContext = formatMetadataContext(metadata, { includeLeadingRows: false });
+  const metadataContext = formatMetadataContext(metadata, {
+    includeLeadingRows: false,
+    contextRowLimit: 12,
+  });
   const metadataSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
 
   const prompt = `You are a senior business strategist. Given the summaries below, produce one executive-level overview in ${settings.language}.
@@ -406,7 +444,10 @@ export const generateChatResponse = async (
   const numerical = columns.filter(c => c.type === 'numerical').map(c => c.name);
   const history = chatHistory.map(m => `${m.sender}: ${m.text}`).join('\n');
 
-  const metadataContext = formatMetadataContext(metadata, { leadingRowLimit: 10 });
+  const metadataContext = formatMetadataContext(metadata, {
+    leadingRowLimit: 10,
+    contextRowLimit: 15,
+  });
   const datasetTitle = metadata?.reportTitle || 'Not detected';
   const metadataSection = metadataContext ? `**Dataset Context:**\n${metadataContext}\n` : '';
 

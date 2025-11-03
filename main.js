@@ -83,6 +83,34 @@ class CsvDataAnalysisApp extends HTMLElement {
     return null;
   }
 
+  updateMetadataContext(metadata, dataRows) {
+    if (!metadata) {
+      return metadata;
+    }
+    const rowsArray = Array.isArray(dataRows) ? dataRows : [];
+    const contextLimit = 20;
+    const headerRow = Array.isArray(metadata.headerRow) && metadata.headerRow.length
+      ? metadata.headerRow
+      : rowsArray.length
+      ? Object.keys(rowsArray[0])
+      : [];
+    const leadingRows = Array.isArray(metadata.leadingRows)
+      ? metadata.leadingRows
+      : [];
+    const dataContextRows = rowsArray.slice(0, contextLimit).map(row =>
+      headerRow.map(column => {
+        const value = row?.[column];
+        return value === null || value === undefined ? '' : String(value);
+      })
+    );
+    const combinedContextRows = [...leadingRows, ...dataContextRows].slice(0, contextLimit);
+    return {
+      ...metadata,
+      contextRows: combinedContextRows,
+      contextRowCount: combinedContextRows.length,
+    };
+  }
+
   connectedCallback() {
     this.isMounted = true;
     this.render();
@@ -319,11 +347,11 @@ class CsvDataAnalysisApp extends HTMLElement {
       if (metadata?.reportTitle) {
         this.addProgress(`偵測到報表標題：「${metadata.reportTitle}」。`);
       }
-      if (metadata?.totalLeadingRows) {
-        const previewCount = metadata.leadingRows?.length || 0;
-        if (previewCount) {
-          this.addProgress(`已擷取前 ${previewCount} 列作為報表上下文，供 AI 理解資料來源。`);
-        }
+      const contextCount = metadata?.contextRowCount || metadata?.leadingRows?.length || 0;
+      if (contextCount) {
+        this.addProgress(
+          `已擷取前 ${Math.min(contextCount, 20)} 列資料作為報表上下文（含表頭/前導列與首批資料列），供 AI 理解資料來源。`
+        );
       }
       if (
         metadata &&
@@ -365,8 +393,15 @@ class CsvDataAnalysisApp extends HTMLElement {
               ...dataForAnalysis.metadata,
               cleanedRowCount: newCount,
             };
+            dataForAnalysis.metadata = this.updateMetadataContext(
+              dataForAnalysis.metadata,
+              dataForAnalysis.data
+            );
           } else {
-            dataForAnalysis.metadata = { cleanedRowCount: newCount };
+            dataForAnalysis.metadata = this.updateMetadataContext(
+              { cleanedRowCount: newCount },
+              dataForAnalysis.data
+            );
           }
           this.addProgress(`Transformation complete. Row count changed from ${originalCount} to ${newCount}.`);
           profiles = prepPlan.outputColumns || profileData(dataForAnalysis.data);
@@ -980,6 +1015,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     } else {
       newCsvData.metadata = { cleanedRowCount: newData.length };
     }
+    newCsvData.metadata = this.updateMetadataContext(newCsvData.metadata, newData);
     const newProfiles = profileData(newData);
     this.setState({
       csvData: newCsvData,
@@ -1033,9 +1069,6 @@ class CsvDataAnalysisApp extends HTMLElement {
       rowIndices,
     } = domAction || {};
     const dataRows = this.state.csvData.data;
-    const originalRows = this.state.originalCsvData?.data
-      ? [...this.state.originalCsvData.data]
-      : null;
     if (!dataRows.length) {
       return { success: true, message: 'No rows available in the raw data table.' };
     }
@@ -1132,9 +1165,6 @@ class CsvDataAnalysisApp extends HTMLElement {
       const progressMessage = `Removed ${removedCount.toLocaleString()} row(s) where "${column}" ${conditionDescription}.`;
 
       const result = await this.rebuildAfterDataChange(filtered, progressMessage);
-      if (result.success && Array.isArray(originalRows)) {
-        this.setState({ originalCsvData: { ...this.state.originalCsvData, data: filtered } });
-      }
       return {
         success: result.success,
         message: null,
@@ -1166,11 +1196,6 @@ class CsvDataAnalysisApp extends HTMLElement {
       }
       return true;
     });
-    let filteredOriginal = null;
-    if (Array.isArray(originalRows)) {
-      filteredOriginal = originalRows.filter((_, index) => !indexSet.has(index));
-    }
-
     if (removedCount === 0) {
       return {
         success: true,
@@ -1185,9 +1210,6 @@ class CsvDataAnalysisApp extends HTMLElement {
     const progressMessage = `Removed ${removedCount.toLocaleString()} row(s) at positions ${humanReadable}.`;
 
     const result = await this.rebuildAfterDataChange(filtered, progressMessage);
-    if (result.success && Array.isArray(filteredOriginal)) {
-      this.setState({ originalCsvData: { ...this.state.originalCsvData, data: filteredOriginal } });
-    }
     return {
       success: result.success,
       message: null,
@@ -2059,8 +2081,13 @@ class CsvDataAnalysisApp extends HTMLElement {
         `<p class="text-xs font-semibold text-slate-600">${this.escapeHtml(metadata.reportTitle)}</p>`
       );
     }
-    if (metadata?.leadingRows && metadata.leadingRows.length) {
-      const preview = metadata.leadingRows
+    const contextRows = Array.isArray(metadata?.contextRows)
+      ? metadata.contextRows
+      : Array.isArray(metadata?.leadingRows)
+      ? metadata.leadingRows
+      : [];
+    if (contextRows.length) {
+      const preview = contextRows
         .map(row => row.filter(cell => cell).join(' | '))
         .find(text => text);
       if (preview) {
@@ -2068,6 +2095,12 @@ class CsvDataAnalysisApp extends HTMLElement {
           `<p class="text-[11px] text-slate-400 mt-0.5">${this.escapeHtml(preview)}</p>`
         );
       }
+    }
+    const contextCount = metadata?.contextRowCount || contextRows.length || 0;
+    if (contextCount) {
+      metadataLines.push(
+        `<p class="text-[11px] text-slate-400 mt-0.5">已擷取 ${contextCount} 列上下文資料（包含表頭與首批資料列）。</p>`
+      );
     }
     metadataLines.push(
       `<p class="text-[11px] text-slate-400 mt-0.5">原始 ${originalCount.toLocaleString()} 行 • 清理後 ${cleanedCount.toLocaleString()} 行${removedCount > 0 ? ` • 已移除 ${removedCount.toLocaleString()} 行` : ''}</p>`

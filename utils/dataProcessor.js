@@ -6,6 +6,7 @@ if (!PapaLib) {
 
 const MAX_HEADER_SCAN_ROWS = 15;
 const MIN_TEXT_RATIO_FOR_HEADER = 0.6;
+const CONTEXT_ROWS_LIMIT = 20;
 
 // Prevent CSV formula injection
 const sanitizeValue = value => {
@@ -282,6 +283,13 @@ export const processCsv = file => {
 
         const leadingRows = headerIndex === null ? [] : rows.slice(0, headerIndex);
         const leadingRowsNormalised = leadingRows.map(row => row.map(normaliseCell));
+        const dataContextRows = structuredRows
+          .slice(0, CONTEXT_ROWS_LIMIT)
+          .map(row => headers.map(header => normaliseCell(row[header])));
+        const contextRows = [...leadingRowsNormalised, ...dataContextRows].slice(
+          0,
+          CONTEXT_ROWS_LIMIT
+        );
         const reportTitleRow = leadingRowsNormalised.find(row => row.some(cell => cell));
         const reportTitle = reportTitleRow
           ? reportTitleRow
@@ -303,6 +311,8 @@ export const processCsv = file => {
           totalLeadingRows: leadingRowsNormalised.length,
           reportTitle: reportTitle || null,
           sampleDataRows: structuredRows.slice(0, 10),
+          contextRows,
+          contextRowCount: contextRows.length,
         };
 
         resolve({ fileName: file.name, data: structuredRows, originalData: originalRows, metadata });
