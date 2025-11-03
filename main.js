@@ -20,6 +20,7 @@ import {
 import { getSkillCatalog } from './services/skillLibrary.js';
 import { detectIntent } from './utils/intentClassifier.js';
 import { storeMemory, retrieveRelevantMemories } from './services/memoryService.js';
+import { auditAnalysisState } from './utils/pipelineAudit.js';
 
 const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'];
 const BORDER_COLORS = COLORS.map(color => `${color}B3`);
@@ -55,6 +56,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       originalCsvData: null,
       csvMetadata: null,
       currentDatasetId: null,
+      lastAuditReport: null,
     };
     this.settings = getSettings();
     this.chartInstances = new Map();
@@ -225,6 +227,36 @@ class CsvDataAnalysisApp extends HTMLElement {
 
     Object.assign(plan, normalized);
     return { plan, adjustments, error: null };
+  }
+
+  async runPipelineAudit(options = {}) {
+    const { log = false } = options;
+    const report = auditAnalysisState({
+      csvData: this.state.csvData,
+      columnProfiles: this.state.columnProfiles,
+      analysisCards: this.state.analysisCards,
+      chatHistory: this.state.chatHistory,
+      csvMetadata: this.state.csvMetadata,
+      settings: this.settings,
+    });
+
+    this.setState({ lastAuditReport: report });
+
+    if (log) {
+      if (!report.issues.length) {
+        this.addProgress(`Audit clean: ${report.summary}`);
+      } else {
+        this.addProgress(`Audit detected issues: ${report.summary}`);
+        report.issues.slice(0, 5).forEach(issue => {
+          this.addProgress(`[${issue.severity.toUpperCase()}] ${issue.message}`);
+        });
+        if (report.issues.length > 5) {
+          this.addProgress(`...and ${report.issues.length - 5} more issue(s).`);
+        }
+      }
+    }
+
+    return report;
   }
 
   generateDatasetId(fileName, metadata = null) {
@@ -774,6 +806,8 @@ class CsvDataAnalysisApp extends HTMLElement {
         console.warn('Failed to store final summary memory entry.', memoryError);
       }
     }
+
+    await this.runPipelineAudit({ log: !isChatRequest });
 
     return createdCards;
   }
