@@ -67,7 +67,8 @@ export const auditAnalysisState = state => {
 
       const groupByColumn = normaliseName(plan.groupByColumn);
       const valueColumn = normaliseName(plan.valueColumn);
-
+      const isCorrelation = plan.analysisType === 'correlation';
+  
       if (chartType !== 'scatter') {
         if (!groupByColumn) {
           issues.push(
@@ -75,7 +76,7 @@ export const auditAnalysisState = state => {
               cardId: card.id,
             })
           );
-        } else if (!columnSet.has(groupByColumn)) {
+        } else if (!columnSet.has(groupByColumn) && !isCorrelation) {
           issues.push(
             createIssue('critical', `Card "${cardTitle}" references missing column "${groupByColumn}".`, {
               cardId: card.id,
@@ -83,16 +84,16 @@ export const auditAnalysisState = state => {
             })
           );
         }
-
+  
         if (valueColumn) {
-          if (!columnSet.has(valueColumn)) {
+          if (!columnSet.has(valueColumn) && !isCorrelation) {
             issues.push(
               createIssue('critical', `Card "${cardTitle}" references missing value column "${valueColumn}".`, {
                 cardId: card.id,
                 column: valueColumn,
               })
             );
-          } else if (!numericColumns.has(valueColumn)) {
+          } else if (!numericColumns.has(valueColumn) && !isCorrelation) {
             issues.push(
               createIssue(
                 'warning',
@@ -101,7 +102,7 @@ export const auditAnalysisState = state => {
               )
             );
           }
-        } else if (plan.aggregation !== 'count') {
+        } else if (plan.aggregation !== 'count' && !isCorrelation) {
           issues.push(
             createIssue(
               'critical',

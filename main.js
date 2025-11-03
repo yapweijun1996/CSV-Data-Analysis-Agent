@@ -84,6 +84,10 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (!plan.chartType) {
       return 'Missing chart type.';
     }
+    // Allow advanced correlation analysis to bypass aggregation checks; executePlan will populate fields.
+    if (plan.analysisType === 'correlation') {
+      return null;
+    }
     if (plan.chartType === 'scatter') {
       return null;
     }
@@ -179,12 +183,17 @@ class CsvDataAnalysisApp extends HTMLElement {
       normalized.chartType = 'bar';
       adjustments.push(`${titleLabel}: Missing chart type; defaulted to bar chart.`);
     }
-
+  
     if (normalized.chartType === 'scatter') {
       Object.assign(plan, normalized);
       return { plan, adjustments, error: null };
     }
-
+    // Allow correlation plans to skip standard aggregation/group-by resolution.
+    if (normalized.analysisType === 'correlation') {
+      Object.assign(plan, normalized);
+      return { plan, adjustments, error: null };
+    }
+  
     let aggregation = typeof normalized.aggregation === 'string' ? normalized.aggregation.toLowerCase() : '';
     if (!SUPPORTED_AGGREGATIONS.has(aggregation)) {
       aggregation = normalized.valueColumn ? 'sum' : 'count';

@@ -396,6 +396,448 @@ export const executeJavaScriptDataTransform = (data, jsFunctionBody) => {
 };
 
 export const executePlan = (csvData, plan) => {
+  // Advanced analysis: Correlation Matrix
+  // Produces a flat list of top correlated pairs suitable for bar charts:
+  // [{ pair: "colA ~ colB", value: correlation }, ...]
+  // We set plan.groupByColumn/valueColumn for downstream components to render.
+  if (plan.analysisType === 'correlation') {
+    const dataRows = Array.isArray(csvData?.data) ? csvData.data : [];
+    if (!dataRows.length) return [];
+
+    // Resolve numeric columns: prefer explicit valueColumns if provided; otherwise infer.
+    let numericColumns = [];
+    if (Array.isArray(plan.valueColumns) && plan.valueColumns.length) {
+      const knownColumns = Object.keys(dataRows[0] || {});
+      numericColumns = plan.valueColumns.filter(col => knownColumns.includes(col));
+    } else {
+      numericColumns = inferNumericColumns(dataRows);
+    }
+
+    // Guardrail: limit number of columns to avoid O(N^2) explosion.
+    const MAX_COLUMNS_FOR_CORR = typeof plan.maxColumns === 'number' ? plan.maxColumns : 12;
+    if (numericColumns.length > MAX_COLUMNS_FOR_CORR) {
+      numericColumns = numericColumns.slice(0, MAX_COLUMNS_FOR_CORR);
+    }
+
+    const results = [];
+    for (let i = 0; i < numericColumns.length; i++) {
+      for (let j = i + 1; j < numericColumns.length; j++) {
+        const colA = numericColumns[i];
+        const colB = numericColumns[j];
+
+        const xs = [];
+        const ys = [];
+        for (let r = 0; r < dataRows.length; r++) {
+          const x = parseNumericValue(dataRows[r]?.[colA]);
+          const y = parseNumericValue(dataRows[r]?.[colB]);
+          if (x !== null && y !== null) {
+            xs.push(x);
+            ys.push(y);
+          }
+        }
+
+        let corr = 0;
+        const n = xs.length;
+        if (n >= 3) {
+          const meanX = xs.reduce((s, v) => s + v, 0) / n;
+          const meanY = ys.reduce((s, v) => s + v, 0) / n;
+          let num = 0;
+          let sx = 0;
+          let sy = 0;
+          for (let k = 0; k < n; k++) {
+            const dx = xs[k] - meanX;
+            const dy = ys[k] - meanY;
+            num += dx * dy;
+            sx += dx * dx;
+            sy += dy * dy;
+          }
+          const denom = Math.sqrt(sx * sy);
+          corr = denom === 0 ? 0 : num / denom;
+        }
+
+        results.push({
+          pair: `${colA} ~ ${colB}`,
+          value: corr,
+        });
+      }
+    }
+
+    // Sort by absolute correlation strength and limit top pairs for readability.
+    results.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+    const TOP_PAIRS_LIMIT = typeof plan.topPairs === 'number' ? plan.topPairs : 50;
+    const limited = results.slice(0, TOP_PAIRS_LIMIT);
+
+    // Hint downstream renderer to use 'pair' and 'value' keys like normal aggregations.
+    plan.groupByColumn = 'pair';
+    plan.valueColumn = 'value';
+    // Optional: tag aggregation to avoid audits expecting 'sum'/'count'
+    plan.aggregation = plan.aggregation || 'none';
+
+    return limited;
+  }
+
+  // Advanced analysis: K-Means clustering
+  if (plan.analysisType === 'clustering_kmeans') {
+    const dataRows = Array.isArray(csvData?.data) ? csvData.data : [];
+    if (!dataRows.length) return [];
+
+    // Resolve feature columns: prefer explicit featureColumns; otherwise infer from data.
+    let featureColumns = Array.isArray(plan.featureColumns) && plan.featureColumns.length
+      ? plan.featureColumns.filter(col => col && (dataRows[0] && Object.prototype.hasOwnProperty.call(dataRows[0], col)))
+      : inferNumericColumns(dataRows);
+
+    // Guardrails: ensure we have features and cap dimension for performance
+    const MAX_FEATURES = typeof plan.maxFeatures === 'number' ? plan.maxFeatures : 6;
+    featureColumns = (featureColumns || []).slice(0, MAX_FEATURES);
+    if (!featureColumns.length) {
+      // No numeric feature available; fallback to scatter auto-handling
+      plan.analysisType = undefined;
+    } else {
+      // Resolve axes: prefer plan.xValueColumn / plan.yValueColumn if valid; else pick two distinct numeric columns; else row index
+      const allNumericColumns = inferNumericColumns(dataRows);
+      const isNum = c => allNumericColumns.includes(c);
+
+      let useRowIndexForX = false;
+      let useRowIndexForY = false;
+
+      let xCol = plan.xValueColumn && isNum(plan.xValueColumn) ? plan.xValueColumn : null;
+      if (!xCol) {
+        xCol = featureColumns.find(c => isNum(c)) || allNumericColumns[0] || null;
+      }
+      if (!xCol) {
+        xCol = 'Row Index';
+        useRowIndexForX = true;
+      }
+
+      let yCol = plan.yValueColumn && isNum(plan.yValueColumn) ? plan.yValueColumn : null;
+      if (!yCol || yCol === xCol) {
+        yCol =
+          featureColumns.find(c => c !== xCol && isNum(c)) ||
+          allNumericColumns.find(c => c !== xCol) ||
+          null;
+      }
+      if (!yCol || yCol === xCol) {
+        if (!useRowIndexForX) {
+          yCol = 'Row Index';
+          useRowIndexForY = true;
+        } else {
+          // Both axes would be row index; fall back to standard scatter flow
+          plan.analysisType = undefined;
+        }
+      }
+
+      if (plan.analysisType === 'clustering_kmeans') {
+        // Build feature matrix (filter out rows with any missing feature)
+        const matrix = [];
+        const rowRefs = [];
+        for (let i = 0; i < dataRows.length; i++) {
+          const row = dataRows[i];
+          const vector = [];
+          let valid = true;
+          for (const col of featureColumns) {
+            const val = parseNumericValue(row[col]);
+            if (val === null) {
+              valid = false;
+              break;
+            }
+            vector.push(val);
+          }
+          if (valid && vector.length) {
+            matrix.push(vector);
+            rowRefs.push(i);
+          }
+        }
+        if (!matrix.length) {
+          // Nothing to cluster; fall back to standard scatter
+          plan.analysisType = undefined;
+        } else {
+          // Standardize features (default true)
+          const standardize = plan.standardize !== false;
+          if (standardize) {
+            const dim = featureColumns.length;
+            const means = new Array(dim).fill(0);
+            const stds = new Array(dim).fill(0);
+            for (let j = 0; j < dim; j++) {
+              let sum = 0;
+              for (let i = 0; i < matrix.length; i++) sum += matrix[i][j];
+              means[j] = sum / matrix.length;
+            }
+            for (let j = 0; j < dim; j++) {
+              let s = 0;
+              for (let i = 0; i < matrix.length; i++) {
+                const d = matrix[i][j] - means[j];
+                s += d * d;
+              }
+              stds[j] = Math.sqrt(s / Math.max(matrix.length - 1, 1)) || 1;
+            }
+            for (let i = 0; i < matrix.length; i++) {
+              for (let j = 0; j < dim; j++) {
+                matrix[i][j] = (matrix[i][j] - means[j]) / (stds[j] || 1);
+              }
+            }
+          }
+
+          // K-Means parameters
+          const k = Math.max(2, Math.min(12, Number(plan.k) || 3));
+          const maxIter = typeof plan.maxIterations === 'number' ? plan.maxIterations : 100;
+
+          // Initialize centroids (deterministic spread across dataset)
+          const centroids = [];
+          const usedIdx = new Set();
+          for (let c = 0; c < k; c++) {
+            let idx = Math.floor((c + 0.5) * matrix.length / k);
+            if (idx >= matrix.length) idx = matrix.length - 1;
+            if (usedIdx.has(idx)) idx = Math.floor(Math.random() * matrix.length);
+            usedIdx.add(idx);
+            centroids.push([...matrix[idx]]);
+          }
+
+          // Iterate assign/update
+          const dim = featureColumns.length;
+          let assignments = new Array(matrix.length).fill(-1);
+          for (let iter = 0; iter < maxIter; iter++) {
+            let changed = 0;
+            // Assign step
+            for (let i = 0; i < matrix.length; i++) {
+              let best = 0;
+              let bestDist = Infinity;
+              for (let c = 0; c < k; c++) {
+                let d = 0;
+                const a = matrix[i];
+                const b = centroids[c];
+                for (let j = 0; j < dim; j++) {
+                  const diff = a[j] - b[j];
+                  d += diff * diff;
+                }
+                if (d < bestDist) {
+                  bestDist = d;
+                  best = c;
+                }
+              }
+              if (assignments[i] !== best) {
+                assignments[i] = best;
+                changed++;
+              }
+            }
+            // Update step
+            const sums = Array.from({ length: k }, () => new Array(dim).fill(0));
+            const counts = new Array(k).fill(0);
+            for (let i = 0; i < matrix.length; i++) {
+              const c = assignments[i];
+              counts[c]++;
+              for (let j = 0; j < dim; j++) {
+                sums[c][j] += matrix[i][j];
+              }
+            }
+            for (let c = 0; c < k; c++) {
+              if (counts[c] === 0) continue; // keep previous centroid if empty
+              for (let j = 0; j < dim; j++) {
+                centroids[c][j] = sums[c][j] / counts[c];
+              }
+            }
+            if (changed === 0) break;
+          }
+
+          // Build scatter output enriched with cluster label
+          const output = [];
+          for (let idx = 0; idx < rowRefs.length; idx++) {
+            const rowIndex = rowRefs[idx];
+            const row = dataRows[rowIndex];
+            const x = useRowIndexForX ? rowIndex + 1 : parseNumericValue(row[xCol]);
+            const y = useRowIndexForY ? rowIndex + 1 : parseNumericValue(row[yCol]);
+            if (x === null || y === null) continue;
+            output.push({
+              [xCol]: x,
+              [yCol]: y,
+              cluster: `Cluster ${assignments[idx] + 1}`,
+            });
+          }
+
+          plan.xValueColumn = xCol;
+          plan.yValueColumn = yCol;
+
+          return output;
+        }
+      }
+    }
+  }
+
+  // Advanced analysis: Time Series Decomposition (trend via moving average)
+  if (plan.analysisType === 'time_series_decompose') {
+    const dataRows = Array.isArray(csvData?.data) ? csvData.data : [];
+    if (!dataRows.length) return [];
+
+    const timeCol = plan.groupByColumn;
+    const valCol = plan.valueColumn;
+    if (!timeCol || !valCol) return [];
+
+    // Aggregate by time key (sum)
+    const seriesMap = new Map();
+    for (const row of dataRows) {
+      const key = String(row?.[timeCol]);
+      const v = parseNumericValue(row?.[valCol]);
+      if (key && v !== null) {
+        seriesMap.set(key, (seriesMap.get(key) || 0) + v);
+      }
+    }
+
+    // Sort by time (try Date, fallback string)
+    const entries = Array.from(seriesMap.entries());
+    const parsed = entries.map(([k, v]) => {
+      const t = Date.parse(k);
+      return { k, v, t: Number.isNaN(t) ? null : t };
+    });
+    const dateCount = parsed.filter(p => p.t !== null).length;
+    if (dateCount >= Math.floor(parsed.length * 0.6)) {
+      parsed.sort((a, b) => (a.t ?? Infinity) - (b.t ?? Infinity));
+    } else {
+      parsed.sort((a, b) => String(a.k).localeCompare(String(b.k)));
+    }
+
+    // Moving average window
+    const w = Math.max(2, Number(plan.window) || 7);
+    const values = parsed.map(p => Number(p.v) || 0);
+    const trend = [];
+    let sum = 0;
+    for (let i = 0; i < values.length; i++) {
+      sum += values[i];
+      if (i >= w) {
+        sum -= values[i - w];
+      }
+      const count = i + 1 < w ? i + 1 : w;
+      trend.push(sum / count);
+    }
+
+    // Output trend as line series
+    const output = parsed.map((p, i) => ({
+      [timeCol]: p.k,
+      value: trend[i],
+    }));
+
+    plan.aggregation = plan.aggregation || 'none';
+    plan.groupByColumn = timeCol;
+    plan.valueColumn = 'value';
+    return output;
+  }
+
+  // Advanced analysis: Linear Prediction (simple OLS on index)
+  if (plan.analysisType === 'prediction_linear') {
+    const dataRows = Array.isArray(csvData?.data) ? csvData.data : [];
+    if (!dataRows.length) return [];
+
+    const timeCol = plan.groupByColumn;
+    const valCol = plan.valueColumn;
+    if (!timeCol || !valCol) return [];
+
+    // Aggregate by time key (sum)
+    const seriesMap = new Map();
+    for (const row of dataRows) {
+      const key = String(row?.[timeCol]);
+      const v = parseNumericValue(row?.[valCol]);
+      if (key && v !== null) {
+        seriesMap.set(key, (seriesMap.get(key) || 0) + v);
+      }
+    }
+
+    // Sort by time (try Date, fallback string)
+    const entries = Array.from(seriesMap.entries());
+    const parsed = entries.map(([k, v]) => {
+      const t = Date.parse(k);
+      return { k, v, t: Number.isNaN(t) ? null : t };
+    });
+    const dateCount = parsed.filter(p => p.t !== null).length;
+    if (dateCount >= Math.floor(parsed.length * 0.6)) {
+      parsed.sort((a, b) => (a.t ?? Infinity) - (b.t ?? Infinity));
+    } else {
+      parsed.sort((a, b) => String(a.k).localeCompare(String(b.k)));
+    }
+
+    // Build regression on index x = 1..n
+    const ys = parsed.map(p => Number(p.v) || 0);
+    const n = ys.length;
+    if (n < 2) {
+      // Not enough points to fit; just return observed
+      const observed = parsed.map(p => ({ [timeCol]: p.k, value: Number(p.v) || 0 }));
+      plan.aggregation = plan.aggregation || 'none';
+      plan.groupByColumn = timeCol;
+      plan.valueColumn = 'value';
+      return observed;
+    }
+    let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0;
+    for (let i = 0; i < n; i++) {
+      const x = i + 1;
+      const y = ys[i];
+      sumX += x;
+      sumY += y;
+      sumXX += x * x;
+      sumXY += x * y;
+    }
+    const denom = (n * sumXX - sumX * sumX) || 1;
+    const slope = (n * sumXY - sumX * sumY) / denom;
+    const intercept = (sumY - slope * sumX) / n;
+
+    // Determine time step if dates are available
+    let stepMs = null;
+    if (dateCount >= 2) {
+      const dts = parsed.filter(p => p.t !== null).map(p => p.t);
+      const diffs = [];
+      for (let i = 1; i < dts.length; i++) {
+        const diff = dts[i] - dts[i - 1];
+        if (diff > 0) diffs.push(diff);
+      }
+      if (diffs.length) {
+        diffs.sort((a, b) => a - b);
+        const mid = Math.floor(diffs.length / 2);
+        stepMs = diffs.length % 2 ? diffs[mid] : Math.floor((diffs[mid - 1] + diffs[mid]) / 2);
+        if (stepMs <= 0) stepMs = null;
+      }
+    }
+
+    // Prepare forecast horizon
+    const horizon = Math.max(1, Math.min(365, Number(plan.horizon) || 10));
+
+    // Observed points (as-is)
+    const observed = parsed.map((p, i) => ({
+      [timeCol]: p.k,
+      value: Number(ys[i]) || 0,
+    }));
+
+    // Compute future time labels
+    const lastTime = parsed[parsed.length - 1]?.t ?? null;
+
+    const formatDate = (ms) => {
+      try {
+        const d = new Date(ms);
+        // ISO date (yyyy-mm-dd)
+        return d.toISOString().slice(0, 10);
+      } catch {
+        return String(ms);
+      }
+    };
+
+    const future = [];
+    for (let h = 1; h <= horizon; h++) {
+      const x = n + h;
+      const yhat = intercept + slope * x;
+      let label;
+      if (stepMs && lastTime !== null) {
+        label = formatDate(lastTime + stepMs * h);
+      } else {
+        label = `Forecast ${h}`;
+      }
+      future.push({
+        [timeCol]: label,
+        value: yhat,
+        isForecast: true,
+      });
+    }
+
+    plan.aggregation = plan.aggregation || 'none';
+    plan.groupByColumn = timeCol;
+    plan.valueColumn = 'value';
+    return [...observed, ...future];
+  }
+  // Existing scatter handling
   if (plan.chartType === 'scatter') {
     const dataRows = Array.isArray(csvData?.data) ? csvData.data : [];
     const numericColumns = inferNumericColumns(dataRows);
