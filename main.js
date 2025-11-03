@@ -631,12 +631,12 @@ class CsvDataAnalysisApp extends HTMLElement {
 
       const metadata = parsedData.metadata || null;
       if (metadata?.reportTitle) {
-        this.addProgress(`偵測到報表標題：「${metadata.reportTitle}」。`);
+        this.addProgress(`Detected report title: "${metadata.reportTitle}".`);
       }
       const contextCount = metadata?.contextRowCount || metadata?.leadingRows?.length || 0;
       if (contextCount) {
         this.addProgress(
-          `已擷取前 ${Math.min(contextCount, 20)} 列資料作為報表上下文（含表頭/前導列與首批資料列），供 AI 理解資料來源。`
+          `Extracted the first ${Math.min(contextCount, 20)} rows as context for the report (including headers/leading rows and initial data rows) for the AI to understand the data source.`
         );
       }
       if (
@@ -646,7 +646,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       ) {
         const removed = Math.max(metadata.originalRowCount - metadata.cleanedRowCount, 0);
         this.addProgress(
-          `原始資料共有 ${metadata.originalRowCount.toLocaleString()} 列，清理後保留 ${metadata.cleanedRowCount.toLocaleString()} 列${removed > 0 ? `，其中 ${removed.toLocaleString()} 列為標題或總計等非資料列。` : '。'}`
+          `The original data has ${metadata.originalRowCount.toLocaleString()} rows, and after cleaning, ${metadata.cleanedRowCount.toLocaleString()} rows are retained${removed > 0 ? `, of which ${removed.toLocaleString()} rows are non-data rows such as titles or totals.` : '.'}`
         );
       }
 
@@ -2313,8 +2313,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       <div class="bg-white border border-slate-200 rounded-xl p-6 flex items-start gap-4 shadow-sm">
         <div class="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin"></div>
         <div class="flex-1">
-          <h3 class="text-base font-semibold text-slate-900">AI 正在分析資料</h3>
-          <p class="text-sm text-slate-500">系統會依序完成資料剖析、圖表生成與重點摘要，請稍候。</p>
+          <h3 class="text-base font-semibold text-slate-900">AI is analyzing the data</h3>
+          <p class="text-sm text-slate-500">The system will complete data analysis, chart generation, and summary in sequence. Please wait.</p>
           ${progressHtml}
         </div>
       </div>
@@ -2323,10 +2323,10 @@ class CsvDataAnalysisApp extends HTMLElement {
 
   renderEmptyCardsState() {
     const hasCsv = Boolean(this.state.csvData);
-    const title = hasCsv ? '目前沒有分析卡片' : '尚未開始分析';
+    const title = hasCsv ? 'No analysis cards at the moment' : 'Analysis has not started yet';
     const subtitle = hasCsv
-      ? '可透過右側對話請 AI 建立新的分析，或重新上傳資料進行探索。'
-      : '上傳 CSV 後會在此顯示由 AI 產生的分析卡片與洞察。';
+      ? 'You can ask the AI to create a new analysis through the conversation on the right, or re-upload data to explore.'
+      : 'After uploading the CSV, AI-generated analysis cards and insights will be displayed here.';
 
     return `
       <div class="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-sm">
@@ -2564,20 +2564,20 @@ class CsvDataAnalysisApp extends HTMLElement {
     const contextCount = metadata?.contextRowCount || contextRows.length || 0;
     if (contextCount) {
       metadataLines.push(
-        `<p class="text-[11px] text-slate-400 mt-0.5">已擷取 ${contextCount} 列上下文資料（包含表頭與首批資料列）。</p>`
+        `<p class="text-[11px] text-slate-400 mt-0.5">Extracted ${contextCount} rows of context data (including headers and initial data rows).</p>`
       );
     }
     metadataLines.push(
-      `<p class="text-[11px] text-slate-400 mt-0.5">原始 ${originalCount.toLocaleString()} 行 • 清理後 ${cleanedCount.toLocaleString()} 行${removedCount > 0 ? ` • 已移除 ${removedCount.toLocaleString()} 行` : ''}</p>`
+      `<p class="text-[11px] text-slate-400 mt-0.5">Original ${originalCount.toLocaleString()} rows • ${cleanedCount.toLocaleString()} rows after cleaning${removedCount > 0 ? ` • ${removedCount.toLocaleString()} rows removed` : ''}</p>`
     );
     metadataLines.push(
-      `<p class="text-[11px] ${resolvedView === 'original' ? 'text-amber-600' : 'text-slate-400'} mt-0.5">目前檢視：${resolvedView === 'original' ? '原始 CSV 內容（包含標題 / 總計列）' : '清理後可供分析的資料'}</p>`
+      `<p class="text-[11px] ${resolvedView === 'original' ? 'text-amber-600' : 'text-slate-400'} mt-0.5">Current view: ${resolvedView === 'original' ? 'Original CSV content (including title/total rows)' : 'Cleaned data ready for analysis'}</p>`
     );
     const metadataBlock = metadataLines.join('');
 
     const viewOptions = [
-      { key: 'cleaned', label: '清理後資料' },
-      { key: 'original', label: '原始資料' },
+      { key: 'cleaned', label: 'Cleaned Data' },
+      { key: 'original', label: 'Original Data' },
     ];
     const viewButtons = viewOptions
       .map(option => {
@@ -2632,7 +2632,7 @@ class CsvDataAnalysisApp extends HTMLElement {
             <div>
               <h3 class="text-base font-semibold text-slate-900">Raw Data Explorer</h3>
               ${metadataBlock}
-              <p class="text-xs text-slate-500">${this.escapeHtml(csvData.fileName)} • ${csvData.data.length.toLocaleString()} 行 (清理後)</p>
+              <p class="text-xs text-slate-500">${this.escapeHtml(csvData.fileName)} • ${csvData.data.length.toLocaleString()} rows (cleaned)</p>
             </div>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 transition-transform ${isRawDataVisible ? 'transform rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
           </button>
