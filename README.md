@@ -1,20 +1,43 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+## CSV Data Analysis Agent (Frontend-Only)
 
-# Run and deploy your AI Studio app
+This branch rewrites the original React/TypeScript implementation into a pure ES6 Modules + Web Components application. All functionality now runs entirely in the browser and communicates directly with the Gemini or OpenAI APIs, so ensure this approach aligns with your internal security policies before distributing it.
 
-This contains everything you need to run your app locally.
+### Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/170AV3PsQ2pWSEw2pArJ_ayMXFNg3_7GW
+- CSV upload, parsing, and automatic column profiling
+- AI-generated analysis plans, Chart.js visualisations, and narrative summaries
+- Progress log panel plus conversational assistant with multi-action responses
+- Support for AI-authored JavaScript data transformations applied on the fly
+- Settings modal to manage API provider, keys, model, and response language on the client
 
-## Run Locally
+### Getting Started
 
-**Prerequisites:**  Node.js
+```bash
+npm install
+npm run dev
+```
 
+The app also works as static files (e.g., serving `index.html` directly) provided the browser can reach the target AI endpoints from the current origin.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Configuring API Keys
+
+1. Launch the app and open the **Settings** button in the top-right corner.
+2. Choose either Google Gemini or OpenAI as the provider.
+3. Enter the corresponding API key and default model.
+4. Save the settings to unlock the AI-driven workflow.
+
+> Keys are saved in `localStorage`, so only run this build in trusted environments. For stricter security, route calls through an internal proxy instead.
+
+### Key Files
+
+- `index.html` – loads Tailwind, Chart.js, PapaParse, idb, and bootstraps `main.js`
+- `main.js` – defines the `<csv-data-analysis-app>` Web Component handling UI and state
+- `utils/dataProcessor.js` – CSV parsing, profiling, aggregations, and AI transformation executor
+- `services/geminiService.js` – shared wrapper for Gemini/OpenAI requests (plans, summaries, chat)
+- `storageService.js` – manages settings persistence (and can be extended for report history)
+
+### Important Notes
+
+- Exposing API keys in the browser inherently reveals them to end users; treat this build as internal tooling only.
+- If you deploy with a strict Content Security Policy, allow `unsafe-eval` or rework the transformation executor so AI-authored JavaScript can run.
+- For production use, consider adding a backend façade to secure credentials, enforce quotas, and audit requests.
