@@ -16,6 +16,11 @@ import {
 import {
   getSettings,
   saveSettings,
+  getReportsList,
+  saveReport,
+  getReport,
+  deleteReport,
+  CURRENT_SESSION_KEY,
 } from './storageService.js';
 import { getSkillCatalog } from './services/skillLibrary.js';
 import { detectIntent } from './utils/intentClassifier.js';
@@ -36,11 +41,19 @@ const DESELECTED_COLOR = 'rgba(107, 114, 128, 0.2)';
 const DESELECTED_BORDER_COLOR = 'rgba(107, 114, 128, 0.5)';
 const SUPPORTED_CHART_TYPES = new Set(['bar', 'line', 'pie', 'doughnut', 'scatter']);
 const SUPPORTED_AGGREGATIONS = new Set(['sum', 'count', 'avg']);
+const MIN_ASIDE_WIDTH = 320;
+const MAX_ASIDE_WIDTH = 800;
 let zoomPluginRegistered = false;
 
 class CsvDataAnalysisApp extends HTMLElement {
   constructor() {
     super();
+    const defaultAsideWidth = (() => {
+      if (typeof window === 'undefined') return MIN_ASIDE_WIDTH + 40;
+      const ideal = window.innerWidth / 4;
+      return Math.max(MIN_ASIDE_WIDTH, Math.min(MAX_ASIDE_WIDTH, ideal));
+    })();
+
     this.state = {
       currentView: 'file_upload',
       isBusy: false,
@@ -65,6 +78,10 @@ class CsvDataAnalysisApp extends HTMLElement {
       lastAuditReport: null,
       lastRepairSummary: null,
       lastRepairTimestamp: null,
+      reportsList: [],
+      isHistoryPanelOpen: false,
+      isAsideVisible: true,
+      asideWidth: defaultAsideWidth,
     };
     this.settings = getSettings();
     this.chartInstances = new Map();
@@ -75,6 +92,201 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.conversationLogElement = null;
     this.handleConversationScroll = this.onConversationScroll.bind(this);
     this.chatDraft = '';
+    this.sessionSaveTimer = null;
+    this.isRestoringSession = false;
+    this.initialDataLoaded = false;
+    this.isResizingAside = false;
+    this.boundAsideMouseMove = this.handleAsideMouseMove.bind(this);
+    this.boundAsideMouseUp = this.handleAsideMouseUp.bind(this);
+  }
+
+  captureSerializableAppState() {
+    const normaliseTimestamp = value => {
+      if (value instanceof Date) return value;
+      const candidate = new Date(value);
+      return Number.isNaN(candidate.getTime()) ? new Date() : candidate;
+    };
+
+    const cloneTimeline = list =>
+      Array.isArray(list)
+        ? list.map(item => ({
+            ...item,
+            timestamp: normaliseTimestamp(item?.timestamp),
+          }))
+        : [];
+
+    return {
+      currentView: this.state.currentView,
+      isBusy: false,
+      isThinking: false,
+      progressMessages: cloneTimeline(this.state.progressMessages),
+      csvData: this.state.csvData,
+      columnProfiles: this.state.columnProfiles,
+      analysisCards: this.state.analysisCards,
+      finalSummary: this.state.finalSummary,
+      aiCoreAnalysisSummary: this.state.aiCoreAnalysisSummary,
+      chatHistory: cloneTimeline(this.state.chatHistory),
+      highlightedCardId: this.state.highlightedCardId,
+      showSettings: false,
+      isRawDataVisible: this.state.isRawDataVisible,
+      rawDataFilter: this.state.rawDataFilter,
+      rawDataWholeWord: this.state.rawDataWholeWord,
+      rawDataSort: this.state.rawDataSort,
+      rawDataView: this.state.rawDataView,
+      originalCsvData: this.state.originalCsvData,
+      csvMetadata: this.state.csvMetadata,
+      currentDatasetId: this.state.currentDatasetId,
+      lastAuditReport: this.state.lastAuditReport,
+      lastRepairSummary: this.state.lastRepairSummary,
+      lastRepairTimestamp: this.state.lastRepairTimestamp,
+    };
+  }
+
+  rehydrateAppState(appState) {
+    if (!appState || typeof appState !== 'object') {
+      return null;
+    }
+
+    const reviveTimeline = list =>
+      Array.isArray(list)
+        ? list.map(item => {
+            const entry = { ...item };
+            if (entry.timestamp && !(entry.timestamp instanceof Date)) {
+              const parsed = new Date(entry.timestamp);
+              if (!Number.isNaN(parsed.getTime())) {
+                entry.timestamp = parsed;
+              }
+            }
+            return entry;
+          })
+        : [];
+
+    const restored = {
+      ...appState,
+      isBusy: false,
+      isThinking: false,
+      progressMessages: reviveTimeline(appState.progressMessages),
+      chatHistory: reviveTimeline(appState.chatHistory),
+      showSettings: false,
+      reportsList: Array.isArray(this.state.reportsList) ? this.state.reportsList : [],
+      isHistoryPanelOpen: false,
+    };
+
+    if (!restored.currentView) {
+      restored.currentView =
+        restored.csvData && Array.isArray(restored.csvData.data) && restored.csvData.data.length
+          ? 'analysis_dashboard'
+          : 'file_upload';
+    }
+
+    return restored;
+  }
+
+  async initializeAppState() {
+    try {
+      this.isRestoringSession = true;
+      const updates = {};
+
+      try {
+        const currentSession = await getReport(CURRENT_SESSION_KEY);
+        if (currentSession?.appState) {
+          const restoredState = this.rehydrateAppState(currentSession.appState);
+          if (restoredState) {
+            Object.assign(updates, restoredState);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to restore current session from IndexedDB:', error);
+      }
+
+      try {
+        const reports = await getReportsList();
+        updates.reportsList = reports;
+      } catch (error) {
+        console.error('Failed to load reports list from IndexedDB:', error);
+      }
+
+      if (Object.keys(updates).length) {
+        this.setState(prev => ({ ...prev, ...updates }));
+      }
+    } finally {
+      this.isRestoringSession = false;
+      this.initialDataLoaded = true;
+    }
+  }
+
+  scheduleSessionSave() {
+    if (this.isRestoringSession || !this.initialDataLoaded) return;
+    if (this.sessionSaveTimer) {
+      clearTimeout(this.sessionSaveTimer);
+      this.sessionSaveTimer = null;
+    }
+    this.sessionSaveTimer = setTimeout(() => {
+      this.saveCurrentSession();
+    }, 800);
+  }
+
+  async saveCurrentSession() {
+    if (this.sessionSaveTimer) {
+      clearTimeout(this.sessionSaveTimer);
+      this.sessionSaveTimer = null;
+    }
+    if (this.isRestoringSession || !this.initialDataLoaded) return;
+    if (!this.state.csvData || !Array.isArray(this.state.csvData.data) || !this.state.csvData.data.length) {
+      return;
+    }
+
+    try {
+      const existing = await getReport(CURRENT_SESSION_KEY);
+      const payload = {
+        id: CURRENT_SESSION_KEY,
+        filename: this.state.csvData.fileName || 'Current Session',
+        createdAt: existing?.createdAt ? new Date(existing.createdAt) : new Date(),
+        updatedAt: new Date(),
+        appState: this.captureSerializableAppState(),
+      };
+      await saveReport(payload);
+      if (this.state.isHistoryPanelOpen) {
+        const fresh = await getReportsList();
+        const previousFlag = this.isRestoringSession;
+        this.isRestoringSession = true;
+        this.setState({ reportsList: fresh });
+        this.isRestoringSession = previousFlag;
+      }
+    } catch (error) {
+      console.error('Failed to persist current session to IndexedDB:', error);
+    }
+  }
+
+  async archiveCurrentSession() {
+    try {
+      const existing = await getReport(CURRENT_SESSION_KEY);
+      if (existing) {
+        const createdAt = existing.createdAt ? new Date(existing.createdAt) : new Date();
+        const archiveId = `report-${createdAt.getTime()}`;
+        await saveReport({
+          ...existing,
+          id: archiveId,
+          updatedAt: new Date(),
+        });
+      }
+      await deleteReport(CURRENT_SESSION_KEY);
+    } catch (error) {
+      console.error('Failed to archive previous session:', error);
+    }
+  }
+
+  async loadReportsList() {
+    const previousFlag = this.isRestoringSession;
+    try {
+      const reports = await getReportsList();
+      this.isRestoringSession = true;
+      this.setState({ reportsList: reports });
+    } catch (error) {
+      console.error('Failed to refresh reports list:', error);
+    } finally {
+      this.isRestoringSession = previousFlag;
+    }
   }
 
   validatePlanForExecution(plan) {
@@ -409,6 +621,9 @@ class CsvDataAnalysisApp extends HTMLElement {
   connectedCallback() {
     this.isMounted = true;
     this.render();
+    this.initializeAppState().catch(error =>
+      console.error('Failed during initial app state restoration:', error)
+    );
   }
 
   disconnectedCallback() {
@@ -418,14 +633,25 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.conversationLogElement.removeEventListener('scroll', this.handleConversationScroll);
       this.conversationLogElement = null;
     }
+    if (this.sessionSaveTimer) {
+      clearTimeout(this.sessionSaveTimer);
+      this.sessionSaveTimer = null;
+    }
+    if (this.isResizingAside) {
+      this.handleAsideMouseUp();
+    }
   }
 
   setState(updater) {
     const prevState = this.state;
     const nextPartial = typeof updater === 'function' ? updater(prevState) : updater;
+    if (!nextPartial || typeof nextPartial !== 'object') {
+      return;
+    }
     this.state = { ...prevState, ...nextPartial };
     this.captureFocus();
     this.scheduleRender();
+    this.scheduleSessionSave();
   }
 
   captureFocus() {
@@ -618,6 +844,16 @@ class CsvDataAnalysisApp extends HTMLElement {
   async handleFileInput(file) {
     if (!file) return;
     const prevCsv = this.state.csvData;
+    if (prevCsv && Array.isArray(prevCsv.data) && prevCsv.data.length) {
+      await this.archiveCurrentSession();
+    } else {
+      try {
+        await deleteReport(CURRENT_SESSION_KEY);
+      } catch (error) {
+        console.error('Failed to clear previous current session before upload:', error);
+      }
+    }
+    await this.loadReportsList();
     this.setState({
       isBusy: true,
       progressMessages: [],
@@ -1209,6 +1445,165 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.settings = { ...this.settings, ...newSettings };
     saveSettings(this.settings);
     this.setState({ showSettings: false });
+  }
+
+  toggleHistoryPanel(forceOpen) {
+    const isOpen =
+      typeof forceOpen === 'boolean' ? forceOpen : !(this.state.isHistoryPanelOpen ?? false);
+    const previousFlag = this.isRestoringSession;
+    this.isRestoringSession = true;
+    this.setState({ isHistoryPanelOpen: isOpen });
+    this.isRestoringSession = previousFlag;
+    if (isOpen) {
+      this.loadReportsList();
+    }
+  }
+
+  toggleAsideVisibility(forceVisible) {
+    const isVisible =
+      typeof forceVisible === 'boolean' ? forceVisible : !(this.state.isAsideVisible ?? true);
+    this.setState({ isAsideVisible: isVisible });
+    if (isVisible) {
+      queueMicrotask(() => this.scrollConversationToBottom());
+    }
+  }
+
+  handleAsideMouseDown(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation?.();
+    }
+    if (this.isResizingAside) return;
+    this.isResizingAside = true;
+    if (typeof document !== 'undefined') {
+      document.addEventListener('mousemove', this.boundAsideMouseMove);
+      document.addEventListener('mouseup', this.boundAsideMouseUp);
+    }
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.cursor = 'col-resize';
+    }
+  }
+
+  handleAsideMouseMove(event) {
+    if (!this.isResizingAside) return;
+    if (typeof window === 'undefined') return;
+    const clientX = event?.clientX;
+    if (typeof clientX !== 'number') return;
+    let newWidth = window.innerWidth - clientX;
+    if (newWidth < MIN_ASIDE_WIDTH) newWidth = MIN_ASIDE_WIDTH;
+    if (newWidth > MAX_ASIDE_WIDTH) newWidth = MAX_ASIDE_WIDTH;
+    this.setState({ asideWidth: newWidth });
+  }
+
+  handleAsideMouseUp() {
+    if (!this.isResizingAside) return;
+    this.isResizingAside = false;
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('mousemove', this.boundAsideMouseMove);
+      document.removeEventListener('mouseup', this.boundAsideMouseUp);
+      if (document.body) {
+        document.body.style.cursor = '';
+      }
+    }
+  }
+
+  async handleLoadReport(reportId) {
+    if (!reportId) return;
+    try {
+      this.addProgress(`Loading report ${reportId}...`);
+      const report = await getReport(reportId);
+      if (!report?.appState) {
+        this.addProgress('Unable to load the selected report.', 'error');
+        return;
+      }
+      const restored = this.rehydrateAppState(report.appState);
+      if (!restored) {
+        this.addProgress('Report data is incompatible with the current app version.', 'error');
+        return;
+      }
+      const previousFlag = this.isRestoringSession;
+      this.isRestoringSession = true;
+      this.setState(prev => ({
+        ...prev,
+        ...restored,
+        isHistoryPanelOpen: false,
+      }));
+      this.isRestoringSession = previousFlag;
+      await saveReport({
+        id: CURRENT_SESSION_KEY,
+        filename: report.filename,
+        createdAt: report.createdAt ? new Date(report.createdAt) : new Date(),
+        updatedAt: new Date(),
+        appState: this.captureSerializableAppState(),
+      });
+      await this.loadReportsList();
+      this.addProgress(`Report "${report.filename}" loaded successfully.`);
+    } catch (error) {
+      console.error('Failed to load report:', error);
+      this.addProgress('Failed to load the selected report.', 'error');
+    }
+  }
+
+  async handleDeleteReport(reportId) {
+    if (!reportId) return;
+    try {
+      await deleteReport(reportId);
+      if (reportId === CURRENT_SESSION_KEY) {
+        this.addProgress('Cleared current session history entry.');
+      } else {
+        this.addProgress('Report deleted from history.');
+      }
+      await this.loadReportsList();
+    } catch (error) {
+      console.error('Failed to delete report:', error);
+      this.addProgress('Failed to delete the selected report.', 'error');
+    }
+  }
+
+  async handleNewSession() {
+    const hasExistingData =
+      this.state.csvData && Array.isArray(this.state.csvData.data) && this.state.csvData.data.length;
+    this.addProgress('Starting new session...');
+    if (hasExistingData) {
+      await this.archiveCurrentSession();
+    } else {
+      try {
+        await deleteReport(CURRENT_SESSION_KEY);
+      } catch (error) {
+        console.error('Failed to clear current session:', error);
+      }
+    }
+    const previousFlag = this.isRestoringSession;
+    this.isRestoringSession = true;
+    this.setState(prev => ({
+      ...prev,
+      currentView: 'file_upload',
+      isBusy: false,
+      isThinking: false,
+      progressMessages: [],
+      csvData: null,
+      columnProfiles: [],
+      analysisCards: [],
+      finalSummary: null,
+      aiCoreAnalysisSummary: null,
+      chatHistory: [],
+      highlightedCardId: null,
+      isRawDataVisible: true,
+      rawDataFilter: '',
+      rawDataWholeWord: false,
+      rawDataSort: null,
+      rawDataView: 'cleaned',
+      originalCsvData: null,
+      csvMetadata: null,
+      currentDatasetId: null,
+      lastAuditReport: null,
+      lastRepairSummary: null,
+      lastRepairTimestamp: null,
+      isHistoryPanelOpen: false,
+    }));
+    this.isRestoringSession = previousFlag;
+    await this.loadReportsList();
+    this.addProgress('New session started. Please upload a CSV file to begin.');
   }
 
   handleChartTypeChange(cardId, newType) {
@@ -1940,6 +2335,76 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     }
 
+    this.querySelectorAll('[data-new-session]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        this.handleNewSession();
+      });
+    });
+
+    this.querySelectorAll('[data-toggle-history]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.toggleHistoryPanel();
+      });
+    });
+
+    this.querySelectorAll('[data-toggle-aside]').forEach(btn => {
+      const mode = btn.dataset.toggleAside;
+      btn.addEventListener('click', () => {
+        if (mode === 'show') {
+          this.toggleAsideVisibility(true);
+        } else if (mode === 'hide') {
+          this.toggleAsideVisibility(false);
+        } else {
+          this.toggleAsideVisibility();
+        }
+      });
+    });
+
+    const asideResizer = this.querySelector('[data-aside-resizer]');
+    if (asideResizer) {
+      asideResizer.addEventListener('mousedown', event => this.handleAsideMouseDown(event));
+    }
+
+    const historyOverlay = this.querySelector('[data-history-overlay]');
+    if (historyOverlay) {
+      historyOverlay.addEventListener('click', () => this.toggleHistoryPanel(false));
+    }
+
+    const historyPanel = this.querySelector('[data-history-panel]');
+    if (historyPanel) {
+      historyPanel.addEventListener('click', event => event.stopPropagation());
+    }
+
+    this.querySelectorAll('[data-history-close]').forEach(btn => {
+      btn.addEventListener('click', () => this.toggleHistoryPanel(false));
+    });
+
+    this.querySelectorAll('[data-history-load]').forEach(btn => {
+      const reportId = btn.dataset.historyLoad;
+      btn.addEventListener('click', () => {
+        this.handleLoadReport(reportId);
+      });
+    });
+
+    this.querySelectorAll('[data-history-delete]').forEach(btn => {
+      const reportId = btn.dataset.historyDelete;
+      btn.addEventListener('click', () => {
+        this.handleDeleteReport(reportId);
+      });
+    });
+
+    this.querySelectorAll('[data-show-card]').forEach(btn => {
+      const cardId = btn.dataset.showCard;
+      btn.addEventListener('click', () => {
+        if (!cardId) return;
+        const highlighted = this.highlightCard(cardId, { scrollIntoView: true });
+        if (!highlighted) {
+          this.addProgress(`Could not find card ID ${cardId} to show.`, 'error');
+        }
+      });
+    });
+
     const chatForm = this.querySelector('#chat-form');
     const chatInput = this.querySelector('#chat-input');
     if (chatInput) {
@@ -2187,6 +2652,33 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.shouldAutoScrollConversation = distanceFromBottom <= 48;
   }
 
+  buildConversationTimeline() {
+    const normaliseTimestamp = value => {
+      const date = value instanceof Date ? value : new Date(value);
+      return Number.isNaN(date.getTime()) ? new Date() : date;
+    };
+
+    const progress = Array.isArray(this.state.progressMessages)
+      ? this.state.progressMessages.map(item => ({
+          ...item,
+          timestamp: normaliseTimestamp(item?.timestamp),
+          __kind: 'progress',
+        }))
+      : [];
+
+    const chat = Array.isArray(this.state.chatHistory)
+      ? this.state.chatHistory.map(item => ({
+          ...item,
+          timestamp: normaliseTimestamp(item?.timestamp),
+          __kind: 'chat',
+        }))
+      : [];
+
+    const combined = [...progress, ...chat];
+    combined.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    return combined.slice(-300);
+  }
+
   renderSettingsModal() {
     if (!this.state.showSettings) return '';
     return `
@@ -2235,6 +2727,247 @@ class CsvDataAnalysisApp extends HTMLElement {
           <div class="flex justify-end gap-3 mt-6">
             <button class="px-4 py-2 rounded-md border border-slate-300 text-slate-700" data-toggle-settings>Cancel</button>
             <button class="px-4 py-2 rounded-md bg-blue-600 text-white" data-save-settings>Save</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderHistoryPanel() {
+    if (!this.state.isHistoryPanelOpen) return '';
+    const reports = Array.isArray(this.state.reportsList) ? this.state.reportsList : [];
+    const formatTimestamp = value => {
+      const date = value instanceof Date ? value : new Date(value);
+      return Number.isNaN(date.getTime())
+        ? 'Unknown'
+        : date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+    const itemsHtml = reports.length
+      ? reports
+          .map(report => {
+            const isCurrent = report.id === CURRENT_SESSION_KEY;
+            const title = this.escapeHtml(report.filename || 'Untitled report');
+            const updated = formatTimestamp(report.updatedAt);
+            const created = formatTimestamp(report.createdAt);
+            const badge = isCurrent
+              ? '<span class="ml-2 inline-flex items-center text-[10px] font-semibold uppercase tracking-wide text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Current</span>'
+              : '';
+            const deleteButton = isCurrent
+              ? ''
+              : `<button class="px-2 py-1 text-xs text-rose-600 border border-rose-200 rounded-md hover:bg-rose-50" data-history-delete="${this.escapeHtml(
+                  report.id
+                )}">
+                Delete
+              </button>`;
+            return `
+              <li class="border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-3">
+                <div class="flex-1">
+                  <div class="text-sm font-semibold text-slate-900 flex items-center flex-wrap gap-1">${title}${badge}</div>
+                  <div class="text-xs text-slate-500">Updated ${this.escapeHtml(updated)} • Created ${this.escapeHtml(created)}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  ${
+                    isCurrent
+                      ? '<button class="px-2 py-1 text-xs border border-slate-200 text-slate-400 rounded-md cursor-default" disabled>Current</button>'
+                      : `<button class="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700" data-history-load="${this.escapeHtml(
+                          report.id
+                        )}">Open</button>`
+                  }
+                  ${deleteButton}
+                </div>
+              </li>`;
+          })
+          .join('')
+      : '<li class="py-8 text-center text-sm text-slate-400 border border-dashed border-slate-300 rounded-lg">No saved reports yet. Upload a CSV to generate your first analysis.</li>';
+    return `
+      <div class="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center px-4" data-history-overlay>
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col" data-history-panel>
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+            <h2 class="text-xl font-semibold text-slate-900">Analysis History</h2>
+            <button class="text-slate-400 hover:text-slate-600" data-history-close aria-label="Close history panel">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="px-5 py-4 overflow-y-auto">
+            <ul class="space-y-3">${itemsHtml}</ul>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderAssistantPanel(options = {}) {
+    const isApiKeySet = options.isApiKeySet ?? (this.settings.provider === 'google'
+      ? !!this.settings.geminiApiKey
+      : !!this.settings.openAIApiKey);
+    const timeline = this.buildConversationTimeline();
+    const isBusy = this.state.isBusy;
+    const isChatDisabled = !isApiKeySet || isBusy || this.state.isThinking;
+    const currentView = this.state.currentView;
+    const placeholder = !isApiKeySet
+      ? 'Set API Key in settings to chat'
+      : currentView === 'analysis_dashboard'
+      ? 'Ask for a new analysis or data transformation...'
+      : 'Upload a file to begin chatting';
+
+    const conversationHtml = timeline
+      .map(entry => {
+        const timestamp = entry.timestamp instanceof Date ? entry.timestamp : new Date(entry.timestamp);
+        const hasTime = timestamp && !Number.isNaN(timestamp.getTime());
+        const timeLabel = hasTime
+          ? timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '';
+
+        if (entry.__kind === 'progress') {
+          const colorClass = entry.type === 'error' ? 'text-rose-600' : 'text-slate-500';
+          return `
+            <div class="flex text-xs ${colorClass}">
+              <span class="mr-2 text-slate-400">${this.escapeHtml(timeLabel)}</span>
+              <span>${this.escapeHtml(entry.text || '')}</span>
+            </div>`;
+        }
+
+        const sender = entry.sender;
+        if (entry.type === 'ai_thinking') {
+          return `
+            <div class="my-2 p-3 bg-white border border-blue-200 rounded-lg">
+              <div class="flex items-center text-blue-700 mb-2">
+                <span class="text-lg mr-2">🧠</span>
+                <h4 class="font-semibold">AI's Initial Analysis</h4>
+              </div>
+              <p class="text-sm text-slate-700 whitespace-pre-wrap">${this.escapeHtml(entry.text || '')}</p>
+            </div>`;
+        }
+
+        const alignmentClass = sender === 'user' ? 'justify-end' : 'justify-start';
+        const orientationClass = sender === 'user' ? 'items-end text-right' : 'items-start text-left';
+        let bubbleClass;
+        if (entry.isError) {
+          bubbleClass = 'bg-rose-100 text-rose-800 border border-rose-200';
+        } else if (sender === 'user') {
+          bubbleClass = 'bg-blue-600 text-white shadow-sm';
+        } else if (sender === 'system') {
+          bubbleClass = 'bg-amber-50 text-amber-800 border border-amber-200';
+        } else {
+          bubbleClass = 'bg-slate-200 text-slate-800';
+        }
+
+        const metaParts = [];
+        if (timeLabel) metaParts.push(timeLabel);
+        if (sender === 'user') metaParts.push('You');
+        else if (sender === 'ai') metaParts.push('AI');
+        else if (sender === 'system') metaParts.push('System');
+        else metaParts.push(sender || '');
+        if (entry.cardId) metaParts.push(`Card ${entry.cardId}`);
+        const metaLine = metaParts.filter(Boolean).map(part => this.escapeHtml(part)).join(' • ');
+
+        const cardButton = entry.cardId && !entry.isError
+          ? `<button type="button" class="mt-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md hover:bg-blue-200 transition-colors w-full text-left font-medium" data-show-card="${this.escapeHtml(entry.cardId)}">
+                → Show Related Card
+             </button>`
+          : '';
+
+        return `
+          <div class="flex ${alignmentClass} w-full">
+            <div class="flex flex-col ${orientationClass} max-w-full gap-1">
+              <div class="text-[10px] uppercase tracking-wide text-slate-400">${metaLine}</div>
+              <div class="inline-block max-w-[28rem] rounded-xl px-3 py-2 text-sm whitespace-pre-wrap ${bubbleClass}">
+                ${this.escapeHtml(entry.text || '')}
+                ${cardButton}
+              </div>
+            </div>
+          </div>`;
+      })
+      .join('');
+
+    const timelineFallback = isBusy
+      ? '<p class="text-xs text-slate-400">Processing... The assistant will respond shortly.</p>'
+      : '<p class="text-xs text-slate-400">No activity yet. Upload a CSV or start chatting to begin.</p>';
+
+    const auditReport = this.state.lastAuditReport;
+    const auditSummary = auditReport?.summary
+      ? this.escapeHtml(auditReport.summary)
+      : 'Audit not run yet.';
+    const auditIssuesPreview = Array.isArray(auditReport?.issues)
+      ? auditReport.issues.slice(0, 4)
+      : [];
+    const auditIssuesHtml = auditIssuesPreview.length
+      ? auditIssuesPreview
+          .map(issue => {
+            const badgeClass =
+              issue.severity === 'critical'
+                ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                : issue.severity === 'warning'
+                ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                : 'bg-slate-100 text-slate-600 border border-slate-200';
+            return `<li class="flex items-start gap-2 text-xs text-slate-600">
+              <span class="shrink-0 mt-0.5 px-2 py-0.5 rounded-full ${badgeClass}">${this.escapeHtml(
+                (issue.severity || '').toUpperCase()
+              )}</span>
+              <span class="flex-1">${this.escapeHtml(issue.message || '')}</span>
+            </li>`;
+          })
+          .join('')
+      : '<li class="text-xs text-slate-400">No outstanding issues.</li>';
+
+    const repairSummary = this.state.lastRepairSummary
+      ? this.escapeHtml(this.state.lastRepairSummary)
+      : 'No auto-repair actions executed yet.';
+    const repairTimestamp = this.state.lastRepairTimestamp
+      ? new Date(this.state.lastRepairTimestamp)
+      : null;
+    const repairTimeLabel =
+      repairTimestamp && !Number.isNaN(repairTimestamp.getTime())
+        ? `Last updated at ${repairTimestamp.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          })}`
+        : '';
+
+    return `
+      <div class="flex flex-col h-full">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+          <h2 class="text-xl font-semibold text-slate-900">Assistant</h2>
+          <div class="flex items-center gap-2">
+            <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Open Settings" aria-label="Open Settings" data-toggle-settings>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </button>
+            <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Hide Assistant Panel" aria-label="Hide Assistant Panel" data-toggle-aside="hide">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto space-y-4 p-4 bg-slate-100" data-conversation-log>
+          ${conversationHtml || timelineFallback}
+          ${isBusy ? `<div class="flex items-center text-blue-600"><svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...</div>` : ''}
+        </div>
+        <div class="p-4 border-t border-slate-200 bg-white">
+          <form id="chat-form" class="flex gap-2">
+            <input type="text" id="chat-input" data-focus-key="chat-input" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="${this.escapeHtml(placeholder)}" ${isChatDisabled ? 'disabled' : ''} />
+            <button type="submit" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg ${
+              !isChatDisabled ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'
+            }" ${isChatDisabled ? 'disabled' : ''}>Send</button>
+          </form>
+          <p class="text-xs text-slate-400 mt-2">${
+            currentView === 'analysis_dashboard'
+              ? 'e.g., "Sum of sales by region", or "Remove rows for USA"'
+              : ''
+          }</p>
+        </div>
+        <div class="p-4 border-t border-slate-200 bg-white space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-semibold text-slate-700">Audit & Repairs</h3>
+            <button class="text-xs px-2 py-1 border border-slate-300 rounded-md hover:bg-slate-100" data-run-audit>Run Audit</button>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">${auditSummary}</p>
+          <ul class="space-y-2 max-h-32 overflow-y-auto">${auditIssuesHtml}</ul>
+          <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            <p class="text-xs font-semibold text-slate-700 mb-1">Auto-repair status</p>
+            <p class="text-xs text-slate-600 whitespace-pre-line">${repairSummary}</p>
+            ${repairTimeLabel ? `<p class="text-[10px] uppercase tracking-wide text-slate-400 mt-2">${this.escapeHtml(repairTimeLabel)}</p>` : ''}
           </div>
         </div>
       </div>
@@ -2674,13 +3407,11 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   render() {
-    const { isBusy, csvData, analysisCards, finalSummary, chatHistory } = this.state;
+    const { isBusy, csvData, analysisCards, finalSummary } = this.state;
     const isApiKeySet =
       this.settings.provider === 'google'
         ? !!this.settings.geminiApiKey
         : !!this.settings.openAIApiKey;
-    const isChatDisabled = !isApiKeySet || isBusy || this.state.isThinking;
- 
     const cardsHtml = analysisCards.map(card => this.renderAnalysisCard(card)).join('');
     let cardsSection;
     if (cardsHtml) {
@@ -2692,184 +3423,69 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
     const rawDataPanel = this.renderRawDataPanel();
 
-    const conversationEntries = Array.isArray(chatHistory) ? chatHistory.slice(-200) : [];
-    const conversationHtml = conversationEntries
-      .map(msg => {
-        const timestamp = msg?.timestamp ? new Date(msg.timestamp) : null;
-        const hasTime = timestamp && !Number.isNaN(timestamp.getTime());
-        const timeLabel = hasTime
-          ? timestamp.toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })
-          : '';
-        const senderLabel =
-          msg.sender === 'user' ? 'You' : msg.sender === 'ai' ? 'AI' : 'System';
-        const metaParts = [];
-        if (timeLabel) metaParts.push(timeLabel);
-        metaParts.push(senderLabel);
-        if (msg.cardId) metaParts.push(`Card ${msg.cardId}`);
-        const metaLine = metaParts.map(part => this.escapeHtml(part)).join(' • ');
-        const alignmentClass = msg.sender === 'user' ? 'justify-end' : 'justify-start';
-        const orientationClass =
-          msg.sender === 'user' ? 'items-end text-right' : 'items-start text-left';
-        let bubbleClass;
-        if (msg.type === 'system_error') {
-          bubbleClass = 'bg-rose-50 text-rose-700 border border-rose-200';
-        } else if (msg.sender === 'user') {
-          bubbleClass = 'bg-blue-600 text-white shadow-sm';
-        } else if (msg.type === 'ai_thinking') {
-          bubbleClass = 'bg-slate-200 text-slate-600 italic';
-        } else if (msg.sender === 'system') {
-          bubbleClass = 'bg-amber-50 text-amber-800 border border-amber-200';
-        } else {
-          bubbleClass = 'bg-white border border-slate-200 text-slate-800';
-        }
-        return `
-        <div class="flex ${alignmentClass} w-full">
-          <div class="flex flex-col ${orientationClass} max-w-full gap-1">
-            <div class="text-[10px] uppercase tracking-wide text-slate-400">${metaLine}</div>
-            <div class="inline-block max-w-[28rem] rounded-xl px-3 py-2 text-sm whitespace-pre-line ${bubbleClass}">
-              ${this.escapeHtml(msg.text || '')}
-            </div>
-          </div>
-        </div>`;
-      })
-      .join('');
+    const summaryBlock = finalSummary
+      ? `<article class="bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-4">
+          <h2 class="text-lg font-semibold mb-2">AI Summary</h2>
+          <p class="text-sm leading-relaxed whitespace-pre-line">${this.escapeHtml(finalSummary)}</p>
+        </article>`
+      : '';
 
-    const auditReport = this.state.lastAuditReport;
-    const auditSummary = auditReport?.summary
-      ? this.escapeHtml(auditReport.summary)
-      : 'Audit not run yet.';
-    const auditIssuesPreview = Array.isArray(auditReport?.issues)
-      ? auditReport.issues.slice(0, 4)
-      : [];
-    const auditIssuesHtml = auditIssuesPreview.length
-      ? auditIssuesPreview
-          .map(issue => {
-            const badgeClass =
-              issue.severity === 'critical'
-                ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                : issue.severity === 'warning'
-                ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                : 'bg-slate-100 text-slate-600 border border-slate-200';
-            return `<li class="flex items-start gap-2 text-xs text-slate-600">
-              <span class="shrink-0 mt-0.5 px-2 py-0.5 rounded-full ${badgeClass}">${this.escapeHtml(
-                issue.severity.toUpperCase()
-              )}</span>
-              <span class="flex-1">${this.escapeHtml(issue.message)}</span>
-            </li>`;
-          })
-          .join('')
-      : '<li class="text-xs text-slate-400">No outstanding issues.</li>';
-    const repairSummary = this.state.lastRepairSummary
-      ? this.escapeHtml(this.state.lastRepairSummary)
-      : 'No auto-repair actions executed yet.';
-    const repairTimestamp = this.state.lastRepairTimestamp
-      ? new Date(this.state.lastRepairTimestamp)
-      : null;
-    const repairTimeLabel =
-      repairTimestamp && !Number.isNaN(repairTimestamp.getTime())
-        ? `Last updated at ${repairTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
-        : '';
+    const mainContent = !csvData
+      ? `<div class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center" data-drop-zone>
+          <p class="text-xl text-slate-500 mb-4">Drag and drop your CSV here or use the button above.</p>
+          <p class="text-sm text-slate-400">All processing happens locally in your browser.</p>
+        </div>`
+      : `
+        ${summaryBlock}
+        <div class="space-y-6">${cardsSection}</div>
+        ${rawDataPanel}
+      `;
+
+    const disableNewSession = isBusy || this.state.isThinking;
+    const isAsideVisible = this.state.isAsideVisible !== false;
+    const asideWidth = this.state.asideWidth || MIN_ASIDE_WIDTH;
+    const assistantPanelHtml = isAsideVisible
+      ? `<div class="hidden md:block w-1.5 cursor-col-resize bg-slate-300 hover:bg-blue-400 transition-colors duration-200" data-aside-resizer></div>
+         <aside class="w-full md:w-auto bg-white flex flex-col h-full border-l border-slate-200" style="width:${asideWidth}px">
+           ${this.renderAssistantPanel({ isApiKeySet })}
+         </aside>`
+      : '';
+    const showAssistantButton = isAsideVisible
+      ? ''
+      : `<button class="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors" data-toggle-aside="show">
+           Show Assistant
+         </button>`;
 
     this.innerHTML = `
-      <div class="min-h-screen flex flex-col">
-        <header class="bg-white border-b border-slate-200">
-          <div class="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-            <div>
-              <h1 class="text-2xl font-bold text-slate-900">CSV Data Analysis Agent</h1>
-              <p class="text-sm text-slate-500">Frontend-only Web Component build</p>
-            </div>
-            <div class="flex items-center gap-3">
+      <div class="flex flex-col md:flex-row h-screen bg-slate-50 text-slate-800">
+        <main class="flex-1 overflow-hidden flex flex-col">
+          <header class="flex-shrink-0 px-4 md:px-6 lg:px-8 py-4 flex items-center justify-between border-b border-slate-200 bg-white">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-900">CSV Data Analysis Agent</h1>
+            <div class="flex items-center gap-2 flex-wrap justify-end">
+              <button class="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed" data-new-session ${disableNewSession ? 'disabled' : ''}>
+                New Session
+              </button>
+              <button class="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-100" data-toggle-history>
+                History
+              </button>
               <button class="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-100" data-toggle-settings>
                 Settings
               </button>
-              <label class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700">
+              ${showAssistantButton}
+              <label class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 ${isBusy ? 'opacity-60 cursor-not-allowed' : ''}">
                 Upload CSV
                 <input id="file-upload-input" type="file" accept=".csv" class="hidden" ${isBusy ? 'disabled' : ''} />
               </label>
             </div>
-          </div>
-        </header>
-
-        <main class="flex-1">
-          <div class="mx-auto max-w-6xl px-6 py-6 grid lg:grid-cols-3 gap-6">
-            <section class="lg:col-span-2 space-y-6">
-              ${
-                !csvData
-                  ? `<div class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center" data-drop-zone>
-                      <p class="text-xl text-slate-500 mb-4">Drag and drop your CSV here or use the button above.</p>
-                      <p class="text-sm text-slate-400">All processing happens locally in your browser.</p>
-                    </div>`
-                  : ''
-              }
-
-              ${
-                finalSummary
-                  ? `<article class="bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-4">
-                      <h2 class="text-lg font-semibold mb-2">AI Summary</h2>
-                      <p class="text-sm leading-relaxed whitespace-pre-line">${this.escapeHtml(finalSummary)}</p>
-                    </article>`
-                  : ''
-              }
-
-              <div class="space-y-6">${cardsSection}</div>
-            </section>
-
-            <aside class="lg:col-span-1 space-y-6">
-              <section class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col h-[40rem] sticky top-6">
-                <h2 class="text-sm font-semibold text-slate-700 mb-3">Conversation Log</h2>
-                <div class="flex-1 overflow-y-auto space-y-3 pr-1" data-conversation-log>${
-                  conversationHtml ||
-                  '<p class="text-xs text-slate-400">No activity yet. Upload a CSV or start chatting to begin.</p>'
-                }</div>
-                <form id="chat-form" class="mt-3 flex gap-2">
-                  <textarea id="chat-input" data-focus-key="chat-input" rows="2" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm resize-y" placeholder="${
-                    isApiKeySet
-                      ? (isChatDisabled ? 'Agent is working...' : 'Type a message...')
-                      : 'Set an API key first'
-                  }" ${isChatDisabled ? 'disabled' : ''}></textarea>
-                  <button type="submit" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg ${
-                    !isChatDisabled ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'
-                  }" ${isChatDisabled ? 'disabled' : ''}>
-                    ${
-                      isChatDisabled
-                        ? `<span class="inline-flex items-center gap-2">
-                             <span class="h-4 w-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
-                             <span>${this.state.isThinking ? 'Working...' : 'Busy...'}</span>
-                           </span>`
-                        : 'Send'
-                    }
-                  </button>
-                </form>
-              </section>
-              <section class="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-                <div class="flex items-center justify-between gap-2">
-                  <h2 class="text-sm font-semibold text-slate-700">Audit & Repairs</h2>
-                  <button class="text-xs px-2 py-1 border border-slate-300 rounded-md hover:bg-slate-100" data-run-audit>Run Audit</button>
-                </div>
-                <p class="text-xs text-slate-600 leading-relaxed">${auditSummary}</p>
-                <ul class="space-y-2">${auditIssuesHtml}</ul>
-                <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-                  <p class="text-xs font-semibold text-slate-700 mb-1">Auto-repair status</p>
-                  <p class="text-xs text-slate-600 whitespace-pre-line">${repairSummary}</p>
-                  ${
-                    repairTimeLabel
-                      ? `<p class="text-[10px] uppercase tracking-wide text-slate-400 mt-2">${this.escapeHtml(
-                          repairTimeLabel
-                        )}</p>`
-                      : ''
-                  }
-                </div>
-              </section>
-            </aside>
+          </header>
+          <div class="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 lg:px-8 py-6 space-y-6">
+            ${mainContent}
           </div>
         </main>
+        ${assistantPanelHtml}
       </div>
-      ${rawDataPanel}
       ${this.renderSettingsModal()}
+      ${this.renderHistoryPanel()}
     `;
 
     this.bindEvents();
