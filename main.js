@@ -257,9 +257,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         report.issues.slice(0, 5).forEach(issue => {
           this.addProgress(`[${issue.severity.toUpperCase()}] ${issue.message}`);
         });
-        if (report.issues.length > 5) {
+      if (report.issues.length > 5) {
           this.addProgress(`...and ${report.issues.length - 5} more issue(s).`);
         }
+        console.warn('Audit issues detected:', report);
       }
     }
 
@@ -308,6 +309,9 @@ class CsvDataAnalysisApp extends HTMLElement {
       if (hasCriticalIssues(auditReport)) {
         summaryText = 'Audit found critical issues but no automated repair actions are available.';
         this.addProgress(summaryText, 'error');
+        console.error('Critical issues without repair actions:', {
+          auditReport,
+        });
       }
       this.setState({
         lastRepairSummary: summaryText,
@@ -332,11 +336,13 @@ class CsvDataAnalysisApp extends HTMLElement {
       if (action.type === 'plan_patch') {
         try {
           await this.rebuildCardWithPlan(action.cardId, action.patchedPlan);
+          console.info('Applied repair action', action);
         } catch (error) {
           this.addProgress(
             `Failed to apply repair to card ${action.cardId}: ${error instanceof Error ? error.message : String(error)}`,
             'error'
           );
+          console.error('Repair action failure:', { action, error });
         }
       }
     }
@@ -843,7 +849,11 @@ class CsvDataAnalysisApp extends HTMLElement {
         isFirstCard = false;
         this.addProgress(`Analysis card created: ${planTitle}`);
       } catch (error) {
-        console.error(error);
+        console.error('Plan execution error:', error, {
+          plan: normalizedPlan,
+          cardTitle: planTitle,
+          csvDataSample: Array.isArray(csvData?.data) ? csvData.data.slice(0, 5) : null,
+        });
         this.addProgress(
           `Analysis "${planTitle}" failed: ${error instanceof Error ? error.message : String(error)}`,
           'error'
@@ -1173,6 +1183,7 @@ class CsvDataAnalysisApp extends HTMLElement {
           }
           break;
         default:
+          console.error('Unsupported AI action type received:', action);
           this.addProgress('AI returned an unsupported action type.', 'error');
       }
     }
@@ -1953,9 +1964,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         runAuditButton.disabled = true;
         runAuditButton.classList.add('opacity-60', 'cursor-not-allowed');
         try {
-          this.addProgress('Manual audit requested...');
-          const report = await this.runPipelineAudit({ log: true });
-          await this.autoRepairIfNeeded(report);
+      this.addProgress('Manual audit requested...');
+      console.info('Manual audit triggered by user.');
+      const report = await this.runPipelineAudit({ log: true });
+      await this.autoRepairIfNeeded(report);
         } catch (error) {
           this.addProgress(
             `Manual audit failed: ${error instanceof Error ? error.message : String(error)}`,
