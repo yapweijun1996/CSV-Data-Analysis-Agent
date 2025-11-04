@@ -8,13 +8,17 @@
     - [x] **FileUpload**：验证原生实现是否与 `original/csv-data-analysis-agent /components/FileUpload.tsx` 中的行为匹配。确认用户体验对齐（拖放、API密钥门控）。当前的原生实现位于 `main.js` 中。
     - [x] **DataPreviewPanel**：移植或最终确定缺失的预览面板行为。原始文件 `original/csv-data-analysis-agent /components/DataPreviewPanel.tsx` 为空。原生版本有表格渲染助手，但应将其整合。
     - [x] **DataTable & EditableDataTable**：确保与 `original/csv-data-analysis-agent /components/EditableDataTable.tsx` 完全可编辑的电子表格功能对齐。原生版本具有内联编辑功能；确认所有流程（保存/放弃、待定编辑）、分页（50行）、列宽拖动与行号显示保持一致。
-    - [ ] **ChatPanel**：原生聊天仍缺乏多步计划提示与主动洞察体验，需要比照 `original/csv-data-analysis-agent /components/ChatPanel.tsx` 与 `App.tsx`：在多步骤动作前注入 `ai_plan_start` 消息并渲染专属样式；恢复 `generateProactiveInsights` 产出的 `ai_proactive_insight` 消息及“Show Related Card”按钮；在聊天头部补上 Memory 入口并串接记忆面板；当 `currentView === 'file_upload'` 时禁用输入框以保持流程一致。
+    - [ ] **ChatPanel**：原生聊天逐步对齐 React 体验。
+        - [x] 在多步骤动作前注入 `ai_plan_start`，恢复 `ai_proactive_insight` 消息与“Show Related Card”按钮，并在 `currentView === 'file_upload'` 时禁用输入框。
+        - [x] 将数据准备计划与主动洞察输出渲染到 UI，保持与 `App.tsx` 行为一致。
+        - [ ] 验证并修复 DOM 动作（高亮/筛选等）在刷新后的卡片解析流程，重点关注 `main.js` 1664-2099 与 2006-2099 段落。
+        - [ ] 将 Memory 按钮接入真实面板与向量检索；当前仅为占位并输出控制台提示。
     - [ ] **AnalysisPanel & Chart 组件**：从 `original/csv-data-analysis-agent /components/AnalysisPanel.tsx`、`ChartRenderer.tsx` 和 `ChartTypeSwitcher.tsx` 移植任何缺失的交互。除验证工具提示、缩放、选择与 TopN 逻辑外，还需在 `runAnalysisPipeline` 中重新调用 `generateProactiveInsights`，确保分析完成后能推送对应聊天提示。
     - [ ] **辅助组件 & 模态框**：`MemoryPanel` 尚未在原生实现（缺搜索、容量条、结果高亮等）；`SettingsModal` 需恢复 React 中的提供商切换按钮、按提供商显示对应 API Key 字段与获取链接；其余 HistoryPanel、SpreadsheetPanel、FinalSummary、InteractiveLegend 仍需做可访问性与键盘操作对齐检查。
 
 - [ ] **任务2：实现关键缺失服务**
     - [ ] **实现 `services/vectorStore.js`**：从 `original/csv-data-analysis-agent /services/vectorStore.ts` 移植。这是启用AI使用的记忆功能、向量搜索和索引所必需的。 **(当前缺失)**。
-    - [ ] **验证 `services/geminiService.js`**：确保与原始TS实现 (`original/csv-data-analysis-agent /services/geminiService.ts`) 的功能对齐。确认提示细节、流式传输/操作和规范化。
+    - [x] **验证 `services/geminiService.js`**：确保与原始TS实现 (`original/csv-data-analysis-agent /services/geminiService.ts`) 的功能对齐。确认提示细节、流式传输/操作和规范化。已重建 ReAct 提示、记忆/数据准备上下文与行动正规化；需继续配合 DOM 动作验证与 Memory 面板完善。
 
 ## P1：核心逻辑、集成与策略修复
 
@@ -23,6 +27,7 @@
     - [ ] **启用记忆功能**：在 `vectorStore.js` 实现并测试后，在 `main.js` 中将 `ENABLE_MEMORY_FEATURES` 设置为 `true`。
     - [ ] **启用管道修复**：启用并验证管道修复标志 (`ENABLE_PIPELINE_REPAIR`) 和 `utils/repairEngine.js` 的功能对齐。
     - [ ] **验证预处理流程**：通过比较 `dataProcessor.ts` 和 `geminiService.ts` 的逻辑，确保AI驱动的预处理流程与原始版本匹配。
+    - [ ] **补充测试覆盖**：为 `normaliseAiAction` 思路传递与 `applyChatActions` 多步骤执行建立单元/集成测试，确保 DOM 动作与聊天队列稳定。
 
 - [ ] **任务4：解决用户体验、策略和构建约束**
     - [ ] **移除 Tailwind CSS**：项目当前在 `index.html` 中加载 Tailwind。根据项目规则，必须用纯CSS样式表替换。
