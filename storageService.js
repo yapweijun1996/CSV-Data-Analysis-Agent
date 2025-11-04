@@ -141,6 +141,31 @@ export const pruneMemoriesByDataset = async (datasetId, maxEntries = 200) => {
   }
 };
 
+export const deleteMemoryEntry = async id => {
+  if (!id) return false;
+  try {
+    const db = await getDb();
+    await db.delete(MEMORY_STORE_NAME, id);
+    return true;
+  } catch (error) {
+    console.error('Failed to delete memory entry from IndexedDB:', error);
+    return false;
+  }
+};
+
+export const clearAllMemories = async () => {
+  try {
+    const db = await getDb();
+    const txn = db.transaction(MEMORY_STORE_NAME, 'readwrite');
+    await txn.store.clear();
+    await txn.done;
+    return true;
+  } catch (error) {
+    console.error('Failed to clear memories from IndexedDB:', error);
+    return false;
+  }
+};
+
 const defaultSettings = {
   provider: 'google',
   geminiApiKey: '',

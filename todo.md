@@ -11,13 +11,13 @@
     - [ ] **ChatPanel**：原生聊天逐步对齐 React 体验。
         - [x] 在多步骤动作前注入 `ai_plan_start`，恢复 `ai_proactive_insight` 消息与“Show Related Card”按钮，并在 `currentView === 'file_upload'` 时禁用输入框。
         - [x] 将数据准备计划与主动洞察输出渲染到 UI，保持与 `App.tsx` 行为一致。
-        - [ ] 验证并修复 DOM 动作（高亮/筛选等）在刷新后的卡片解析流程，重点关注 `main.js` 1664-2099 与 2006-2099 段落。
+        - [ ] 验证并修复 DOM 动作（高亮/筛选等）在刷新后的卡片解析流程，重点关注 `main.js` 1664-2099 与 2006-2099 段落。已新增卡片 ID 别名注册与解析逻辑重试，高亮路径待回归测试确认。
         - [ ] 将 Memory 按钮接入真实面板与向量检索；当前仅为占位并输出控制台提示。
     - [ ] **AnalysisPanel & Chart 组件**：从 `original/csv-data-analysis-agent /components/AnalysisPanel.tsx`、`ChartRenderer.tsx` 和 `ChartTypeSwitcher.tsx` 移植任何缺失的交互。除验证工具提示、缩放、选择与 TopN 逻辑外，还需在 `runAnalysisPipeline` 中重新调用 `generateProactiveInsights`，确保分析完成后能推送对应聊天提示。
-    - [ ] **辅助组件 & 模态框**：`MemoryPanel` 尚未在原生实现（缺搜索、容量条、结果高亮等）；`SettingsModal` 需恢复 React 中的提供商切换按钮、按提供商显示对应 API Key 字段与获取链接；其余 HistoryPanel、SpreadsheetPanel、FinalSummary、InteractiveLegend 仍需做可访问性与键盘操作对齐检查。
+    - [ ] **辅助组件 & 模态框**：`MemoryPanel` 已加入底板（模型加载、搜索、删除、清空、容量条）；仍需补充：首次载入回灌旧记忆、结果高亮回滚说明与键盘可访问性。`SettingsModal` 需恢复 React 中的提供商切换按钮、按提供商显示对应 API Key 字段与获取链接；其余 HistoryPanel、SpreadsheetPanel、FinalSummary、InteractiveLegend 仍需做可访问性与键盘操作对齐检查。
 
 - [ ] **任务2：实现关键缺失服务**
-    - [ ] **实现 `services/vectorStore.js`**：从 `original/csv-data-analysis-agent /services/vectorStore.ts` 移植。这是启用AI使用的记忆功能、向量搜索和索引所必需的。 **(当前缺失)**。
+    - [x] **实现 `services/vectorStore.js`**：从 `original/csv-data-analysis-agent /services/vectorStore.ts` 移植。这是启用AI使用的记忆功能、向量搜索和索引所必需的。现已优先加载本地模型 (`/models/all-MiniLM-L6-v2`)，缺失时自动回退 CDN / 轻量嵌入；后续仍需补全记忆回灌与性能评估。
     - [x] **验证 `services/geminiService.js`**：确保与原始TS实现 (`original/csv-data-analysis-agent /services/geminiService.ts`) 的功能对齐。确认提示细节、流式传输/操作和规范化。已重建 ReAct 提示、记忆/数据准备上下文与行动正规化；需继续配合 DOM 动作验证与 Memory 面板完善。
 
 ## P1：核心逻辑、集成与策略修复

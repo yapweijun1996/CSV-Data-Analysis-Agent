@@ -25,7 +25,14 @@ import {
 } from './storageService.js';
 import { getSkillCatalog } from './services/skillLibrary.js';
 import { detectIntent } from './utils/intentClassifier.js';
-import { storeMemory, retrieveRelevantMemories } from './services/memoryService.js';
+import {
+  storeMemory,
+  retrieveRelevantMemories,
+  initMemoryVectorStore,
+  removeMemory,
+  clearMemoryStore,
+} from './services/memoryService.js';
+import { vectorStore } from './services/vectorStore.js';
 import { auditAnalysisState } from './utils/pipelineAudit.js';
 import {
   determineRepairActions,
@@ -46,6 +53,7 @@ const SUPPORTED_AGGREGATIONS = new Set(['sum', 'count', 'avg']);
 const RAW_ROWS_PER_PAGE = 50;
 const MIN_RAW_COLUMN_WIDTH = 60;
 const DEFAULT_RAW_COLUMN_WIDTH = 120;
+const MEMORY_CAPACITY_KB = 5 * 1024;
 const DOM_ACTION_TOOL_NAMES = new Set([
   'highlightCard',
   'clearHighlight',
@@ -66,8 +74,20 @@ const DOM_ACTION_TOOL_NAMES = new Set([
 const MIN_ASIDE_WIDTH = 320;
 const MAX_ASIDE_WIDTH = 800;
 let zoomPluginRegistered = false;
-const ENABLE_MEMORY_FEATURES = false;
+const ENABLE_MEMORY_FEATURES = true;
 const ENABLE_PIPELINE_REPAIR = false;
+
+const normaliseTitleKey = value => {
+  if (typeof value !== 'string') {
+    if (value && typeof value.toString === 'function') {
+      const text = value.toString();
+      return text ? text.trim().toLowerCase() : null;
+    }
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed.toLowerCase() : null;
+};
 
 class CsvDataAnalysisApp extends HTMLElement {
   constructor() {
@@ -109,6 +129,12 @@ class CsvDataAnalysisApp extends HTMLElement {
       isHistoryPanelOpen: false,
       isAsideVisible: true,
       asideWidth: defaultAsideWidth,
+      isMemoryPanelOpen: false,
+      memoryPanelDocuments: [],
+      memoryPanelQuery: '',
+      memoryPanelResults: [],
+      memoryPanelHighlightedId: null,
+      memoryPanelIsSearching: false,
     };
     this.settings = getSettings();
     this.chartInstances = new Map();
@@ -131,6 +157,10 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.boundDocumentClick = this.onDocumentClick.bind(this);
     this.pendingRawEdits = new Map();
     this.rawEditDatasetId = this.getCurrentDatasetId();
+    this.cardTitleRegistry = new Map();
+    this.cardIdAlias = new Map();
+    this.memoryVectorReady = false;
+    this.lastReferencedCard = null;
   }
 
   captureSerializableAppState() {
@@ -219,6 +249,35 @@ class CsvDataAnalysisApp extends HTMLElement {
             : true,
         isExporting: false,
       }));
+    }
+
+    if (Array.isArray(restored.chatHistory) && Array.isArray(restored.analysisCards)) {
+      restored.chatHistory = restored.chatHistory.map(entry => {
+        if (!entry || entry.cardTitle || !entry.cardId) {
+          return entry;
+        }
+        const card = restored.analysisCards.find(cardItem => cardItem.id === entry.cardId);
+        return card?.plan?.title ? { ...entry, cardTitle: card.plan.title } : entry;
+      });
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(restored, 'isMemoryPanelOpen')) {
+      restored.isMemoryPanelOpen = false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(restored, 'memoryPanelDocuments')) {
+      restored.memoryPanelDocuments = [];
+    }
+    if (!Object.prototype.hasOwnProperty.call(restored, 'memoryPanelQuery')) {
+      restored.memoryPanelQuery = '';
+    }
+    if (!Object.prototype.hasOwnProperty.call(restored, 'memoryPanelResults')) {
+      restored.memoryPanelResults = [];
+    }
+    if (!Object.prototype.hasOwnProperty.call(restored, 'memoryPanelHighlightedId')) {
+      restored.memoryPanelHighlightedId = null;
+    }
+    if (!Object.prototype.hasOwnProperty.call(restored, 'memoryPanelIsSearching')) {
+      restored.memoryPanelIsSearching = false;
     }
 
     if (!restored.currentView) {
@@ -703,12 +762,339 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (!nextPartial || typeof nextPartial !== 'object') {
       return;
     }
+    const nextState = { ...prevState, ...nextPartial };
+    const hasAnalysisCardsUpdate = Object.prototype.hasOwnProperty.call(nextPartial, 'analysisCards');
     this.captureConversationScrollPosition();
     this.captureMainScrollPosition();
-    this.state = { ...prevState, ...nextPartial };
+    if (hasAnalysisCardsUpdate) {
+      const cards = Array.isArray(nextState.analysisCards) ? nextState.analysisCards : [];
+      this.syncCardRegistries(cards);
+    }
+    this.state = nextState;
     this.captureFocus();
     this.scheduleRender();
     this.scheduleSessionSave();
+  }
+
+  resetCardRegistries() {
+    if (this.cardTitleRegistry) {
+      this.cardTitleRegistry.clear();
+    } else {
+      this.cardTitleRegistry = new Map();
+    }
+    if (this.cardIdAlias) {
+      this.cardIdAlias.clear();
+    } else {
+      this.cardIdAlias = new Map();
+    }
+    this.lastReferencedCard = null;
+  }
+
+  linkAliasToCard(card, aliasId = null) {
+    if (!card || typeof card !== 'object') return;
+    const canonicalId = typeof card.id === 'string' ? card.id : null;
+    if (!canonicalId) return;
+
+    if (!this.cardIdAlias) {
+      this.cardIdAlias = new Map();
+    }
+    this.cardIdAlias.set(canonicalId, canonicalId);
+
+    const shouldLinkAlias = typeof aliasId === 'string' && aliasId && aliasId !== canonicalId;
+    const titleKey = normaliseTitleKey(card.plan?.title);
+    if (!titleKey) {
+      if (shouldLinkAlias) {
+        this.cardIdAlias.set(aliasId, canonicalId);
+      }
+      return;
+    }
+
+    if (!this.cardTitleRegistry) {
+      this.cardTitleRegistry = new Map();
+    }
+    let record = this.cardTitleRegistry.get(titleKey);
+    if (!record) {
+      record = { latestId: canonicalId, history: new Set() };
+    }
+    record.latestId = canonicalId;
+    record.history.add(canonicalId);
+    if (shouldLinkAlias) {
+      record.history.add(aliasId);
+    }
+    this.cardTitleRegistry.set(titleKey, record);
+
+    record.history.forEach(existingAlias => {
+      if (existingAlias && typeof existingAlias === 'string') {
+        this.cardIdAlias.set(existingAlias, canonicalId);
+      }
+    });
+  }
+
+  registerAnalysisCard(card) {
+    if (!card || typeof card !== 'object') return;
+    this.linkAliasToCard(card);
+  }
+
+  syncCardRegistries(cards) {
+    if (!Array.isArray(cards)) return;
+    cards.forEach(card => this.registerAnalysisCard(card));
+  }
+
+  async ensureMemoryVectorReady(progressCallback) {
+    if (!ENABLE_MEMORY_FEATURES) {
+      return false;
+    }
+    if (this.memoryVectorReady) {
+      return true;
+    }
+    const callback =
+      typeof progressCallback === 'function'
+        ? progressCallback
+        : message => this.addProgress(message);
+    const initialised = await initMemoryVectorStore(callback);
+    this.memoryVectorReady = Boolean(initialised);
+    return this.memoryVectorReady;
+  }
+
+  async openMemoryPanel() {
+    if (!ENABLE_MEMORY_FEATURES) {
+      this.addProgress('Memory features are currently disabled.', 'error');
+      return;
+    }
+    this.setState({
+      isMemoryPanelOpen: true,
+      memoryPanelQuery: '',
+      memoryPanelResults: [],
+      memoryPanelHighlightedId: null,
+      memoryPanelIsSearching: false,
+    });
+    await this.ensureMemoryVectorReady(message => this.addProgress(message));
+    this.refreshMemoryDocuments();
+  }
+
+  closeMemoryPanel() {
+    this.setState({
+      isMemoryPanelOpen: false,
+      memoryPanelQuery: '',
+      memoryPanelResults: [],
+      memoryPanelHighlightedId: null,
+      memoryPanelIsSearching: false,
+    });
+  }
+
+  refreshMemoryDocuments() {
+    if (!ENABLE_MEMORY_FEATURES) {
+      return;
+    }
+    const docs = vectorStore.getDocuments();
+    this.setState(prev => ({
+      memoryPanelDocuments: docs,
+      memoryPanelHighlightedId: docs.some(doc => doc.id === prev.memoryPanelHighlightedId)
+        ? prev.memoryPanelHighlightedId
+        : null,
+    }));
+  }
+
+  async searchMemoryPanel(query) {
+    if (!ENABLE_MEMORY_FEATURES) return;
+    const text = typeof query === 'string' ? query : '';
+    const trimmed = text.trim();
+    this.setState({
+      memoryPanelIsSearching: true,
+      memoryPanelHighlightedId: null,
+      memoryPanelQuery: text,
+    });
+    if (!trimmed) {
+      if (text.length) {
+        this.addProgress('Enter non-whitespace characters to search memories.', 'error');
+      }
+      this.setState({
+        memoryPanelResults: [],
+        memoryPanelIsSearching: false,
+      });
+      return;
+    }
+    await this.ensureMemoryVectorReady();
+    try {
+      this.addProgress(`Searching memory for "${trimmed}"...`);
+      const results = await vectorStore.search(trimmed, 5);
+      this.setState({
+        memoryPanelResults: results,
+        memoryPanelIsSearching: false,
+      });
+      this.addProgress(
+        results.length
+          ? `Found ${results.length} matching memory item${results.length === 1 ? '' : 's'}.`
+          : 'No stored memories matched that query.'
+      );
+    } catch (error) {
+      console.warn('Memory search failed.', error);
+      this.setState({
+        memoryPanelResults: [],
+        memoryPanelIsSearching: false,
+      });
+      this.addProgress('Unable to search memory right now.', 'error');
+    }
+  }
+
+  focusMemoryDocument(docId) {
+    if (!docId) return;
+    this.setState({ memoryPanelHighlightedId: docId });
+    queueMicrotask(() => {
+      try {
+        const escapedId =
+          typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+            ? CSS.escape(docId)
+            : docId.replace(/"/g, '\\"');
+        const element = this.querySelector(`[data-memory-doc="${escapedId}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      } catch (error) {
+        console.warn('Failed to focus memory document element.', error);
+      }
+    });
+  }
+
+  async handleMemoryDelete(id) {
+    if (!id) return;
+    if (typeof window !== 'undefined' && !window.confirm('Delete this memory entry? This action cannot be undone.')) {
+      return;
+    }
+    const success = await removeMemory(id);
+    if (!success) {
+      this.addProgress('Failed to delete memory entry.', 'error');
+      return;
+    }
+    this.refreshMemoryDocuments();
+    this.setState(prev => ({
+      memoryPanelResults: Array.isArray(prev.memoryPanelResults)
+        ? prev.memoryPanelResults.filter(item => item.id !== id)
+        : [],
+      memoryPanelHighlightedId: prev.memoryPanelHighlightedId === id ? null : prev.memoryPanelHighlightedId,
+    }));
+  }
+
+  async handleMemoryClear() {
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm('Clear all memorised items for this assistant? This cannot be undone.')
+    ) {
+      return;
+    }
+    try {
+      await clearMemoryStore();
+      this.refreshMemoryDocuments();
+      this.setState({
+        memoryPanelResults: [],
+        memoryPanelHighlightedId: null,
+        memoryPanelQuery: '',
+      });
+    } catch (error) {
+      console.warn('Failed to clear memory store.', error);
+      this.addProgress('Failed to clear AI memory entries.', 'error');
+    }
+  }
+
+  calculateMemoryUsage(documents) {
+    if (!Array.isArray(documents) || !documents.length) {
+      return 0;
+    }
+    const textSize = documents.reduce((total, doc) => total + (doc.text?.length || 0) * 2, 0);
+    const embeddingSize = documents.reduce((total, doc) => {
+      const embedding = doc.embedding || {};
+      if (embedding.type === 'transformer' && Array.isArray(embedding.values)) {
+        return total + embedding.values.length * 4;
+      }
+      if (embedding.type === 'bow' && embedding.weights) {
+        return total + Object.keys(embedding.weights).length * 8;
+      }
+      if (Array.isArray(embedding)) {
+        return total + embedding.length * 4;
+      }
+      if (embedding.weights) {
+        return total + Object.keys(embedding.weights).length * 8;
+      }
+      return total;
+    }, 0);
+    return (textSize + embeddingSize) / 1024;
+  }
+
+  getCardByIdOrAlias(cardId) {
+    if (typeof cardId !== 'string' || !cardId) {
+      return null;
+    }
+    const direct = this.state.analysisCards.find(card => card.id === cardId);
+    if (direct) {
+      return direct;
+    }
+    if (this.cardIdAlias && typeof this.cardIdAlias.get === 'function') {
+      const canonicalId = this.cardIdAlias.get(cardId);
+      if (canonicalId && typeof canonicalId === 'string') {
+        const aliasCard = this.state.analysisCards.find(card => card.id === canonicalId);
+        if (aliasCard) {
+          return aliasCard;
+        }
+      }
+    }
+    return null;
+  }
+
+  resolveCardReference(cardIdInput, fallbackTitle) {
+    const trimmedTitle =
+      typeof fallbackTitle === 'string' && fallbackTitle.trim() ? fallbackTitle.trim() : null;
+    const titleKey = trimmedTitle ? normaliseTitleKey(trimmedTitle) : null;
+
+    let card = null;
+    let resolvedId = null;
+
+    if (typeof cardIdInput === 'string' && cardIdInput) {
+      card = this.getCardByIdOrAlias(cardIdInput);
+      if (card) {
+        resolvedId = card.id;
+      }
+    }
+
+    if (!card && titleKey) {
+      card =
+        this.state.analysisCards.find(
+          existing => normaliseTitleKey(existing.plan?.title) === titleKey
+        ) || null;
+      if (!card) {
+        const registry =
+          this.cardTitleRegistry && typeof this.cardTitleRegistry.get === 'function'
+            ? this.cardTitleRegistry.get(titleKey)
+            : null;
+        if (registry?.latestId) {
+          card =
+            this.state.analysisCards.find(existing => existing.id === registry.latestId) || card;
+        }
+      }
+      if (card) {
+        resolvedId = card.id;
+      }
+    }
+
+    if (card) {
+      if (typeof cardIdInput === 'string' && cardIdInput && cardIdInput !== card.id) {
+        this.linkAliasToCard(card, cardIdInput);
+      } else {
+        this.linkAliasToCard(card);
+      }
+      this.lastReferencedCard = {
+        id: card.id,
+        title: card.plan?.title || trimmedTitle || null,
+      };
+    }
+
+    const fallback =
+      card?.plan?.title || (trimmedTitle && trimmedTitle.length ? trimmedTitle : null) || null;
+
+    return {
+      card,
+      cardId: resolvedId || (typeof cardIdInput === 'string' ? cardIdInput : null),
+      fallbackTitle: fallback,
+    };
   }
 
   captureFocus() {
@@ -1177,6 +1563,7 @@ class CsvDataAnalysisApp extends HTMLElement {
   async handleFileInput(file) {
     if (!file) return;
     this.clearPendingRawEdits();
+    this.resetCardRegistries();
     const prevCsv = this.state.csvData;
     if (prevCsv && Array.isArray(prevCsv.data) && prevCsv.data.length) {
       await this.archiveCurrentSession();
@@ -1420,6 +1807,7 @@ class CsvDataAnalysisApp extends HTMLElement {
         createdCards.push(newCard);
         if (ENABLE_MEMORY_FEATURES) {
           try {
+            await this.ensureMemoryVectorReady();
             await storeMemory(datasetId, {
               kind: 'analysis_plan',
               intent: normalizedPlan?.aggregation ? 'analysis' : 'general',
@@ -1430,6 +1818,9 @@ class CsvDataAnalysisApp extends HTMLElement {
                 sampleRows: aggregatedData.slice(0, 10),
               },
             });
+            if (this.state.isMemoryPanelOpen) {
+              this.refreshMemoryDocuments();
+            }
           } catch (memoryError) {
             console.warn('Failed to store analysis memory entry.', memoryError);
           }
@@ -1488,7 +1879,14 @@ class CsvDataAnalysisApp extends HTMLElement {
           timestamp: new Date(),
           type: 'ai_proactive_insight',
           cardId: proactiveInsight.cardId,
+          cardTitle: targetCard?.plan?.title || null,
         };
+        if (targetCard) {
+          this.lastReferencedCard = {
+            id: targetCard.id,
+            title: targetCard.plan?.title || null,
+          };
+        }
         this.setState(prev => ({
           chatHistory: [...prev.chatHistory, insightMessage],
         }));
@@ -1504,6 +1902,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.addProgress('Overall summary created.');
       if (ENABLE_MEMORY_FEATURES) {
         try {
+          await this.ensureMemoryVectorReady();
           await storeMemory(datasetId, {
             kind: 'summary',
             intent: 'narrative',
@@ -1516,6 +1915,9 @@ class CsvDataAnalysisApp extends HTMLElement {
               })),
             },
           });
+          if (this.state.isMemoryPanelOpen) {
+            this.refreshMemoryDocuments();
+          }
         } catch (memoryError) {
           console.warn('Failed to store final summary memory entry.', memoryError);
         }
@@ -1569,12 +1971,16 @@ class CsvDataAnalysisApp extends HTMLElement {
       const datasetId = this.getCurrentDatasetId();
       if (ENABLE_MEMORY_FEATURES) {
         try {
+          await this.ensureMemoryVectorReady();
           await storeMemory(datasetId, {
             kind: 'user_prompt',
             intent: userIntent,
             text: message,
             summary: message.slice(0, 220),
           });
+          if (this.state.isMemoryPanelOpen) {
+            this.refreshMemoryDocuments();
+          }
         } catch (memoryError) {
           console.warn('Failed to store user prompt memory entry.', memoryError);
         }
@@ -1587,9 +1993,11 @@ class CsvDataAnalysisApp extends HTMLElement {
       }));
       const rawDataSample = this.state.csvData.data.slice(0, 20);
       const metadata = this.state.csvMetadata || this.state.csvData?.metadata || null;
-      const memoryContext = ENABLE_MEMORY_FEATURES
-        ? await retrieveRelevantMemories(datasetId, message, 6)
-        : [];
+      let memoryContext = [];
+      if (ENABLE_MEMORY_FEATURES) {
+        await this.ensureMemoryVectorReady();
+        memoryContext = await retrieveRelevantMemories(datasetId, message, 6);
+      }
       const response = await generateChatResponse(
         this.state.columnProfiles,
         this.state.chatHistory,
@@ -1628,35 +2036,6 @@ class CsvDataAnalysisApp extends HTMLElement {
       return { success: false, error: 'DOM action requires a toolName.' };
     }
 
-    const normaliseTitleKey = value => {
-      if (typeof value !== 'string') {
-        if (value && typeof value.toString === 'function') {
-          const text = value.toString();
-          return text ? text.trim().toLowerCase() : null;
-        }
-        return null;
-      }
-      const trimmed = value.trim();
-      return trimmed ? trimmed.toLowerCase() : null;
-    };
-
-    const lookupCard = (id, fallbackTitle) => {
-      if (id) {
-        const direct = this.state.analysisCards.find(card => card.id === id);
-        if (direct) {
-          return direct;
-        }
-      }
-      const titleKey = normaliseTitleKey(fallbackTitle);
-      if (titleKey) {
-        return this.state.analysisCards.find(card => {
-          const planTitle = normaliseTitleKey(card.plan?.title);
-          return planTitle === titleKey;
-        });
-      }
-      return null;
-    };
-
     const resolveCardContext = payload => {
       const args = payload && typeof payload.args === 'object' ? payload.args : {};
       const cardIdInput =
@@ -1678,12 +2057,27 @@ class CsvDataAnalysisApp extends HTMLElement {
         payload.name ??
         payload.card_name ??
         null;
-      const card = lookupCard(cardIdInput, fallbackTitle);
-      return {
-        card,
-        cardId: card?.id ?? cardIdInput ?? null,
-        fallbackTitle: typeof fallbackTitle === 'string' ? fallbackTitle.trim() : null,
-      };
+      const resolved = this.resolveCardReference(cardIdInput, fallbackTitle);
+      if (!resolved.card) {
+        const last = this.lastReferencedCard;
+        if (last?.id || last?.title) {
+          const fallbackCard = last.id ? this.getCardByIdOrAlias(last.id) : null;
+          if (fallbackCard) {
+            return {
+              card: fallbackCard,
+              cardId: fallbackCard.id,
+              fallbackTitle: fallbackCard.plan?.title || last.title || resolved.fallbackTitle || null,
+            };
+          }
+          if (!resolved.cardId && last.title) {
+            const titleFallback = this.resolveCardReference(null, last.title);
+            if (titleFallback.card) {
+              return titleFallback;
+            }
+          }
+        }
+      }
+      return resolved;
     };
 
     const describeCardTarget = (card, fallbackTitle, fallbackId) => {
@@ -2081,6 +2475,18 @@ class CsvDataAnalysisApp extends HTMLElement {
       switch (action.responseType) {
         case 'text_response':
           {
+            const context = this.resolveCardReference(action.cardId, action.cardTitle);
+            if (context.card) {
+              this.lastReferencedCard = {
+                id: context.card.id,
+                title: context.fallbackTitle || context.card.plan?.title || null,
+              };
+            } else if (context.cardId || context.fallbackTitle) {
+              this.lastReferencedCard = {
+                id: context.cardId || null,
+                title: context.fallbackTitle || null,
+              };
+            }
             const shouldStick = this.isConversationNearBottom();
             this.setState(prev => ({
               chatHistory: [
@@ -2090,7 +2496,8 @@ class CsvDataAnalysisApp extends HTMLElement {
                   text: action.text || '',
                   timestamp: new Date(),
                   type: 'ai_message',
-                  cardId: action.cardId,
+                  cardId: context.cardId,
+                  cardTitle: context.fallbackTitle,
                 },
               ],
             }));
@@ -2100,6 +2507,7 @@ class CsvDataAnalysisApp extends HTMLElement {
           }
           if (action.text && ENABLE_MEMORY_FEATURES) {
             try {
+              await this.ensureMemoryVectorReady();
               await storeMemory(datasetId, {
                 kind: 'chat_response',
                 intent: 'narrative',
@@ -2107,6 +2515,9 @@ class CsvDataAnalysisApp extends HTMLElement {
                 summary: action.text.slice(0, 220),
                 metadata: { cardId: action.cardId },
               });
+              if (this.state.isMemoryPanelOpen) {
+                this.refreshMemoryDocuments();
+              }
             } catch (memoryError) {
               console.warn('Failed to store AI chat memory entry.', memoryError);
             }
@@ -2131,6 +2542,7 @@ class CsvDataAnalysisApp extends HTMLElement {
               );
               if (result.success && ENABLE_MEMORY_FEATURES) {
                 try {
+                  await this.ensureMemoryVectorReady();
                   await storeMemory(datasetId, {
                     kind: 'transformation',
                     intent: 'cleaning',
@@ -2138,6 +2550,9 @@ class CsvDataAnalysisApp extends HTMLElement {
                     summary: 'AI transformation applied to dataset.',
                     metadata: { codePreview: action.code.jsFunctionBody.slice(0, 200) },
                   });
+                  if (this.state.isMemoryPanelOpen) {
+                    this.refreshMemoryDocuments();
+                  }
                 } catch (memoryError) {
                   console.warn('Failed to store transformation memory entry.', memoryError);
                 }
@@ -2157,6 +2572,18 @@ class CsvDataAnalysisApp extends HTMLElement {
           {
             const result = await this.handleDomAction(action.domAction);
             if (result.success) {
+              if (action.domAction && typeof action.domAction === 'object') {
+                const context = this.resolveCardReference(
+                  action.domAction.cardId ?? null,
+                  action.domAction.cardTitle ?? action.domAction.title ?? null
+                );
+                if (context.card) {
+                  this.lastReferencedCard = {
+                    id: context.card.id,
+                    title: context.fallbackTitle || context.card.plan?.title || null,
+                  };
+                }
+              }
               if (result.message) {
                 this.addProgress(result.message);
               }
@@ -2165,6 +2592,7 @@ class CsvDataAnalysisApp extends HTMLElement {
             }
             if (result.success && ENABLE_MEMORY_FEATURES && action.domAction) {
               try {
+                await this.ensureMemoryVectorReady();
                 await storeMemory(datasetId, {
                   kind: 'dom_action',
                   intent: 'interaction',
@@ -2172,6 +2600,9 @@ class CsvDataAnalysisApp extends HTMLElement {
                   summary: 'Saved assistant UI action.',
                   metadata: { domAction: action.domAction },
                 });
+                if (this.state.isMemoryPanelOpen) {
+                  this.refreshMemoryDocuments();
+                }
               } catch (memoryError) {
                 console.warn('Failed to store DOM action memory entry.', memoryError);
               }
@@ -2401,6 +2832,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       }
       const previousFlag = this.isRestoringSession;
       this.isRestoringSession = true;
+      this.resetCardRegistries();
       this.setState(prev => ({
         ...prev,
         ...restored,
@@ -2453,6 +2885,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
     const previousFlag = this.isRestoringSession;
     this.isRestoringSession = true;
+    this.resetCardRegistries();
     this.setState(prev => ({
       ...prev,
       currentView: 'file_upload',
@@ -3556,10 +3989,7 @@ class CsvDataAnalysisApp extends HTMLElement {
 
     this.querySelectorAll('[data-open-memory]').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.addProgress(
-          'Memory panel is not available yet in this vanilla build. It will be enabled once vector storage support is implemented.',
-          'error'
-        );
+        this.openMemoryPanel();
       });
     });
 
@@ -3616,13 +4046,24 @@ class CsvDataAnalysisApp extends HTMLElement {
     });
 
     this.querySelectorAll('[data-show-card]').forEach(btn => {
-      const cardId = btn.dataset.showCard;
+      const rawCardId = btn.dataset.showCard || null;
+      const fallbackTitle = btn.dataset.showCardTitle || null;
       btn.addEventListener('click', () => {
-        if (!cardId) return;
-        const highlighted = this.highlightCard(cardId, { scrollIntoView: true });
-        if (!highlighted) {
-          this.addProgress(`Could not find card ID ${cardId} to show.`, 'error');
+        if (!rawCardId && !fallbackTitle) {
+          return;
         }
+        const { cardId, card, fallbackTitle: resolvedTitle } = this.resolveCardReference(
+          rawCardId,
+          fallbackTitle
+        );
+        if (cardId) {
+          const highlighted = this.highlightCard(cardId, { scrollIntoView: true });
+          if (highlighted) {
+            return;
+          }
+        }
+        const label = card?.plan?.title || resolvedTitle || rawCardId || 'card';
+        this.addProgress(`Could not find card ${label} to show.`, 'error');
       });
     });
 
@@ -4143,6 +4584,12 @@ class CsvDataAnalysisApp extends HTMLElement {
         const timeLabel = hasTime
           ? timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : '';
+        const showCardContext =
+          entry.cardId || entry.cardTitle
+            ? this.resolveCardReference(entry.cardId || null, entry.cardTitle || null)
+            : null;
+        const resolvedCardId = showCardContext?.cardId || entry.cardId || null;
+        const resolvedCardTitle = showCardContext?.fallbackTitle || entry.cardTitle || null;
 
         if (entry.__kind === 'progress') {
           const colorClass = entry.type === 'error' ? 'text-rose-600' : 'text-slate-500';
@@ -4177,8 +4624,12 @@ class CsvDataAnalysisApp extends HTMLElement {
         }
 
         if (entry.type === 'ai_proactive_insight') {
-          const insightButton = entry.cardId
-            ? `<button type="button" class="mt-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md hover:bg-amber-200 transition-colors font-medium" data-show-card="${this.escapeHtml(entry.cardId)}">
+          const insightButton = resolvedCardId
+            ? `<button type="button" class="mt-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md hover:bg-amber-200 transition-colors font-medium" data-show-card="${this.escapeHtml(resolvedCardId)}"${
+                resolvedCardTitle
+                  ? ` data-show-card-title="${this.escapeHtml(resolvedCardTitle)}"`
+                  : ''
+              }>
                  → Show Related Card
                </button>`
             : '';
@@ -4231,7 +4682,7 @@ class CsvDataAnalysisApp extends HTMLElement {
 
         const metaParts = [];
         if (timeLabel) metaParts.push(timeLabel);
-        if (entry.cardId) metaParts.push(`Card ${entry.cardId}`);
+        if (resolvedCardId) metaParts.push(`Card ${resolvedCardId}`);
         const metaLine = metaParts.filter(Boolean).map(part => this.escapeHtml(part)).join(' • ');
 
         const senderBadge = sender === 'user'
@@ -4240,8 +4691,10 @@ class CsvDataAnalysisApp extends HTMLElement {
           ? '<span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold text-[10px] uppercase tracking-wide">AI</span>'
           : '';
 
-        const cardButton = entry.cardId && !entry.isError
-          ? `<button type="button" class="mt-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md hover:bg-blue-200 transition-colors w-full text-left font-medium" data-show-card="${this.escapeHtml(entry.cardId)}">
+        const cardButton = resolvedCardId && !entry.isError
+          ? `<button type="button" class="mt-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md hover:bg-blue-200 transition-colors w-full text-left font-medium" data-show-card="${this.escapeHtml(resolvedCardId)}"${
+              resolvedCardTitle ? ` data-show-card-title="${this.escapeHtml(resolvedCardTitle)}"` : ''
+            }>
                 → Show Related Card
              </button>`
           : '';
@@ -4322,6 +4775,238 @@ class CsvDataAnalysisApp extends HTMLElement {
         language,
       });
     });
+  }
+
+  bindMemoryPanelEvents() {
+    if (!this.state.isMemoryPanelOpen) {
+      return;
+    }
+    const overlay = this.querySelector('[data-memory-overlay]');
+    if (overlay) {
+      overlay.addEventListener('click', () => this.closeMemoryPanel());
+    }
+    const panel = this.querySelector('[data-memory-panel]');
+    if (panel) {
+      panel.addEventListener('click', event => event.stopPropagation());
+    }
+    const closeBtn = this.querySelector('[data-memory-close]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeMemoryPanel());
+    }
+    const clearBtn = this.querySelector('[data-memory-clear-all]');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => this.handleMemoryClear());
+    }
+    const refreshBtn = this.querySelector('[data-memory-refresh]');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => this.refreshMemoryDocuments());
+    }
+    const searchInput = this.querySelector('[data-memory-search-input]');
+    if (searchInput) {
+      searchInput.addEventListener('input', event => {
+        const value = event.target?.value ?? '';
+        this.setState({ memoryPanelQuery: value });
+      });
+      searchInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.isComposing) {
+          event.preventDefault();
+          const value = event.target?.value ?? '';
+          this.searchMemoryPanel(value);
+        }
+      });
+      if (searchInput instanceof HTMLElement) {
+        searchInput.focus();
+        searchInput.setSelectionRange?.(searchInput.value.length, searchInput.value.length);
+      }
+    }
+    const searchButton = this.querySelector('[data-memory-search]');
+    if (searchButton) {
+      searchButton.addEventListener('click', () => {
+        const input = this.querySelector('[data-memory-search-input]');
+        const value = input?.value || '';
+        this.searchMemoryPanel(value);
+      });
+    }
+    this.querySelectorAll('[data-memory-delete]').forEach(btn => {
+      const id = btn.getAttribute('data-memory-delete');
+      btn.addEventListener('click', () => {
+        this.handleMemoryDelete(id);
+      });
+    });
+    this.querySelectorAll('[data-memory-search-result]').forEach(btn => {
+      const docId = btn.getAttribute('data-memory-search-result');
+      btn.addEventListener('click', () => {
+        if (docId) {
+          this.focusMemoryDocument(docId);
+        }
+      });
+    });
+  }
+
+  renderMemoryPanel() {
+    if (!this.state.isMemoryPanelOpen) {
+      return '';
+    }
+    const documents = Array.isArray(this.state.memoryPanelDocuments)
+      ? this.state.memoryPanelDocuments
+      : [];
+    const query = typeof this.state.memoryPanelQuery === 'string' ? this.state.memoryPanelQuery : '';
+    const results = Array.isArray(this.state.memoryPanelResults)
+      ? this.state.memoryPanelResults
+      : [];
+    const isSearching = Boolean(this.state.memoryPanelIsSearching);
+    const highlightedId = this.state.memoryPanelHighlightedId;
+    const memoryUsage = this.calculateMemoryUsage(documents);
+    const usagePercentage = Math.min((memoryUsage / MEMORY_CAPACITY_KB) * 100, 100);
+    const modelStatus = this.memoryVectorReady ? 'Model ready' : 'Loading memory model...';
+
+    const documentsHtml = documents.length
+      ? documents
+          .map(doc => {
+            const safeId = this.escapeHtml(doc.id || '');
+            const snippet = typeof doc.text === 'string' ? doc.text.slice(0, 280) : '';
+            const displayText =
+              snippet.length < (doc.text || '').length ? `${snippet}…` : snippet;
+            const metadata = doc.metadata || {};
+            const datasetLabel = metadata.datasetId ? `Dataset: ${metadata.datasetId}` : 'Dataset: default';
+            const intentLabel = metadata.intent ? `Intent: ${metadata.intent}` : '';
+            const kindLabel = metadata.kind ? metadata.kind : 'note';
+            const createdAt = metadata.createdAt ? new Date(metadata.createdAt) : null;
+            const createdLabel =
+              createdAt && !Number.isNaN(createdAt.getTime())
+                ? createdAt.toLocaleString()
+                : '';
+            const isHighlighted = highlightedId && doc.id === highlightedId;
+            const cardId = metadata.metadata?.cardId || metadata.cardId;
+            const highlightClasses = isHighlighted
+              ? 'border-blue-400 ring-2 ring-blue-300 bg-blue-50'
+              : 'border-slate-200 bg-white';
+            return `
+              <li class="border ${highlightClasses} rounded-lg p-4 shadow-sm transition-colors duration-200" data-memory-doc="${safeId}">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                      <span class="px-2 py-0.5 bg-slate-100 rounded-md">${this.escapeHtml(kindLabel)}</span>
+                      ${intentLabel ? `<span class="px-2 py-0.5 bg-slate-100 rounded-md">${this.escapeHtml(intentLabel)}</span>` : ''}
+                      ${cardId ? `<span class="px-2 py-0.5 bg-slate-100 rounded-md">Card: ${this.escapeHtml(cardId)}</span>` : ''}
+                      ${isHighlighted ? '<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md font-semibold">Highlighted</span>' : ''}
+                    </div>
+                    <p class="mt-2 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${this.escapeHtml(displayText)}</p>
+                    <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                      <span>${this.escapeHtml(datasetLabel)}</span>
+                      ${createdLabel ? `<span>Saved: ${this.escapeHtml(createdLabel)}</span>` : ''}
+                      <span>Embedding: ${
+                        doc.embedding?.type === 'transformer' && Array.isArray(doc.embedding.values)
+                          ? `${doc.embedding.values.length} dims (transformer)`
+                          : doc.embedding?.type === 'bow' && doc.embedding.weights
+                          ? `${Object.keys(doc.embedding.weights).length} dims (lightweight)`
+                          : 'n/a'
+                      }</span>
+                    </div>
+                  </div>
+                  <button class="text-rose-500 hover:text-rose-700" type="button" title="Delete memory entry" aria-label="Delete memory entry" data-memory-delete="${safeId}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            `;
+          })
+          .join('')
+      : '<li class="text-sm text-slate-500 py-6 text-center border border-dashed border-slate-200 rounded-lg">No memories stored yet. Interact with the assistant to build its long-term context.</li>';
+
+    const resultsHtml = results.length
+      ? `<ul class="space-y-2">
+            ${results
+              .map(result => {
+                const safeId = this.escapeHtml(result.id || result.text || '');
+                const score = typeof result.score === 'number' ? (result.score * 100).toFixed(1) : 'n/a';
+                const preview =
+                  typeof result.text === 'string'
+                    ? result.text.slice(0, 120).replace(/\s+/g, ' ')
+                    : '';
+                return `<li>
+                  <button type="button" class="w-full text-left px-3 py-2 rounded-md border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-colors" data-memory-search-result="${safeId}">
+                    <div class="flex items-center justify-between text-xs text-slate-500">
+                      <span>Score: ${score}</span>
+                      <span>ID: ${this.escapeHtml(result.id || 'unknown')}</span>
+                    </div>
+                    <p class="mt-1 text-sm text-slate-700">${this.escapeHtml(preview)}</p>
+                  </button>
+                </li>`;
+              })
+              .join('')}
+          </ul>`
+      : query.trim()
+      ? `<p class="text-sm text-slate-500 ${isSearching ? 'italic' : ''}">${isSearching ? 'Searching memories…' : 'No memories match that search query yet.'}</p>`
+      : '<p class="text-sm text-slate-500">Use search to find relevant memories. Results appear here.</p>';
+
+    return `
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6" data-memory-overlay>
+        <div class="relative w-full max-w-5xl max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col" data-memory-panel>
+          <header class="flex items-start justify-between gap-4 p-6 border-b border-slate-200">
+            <div>
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">🧠</span>
+                <div>
+                  <h2 class="text-2xl font-semibold text-slate-900">AI Long-Term Memory</h2>
+                  <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
+                    <span>${documents.length} item${documents.length === 1 ? '' : 's'}</span>
+                    <span>Usage ~${memoryUsage.toFixed(2)} KB</span>
+                    <span>${this.escapeHtml(modelStatus)}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-3">
+                <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+                  <div class="h-full bg-blue-500" style="width:${usagePercentage}%"></div>
+                </div>
+                <p class="mt-1 text-xs text-slate-400">${usagePercentage.toFixed(1)}% of visual capacity (soft limit ${MEMORY_CAPACITY_KB / 1024} MB)</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-100" type="button" data-memory-refresh>Refresh</button>
+              <button class="px-3 py-2 text-sm border border-rose-300 text-rose-600 rounded-md hover:bg-rose-50" type="button" data-memory-clear-all>Clear All</button>
+              <button class="p-2 text-slate-500 hover:text-slate-700 rounded-md" type="button" aria-label="Close memory panel" data-memory-close>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </header>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 flex-1 overflow-hidden">
+            <div class="lg:col-span-2 flex flex-col border-r border-slate-200">
+              <div class="px-6 py-4 border-b border-slate-200">
+                <div class="flex items-center gap-2">
+                  <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" /></svg>
+                    </span>
+                    <input type="text" class="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Search across saved memories..." value="${this.escapeHtml(query)}" data-memory-search-input />
+                  </div>
+                  <button type="button" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 ${isSearching ? 'opacity-70' : ''}" data-memory-search ${isSearching ? 'disabled' : ''}>
+                    ${isSearching ? 'Searching…' : 'Search'}
+                  </button>
+                </div>
+              </div>
+              <div class="flex-1 overflow-y-auto px-6 py-4">
+                <ul class="space-y-3">${documentsHtml}</ul>
+              </div>
+            </div>
+            <aside class="flex flex-col bg-slate-50">
+              <div class="px-5 py-4 border-b border-slate-200">
+                <h3 class="text-sm font-semibold text-slate-900">Search Results</h3>
+                <p class="text-xs text-slate-500 mt-1">Click a result to highlight the associated memory entry.</p>
+              </div>
+              <div class="flex-1 overflow-y-auto px-5 py-4">
+                ${resultsHtml}
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   renderLegend(card, legendData, totalValue) {
@@ -5065,10 +5750,12 @@ class CsvDataAnalysisApp extends HTMLElement {
       </div>
       ${this.renderSettingsModal()}
       ${this.renderHistoryPanel()}
+      ${this.renderMemoryPanel()}
     `;
 
     this.bindEvents();
     this.bindSettingsEvents();
+    this.bindMemoryPanelEvents();
     this.renderCharts();
     this.setupMainScrollElement();
     this.restoreMainScrollPosition();
