@@ -42,6 +42,23 @@ const DESELECTED_COLOR = 'rgba(107, 114, 128, 0.2)';
 const DESELECTED_BORDER_COLOR = 'rgba(107, 114, 128, 0.5)';
 const SUPPORTED_CHART_TYPES = new Set(['bar', 'line', 'pie', 'doughnut', 'scatter']);
 const SUPPORTED_AGGREGATIONS = new Set(['sum', 'count', 'avg']);
+const DOM_ACTION_TOOL_NAMES = new Set([
+  'highlightCard',
+  'clearHighlight',
+  'changeCardChartType',
+  'toggleCardData',
+  'showCardData',
+  'setCardTopN',
+  'setCardHideOthers',
+  'filterCard',
+  'clearCardSelection',
+  'resetCardZoom',
+  'setRawDataVisibility',
+  'setRawDataFilter',
+  'setRawDataWholeWord',
+  'setRawDataSort',
+  'removeRawDataRows',
+]);
 const MIN_ASIDE_WIDTH = 320;
 const MAX_ASIDE_WIDTH = 800;
 let zoomPluginRegistered = false;
@@ -103,6 +120,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.boundAsideMouseUp = this.handleAsideMouseUp.bind(this);
     this.mainScrollElement = null;
     this.savedMainScrollTop = null;
+    this.savedConversationScroll = null;
     this.boundDocumentClick = this.onDocumentClick.bind(this);
     this.pendingRawEdits = new Map();
     this.rawEditDatasetId = this.getCurrentDatasetId();
@@ -673,6 +691,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (!nextPartial || typeof nextPartial !== 'object') {
       return;
     }
+    this.captureConversationScrollPosition();
     this.captureMainScrollPosition();
     this.state = { ...prevState, ...nextPartial };
     this.captureFocus();
@@ -746,6 +765,7 @@ class CsvDataAnalysisApp extends HTMLElement {
 
   addProgress(text, type = 'system') {
     const timestamp = new Date();
+    const shouldStick = this.isConversationNearBottom();
     const newMessage = {
       text,
       type,
@@ -761,6 +781,9 @@ class CsvDataAnalysisApp extends HTMLElement {
       progressMessages: [...prev.progressMessages, newMessage],
       chatHistory: [...prev.chatHistory, chatMessage],
     }));
+    if (shouldStick) {
+      this.shouldAutoScrollConversation = true;
+    }
   }
 
   getCardValueKey(card) {
@@ -1371,6 +1394,7 @@ class CsvDataAnalysisApp extends HTMLElement {
         this.settings,
         metadata
       );
+      const shouldStick = this.isConversationNearBottom();
       this.setState(prev => ({
         aiCoreAnalysisSummary: coreSummary,
         chatHistory: [
@@ -1378,6 +1402,9 @@ class CsvDataAnalysisApp extends HTMLElement {
           { sender: 'ai', text: coreSummary, timestamp: new Date(), type: 'ai_thinking' },
         ],
       }));
+      if (shouldStick) {
+        this.shouldAutoScrollConversation = true;
+      }
 
       const finalSummary = await generateFinalSummary(createdCards, this.settings, metadata);
       this.setState({ finalSummary });
@@ -1435,9 +1462,13 @@ class CsvDataAnalysisApp extends HTMLElement {
       type: 'user_message',
     };
 
+    const shouldStick = this.isConversationNearBottom();
     this.setState(prev => ({
       chatHistory: [...prev.chatHistory, userMessage],
     }));
+    if (shouldStick) {
+      this.shouldAutoScrollConversation = true;
+    }
 
     try {
       this.addProgress('AI is composing a reply...');
@@ -1503,74 +1534,196 @@ class CsvDataAnalysisApp extends HTMLElement {
       return { success: false, error: 'DOM action requires a toolName.' };
     }
 
-    const findCard = id => this.state.analysisCards.find(card => card.id === id);
+    const normaliseTitleKey = value => {
+      if (typeof value !== 'string') {
+        if (value && typeof value.toString === 'function') {
+          const text = value.toString();
+          return text ? text.trim().toLowerCase() : null;
+        }
+        return null;
+      }
+      const trimmed = value.trim();
+      return trimmed ? trimmed.toLowerCase() : null;
+    };
+
+    const lookupCard = (id, fallbackTitle) => {
+      if (id) {
+        const direct = this.state.analysisCards.find(card => card.id === id);
+        if (direct) {
+          return direct;
+        }
+      }
+      const titleKey = normaliseTitleKey(fallbackTitle);
+      if (titleKey) {
+        return this.state.analysisCards.find(card => {
+          const planTitle = normaliseTitleKey(card.plan?.title);
+          return planTitle === titleKey;
+        });
+      }
+      return null;
+    };
+
+    const resolveCardContext = payload => {
+      const fallbackTitle =
+        payload.cardTitle ??
+        payload.card_title ??
+        payload.planTitle ??
+        payload.cardLabel ??
+        payload.label ??
+        payload.title ??
+        payload.name ??
+        payload.card_name ??
+        null;
+      const card = lookupCard(payload.cardId, fallbackTitle);
+      return {
+        card,
+        cardId: card?.id ?? payload.cardId ?? null,
+        fallbackTitle: typeof fallbackTitle === 'string' ? fallbackTitle.trim() : null,
+      };
+    };
+
+    const describeCardTarget = (card, fallbackTitle, fallbackId) => {
+      if (card?.plan?.title) {
+        return `"${card.plan.title}"`;
+      }
+      if (typeof fallbackTitle === 'string' && fallbackTitle.trim()) {
+        return `"${fallbackTitle.trim()}"`;
+      }
+      if (fallbackId) {
+        return fallbackId;
+      }
+      return 'card';
+    };
 
     switch (toolName) {
       case 'highlightCard': {
-        const { cardId, scrollIntoView } = domAction;
+        const { scrollIntoView } = domAction;
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
+        }
         const success = this.highlightCard(cardId, { scrollIntoView: scrollIntoView !== false });
         return success
-          ? { success: true, message: `Highlighted card ${cardId}.` }
-          : { success: false, error: `Card ${cardId || ''} not found.` };
+          ? { success: true, message: `Highlighted ${describeCardTarget(card)}.` }
+          : {
+              success: false,
+              error: `Card ${describeCardTarget(card, fallbackTitle, domAction.cardId)} not found.`,
+            };
       }
       case 'clearHighlight': {
         this.setState({ highlightedCardId: null });
         return { success: true, message: 'Cleared highlighted card.' };
       }
       case 'changeCardChartType': {
-        const { cardId, chartType } = domAction;
-        if (!cardId || !chartType) {
+        const { chartType } = domAction;
+        if (!chartType) {
           return { success: false, error: 'Card ID and chart type are required.' };
         }
         const allowed = new Set(['bar', 'line', 'pie', 'doughnut', 'scatter']);
         if (!allowed.has(chartType)) {
           return { success: false, error: `Unsupported chart type: ${chartType}.` };
         }
-        if (!findCard(cardId)) {
-          return { success: false, error: `Card ${cardId} not found.` };
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
         }
         this.handleChartTypeChange(cardId, chartType);
-        return { success: true, message: `Switched card ${cardId} to ${chartType} chart.` };
+        return {
+          success: true,
+          message: `Switched ${describeCardTarget(card)} to ${chartType} chart.`,
+        };
       }
       case 'toggleCardData':
       case 'showCardData': {
-        const { cardId, visible } = domAction;
+        const { visible } = domAction;
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
+        }
         const success = this.setCardDataVisibility(cardId, visible);
         return success
           ? {
               success: true,
-              message: `Card ${cardId} data ${visible === false ? 'hidden' : 'shown'}.`,
+              message: `${describeCardTarget(card)} data ${visible === false ? 'hidden' : 'shown'}.`,
             }
-          : { success: false, error: `Unable to toggle data table for card ${cardId || ''}.` };
+          : {
+              success: false,
+              error: `Unable to toggle data table for ${describeCardTarget(
+                card,
+                fallbackTitle,
+                domAction.cardId
+              )}.`,
+            };
       }
       case 'setCardTopN': {
-        const { cardId, topN, hideOthers } = domAction;
+        const { topN, hideOthers } = domAction;
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
+        }
         const success = this.setCardTopN(cardId, topN, hideOthers);
         return success
-          ? { success: true, message: `Updated Top-N setting for card ${cardId}.` }
-          : { success: false, error: `Unable to update Top-N for card ${cardId || ''}.` };
+          ? { success: true, message: `Updated Top-N setting for ${describeCardTarget(card)}.` }
+          : {
+              success: false,
+              error: `Unable to update Top-N for ${describeCardTarget(
+                card,
+                fallbackTitle,
+                domAction.cardId
+              )}.`,
+            };
       }
       case 'setCardHideOthers': {
-        const { cardId, hideOthers } = domAction;
+        const { hideOthers } = domAction;
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
+        }
         const success = this.setCardHideOthers(cardId, hideOthers);
         return success
           ? {
               success: true,
-              message: `Hide "Others" is now ${hideOthers ? 'enabled' : 'disabled'} for card ${cardId}.`,
+              message: `Hide "Others" is now ${hideOthers ? 'enabled' : 'disabled'} for ${describeCardTarget(
+                card
+              )}.`,
             }
-          : { success: false, error: `Unable to toggle hide others for card ${cardId || ''}.` };
+          : {
+              success: false,
+              error: `Unable to toggle hide others for ${describeCardTarget(
+                card,
+                fallbackTitle,
+                domAction.cardId
+              )}.`,
+            };
       }
       case 'filterCard': {
-        const { cardId, column, values } = domAction;
-        if (!cardId) {
-          return { success: false, error: 'Card ID is required for filtering.' };
-        }
-        const card = findCard(cardId);
-        if (!card) {
-          return { success: false, error: `Card ${cardId} not found.` };
+        const { column, values } = domAction;
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
         }
         const columnName =
-          typeof column === 'string' && column.trim() ? column.trim() : card.plan?.groupByColumn;
+          typeof column === 'string' && column.trim()
+            ? column.trim()
+            : card.plan?.groupByColumn;
         if (!columnName) {
           return { success: false, error: 'Filter requires a target column.' };
         }
@@ -1596,18 +1749,44 @@ class CsvDataAnalysisApp extends HTMLElement {
         };
       }
       case 'clearCardSelection': {
-        const { cardId } = domAction;
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
+        }
         const success = this.clearCardSelection(cardId);
         return success
-          ? { success: true, message: `Cleared selection for card ${cardId}.` }
-          : { success: false, error: `Unable to clear selection for card ${cardId || ''}.` };
+          ? { success: true, message: `Cleared selection for ${describeCardTarget(card)}.` }
+          : {
+              success: false,
+              error: `Unable to clear selection for ${describeCardTarget(
+                card,
+                fallbackTitle,
+                domAction.cardId
+              )}.`,
+            };
       }
       case 'resetCardZoom': {
-        const { cardId } = domAction;
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
+        }
         const success = this.resetCardZoom(cardId);
         return success
-          ? { success: true, message: `Reset zoom for card ${cardId}.` }
-          : { success: false, error: `Unable to reset zoom for card ${cardId || ''}.` };
+          ? { success: true, message: `Reset zoom for ${describeCardTarget(card)}.` }
+          : {
+              success: false,
+              error: `Unable to reset zoom for ${describeCardTarget(
+                card,
+                fallbackTitle,
+                domAction.cardId
+              )}.`,
+            };
       }
       case 'setRawDataVisibility': {
         const { visible } = domAction;
@@ -1639,23 +1818,108 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
   }
 
+  normaliseAiAction(action) {
+    if (!action || typeof action !== 'object') {
+      return null;
+    }
+    if (action.responseType) {
+      return action;
+    }
+
+    const toolName = typeof action.toolName === 'string' ? action.toolName : typeof action.type === 'string' ? action.type : null;
+    const props = action && typeof action.props === 'object' && action.props ? { ...action.props } : {};
+    if (action && typeof action.args === 'object' && action.args) {
+      Object.assign(props, action.args);
+    }
+
+    if (toolName === 'text_response') {
+      const text =
+        typeof action.text === 'string'
+          ? action.text
+          : typeof props.text === 'string'
+          ? props.text
+          : '';
+      const cardId = props.cardId ?? action.cardId ?? null;
+      return { responseType: 'text_response', text, cardId };
+    }
+
+    if (toolName === 'plan_creation') {
+      const plan = action.plan || props.plan;
+      return plan ? { responseType: 'plan_creation', plan } : null;
+    }
+
+    if (toolName === 'execute_js_code' || toolName === 'code_execution') {
+      const codePayload = action.code || props.code;
+      if (codePayload && typeof codePayload === 'object') {
+        return { responseType: 'execute_js_code', code: codePayload };
+      }
+      const jsBody =
+        typeof props.jsFunctionBody === 'string'
+          ? props.jsFunctionBody
+          : typeof action.jsFunctionBody === 'string'
+          ? action.jsFunctionBody
+          : null;
+      if (jsBody) {
+        return {
+          responseType: 'execute_js_code',
+          code: {
+            explanation:
+              typeof props.explanation === 'string'
+                ? props.explanation
+                : typeof action.explanation === 'string'
+                ? action.explanation
+                : '',
+            jsFunctionBody: jsBody,
+          },
+        };
+      }
+      return null;
+    }
+
+    if (toolName === 'dom_action' && action.domAction && typeof action.domAction === 'object') {
+      return { responseType: 'dom_action', domAction: action.domAction };
+    }
+
+    if (toolName && DOM_ACTION_TOOL_NAMES.has(toolName)) {
+      const domAction = { toolName, ...props };
+      if (action.cardId && !Object.prototype.hasOwnProperty.call(domAction, 'cardId')) {
+        domAction.cardId = action.cardId;
+      }
+      return { responseType: 'dom_action', domAction };
+    }
+
+    return null;
+  }
+
   async applyChatActions(actions) {
     const datasetId = this.getCurrentDatasetId();
-    for (const action of actions) {
+    for (const rawAction of actions) {
+      const action = this.normaliseAiAction(rawAction);
+      if (!action) {
+        console.error('Unsupported AI action type received:', rawAction);
+        this.addProgress('AI returned an unsupported action type.', 'error');
+        continue;
+      }
       switch (action.responseType) {
         case 'text_response':
-          this.setState(prev => ({
-            chatHistory: [
-              ...prev.chatHistory,
-              {
-                sender: 'ai',
-                text: action.text || '',
-                timestamp: new Date(),
-                type: 'ai_message',
-                cardId: action.cardId,
-              },
-            ],
-          }));
+          {
+            const shouldStick = this.isConversationNearBottom();
+            this.setState(prev => ({
+              chatHistory: [
+                ...prev.chatHistory,
+                {
+                  sender: 'ai',
+                  text: action.text || '',
+                  timestamp: new Date(),
+                  type: 'ai_message',
+                  cardId: action.cardId,
+                },
+              ],
+            }));
+            if (shouldStick) {
+              this.shouldAutoScrollConversation = true;
+            }
+          }
           if (action.text && ENABLE_MEMORY_FEATURES) {
             try {
               await storeMemory(datasetId, {
@@ -2107,9 +2371,22 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.setState({ highlightedCardId: cardId });
     const { scrollIntoView = true } = options;
     if (scrollIntoView) {
-      queueMicrotask(() => {
+      this.waitForNextFrame().then(() => {
         const cardElement = this.querySelector(`[data-card-id="${cardId}"]`);
-        cardElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!cardElement) return;
+        const container = this.mainScrollElement || this.querySelector('[data-main-scroll]');
+        if (container && typeof container.scrollTo === 'function') {
+          const containerRect = container.getBoundingClientRect();
+          const cardRect = cardElement.getBoundingClientRect();
+          const offsetWithinContainer = cardRect.top - containerRect.top;
+          const targetTop = container.scrollTop + offsetWithinContainer - container.clientHeight / 2 + cardElement.offsetHeight / 2;
+          container.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: 'smooth',
+          });
+        } else if (typeof cardElement.scrollIntoView === 'function') {
+          cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       });
     }
     return true;
@@ -3275,6 +3552,50 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
   }
 
+  captureConversationScrollPosition() {
+    if (this.shouldAutoScrollConversation) {
+      this.savedConversationScroll = null;
+      return;
+    }
+    const container = this.conversationLogElement;
+    if (!container) {
+      this.savedConversationScroll = null;
+      return;
+    }
+    this.savedConversationScroll = {
+      top: container.scrollTop,
+      height: container.scrollHeight,
+    };
+  }
+
+  restoreConversationScrollPosition() {
+    const container = this.conversationLogElement;
+    if (!container) {
+      this.savedConversationScroll = null;
+      return;
+    }
+    if (this.shouldAutoScrollConversation || !this.savedConversationScroll) {
+      this.savedConversationScroll = null;
+      return;
+    }
+    const { top, height } = this.savedConversationScroll;
+    const currentHeight = container.scrollHeight;
+    const delta = currentHeight - height;
+    const targetTop = Math.max(0, top + (Number.isFinite(delta) ? delta : 0));
+    container.scrollTop = targetTop;
+    this.savedConversationScroll = null;
+  }
+
+  isConversationNearBottom(threshold = 48) {
+    const container = this.conversationLogElement;
+    if (!container) {
+      return true;
+    }
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+    return distanceFromBottom <= threshold;
+  }
+
   captureMainScrollPosition() {
     const container = this.mainScrollElement || this.querySelector('[data-main-scroll]');
     if (container) {
@@ -4271,6 +4592,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.setupMainScrollElement();
     this.restoreMainScrollPosition();
     this.setupConversationLogAutoScroll();
+    this.restoreConversationScrollPosition();
     this.restoreFocus();
   }
 }
