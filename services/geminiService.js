@@ -8,6 +8,7 @@ let planArraySchema = null;
 let singlePlanSchema = null;
 let dataPreparationSchemaCache = null;
 let multiActionChatResponseSchemaCache = null;
+let proactiveInsightSchemaCache = null;
 
 const loadGoogleModule = async () => {
   if (!googleModulePromise) {
@@ -177,6 +178,11 @@ const getMultiActionChatResponseSchema = () => {
     const actionSchema = {
       type: GeminiType.OBJECT,
       properties: {
+        thought: {
+          type: GeminiType.STRING,
+          description:
+            'The assistant’s reasoning for this action. Must precede every action (ReAct pattern).',
+        },
         responseType: {
           type: GeminiType.STRING,
           enum: ['text_response', 'plan_creation', 'dom_action', 'execute_js_code', 'proceed_to_analysis'],
@@ -232,7 +238,7 @@ const getMultiActionChatResponseSchema = () => {
           required: ['explanation', 'jsFunctionBody'],
         },
       },
-      required: ['responseType'],
+      required: ['responseType', 'thought'],
     };
 
     multiActionChatResponseSchemaCache = {
@@ -248,6 +254,27 @@ const getMultiActionChatResponseSchema = () => {
     };
   }
   return multiActionChatResponseSchemaCache;
+};
+
+const getProactiveInsightSchema = () => {
+  if (!GeminiType) return null;
+  if (!proactiveInsightSchemaCache) {
+    proactiveInsightSchemaCache = {
+      type: GeminiType.OBJECT,
+      properties: {
+        insight: {
+          type: GeminiType.STRING,
+          description: 'A concise message describing the single most important finding.',
+        },
+        cardId: {
+          type: GeminiType.STRING,
+          description: 'ID of the card where the insight was observed.',
+        },
+      },
+      required: ['insight', 'cardId'],
+    };
+  }
+  return proactiveInsightSchemaCache;
 };
 
 const formatMetadataContext = (metadata, options = {}) => {
@@ -636,6 +663,49 @@ Return a single short paragraph.`;
   return callGeminiText(settings, prompt);
 };
 
+export const generateProactiveInsights = async (cardContext, settings) => {
+  const provider = settings.provider || 'google';
+  const isApiKeySet =
+    provider === 'google' ? !!settings.geminiApiKey : !!settings.openAIApiKey;
+  if (!isApiKeySet || !cardContext || !cardContext.length) {
+    return null;
+  }
+
+  try {
+    const promptContext = JSON.stringify(cardContext, null, 2);
+    if (provider === 'openai') {
+      const systemPrompt = `You are a proactive data analyst. Review the following summaries of data visualizations. Your task is to identify the single most commercially significant or surprising insight. This could be a major trend, a key outlier, or a dominant category that has clear business implications. Respond with JSON only.`;
+      const userPrompt = `**Generated Analysis Cards & Data Samples:**
+${promptContext}
+
+Your Task:
+1. Analyze all cards.
+2. Identify a single high-impact insight.
+3. Explain it in ${settings.language}.
+4. Return JSON: {"insight": string, "cardId": string}.`;
+      return await callOpenAIJson(settings, systemPrompt, userPrompt);
+    }
+
+    const schema = getProactiveInsightSchema();
+    const prompt = `
+You are a proactive data analyst. Review the following summaries of data visualizations you have created. Your task is to identify the single most commercially significant or surprising insight. This could be a major trend, a key outlier, or a dominant category that has clear business implications.
+
+**Generated Analysis Cards & Data Samples:**
+${promptContext}
+
+Your Task:
+1. Analyze all cards.
+2. Identify the ONE most important finding.
+3. Formulate a short, user-facing message in ${settings.language}.
+4. Respond with a JSON object containing "insight" and "cardId".
+`;
+    return await callGeminiJson(settings, prompt, { schema });
+  } catch (error) {
+    console.error('Error generating proactive insights:', error);
+    return null;
+  }
+};
+
 export const generateFinalSummary = async (cards, settings, metadata = null) => {
   const provider = settings.provider || 'google';
   const isApiKeySet =
@@ -683,7 +753,8 @@ export const generateChatResponse = async (
   metadata = null,
   intent = 'general',
   skillCatalog = [],
-  memoryContext = []
+  memoryContext = [],
+  dataPreparationPlan = null
 ) => {
   const provider = settings.provider || 'google';
   const isApiKeySet =
@@ -718,15 +789,18 @@ ${skillCatalog
     : '';
 
   const memorySection = Array.isArray(memoryContext) && memoryContext.length
-    ? `**Memory Context (Top Matches):**
+    ? `**LONG-TERM MEMORY (Top Matches):**
 ${memoryContext
   .map(item => {
     const score = typeof item.score === 'number' ? item.score.toFixed(2) : 'n/a';
-    return `- (${item.kind || 'note'} | score ${score}) ${item.summary || item.text}`;
+    const summary = item.summary || item.text || '';
+    return `- (${item.kind || 'note'} | score ${score}) ${summary}`;
   })
   .join('\n')}
 `
-    : '';
+    : `**LONG-TERM MEMORY (Top Matches):**
+No specific long-term memories seem relevant to this query.
+`;
 
   const cardsPreview = cardContext && cardContext.length
     ? JSON.stringify(cardContext.slice(0, 6), null, 2)
@@ -739,6 +813,22 @@ ${memoryContext
   const coreBriefing = aiCoreAnalysisSummary || 'No core analysis has been performed yet. This is your first look at the data.';
   const coreBriefingSection = `**CORE ANALYSIS BRIEFING (Your Memory):**
 ${coreBriefing}
+`;
+
+  const dataPreparationDetails = (() => {
+    if (!dataPreparationPlan) {
+      return 'No AI-driven data preparation was performed.';
+    }
+    const explanation = dataPreparationPlan.explanation || 'AI suggested preparing the data before analysis.';
+    const codeBlock = dataPreparationPlan.jsFunctionBody
+      ? `Code Executed: \`\`\`javascript
+${dataPreparationPlan.jsFunctionBody}
+\`\`\``
+      : 'Code Executed: None (AI determined no transformation was necessary).';
+    return `${explanation}\n${codeBlock}`;
+  })();
+  const dataPreparationSection = `**DATA PREPARATION LOG (How the raw data was cleaned):**
+${dataPreparationDetails}
 `;
 
   const guidingPrinciples = `**Guiding Principles & Common Sense:**
@@ -774,11 +864,13 @@ ${metadataSection}`;
    - {"toolName":"removeRawDataRows","column":"Status","values":["Cancelled"],"operator":"equals"}
 4. \`execute_js_code\`: Supply complex JavaScript transformations for data cleansing/prep. Always accompany with a \`text_response\` describing the change.
 
-**Execution Notes**
-- Think step-by-step; a single user request may require multiple coordinated actions.
-- When you modify data or charts, confirm the outcome with a \`text_response\`.
+**ReAct Requirements**
+- Every action MUST include a \`thought\` explaining the reasoning immediately before acting.
+- For multi-step tasks, outline the full plan in the FIRST action's \`thought\`, then execute the steps in order.
+- Conclude with a \`text_response\` that summarizes results and suggests a logical next step for the user.
+- When you change data or charts, acknowledge the outcome in a \`text_response\`.
 - Respond strictly with a single JSON object: {"actions":[ ... ]}. No extra commentary outside JSON.
-- Unless absolutely necessary, do not use \`proceed_to_analysis\`; it is deprecated.
+- Avoid \`proceed_to_analysis\` unless specifically required (deprecated).
 `;
 
   const conversationSection = `**Conversation History:**
@@ -789,6 +881,7 @@ ${history || 'No previous messages.'}
 ${coreBriefingSection}
 ${guidingPrinciples}
 ${datasetOverview}
+${dataPreparationSection}
 **Analysis Cards on Screen:**
 ${cardsPreview}
 
@@ -801,7 +894,7 @@ ${skillSection}${memorySection}${systemSection}${conversationSection}
 ${actionsInstructions}
 `;
 
-  const systemPrompt = `You are an expert data analyst and business strategist. Respond in ${settings.language}. You must produce a single JSON object with an "actions" array describing how to satisfy the user.`;
+  const systemPrompt = `You are an expert data analyst and business strategist operating with a Reason+Act (ReAct) mindset. Respond in ${settings.language}. Your entire reply MUST be a single JSON object containing an "actions" array, and each action MUST include a "thought" that clearly explains your reasoning before the action.`;
 
   let result;
   const geminiSchema = provider === 'google' ? getMultiActionChatResponseSchema() : null;
@@ -821,6 +914,13 @@ ${actionsInstructions}
 
   if (!result || !Array.isArray(result.actions)) {
     throw new Error('The AI response does not contain a valid actions array.');
+  }
+
+  const missingThought = result.actions.find(
+    action => !action || typeof action.thought !== 'string' || !action.thought.trim()
+  );
+  if (missingThought) {
+    throw new Error('The AI response is missing a required "thought" field on one or more actions.');
   }
 
   return result;

@@ -12,6 +12,7 @@ import {
   generateChatResponse,
   generateDataPreparationPlan,
   generateCoreAnalysisSummary,
+  generateProactiveInsights,
 } from './services/geminiService.js';
 import {
   getSettings,
@@ -87,6 +88,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       analysisCards: [],
       finalSummary: null,
       aiCoreAnalysisSummary: null,
+      dataPreparationPlan: null,
       chatHistory: [],
       highlightedCardId: null,
       showSettings: false,
@@ -156,6 +158,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       analysisCards: this.state.analysisCards,
       finalSummary: this.state.finalSummary,
       aiCoreAnalysisSummary: this.state.aiCoreAnalysisSummary,
+      dataPreparationPlan: this.state.dataPreparationPlan,
       chatHistory: cloneTimeline(this.state.chatHistory),
       highlightedCardId: this.state.highlightedCardId,
       showSettings: false,
@@ -202,6 +205,10 @@ class CsvDataAnalysisApp extends HTMLElement {
       reportsList: Array.isArray(this.state.reportsList) ? this.state.reportsList : [],
       isHistoryPanelOpen: false,
     };
+
+    if (!Object.prototype.hasOwnProperty.call(restored, 'dataPreparationPlan')) {
+      restored.dataPreparationPlan = null;
+    }
 
     if (Array.isArray(restored.analysisCards)) {
       restored.analysisCards = restored.analysisCards.map(card => ({
@@ -1190,6 +1197,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       analysisCards: [],
       finalSummary: null,
       aiCoreAnalysisSummary: null,
+      dataPreparationPlan: null,
       chatHistory: [],
       highlightedCardId: null,
       currentView: 'analysis_dashboard',
@@ -1228,10 +1236,11 @@ class CsvDataAnalysisApp extends HTMLElement {
       let profiles = profileData(parsedData.data);
 
       const isApiKeySet = this.hasConfiguredApiKey();
+      let prepPlan = null;
 
       if (isApiKeySet) {
         this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
-        const prepPlan = await generateDataPreparationPlan(
+        prepPlan = await generateDataPreparationPlan(
           profiles,
           dataForAnalysis.data.slice(0, 20),
           this.settings,
@@ -1296,6 +1305,7 @@ class CsvDataAnalysisApp extends HTMLElement {
           : null,
         csvMetadata: dataForAnalysis.metadata || metadata || null,
         currentDatasetId: datasetId,
+        dataPreparationPlan: prepPlan,
         rawDataPage: 0,
         rawDataColumnWidths: {},
       });
@@ -1467,6 +1477,28 @@ class CsvDataAnalysisApp extends HTMLElement {
         this.shouldAutoScrollConversation = true;
       }
 
+      this.addProgress('AI is looking for key insights...');
+      const proactiveInsight = await generateProactiveInsights(cardContext, this.settings);
+      if (proactiveInsight && proactiveInsight.insight && proactiveInsight.cardId) {
+        const insightShouldStick = this.isConversationNearBottom();
+        const targetCard = createdCards.find(card => card.id === proactiveInsight.cardId);
+        const insightMessage = {
+          sender: 'ai',
+          text: proactiveInsight.insight,
+          timestamp: new Date(),
+          type: 'ai_proactive_insight',
+          cardId: proactiveInsight.cardId,
+        };
+        this.setState(prev => ({
+          chatHistory: [...prev.chatHistory, insightMessage],
+        }));
+        if (insightShouldStick) {
+          this.shouldAutoScrollConversation = true;
+        }
+        const insightLabel = targetCard?.plan?.title ? `"${targetCard.plan.title}"` : proactiveInsight.cardId;
+        this.addProgress(`Proactive insight surfaced for ${insightLabel}.`);
+      }
+
       const finalSummary = await generateFinalSummary(createdCards, this.settings, metadata);
       this.setState({ finalSummary });
       this.addProgress('Overall summary created.');
@@ -1570,7 +1602,8 @@ class CsvDataAnalysisApp extends HTMLElement {
         metadata,
         userIntent,
         skillCatalog,
-        memoryContext
+        memoryContext,
+        this.state.dataPreparationPlan
       );
 
       await this.applyChatActions(response.actions || []);
@@ -1625,20 +1658,30 @@ class CsvDataAnalysisApp extends HTMLElement {
     };
 
     const resolveCardContext = payload => {
+      const args = payload && typeof payload.args === 'object' ? payload.args : {};
+      const cardIdInput =
+        payload.cardId ??
+        payload.card_id ??
+        args.cardId ??
+        args.card_id ??
+        null;
       const fallbackTitle =
         payload.cardTitle ??
         payload.card_title ??
         payload.planTitle ??
+        args.cardTitle ??
+        args.card_title ??
+        args.planTitle ??
         payload.cardLabel ??
         payload.label ??
         payload.title ??
         payload.name ??
         payload.card_name ??
         null;
-      const card = lookupCard(payload.cardId, fallbackTitle);
+      const card = lookupCard(cardIdInput, fallbackTitle);
       return {
         card,
-        cardId: card?.id ?? payload.cardId ?? null,
+        cardId: card?.id ?? cardIdInput ?? null,
         fallbackTitle: typeof fallbackTitle === 'string' ? fallbackTitle.trim() : null,
       };
     };
@@ -1883,8 +1926,20 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (!action || typeof action !== 'object') {
       return null;
     }
+    const getThought = source => {
+      if (!source || typeof source !== 'object') return null;
+      const value = source.thought ?? source.reason ?? null;
+      return typeof value === 'string' ? value : null;
+    };
     if (action.responseType) {
-      return action;
+      const normalised = { ...action };
+      const thought = getThought(action);
+      if (thought) {
+        normalised.thought = thought;
+      } else {
+        delete normalised.thought;
+      }
+      return normalised;
     }
 
     const toolName = typeof action.toolName === 'string' ? action.toolName : typeof action.type === 'string' ? action.type : null;
@@ -1892,6 +1947,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (action && typeof action.args === 'object' && action.args) {
       Object.assign(props, action.args);
     }
+    const thought = getThought(action) || getThought(props);
 
     if (toolName === 'text_response') {
       const text =
@@ -1901,18 +1957,18 @@ class CsvDataAnalysisApp extends HTMLElement {
           ? props.text
           : '';
       const cardId = props.cardId ?? action.cardId ?? null;
-      return { responseType: 'text_response', text, cardId };
+      return { responseType: 'text_response', text, cardId, thought };
     }
 
     if (toolName === 'plan_creation') {
       const plan = action.plan || props.plan;
-      return plan ? { responseType: 'plan_creation', plan } : null;
+      return plan ? { responseType: 'plan_creation', plan, thought } : null;
     }
 
     if (toolName === 'execute_js_code' || toolName === 'code_execution') {
       const codePayload = action.code || props.code;
       if (codePayload && typeof codePayload === 'object') {
-        return { responseType: 'execute_js_code', code: codePayload };
+        return { responseType: 'execute_js_code', code: codePayload, thought };
       }
       const jsBody =
         typeof props.jsFunctionBody === 'string'
@@ -1932,13 +1988,25 @@ class CsvDataAnalysisApp extends HTMLElement {
                 : '',
             jsFunctionBody: jsBody,
           },
+          thought,
         };
       }
       return null;
     }
 
     if (toolName === 'dom_action' && action.domAction && typeof action.domAction === 'object') {
-      return { responseType: 'dom_action', domAction: action.domAction };
+      const domAction = { ...action.domAction };
+      if (domAction.args && typeof domAction.args === 'object') {
+        Object.entries(domAction.args).forEach(([key, value]) => {
+          if (!Object.prototype.hasOwnProperty.call(domAction, key)) {
+            domAction[key] = value;
+          }
+        });
+      }
+      if (action.cardId && !Object.prototype.hasOwnProperty.call(domAction, 'cardId')) {
+        domAction.cardId = action.cardId;
+      }
+      return { responseType: 'dom_action', domAction, thought };
     }
 
     if (toolName && DOM_ACTION_TOOL_NAMES.has(toolName)) {
@@ -1946,21 +2014,70 @@ class CsvDataAnalysisApp extends HTMLElement {
       if (action.cardId && !Object.prototype.hasOwnProperty.call(domAction, 'cardId')) {
         domAction.cardId = action.cardId;
       }
-      return { responseType: 'dom_action', domAction };
+      return { responseType: 'dom_action', domAction, thought };
     }
 
     return null;
   }
 
+  sleep(ms = 800) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   async applyChatActions(actions) {
+    if (!Array.isArray(actions) || !actions.length) {
+      return;
+    }
     const datasetId = this.getCurrentDatasetId();
-    for (const rawAction of actions) {
-      const action = this.normaliseAiAction(rawAction);
-      if (!action) {
-        console.error('Unsupported AI action type received:', rawAction);
-        this.addProgress('AI returned an unsupported action type.', 'error');
-        continue;
+    const normalisedActions = actions
+      .map(rawAction => {
+        const normalised = this.normaliseAiAction(rawAction);
+        if (!normalised) {
+          console.error('Unsupported AI action type received:', rawAction);
+          this.addProgress('AI returned an unsupported action type.', 'error');
+        }
+        return normalised;
+      })
+      .filter(Boolean);
+
+    if (!normalisedActions.length) {
+      return;
+    }
+
+    const totalActions = normalisedActions.length;
+    const firstThought = normalisedActions[0].thought;
+    if (totalActions > 1) {
+      const planText =
+        typeof firstThought === 'string' && firstThought.trim().length
+          ? firstThought.trim()
+          : `I've prepared a ${totalActions}-step plan to address your request.`;
+      const shouldStick = this.isConversationNearBottom();
+      this.setState(prev => ({
+        chatHistory: [
+          ...prev.chatHistory,
+          {
+            sender: 'ai',
+            text: planText,
+            timestamp: new Date(),
+            type: 'ai_plan_start',
+          },
+        ],
+      }));
+      if (shouldStick) {
+        this.shouldAutoScrollConversation = true;
       }
+      this.addProgress(`AI is executing a ${totalActions}-step plan.`);
+      await this.sleep(700);
+    }
+
+    for (let index = 0; index < normalisedActions.length; index++) {
+      const action = normalisedActions[index];
+
+      if (action.thought && (totalActions === 1 || index > 0)) {
+        this.addProgress(`AI Thought: ${action.thought}`);
+        await this.sleep(totalActions === 1 ? 900 : 600);
+      }
+
       switch (action.responseType) {
         case 'text_response':
           {
@@ -2043,27 +2160,27 @@ class CsvDataAnalysisApp extends HTMLElement {
               if (result.message) {
                 this.addProgress(result.message);
               }
-              if (ENABLE_MEMORY_FEATURES) {
-                try {
-                  await storeMemory(datasetId, {
-                    kind: 'dom_action',
-                    intent: 'interaction',
-                    text: result.message,
-                    summary: result.message,
-                    metadata: { domAction: action.domAction },
-                  });
-                } catch (memoryError) {
-                  console.warn('Failed to store DOM action memory entry.', memoryError);
-                }
+            } else if (result.error) {
+              this.addProgress(result.error, 'error');
+            }
+            if (result.success && ENABLE_MEMORY_FEATURES && action.domAction) {
+              try {
+                await storeMemory(datasetId, {
+                  kind: 'dom_action',
+                  intent: 'interaction',
+                  text: JSON.stringify(action.domAction),
+                  summary: 'Saved assistant UI action.',
+                  metadata: { domAction: action.domAction },
+                });
+              } catch (memoryError) {
+                console.warn('Failed to store DOM action memory entry.', memoryError);
               }
-            } else {
-              this.addProgress(result.error || 'AI UI action failed.', 'error');
             }
           }
           break;
         default:
-          console.error('Unsupported AI action type received:', action);
           this.addProgress('AI returned an unsupported action type.', 'error');
+          break;
       }
     }
   }
@@ -3437,6 +3554,15 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     });
 
+    this.querySelectorAll('[data-open-memory]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.addProgress(
+          'Memory panel is not available yet in this vanilla build. It will be enabled once vector storage support is implemented.',
+          'error'
+        );
+      });
+    });
+
     this.querySelectorAll('[data-toggle-history]').forEach(btn => {
       btn.addEventListener('click', () => {
         this.toggleHistoryPanel();
@@ -4001,8 +4127,9 @@ class CsvDataAnalysisApp extends HTMLElement {
     const isApiKeySet = options.isApiKeySet ?? this.hasConfiguredApiKey();
     const timeline = this.buildConversationTimeline();
     const isBusy = this.state.isBusy;
-    const isChatDisabled = !isApiKeySet || isBusy || this.state.isThinking;
     const currentView = this.state.currentView;
+    const isChatDisabled =
+      !isApiKeySet || isBusy || this.state.isThinking || currentView === 'file_upload';
     const placeholder = !isApiKeySet
       ? 'Set API Key in settings to chat'
       : currentView === 'analysis_dashboard'
@@ -4035,6 +4162,34 @@ class CsvDataAnalysisApp extends HTMLElement {
                 <h4 class="font-semibold">AI's Initial Analysis</h4>
               </div>
               <p class="text-sm text-slate-700 whitespace-pre-wrap">${this.escapeHtml(entry.text || '')}</p>
+            </div>`;
+        }
+
+        if (entry.type === 'ai_plan_start') {
+          return `
+            <div class="my-2 p-3 bg-slate-100 border border-slate-200 rounded-lg shadow-sm">
+              <div class="flex items-center text-slate-700 mb-2">
+                <span class="text-lg mr-2">⚙️</span>
+                <h4 class="font-semibold">Plan Execution</h4>
+              </div>
+              <p class="text-sm text-slate-700 whitespace-pre-wrap">${this.escapeHtml(entry.text || '')}</p>
+            </div>`;
+        }
+
+        if (entry.type === 'ai_proactive_insight') {
+          const insightButton = entry.cardId
+            ? `<button type="button" class="mt-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md hover:bg-amber-200 transition-colors font-medium" data-show-card="${this.escapeHtml(entry.cardId)}">
+                 → Show Related Card
+               </button>`
+            : '';
+          return `
+            <div class="my-2 p-3 bg-amber-50 border border-amber-200 rounded-lg shadow-sm">
+              <div class="flex items-center text-amber-700 mb-2">
+                <span class="text-lg mr-2">💡</span>
+                <h4 class="font-semibold">Proactive Insight</h4>
+              </div>
+              <p class="text-sm text-amber-800 whitespace-pre-wrap">${this.escapeHtml(entry.text || '')}</p>
+              ${insightButton}
             </div>`;
         }
 
@@ -4116,6 +4271,11 @@ class CsvDataAnalysisApp extends HTMLElement {
         <div class="p-4 border-b border-slate-200 flex justify-between items-center">
           <h2 class="text-xl font-semibold text-slate-900">Assistant</h2>
           <div class="flex items-center gap-2">
+            <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Open Memory Panel" aria-label="Open Memory Panel" data-open-memory>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 2-1-2-1.257-.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 1 1 0 000-2zM6 8a1 1 0 112 0 1 1 0 01-2 0zm2 3a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" />
+              </svg>
+            </button>
             <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Open Settings" aria-label="Open Settings" data-toggle-settings>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </button>
