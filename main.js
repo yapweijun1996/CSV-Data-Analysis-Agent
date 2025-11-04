@@ -42,6 +42,9 @@ const DESELECTED_COLOR = 'rgba(107, 114, 128, 0.2)';
 const DESELECTED_BORDER_COLOR = 'rgba(107, 114, 128, 0.5)';
 const SUPPORTED_CHART_TYPES = new Set(['bar', 'line', 'pie', 'doughnut', 'scatter']);
 const SUPPORTED_AGGREGATIONS = new Set(['sum', 'count', 'avg']);
+const RAW_ROWS_PER_PAGE = 50;
+const MIN_RAW_COLUMN_WIDTH = 60;
+const DEFAULT_RAW_COLUMN_WIDTH = 120;
 const DOM_ACTION_TOOL_NAMES = new Set([
   'highlightCard',
   'clearHighlight',
@@ -92,6 +95,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       rawDataWholeWord: false,
       rawDataSort: null,
       rawDataView: 'cleaned',
+      rawDataPage: 0,
+      rawDataColumnWidths: {},
       originalCsvData: null,
       csvMetadata: null,
       currentDatasetId: null,
@@ -864,6 +869,58 @@ class CsvDataAnalysisApp extends HTMLElement {
       .replace(/'/g, '&#39;');
   }
 
+  formatRawCellDisplay(value) {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (typeof value === 'number') {
+      return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+    return String(value);
+  }
+
+  getColumnLetter(index) {
+    if (!Number.isInteger(index) || index < 0) {
+      return '';
+    }
+    let remainder = index;
+    let label = '';
+    while (remainder >= 0) {
+      const mod = remainder % 26;
+      label = String.fromCharCode(65 + mod) + label;
+      remainder = Math.floor(remainder / 26) - 1;
+    }
+    return label;
+  }
+
+  getDefaultRawColumnWidth(header, datasetRows) {
+    const labelLength = header ? header.length : 0;
+    const headerEstimate = labelLength * 8 + 30;
+    const firstRow = Array.isArray(datasetRows) && datasetRows.length ? datasetRows[0] : null;
+    const sampleValue = firstRow ? firstRow[header] : '';
+    const sampleEstimate = String(sampleValue ?? '').length * 7 + 30;
+    return Math.max(DEFAULT_RAW_COLUMN_WIDTH, headerEstimate, sampleEstimate);
+  }
+
+  getResolvedRawColumnWidth(header, datasetRows) {
+    const overrides = this.state?.rawDataColumnWidths || {};
+    const overrideValue = overrides?.[header];
+    if (Number.isFinite(overrideValue) && overrideValue > 0) {
+      return Math.max(MIN_RAW_COLUMN_WIDTH, Math.floor(overrideValue));
+    }
+    return this.getDefaultRawColumnWidth(header, datasetRows);
+  }
+
+  persistRawColumnWidth(header, width) {
+    if (!header || !Number.isFinite(width)) {
+      return;
+    }
+    this.setState(prev => {
+      const previous = prev.rawDataColumnWidths || {};
+      const next = { ...previous, [header]: Math.max(MIN_RAW_COLUMN_WIDTH, Math.floor(width)) };
+      return { rawDataColumnWidths: next };
+    });
+  }
   normalizeRawCellValue(value) {
     if (value === null || value === undefined) {
       return '';
@@ -1137,6 +1194,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       highlightedCardId: null,
       currentView: 'analysis_dashboard',
       rawDataView: 'cleaned',
+      rawDataPage: 0,
+      rawDataColumnWidths: {},
     });
 
     try {
@@ -1237,6 +1296,8 @@ class CsvDataAnalysisApp extends HTMLElement {
           : null,
         csvMetadata: dataForAnalysis.metadata || metadata || null,
         currentDatasetId: datasetId,
+        rawDataPage: 0,
+        rawDataColumnWidths: {},
       });
 
       if (isApiKeySet) {
@@ -2060,6 +2121,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       rawDataFilter: '',
       rawDataWholeWord: false,
       rawDataSort: null,
+      rawDataPage: 0,
     });
   }
 
@@ -2292,6 +2354,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       rawDataWholeWord: false,
       rawDataSort: null,
       rawDataView: 'cleaned',
+      rawDataPage: 0,
+      rawDataColumnWidths: {},
       originalCsvData: null,
       csvMetadata: null,
       currentDatasetId: null,
@@ -2535,28 +2599,122 @@ class CsvDataAnalysisApp extends HTMLElement {
 
   handleRawDataViewChange(mode) {
     if (mode !== 'cleaned' && mode !== 'original') return;
-    this.setState({ rawDataView: mode });
+    this.setState({ rawDataView: mode, rawDataPage: 0, rawDataColumnWidths: {} });
   }
 
   handleRawDataFilterChange(value) {
-    this.setState({ rawDataFilter: value });
+    this.setState({ rawDataFilter: value, rawDataPage: 0 });
   }
 
   handleRawDataWholeWordChange(checked) {
-    this.setState({ rawDataWholeWord: checked });
+    this.setState({ rawDataWholeWord: checked, rawDataPage: 0 });
   }
 
   handleRawDataSort(column) {
     this.setState(prev => {
       if (!column) {
-        return { rawDataSort: null };
+        return { rawDataSort: null, rawDataPage: 0 };
       }
       if (prev.rawDataSort && prev.rawDataSort.key === column) {
         const direction = prev.rawDataSort.direction === 'ascending' ? 'descending' : 'ascending';
-        return { rawDataSort: { key: column, direction } };
+        return { rawDataSort: { key: column, direction }, rawDataPage: 0 };
       }
-      return { rawDataSort: { key: column, direction: 'ascending' } };
+      return { rawDataSort: { key: column, direction: 'ascending' }, rawDataPage: 0 };
     });
+  }
+
+  handleRawDataPageChange(direction) {
+    if (!direction || (direction !== 'next' && direction !== 'prev')) {
+      return;
+    }
+    const context = this.getDatasetViewContext();
+    if (!context) {
+      this.setState({ rawDataPage: 0 });
+      return;
+    }
+    const dataset = context.activeDataset || this.state.csvData;
+    const rows = this.getProcessedRawData(dataset);
+    const totalRows = rows.length;
+    if (!totalRows) {
+      this.setState({ rawDataPage: 0 });
+      return;
+    }
+    const totalPages = Math.max(1, Math.ceil(totalRows / RAW_ROWS_PER_PAGE));
+    const currentPage = this.state.rawDataPage || 0;
+    const delta = direction === 'next' ? 1 : -1;
+    const nextPage = Math.min(totalPages - 1, Math.max(0, currentPage + delta));
+    if (nextPage !== currentPage) {
+      this.setState({ rawDataPage: nextPage });
+    }
+  }
+
+  handleRawColumnResizeStart(event) {
+    const pointerEvent = event;
+    if (!pointerEvent || typeof pointerEvent.clientX !== 'number') {
+      return;
+    }
+    const handle = pointerEvent.currentTarget;
+    if (!(handle instanceof HTMLElement)) {
+      return;
+    }
+    const headerKey = handle.dataset.rawResize;
+    if (!headerKey) {
+      return;
+    }
+    const headerCell = handle.closest('th');
+    if (!(headerCell instanceof HTMLElement)) {
+      return;
+    }
+    const table = headerCell.closest('table');
+    const cells =
+      table instanceof HTMLElement
+        ? Array.from(table.querySelectorAll('[data-raw-cell-col]')).filter(
+            cell => cell.getAttribute('data-raw-cell-col') === headerKey
+          )
+        : [];
+    const startX = pointerEvent.clientX;
+    const initialWidth = headerCell.offsetWidth;
+    let latestWidth = initialWidth;
+    const originalCursor = document.body.style.cursor;
+    const originalUserSelect = document.body.style.userSelect;
+    const cleanup = () => {
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      document.body.style.cursor = originalCursor;
+      document.body.style.userSelect = originalUserSelect;
+    };
+    const applyWidth = width => {
+      const clamped = Math.max(MIN_RAW_COLUMN_WIDTH, width);
+      latestWidth = clamped;
+      const widthPx = `${clamped}px`;
+      headerCell.style.width = widthPx;
+      headerCell.style.minWidth = widthPx;
+      headerCell.style.maxWidth = widthPx;
+      cells.forEach(cell => {
+        if (cell instanceof HTMLElement) {
+          cell.style.width = widthPx;
+          cell.style.minWidth = widthPx;
+        }
+      });
+    };
+    const onPointerMove = moveEvent => {
+      if (typeof moveEvent.clientX !== 'number') {
+        return;
+      }
+      const delta = moveEvent.clientX - startX;
+      applyWidth(initialWidth + delta);
+    };
+    const onPointerUp = () => {
+      cleanup();
+      this.persistRawColumnWidth(headerKey, latestWidth);
+    };
+
+    pointerEvent.preventDefault();
+    pointerEvent.stopPropagation();
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp, { once: true });
   }
 
   setRawDataVisibility(visible) {
@@ -3514,6 +3672,16 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     });
 
+    const rawPrevPage = this.querySelector('[data-raw-page-prev]');
+    if (rawPrevPage) {
+      rawPrevPage.addEventListener('click', () => this.handleRawDataPageChange('prev'));
+    }
+
+    const rawNextPage = this.querySelector('[data-raw-page-next]');
+    if (rawNextPage) {
+      rawNextPage.addEventListener('click', () => this.handleRawDataPageChange('next'));
+    }
+
     const rawSaveButton = this.querySelector('[data-raw-save]');
     if (rawSaveButton) {
       rawSaveButton.addEventListener('click', () => this.handleRawDataSave(rawSaveButton));
@@ -3530,6 +3698,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         cell.addEventListener('input', event => this.handleRawCellInput(event));
         cell.addEventListener('blur', event => this.handleRawCellBlur(event));
       }
+    });
+
+    this.querySelectorAll('[data-raw-resize]').forEach(handle => {
+      handle.addEventListener('pointerdown', event => this.handleRawColumnResizeStart(event));
     });
 
     this.updateRawEditControls();
@@ -4376,22 +4548,29 @@ class CsvDataAnalysisApp extends HTMLElement {
     const activeDataset = context.activeDataset || csvData;
     const headers = context.headers;
     const sortState = this.state.rawDataSort || null;
+    const datasetRows = Array.isArray(activeDataset?.data) ? activeDataset.data : [];
     const processedRows = this.getProcessedRawData(activeDataset);
-    const rowLimit = 500;
-    const visibleRows = processedRows.slice(0, rowLimit);
-    const hasMore = processedRows.length > rowLimit;
-    const totalRowsInView = context.allRows.length || (Array.isArray(activeDataset?.data) ? activeDataset.data.length : 0);
-    const filteredRowCount = processedRows.length;
+    const totalRows = processedRows.length;
+    const rowsPerPage = RAW_ROWS_PER_PAGE;
+    const totalRowsInDataset =
+      context.allRows.length || (Array.isArray(activeDataset?.data) ? activeDataset.data.length : 0);
     const filterActive = Boolean(rawDataFilter || rawDataWholeWord || sortState);
-    const filterSummaryText = filterActive
-      ? `Showing ${visibleRows.length.toLocaleString()} of ${filteredRowCount.toLocaleString()} matching rows`
-      : `Showing ${visibleRows.length.toLocaleString()} of ${totalRowsInView.toLocaleString()} rows`;
-    const filterSummary = hasMore
-      ? `${filterSummaryText} (first ${rowLimit.toLocaleString()} rows displayed)`
-      : filterSummaryText;
+    const totalPages = totalRows ? Math.ceil(totalRows / rowsPerPage) : 1;
+    const currentPageState = this.state.rawDataPage || 0;
+    const currentPage = Math.min(currentPageState, Math.max(totalPages - 1, 0));
+    const startIndex = totalRows ? currentPage * rowsPerPage : 0;
+    const endIndex = totalRows ? Math.min(startIndex + rowsPerPage, totalRows) : 0;
+    const visibleRows = processedRows.slice(startIndex, endIndex);
+    const hasVisibleRows = visibleRows.length > 0;
+    const filterSummary = totalRows
+      ? `Showing ${(startIndex + 1).toLocaleString()} - ${endIndex.toLocaleString()} of ${(filterActive ? totalRows : totalRowsInDataset).toLocaleString()} ${filterActive ? 'matching rows' : 'rows'}`
+      : filterActive
+      ? 'No rows match your filters.'
+      : 'No data rows available.';
     const sortSummary = sortState
       ? `Sorted by ${sortState.key} (${sortState.direction === 'ascending' ? 'ascending' : 'descending'})`
       : '';
+    const showPagination = totalPages > 1 && totalRows > 0;
 
     this.ensureRawEditContext();
     const metadataLines = [];
@@ -4435,81 +4614,136 @@ class CsvDataAnalysisApp extends HTMLElement {
       })
       .join('<span class="w-1"></span>');
 
-    const tableHeader = headers
-      .map(header => {
-        const label = this.escapeHtml(header);
-        const isSorted = sortState && sortState.key === header;
-        const direction = isSorted ? sortState.direction : null;
-        const indicator = direction
-          ? `<span class="text-[10px] ${isSorted ? 'text-blue-600' : 'text-slate-400'}">${direction === 'ascending' ? '&#9650;' : '&#9660;'}</span>`
-          : '<span class="text-[10px] text-slate-300">&#8597;</span>';
-        const cellClasses = [
-          'px-3 py-2 text-xs font-semibold select-none',
-          isSorted ? 'text-blue-600 bg-blue-50/60' : 'text-slate-600',
-        ].join(' ');
-        return `
-          <th class="${cellClasses}">
-            <button type="button" class="w-full flex items-center justify-between gap-1 text-left" data-raw-sort="${header}" title="Sort by ${label}">
+    const columnWidths = headers.reduce((map, header) => {
+      map[header] = this.getResolvedRawColumnWidth(header, datasetRows);
+      return map;
+    }, {});
+
+    const numberingHeader =
+      '<th class="px-3 py-2 text-xs font-semibold text-slate-500 text-center sticky left-0 z-20 bg-slate-100 border-r border-slate-200" style="width:60px;min-width:60px;max-width:60px;">#</th>';
+
+    const tableHeader = numberingHeader.concat(
+      headers
+        .map((header, index) => {
+          const columnLetter = this.getColumnLetter(index);
+          const displayHeader = columnLetter ? `${columnLetter} - ${header}` : header;
+          const label = this.escapeHtml(displayHeader);
+          const titleLabel = this.escapeHtml(header);
+          const isSorted = sortState && sortState.key === header;
+          const direction = isSorted ? sortState.direction : null;
+          const indicator = direction
+            ? `<span class="text-[10px] ${isSorted ? 'text-blue-600' : 'text-slate-400'}">${direction === 'ascending' ? '&#9650;' : '&#9660;'}</span>`
+            : '<span class="text-[10px] text-slate-300">&#8597;</span>';
+          const cellClasses = [
+            'px-3 py-2 text-xs font-semibold select-none relative',
+            isSorted ? 'text-blue-600 bg-blue-50/60' : 'text-slate-600',
+          ].join(' ');
+          const width = columnWidths[header];
+          const widthStyle = Number.isFinite(width)
+            ? ` style="width:${width}px;min-width:${width}px;max-width:${width}px;"`
+            : '';
+          return `
+          <th class="${cellClasses}"${widthStyle}>
+            <button type="button" class="w-full flex items-center justify-between gap-1 text-left" data-raw-sort="${this.escapeHtml(
+              header
+            )}" title="Sort by ${titleLabel}">
               <span class="truncate">${label}</span>
               ${indicator}
             </button>
+            <div class="absolute top-0 right-0 h-full w-2 cursor-col-resize z-20" data-raw-resize="${this.escapeHtml(
+              header
+            )}"></div>
           </th>`;
-      })
-      .join('');
+        })
+        .join('')
+    );
 
-    const datasetRows = Array.isArray(activeDataset?.data) ? activeDataset.data : [];
     const editingEnabled = context.resolvedView === 'cleaned';
     const pendingEditCount = this.getPendingRawEditCount();
     const hasPendingEdits = pendingEditCount > 0;
 
-    const tableBody = visibleRows
-      .map((row, rowIndex) => {
-        const rowClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
-        const datasetIndex = datasetRows.indexOf(row);
-        const resolvedRowIndex = datasetIndex >= 0 ? datasetIndex : rowIndex;
-        const rowUpdates = this.getPendingRawRow(resolvedRowIndex);
-        const cells = headers
-          .map(header => {
-            const baseValue = row?.[header];
-            const displayValue = this.getPendingRawValue(resolvedRowIndex, header, baseValue);
-            const isEdited =
-              Boolean(rowUpdates) && Object.prototype.hasOwnProperty.call(rowUpdates, header);
-            const cellClasses = [
-              'px-3 py-2 text-xs whitespace-nowrap align-top text-slate-700',
-              editingEnabled ? 'focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-400' : '',
-              isEdited ? 'bg-amber-50 ring-2 ring-amber-200 rounded-sm shadow-inner' : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
-            const originalString =
-              baseValue === null || baseValue === undefined ? '' : String(baseValue);
-            const displayString =
-              displayValue === null || displayValue === undefined ? '' : String(displayValue);
-            const editableAttrs = editingEnabled
-              ? ` contenteditable="true" spellcheck="false" data-raw-cell data-row-index="${resolvedRowIndex}" data-col-key="${this.escapeHtml(
-                  header
-                )}" data-original-value="${this.escapeHtml(originalString)}"`
-              : '';
-            const editedAttr = isEdited ? ' data-edited="true"' : '';
-            return `<td class="${cellClasses}"${editableAttrs}${editedAttr}>${this.escapeHtml(
-              displayString
-            )}</td>`;
+    const tableBody = hasVisibleRows
+      ? visibleRows
+          .map((row, rowIndex) => {
+            const rowBackground = rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
+            const datasetIndex = datasetRows.indexOf(row);
+            const resolvedRowIndex = datasetIndex >= 0 ? datasetIndex : startIndex + rowIndex;
+            const rowUpdates = this.getPendingRawRow(resolvedRowIndex);
+            const globalRowNumber = startIndex + rowIndex + 1;
+            const numberCell = `<td class="px-3 py-2 text-xs text-slate-400 text-center sticky left-0 z-10 border-r border-slate-200" style="width:60px;min-width:60px;max-width:60px;background-color:inherit;">${globalRowNumber.toLocaleString()}</td>`;
+            const cells = headers
+              .map(header => {
+                const baseValue = row?.[header];
+                const displayValue = this.getPendingRawValue(resolvedRowIndex, header, baseValue);
+                const formattedDisplay = this.formatRawCellDisplay(displayValue);
+                const isEdited =
+                  Boolean(rowUpdates) && Object.prototype.hasOwnProperty.call(rowUpdates, header);
+                const cellClasses = [
+                  'px-3 py-2 text-xs whitespace-nowrap align-top text-slate-700',
+                  editingEnabled ? 'focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-400' : '',
+                  isEdited ? 'bg-amber-50 ring-2 ring-amber-200 rounded-sm shadow-inner' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ');
+                const originalString =
+                  baseValue === null || baseValue === undefined ? '' : String(baseValue);
+                const editableAttrs = editingEnabled
+                  ? ` contenteditable="true" spellcheck="false" data-raw-cell data-row-index="${resolvedRowIndex}" data-col-key="${this.escapeHtml(
+                      header
+                    )}" data-original-value="${this.escapeHtml(originalString)}"`
+                  : '';
+                const editedAttr = isEdited ? ' data-edited="true"' : '';
+                const columnAttr = ` data-raw-cell-col="${this.escapeHtml(header)}"`;
+                const width = columnWidths[header];
+                const widthStyle = Number.isFinite(width)
+                  ? ` style="width:${width}px;min-width:${width}px;max-width:${width}px;"`
+                  : '';
+                return `<td class="${cellClasses}"${editableAttrs}${editedAttr}${columnAttr}${widthStyle}>${this.escapeHtml(
+                  formattedDisplay
+                )}</td>`;
+              })
+              .join('');
+            return `<tr class="border-t border-slate-100 ${rowBackground} hover:bg-blue-50/40 transition-colors" data-row-source="${resolvedRowIndex}">${numberCell}${cells}</tr>`;
           })
-          .join('');
-        return `<tr class="border-t border-slate-100 ${rowClass} hover:bg-blue-50/40 transition-colors" data-row-source="${resolvedRowIndex}">${cells}</tr>`;
-      })
-      .join('');
+          .join('')
+      : '';
 
-    const tableHtml = headers.length
-      ? `<div class="overflow-auto border border-slate-200 rounded-md shadow-sm" style="max-height: 60vh;">
-          <table class="min-w-full text-left text-xs">
+    let tableHtml = '';
+    if (!headers.length) {
+      tableHtml = '<p class="text-xs text-slate-500">No data rows available.</p>';
+    } else if (!hasVisibleRows) {
+      tableHtml = '<p class="text-xs text-slate-500">No rows match your filters.</p>';
+    } else {
+      tableHtml = `<div class="overflow-auto border border-slate-200 rounded-md shadow-sm" style="max-height: 60vh;">
+          <table class="min-w-full text-left text-xs table-fixed">
             <thead class="bg-slate-100 sticky top-0 z-10 shadow-sm">
               <tr>${tableHeader}</tr>
             </thead>
             <tbody>${tableBody}</tbody>
           </table>
+        </div>`;
+    }
+
+    const filterSummaryHtml = this.escapeHtml(filterSummary);
+    const sortSummaryHtml = sortSummary ? this.escapeHtml(sortSummary) : '';
+
+    const paginationHtml = showPagination
+      ? `<div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <span>Page ${(currentPage + 1).toLocaleString()} of ${totalPages.toLocaleString()}</span>
+          <div class="flex items-center gap-2">
+            <button type="button" class="px-2 py-1 text-xs bg-slate-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-300" data-raw-page-prev ${
+              currentPage === 0 ? 'disabled' : ''
+            }>
+              Previous
+            </button>
+            <button type="button" class="px-2 py-1 text-xs bg-slate-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-300" data-raw-page-next ${
+              currentPage >= totalPages - 1 ? 'disabled' : ''
+            }>
+              Next
+            </button>
+          </div>
         </div>`
-      : '<p class="text-xs text-slate-500">No data rows available.</p>';
+      : '';
 
     const editToolbar = editingEnabled
       ? `<div class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
@@ -4561,12 +4795,12 @@ class CsvDataAnalysisApp extends HTMLElement {
                   </div>
                 </div>
                 <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-                  <span>${this.escapeHtml(filterSummary)}</span>
-                  ${sortSummary ? `<span>${this.escapeHtml(sortSummary)}</span>` : ''}
+                  <span>${filterSummaryHtml}</span>
+                  ${sortSummaryHtml ? `<span>${sortSummaryHtml}</span>` : ''}
                 </div>
+                ${paginationHtml}
                 ${editToolbar}
                 ${tableHtml}
-                ${hasMore ? '<p class="text-xs text-slate-500">Showing first 500 rows. Refine your filters to view more.</p>' : ''}
               </div>`
             : ''}
         </div>

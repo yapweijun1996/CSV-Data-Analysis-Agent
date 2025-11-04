@@ -7,7 +7,7 @@
 - [ ] **任务1：重建UI组件 (功能对齐检查)**
     - [x] **FileUpload**：验证原生实现是否与 `original/csv-data-analysis-agent /components/FileUpload.tsx` 中的行为匹配。确认用户体验对齐（拖放、API密钥门控）。当前的原生实现位于 `main.js` 中。
     - [x] **DataPreviewPanel**：移植或最终确定缺失的预览面板行为。原始文件 `original/csv-data-analysis-agent /components/DataPreviewPanel.tsx` 为空。原生版本有表格渲染助手，但应将其整合。
-    - [ ] **DataTable & EditableDataTable**：确保与 `original/csv-data-analysis-agent /components/EditableDataTable.tsx` 完全可编辑的电子表格功能对齐。原生版本具有内联编辑功能；确认所有流程（保存/放弃、待定编辑）工作方式相同。
+    - [x] **DataTable & EditableDataTable**：确保与 `original/csv-data-analysis-agent /components/EditableDataTable.tsx` 完全可编辑的电子表格功能对齐。原生版本具有内联编辑功能；确认所有流程（保存/放弃、待定编辑）、分页（50行）、列宽拖动与行号显示保持一致。
     - [ ] **ChatPanel**：将行为和可访问性与 `original/csv-data-analysis-agent /components/ChatPanel.tsx` 对齐。原生聊天功能存在，但需要验证消息类型、计划/思路流程和DOM操作触发器。
     - [ ] **AnalysisPanel & Chart 组件**：从 `original/csv-data-analysis-agent /components/AnalysisPanel.tsx`、`ChartRenderer.tsx` 和 `ChartTypeSwitcher.tsx` 移植任何缺失的交互。验证工具提示、缩放、选择和 topN 逻辑的功能对齐。
     - [ ] **辅助组件 & 模态框**：确认 HistoryPanel、MemoryPanel、SpreadsheetPanel、SettingsModal、FinalSummary 和 InteractiveLegend 的功能对齐和键盘可访问性，与其在 `original/csv-data-analysis-agent /components/` 中的原始对应组件进行比较。
