@@ -4530,7 +4530,7 @@ class CsvDataAnalysisApp extends HTMLElement {
         </div>`;
 
     return `
-      <section class="mx-auto max-w-6xl px-6 pb-8">
+      <section class="mx-auto max-w-6xl pb-8">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm">
           <button type="button" class="flex justify-between items-center w-full px-4 py-3 text-left hover:bg-slate-50" data-raw-toggle>
             <div>
