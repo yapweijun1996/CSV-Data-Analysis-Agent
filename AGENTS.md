@@ -3,6 +3,7 @@
 * help to convert the react js project(folder "Original") to vanilla frontend project. 
 * Vanilla Frontend is HTML CSS Javascript.
 * Dont use React JS and Tailwind CSS.
+* Do not amend folder "Original"
 
 ## Rules
 
