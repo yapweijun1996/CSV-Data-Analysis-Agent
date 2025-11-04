@@ -8,9 +8,9 @@
     - [x] **FileUpload**：验证原生实现是否与 `original/csv-data-analysis-agent /components/FileUpload.tsx` 中的行为匹配。确认用户体验对齐（拖放、API密钥门控）。当前的原生实现位于 `main.js` 中。
     - [x] **DataPreviewPanel**：移植或最终确定缺失的预览面板行为。原始文件 `original/csv-data-analysis-agent /components/DataPreviewPanel.tsx` 为空。原生版本有表格渲染助手，但应将其整合。
     - [x] **DataTable & EditableDataTable**：确保与 `original/csv-data-analysis-agent /components/EditableDataTable.tsx` 完全可编辑的电子表格功能对齐。原生版本具有内联编辑功能；确认所有流程（保存/放弃、待定编辑）、分页（50行）、列宽拖动与行号显示保持一致。
-    - [ ] **ChatPanel**：将行为和可访问性与 `original/csv-data-analysis-agent /components/ChatPanel.tsx` 对齐。原生聊天功能存在，但需要验证消息类型、计划/思路流程和DOM操作触发器。
-    - [ ] **AnalysisPanel & Chart 组件**：从 `original/csv-data-analysis-agent /components/AnalysisPanel.tsx`、`ChartRenderer.tsx` 和 `ChartTypeSwitcher.tsx` 移植任何缺失的交互。验证工具提示、缩放、选择和 topN 逻辑的功能对齐。
-    - [ ] **辅助组件 & 模态框**：确认 HistoryPanel、MemoryPanel、SpreadsheetPanel、SettingsModal、FinalSummary 和 InteractiveLegend 的功能对齐和键盘可访问性，与其在 `original/csv-data-analysis-agent /components/` 中的原始对应组件进行比较。
+    - [ ] **ChatPanel**：原生聊天仍缺乏多步计划提示与主动洞察体验，需要比照 `original/csv-data-analysis-agent /components/ChatPanel.tsx` 与 `App.tsx`：在多步骤动作前注入 `ai_plan_start` 消息并渲染专属样式；恢复 `generateProactiveInsights` 产出的 `ai_proactive_insight` 消息及“Show Related Card”按钮；在聊天头部补上 Memory 入口并串接记忆面板；当 `currentView === 'file_upload'` 时禁用输入框以保持流程一致。
+    - [ ] **AnalysisPanel & Chart 组件**：从 `original/csv-data-analysis-agent /components/AnalysisPanel.tsx`、`ChartRenderer.tsx` 和 `ChartTypeSwitcher.tsx` 移植任何缺失的交互。除验证工具提示、缩放、选择与 TopN 逻辑外，还需在 `runAnalysisPipeline` 中重新调用 `generateProactiveInsights`，确保分析完成后能推送对应聊天提示。
+    - [ ] **辅助组件 & 模态框**：`MemoryPanel` 尚未在原生实现（缺搜索、容量条、结果高亮等）；`SettingsModal` 需恢复 React 中的提供商切换按钮、按提供商显示对应 API Key 字段与获取链接；其余 HistoryPanel、SpreadsheetPanel、FinalSummary、InteractiveLegend 仍需做可访问性与键盘操作对齐检查。
 
 - [ ] **任务2：实现关键缺失服务**
     - [ ] **实现 `services/vectorStore.js`**：从 `original/csv-data-analysis-agent /services/vectorStore.ts` 移植。这是启用AI使用的记忆功能、向量搜索和索引所必需的。 **(当前缺失)**。
