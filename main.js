@@ -4302,36 +4302,85 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
   }
 
-  renderRawDataPanel() {
-    const {
-      csvData,
-      originalCsvData,
-      isRawDataVisible,
-      rawDataFilter,
-      rawDataWholeWord,
+  getDatasetViewOptions() {
+    return [
+      { key: 'cleaned', label: 'Cleaned Data' },
+      { key: 'original', label: 'Original Data' },
+    ];
+  }
+
+  getDatasetViewContext() {
+    const { csvData, originalCsvData } = this.state;
+    if (!csvData || !Array.isArray(csvData.data) || !csvData.data.length) {
+      return null;
+    }
+    const metadata = this.state.csvMetadata || csvData.metadata || null;
+    const rawDataView = this.state.rawDataView || 'cleaned';
+    const originalAvailable =
+      Boolean(originalCsvData) && Array.isArray(originalCsvData.data) && originalCsvData.data.length > 0;
+    const resolvedView = rawDataView === 'original' && originalAvailable ? 'original' : 'cleaned';
+    const activeDataset = resolvedView === 'original' ? originalCsvData : csvData;
+    const allRows = Array.isArray(activeDataset?.data) ? activeDataset.data : [];
+    const headers = allRows.length ? Object.keys(allRows[0]) : [];
+    const cleanedCount = metadata?.cleanedRowCount ?? csvData.data.length;
+    const originalCount =
+      metadata?.originalRowCount ?? (originalCsvData?.data?.length || cleanedCount);
+    const removedCount = Math.max(originalCount - cleanedCount, 0);
+    const contextRows = Array.isArray(metadata?.contextRows)
+      ? metadata.contextRows
+      : Array.isArray(metadata?.leadingRows)
+      ? metadata.leadingRows
+      : [];
+    const contextPreview = contextRows
+      .map(row => row.filter(Boolean).join(' | '))
+      .find(Boolean);
+    const contextCount = metadata?.contextRowCount || contextRows.length || 0;
+    const datasetLabel =
+      resolvedView === 'original'
+        ? 'Original data sample (before cleaning)'
+        : 'Cleaned data sample (ready for analysis)';
+
+    return {
+      metadata,
       rawDataView,
-    } = this.state;
+      originalAvailable,
+      resolvedView,
+      activeDataset,
+      allRows,
+      headers,
+      cleanedCount,
+      originalCount,
+      removedCount,
+      contextPreview: contextPreview || null,
+      contextCount,
+      datasetLabel,
+    };
+  }
+
+  renderDataPreviewPanel() {
+    return '';
+  }
+
+  renderRawDataPanel() {
+    const { csvData, isRawDataVisible, rawDataFilter, rawDataWholeWord } = this.state;
     if (!csvData || !Array.isArray(csvData.data)) {
       return '';
     }
 
-    const metadata = this.state.csvMetadata || csvData.metadata || null;
-    const originalAvailable =
-      Boolean(originalCsvData) && Array.isArray(originalCsvData.data) && originalCsvData.data.length > 0;
-    const resolvedView =
-      rawDataView === 'original' && originalAvailable ? 'original' : 'cleaned';
-    const activeData = resolvedView === 'original' ? originalCsvData : csvData;
-    const headers = activeData?.data?.length
-      ? Object.keys(activeData.data[0])
-      : csvData.data.length
-      ? Object.keys(csvData.data[0])
-      : [];
+    const context = this.getDatasetViewContext();
+    if (!context) {
+      return '';
+    }
+
+    const metadata = context.metadata;
+    const activeDataset = context.activeDataset || csvData;
+    const headers = context.headers;
     const sortState = this.state.rawDataSort || null;
-    const processedRows = this.getProcessedRawData(activeData);
+    const processedRows = this.getProcessedRawData(activeDataset);
     const rowLimit = 500;
     const visibleRows = processedRows.slice(0, rowLimit);
     const hasMore = processedRows.length > rowLimit;
-    const totalRowsInView = Array.isArray(activeData?.data) ? activeData.data.length : csvData.data.length;
+    const totalRowsInView = context.allRows.length || (Array.isArray(activeDataset?.data) ? activeDataset.data.length : 0);
     const filteredRowCount = processedRows.length;
     const filterActive = Boolean(rawDataFilter || rawDataWholeWord || sortState);
     const filterSummaryText = filterActive
@@ -4344,12 +4393,6 @@ class CsvDataAnalysisApp extends HTMLElement {
       ? `Sorted by ${sortState.key} (${sortState.direction === 'ascending' ? 'ascending' : 'descending'})`
       : '';
 
-    const cleanedCount = metadata?.cleanedRowCount ?? (csvData.data?.length || 0);
-    const originalCount =
-      metadata?.originalRowCount ??
-      (originalCsvData?.data?.length || cleanedCount);
-    const removedCount = Math.max(originalCount - cleanedCount, 0);
-
     this.ensureRawEditContext();
     const metadataLines = [];
     if (metadata?.reportTitle) {
@@ -4357,43 +4400,28 @@ class CsvDataAnalysisApp extends HTMLElement {
         `<p class="text-xs font-semibold text-slate-600">${this.escapeHtml(metadata.reportTitle)}</p>`
       );
     }
-    const contextRows = Array.isArray(metadata?.contextRows)
-      ? metadata.contextRows
-      : Array.isArray(metadata?.leadingRows)
-      ? metadata.leadingRows
-      : [];
-    if (contextRows.length) {
-      const preview = contextRows
-        .map(row => row.filter(cell => cell).join(' | '))
-        .find(text => text);
-      if (preview) {
-        metadataLines.push(
-          `<p class="text-[11px] text-slate-400 mt-0.5">${this.escapeHtml(preview)}</p>`
-        );
-      }
-    }
-    const contextCount = metadata?.contextRowCount || contextRows.length || 0;
-    if (contextCount) {
+    if (context.contextPreview) {
       metadataLines.push(
-        `<p class="text-[11px] text-slate-400 mt-0.5">Extracted ${contextCount} rows of context data (including headers and initial data rows).</p>`
+        `<p class="text-[11px] text-slate-400 mt-0.5">${this.escapeHtml(context.contextPreview)}</p>`
+      );
+    }
+    if (context.contextCount) {
+      metadataLines.push(
+        `<p class="text-[11px] text-slate-400 mt-0.5">Extracted ${context.contextCount.toLocaleString()} rows of context data (including headers and initial data rows).</p>`
       );
     }
     metadataLines.push(
-      `<p class="text-[11px] text-slate-400 mt-0.5">Original ${originalCount.toLocaleString()} rows • ${cleanedCount.toLocaleString()} rows after cleaning${removedCount > 0 ? ` • ${removedCount.toLocaleString()} rows removed` : ''}</p>`
+      `<p class="text-[11px] text-slate-400 mt-0.5">Original ${context.originalCount.toLocaleString()} rows • ${context.cleanedCount.toLocaleString()} rows after cleaning${context.removedCount > 0 ? ` • ${context.removedCount.toLocaleString()} rows removed` : ''}</p>`
     );
     metadataLines.push(
-      `<p class="text-[11px] ${resolvedView === 'original' ? 'text-amber-600' : 'text-slate-400'} mt-0.5">Current view: ${resolvedView === 'original' ? 'Original CSV content (including title/total rows)' : 'Cleaned data ready for analysis'}</p>`
+      `<p class="text-[11px] ${context.resolvedView === 'original' ? 'text-amber-600' : 'text-slate-400'} mt-0.5">Current view: ${context.resolvedView === 'original' ? 'Original CSV content (including title/total rows)' : 'Cleaned data ready for analysis'}</p>`
     );
     const metadataBlock = metadataLines.join('');
 
-    const viewOptions = [
-      { key: 'cleaned', label: 'Cleaned Data' },
-      { key: 'original', label: 'Original Data' },
-    ];
-    const viewButtons = viewOptions
+    const viewButtons = this.getDatasetViewOptions()
       .map(option => {
-        const isActive = resolvedView === option.key;
-        const disabled = option.key === 'original' && !originalAvailable;
+        const isActive = context.resolvedView === option.key;
+        const disabled = option.key === 'original' && !context.originalAvailable;
         const classes = [
           'px-3 py-1 text-xs font-medium rounded-md transition-colors',
           isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white/70',
@@ -4429,8 +4457,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       })
       .join('');
 
-    const datasetRows = Array.isArray(activeData?.data) ? activeData.data : [];
-    const editingEnabled = resolvedView === 'cleaned';
+    const datasetRows = Array.isArray(activeDataset?.data) ? activeDataset.data : [];
+    const editingEnabled = context.resolvedView === 'cleaned';
     const pendingEditCount = this.getPendingRawEditCount();
     const hasPendingEdits = pendingEditCount > 0;
 
@@ -4559,6 +4587,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     } else {
       cardsSection = this.renderEmptyCardsState();
     }
+    const dataPreviewPanel = this.renderDataPreviewPanel();
     const rawDataPanel = this.renderRawDataPanel();
 
     const summaryBlock = finalSummary
@@ -4591,6 +4620,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     } else {
       mainContent = `
         ${summaryBlock}
+        ${dataPreviewPanel}
         <div class="space-y-6">${cardsSection}</div>
         ${rawDataPanel}
       `;
