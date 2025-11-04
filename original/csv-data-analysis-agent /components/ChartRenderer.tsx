@@ -129,7 +129,7 @@ export const ChartRenderer = forwardRef<ChartRendererHandle, ChartRendererProps>
                 onPanComplete: ({ chart }: {chart: any}) => onZoomChange(isChartZoomedOrPanned(chart)),
              },
              zoom: {
-                wheel: { enabled: true },
+                wheel: { enabled: false },
                 pinch: { enabled: true },
                 mode: 'xy',
                 onZoomComplete: ({ chart }: {chart: any}) => onZoomChange(isChartZoomedOrPanned(chart)),
@@ -155,7 +155,6 @@ export const ChartRenderer = forwardRef<ChartRendererHandle, ChartRendererProps>
                     },
                     options: {
                         ...commonOptions,
-                        plugins: { ...commonOptions.plugins, zoom: zoomOptions }
                     }
                 });
                 break;

@@ -8,7 +8,7 @@ export interface CsvData {
 
 export interface ColumnProfile {
     name: string;
-    type: 'numerical' | 'categorical';
+    type: 'numerical' | 'categorical' | 'date' | 'time' | 'currency' | 'percentage';
     uniqueValues?: number;
     valueRange?: [number, number];
     missingPercentage?: number;
@@ -54,7 +54,7 @@ export interface ChatMessage {
     sender: 'user' | 'ai';
     text: string;
     timestamp: Date;
-    type?: 'user_message' | 'ai_message' | 'ai_thinking'; // New field for special message types
+    type?: 'user_message' | 'ai_message' | 'ai_thinking' | 'ai_proactive_insight' | 'ai_plan_start'; // New field for special message types
     isError?: boolean; // To style error messages in the chat
     cardId?: string; // ID of the card this message refers to
 }
@@ -79,6 +79,7 @@ export interface AppState {
     chatHistory: ChatMessage[];
     finalSummary: string | null;
     aiCoreAnalysisSummary: string | null; // AI's internal monologue/memory about the dataset
+    dataPreparationPlan: DataPreparationPlan | null; // The plan used to clean the data
 }
 
 export interface DomAction {
@@ -87,6 +88,7 @@ export interface DomAction {
 }
 
 export interface AiAction {
+  thought?: string; // The AI's reasoning for this action (ReAct pattern).
   responseType: 'plan_creation' | 'text_response' | 'dom_action' | 'execute_js_code' | 'proceed_to_analysis';
   plan?: AnalysisPlan;
   text?: string;
@@ -130,6 +132,14 @@ export interface CardContext {
     id: string;
     title: string;
     aggregatedDataSample: CsvRow[];
+}
+
+// For Long-Term Memory / Vector Store
+export interface VectorStoreDocument {
+    id: string;
+    text: string;
+    embedding: number[];
+    metadata?: Record<string, any>;
 }
 
 // For interactive spreadsheet sorting

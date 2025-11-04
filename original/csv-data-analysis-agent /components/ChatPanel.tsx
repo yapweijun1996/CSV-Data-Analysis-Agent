@@ -9,6 +9,7 @@ interface ChatPanelProps {
     isApiKeySet: boolean;
     onToggleVisibility: () => void;
     onOpenSettings: () => void;
+    onOpenMemory: () => void;
     onShowCard: (cardId: string) => void;
     currentView: AppView;
 }
@@ -26,8 +27,14 @@ const SettingsIcon: React.FC = () => (
     </svg>
 );
 
+const MemoryIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 2-1-2-1.257-.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 1 1 0 000-2zM6 8a1 1 0 112 0 1 1 0 01-2 0zm2 3a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
+    </svg>
+);
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ progressMessages, chatHistory, isBusy, onSendMessage, isApiKeySet, onToggleVisibility, onOpenSettings, onShowCard, currentView }) => {
+
+export const ChatPanel: React.FC<ChatPanelProps> = ({ progressMessages, chatHistory, isBusy, onSendMessage, isApiKeySet, onToggleVisibility, onOpenSettings, onOpenMemory, onShowCard, currentView }) => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +71,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ progressMessages, chatHist
         if ('sender' in item) { // It's a ChatMessage
             const msg = item as ChatMessage;
 
+            if (msg.type === 'ai_plan_start') {
+                return (
+                    <div key={`chat-${index}`} className="my-2 p-3 bg-slate-100 border border-slate-200 rounded-lg">
+                        <div className="flex items-center text-slate-700 mb-2">
+                             <span className="text-lg mr-2">⚙️</span>
+                             <h4 className="font-semibold">Plan Execution</h4>
+                        </div>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{msg.text}</p>
+                    </div>
+                );
+            }
+
             if (msg.type === 'ai_thinking') {
                 return (
                     <div key={`chat-${index}`} className="my-2 p-3 bg-white border border-blue-200 rounded-lg">
@@ -72,6 +91,26 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ progressMessages, chatHist
                              <h4 className="font-semibold">AI's Initial Analysis</h4>
                         </div>
                         <p className="text-sm text-slate-700 whitespace-pre-wrap">{msg.text}</p>
+                    </div>
+                )
+            }
+            
+            if (msg.type === 'ai_proactive_insight') {
+                return (
+                    <div key={`chat-${index}`} className="my-2 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                        <div className="flex items-center text-yellow-800 mb-2">
+                             <span className="text-lg mr-2">💡</span>
+                             <h4 className="font-semibold">Proactive Insight</h4>
+                        </div>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{msg.text}</p>
+                         {msg.cardId && (
+                            <button 
+                                onClick={() => onShowCard(msg.cardId!)}
+                                className="mt-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-md hover:bg-yellow-200 transition-colors w-full text-left font-medium"
+                            >
+                                → Show Related Card
+                            </button>
+                         )}
                     </div>
                 )
             }
@@ -119,6 +158,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ progressMessages, chatHist
                 <h2 className="text-xl font-semibold text-slate-900">Assistant</h2>
                  <div className="flex items-center space-x-3">
                     <button
+                        onClick={onOpenMemory}
+                        className="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors"
+                        title="View AI Memory"
+                        aria-label="View AI Memory"
+                    >
+                        <MemoryIcon />
+                    </button>
+                    <button
                         onClick={onOpenSettings}
                         className="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors"
                         title="Settings"
@@ -138,16 +185,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ progressMessages, chatHist
             </div>
             <div className="flex-1 p-4 overflow-y-auto space-y-4">
                 {timeline.map(renderMessage)}
-
-                {isBusy && (
-                    <div className="flex items-center text-blue-600">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                    </div>
-                )}
                 <div ref={messagesEndRef} />
             </div>
             <div className="p-4 border-t border-slate-200 bg-white">

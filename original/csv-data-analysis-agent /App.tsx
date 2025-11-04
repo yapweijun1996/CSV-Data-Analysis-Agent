@@ -4,11 +4,13 @@ import { ChatPanel } from './components/ChatPanel';
 import { FileUpload } from './components/FileUpload';
 import { SettingsModal } from './components/SettingsModal';
 import { HistoryPanel } from './components/HistoryPanel';
+import { MemoryPanel } from './components/MemoryPanel';
 import { SpreadsheetPanel } from './components/SpreadsheetPanel';
-import { AnalysisCardData, ChatMessage, ProgressMessage, CsvData, AnalysisPlan, AppState, ColumnProfile, AiAction, CardContext, ChartType, DomAction, Settings, Report, ReportListItem, AppView, CsvRow } from './types';
+import { AnalysisCardData, ChatMessage, ProgressMessage, CsvData, AnalysisPlan, AppState, ColumnProfile, AiAction, CardContext, ChartType, DomAction, Settings, Report, ReportListItem, AppView, CsvRow, DataPreparationPlan } from './types';
 import { processCsv, profileData, executePlan, executeJavaScriptDataTransform } from './utils/dataProcessor';
-import { generateAnalysisPlans, generateSummary, generateFinalSummary, generateChatResponse, generateDataPreparationPlan, generateCoreAnalysisSummary } from './services/geminiService';
+import { generateAnalysisPlans, generateSummary, generateFinalSummary, generateChatResponse, generateDataPreparationPlan, generateCoreAnalysisSummary, generateProactiveInsights } from './services/geminiService';
 import { getReportsList, saveReport, getReport, deleteReport, getSettings, saveSettings, CURRENT_SESSION_KEY } from './storageService';
+import { vectorStore } from './services/vectorStore';
 
 const MIN_ASIDE_WIDTH = 320;
 const MAX_ASIDE_WIDTH = 800;
@@ -41,6 +43,7 @@ const initialState: AppState = {
     chatHistory: [],
     finalSummary: null,
     aiCoreAnalysisSummary: null,
+    dataPreparationPlan: null,
 };
 
 
@@ -53,6 +56,7 @@ const App: React.FC = () => {
 
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+    const [isMemoryPanelOpen, setIsMemoryPanelOpen] = useState(false);
     const [settings, setSettings] = useState<Settings>(() => getSettings());
     const [reportsList, setReportsList] = useState<ReportListItem[]>([]);
 
@@ -68,9 +72,20 @@ const App: React.FC = () => {
         }
     }, []);
 
-    // Load current session or reports list on initial mount
+    const addProgress = useCallback((message: string, type: 'system' | 'error' = 'system') => {
+        if (!isMounted.current) return;
+        const newMessage: ProgressMessage = { text: message, type, timestamp: new Date() };
+        setAppState(prev => ({ ...prev, progressMessages: [...prev.progressMessages, newMessage] }));
+    }, []);
+    
     useEffect(() => {
         isMounted.current = true;
+        return () => { isMounted.current = false; };
+    }, []);
+
+
+    // Load current session or reports list on initial mount
+    useEffect(() => {
         const loadInitialData = async () => {
             const currentSession = await getReport(CURRENT_SESSION_KEY);
             if (isMounted.current) {
@@ -84,7 +99,6 @@ const App: React.FC = () => {
             }
         };
         loadInitialData();
-        return () => { isMounted.current = false; };
     }, [loadReportsList]);
 
     // Debounced saving of the current session state
@@ -141,13 +155,6 @@ const App: React.FC = () => {
         document.body.style.cursor = 'col-resize';
     }, [handleAsideMouseMove, handleMouseUp]);
 
-
-    const addProgress = useCallback((message: string, type: 'system' | 'error' = 'system') => {
-        if (!isMounted.current) return;
-        const newMessage: ProgressMessage = { text: message, type, timestamp: new Date() };
-        setAppState(prev => ({ ...prev, progressMessages: [...prev.progressMessages, newMessage] }));
-    }, []);
-
     const runAnalysisPipeline = useCallback(async (plans: AnalysisPlan[], data: CsvData, isChatRequest: boolean = false) => {
         let isFirstCardInPipeline = true;
         
@@ -183,6 +190,10 @@ const App: React.FC = () => {
                     setAppState(prev => ({...prev, analysisCards: [...prev.analysisCards, newCard] }));
                 }
 
+                const cardMemoryText = `[Chart: ${plan.title}] Description: ${plan.description}. AI Summary: ${summary.split('---')[0]}`;
+                await vectorStore.addDocument({ id: newCard.id, text: cardMemoryText });
+                addProgress(`View #${newCard.id.slice(-6)} indexed for long-term memory.`);
+
                 isFirstCardInPipeline = false; 
                 addProgress(`Saved as View #${newCard.id.slice(-6)}`);
                 return newCard;
@@ -214,6 +225,28 @@ const App: React.FC = () => {
                     aiCoreAnalysisSummary: coreSummary,
                     chatHistory: [...prev.chatHistory, thinkingMessage],
                 }));
+                
+                addProgress("Indexing core analysis for long-term memory...");
+                await vectorStore.addDocument({ id: 'core-summary', text: `Core Analysis Summary: ${coreSummary}` });
+                addProgress("Core analysis indexed.");
+            }
+            
+            addProgress('AI is looking for key insights...');
+            const proactiveInsight = await generateProactiveInsights(cardContext, settings);
+            
+            if (isMounted.current && proactiveInsight) {
+                const insightMessage: ChatMessage = {
+                    sender: 'ai',
+                    text: proactiveInsight.insight,
+                    timestamp: new Date(),
+                    type: 'ai_proactive_insight',
+                    cardId: proactiveInsight.cardId,
+                };
+                setAppState(prev => ({
+                    ...prev,
+                    chatHistory: [...prev.chatHistory, insightMessage],
+                }));
+                addProgress(`AI proactively identified an insight in View #${proactiveInsight.cardId.slice(-6)}.`);
             }
 
             const finalSummaryText = await generateFinalSummary(createdCards, settings);
@@ -266,6 +299,8 @@ const App: React.FC = () => {
                 await saveReport(sessionToArchive);
              }
         }
+        
+        vectorStore.clear();
         await deleteReport(CURRENT_SESSION_KEY);
         await loadReportsList();
 
@@ -280,12 +315,15 @@ const App: React.FC = () => {
             
             let dataForAnalysis = parsedData;
             let profiles: ColumnProfile[];
+            let prepPlan: DataPreparationPlan | null = null;
 
             if (isApiKeySet) {
+                await vectorStore.init(addProgress);
+
                 addProgress('AI is analyzing data for cleaning and reshaping...');
                 const initialProfiles = profileData(dataForAnalysis.data);
                 
-                const prepPlan = await generateDataPreparationPlan(initialProfiles, dataForAnalysis.data.slice(0, 20), settings);
+                prepPlan = await generateDataPreparationPlan(initialProfiles, dataForAnalysis.data.slice(0, 20), settings);
                 
                 if (prepPlan && prepPlan.jsFunctionBody) {
                     addProgress(`AI Plan: ${prepPlan.explanation}`);
@@ -293,7 +331,7 @@ const App: React.FC = () => {
                     const originalRowCount = dataForAnalysis.data.length;
                     dataForAnalysis.data = executeJavaScriptDataTransform(dataForAnalysis.data, prepPlan.jsFunctionBody);
                     const newRowCount = dataForAnalysis.data.length;
-                    addProgress(`Transformation complete. Row count changed from ${originalRowCount} to ${newRowCount}.`);
+                    addProgress(`Transformation complete. Row count changed from ${originalRowCount} to ${newRowCount}. You can ask me how the data was cleaned.`);
                 } else {
                      addProgress('AI found no necessary data transformations.');
                 }
@@ -309,9 +347,10 @@ const App: React.FC = () => {
                     ...prev, 
                     csvData: dataForAnalysis, 
                     columnProfiles: profiles,
+                    dataPreparationPlan: prepPlan,
                     currentView: 'analysis_dashboard'
                 }));
-                handleInitialAnalysis(dataForAnalysis);
+                await handleInitialAnalysis(dataForAnalysis);
 
             } else {
                  const providerName = settings.provider === 'google' ? 'Gemini' : 'OpenAI';
@@ -341,7 +380,7 @@ const App: React.FC = () => {
                 setAppState(prev => ({ ...prev, isBusy: false, currentView: 'file_upload' }));
             }
         }
-    }, [addProgress, settings, loadReportsList, handleInitialAnalysis, isApiKeySet]);
+    }, [addProgress, settings, loadReportsList, handleInitialAnalysis, isApiKeySet, appState]);
 
 
     const regenerateAnalyses = useCallback(async (newData: CsvData) => {
@@ -452,18 +491,27 @@ const App: React.FC = () => {
             setIsSettingsModalOpen(true);
             return;
         }
+        
+        if (!vectorStore.getIsInitialized()) {
+            await vectorStore.init(addProgress);
+        }
 
         if (!isMounted.current) return;
         const newChatMessage: ChatMessage = { sender: 'user', text: message, timestamp: new Date(), type: 'user_message' };
         setAppState(prev => ({ ...prev, isBusy: true, chatHistory: [...prev.chatHistory, newChatMessage] }));
+        await vectorStore.addDocument({id: `chat-${newChatMessage.timestamp.getTime()}-user`, text: `User asks: "${message}"`});
 
         try {
-            addProgress('AI is thinking...');
+            const relevantMemories = await vectorStore.search(message, 5);
+            const memoryContext = relevantMemories.map(r => r.text);
+            if (memoryContext.length > 0) {
+                addProgress(`Found ${memoryContext.length} relevant memories.`);
+            }
             
             const cardContext: CardContext[] = appState.analysisCards.map(c => ({
                 id: c.id,
                 title: c.plan.title,
-                aggregatedDataSample: c.aggregatedData.slice(0, 10),
+                aggregatedDataSample: c.aggregatedData.slice(0, 100),
             }));
 
             const response = await generateChatResponse(
@@ -474,14 +522,41 @@ const App: React.FC = () => {
                 settings,
                 appState.aiCoreAnalysisSummary,
                 appState.currentView,
-                appState.csvData.data.slice(0, 20)
+                appState.csvData.data.slice(0, 20),
+                memoryContext,
+                appState.dataPreparationPlan
             );
 
             const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
             const actions = response.actions;
+            
+            if (actions.length > 1) {
+                const planText = actions[0]?.thought || `I've formulated a ${actions.length}-step plan to address your request.`;
+                const planMessage: ChatMessage = {
+                    sender: 'ai',
+                    text: planText,
+                    timestamp: new Date(),
+                    type: 'ai_plan_start',
+                };
+                if (isMounted.current) {
+                    setAppState(prev => ({ ...prev, chatHistory: [...prev.chatHistory, planMessage] }));
+                }
+                addProgress(`AI is executing a ${actions.length}-step plan.`);
+                await sleep(1000);
+            }
 
-            for (const action of actions) {
+            for (const [index, action] of actions.entries()) {
                 if (!isMounted.current) break;
+
+                if (action.thought) {
+                    // The first thought of a multi-step plan is already displayed in the chat.
+                    // We only log subsequent thoughts for individual steps, or thoughts for single-step actions.
+                    if (index > 0 || actions.length === 1) {
+                        addProgress(`AI Thought: ${action.thought}`);
+                        await sleep(1500); // Give user time to read the thought
+                    }
+                }
+                
                 switch (action.responseType) {
                     case 'text_response':
                         if (action.text && isMounted.current) {
@@ -493,6 +568,7 @@ const App: React.FC = () => {
                                 cardId: action.cardId
                             };
                             setAppState(prev => ({...prev, chatHistory: [...prev.chatHistory, aiMessage]}));
+                            await vectorStore.addDocument({id: `chat-${aiMessage.timestamp.getTime()}-ai`, text: `AI responds: "${action.text}"`});
                         }
                         break;
                     case 'plan_creation':
@@ -544,7 +620,6 @@ const App: React.FC = () => {
                     await sleep(750);
                 }
             }
-
         } catch(error) {
             console.error('Chat processing error:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -651,6 +726,7 @@ const App: React.FC = () => {
                 await saveReport(sessionToArchive);
             }
         }
+        vectorStore.clear();
         await deleteReport(CURRENT_SESSION_KEY);
         setAppState(initialState);
         await loadReportsList();
@@ -711,6 +787,10 @@ const App: React.FC = () => {
                 onLoadReport={handleLoadReport}
                 onDeleteReport={handleDeleteReport}
             />
+            <MemoryPanel
+                isOpen={isMemoryPanelOpen}
+                onClose={() => setIsMemoryPanelOpen(false)}
+            />
             <main className="flex-1 overflow-hidden p-4 md:p-6 lg:p-8 flex flex-col">
                 <header className="mb-6 flex justify-between items-center flex-shrink-0">
                     <div>
@@ -760,6 +840,7 @@ const App: React.FC = () => {
                             isApiKeySet={isApiKeySet}
                             onToggleVisibility={() => setIsAsideVisible(false)}
                             onOpenSettings={() => setIsSettingsModalOpen(true)}
+                            onOpenMemory={() => setIsMemoryPanelOpen(true)}
                             onShowCard={handleShowCardFromChat}
                             currentView={currentView}
                         />
