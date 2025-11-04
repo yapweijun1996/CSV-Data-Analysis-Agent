@@ -778,14 +778,19 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   getCardLegendData(card) {
-    const { plan, aggregatedData, topN } = card;
-    if (plan.chartType === 'scatter' || !plan.groupByColumn) {
-      return [...aggregatedData];
+    const { plan, aggregatedData, topN, filter } = card;
+    let data = Array.isArray(aggregatedData) ? [...aggregatedData] : [];
+    if (filter && filter.column && Array.isArray(filter.values) && filter.values.length) {
+      const allowed = new Set(filter.values.map(value => String(value)));
+      data = data.filter(row => allowed.has(String(row?.[filter.column])));
     }
-    let data = [...aggregatedData];
+    if (plan.chartType === 'scatter' || !plan.groupByColumn) {
+      return data;
+    }
+    const groupByColumn = plan.groupByColumn;
     if (topN) {
       const valueKey = this.getCardValueKey(card);
-      data = applyTopNWithOthers(data, plan.groupByColumn, valueKey, topN);
+      data = applyTopNWithOthers(data, groupByColumn, valueKey, topN);
     }
     return data;
   }
@@ -793,13 +798,13 @@ class CsvDataAnalysisApp extends HTMLElement {
   getCardDisplayData(card) {
     const { plan, hideOthers, hiddenLabels = [] } = card;
     if (plan.chartType === 'scatter') {
-      return [...card.aggregatedData];
+      return this.getCardLegendData(card);
     }
     const groupKey = plan.groupByColumn;
-    if (!groupKey) {
-      return [...card.aggregatedData];
-    }
     let data = this.getCardLegendData(card);
+    if (!groupKey) {
+      return data;
+    }
     if (card.topN && hideOthers) {
       data = data.filter(row => row[groupKey] !== 'Others');
     }
@@ -1555,6 +1560,41 @@ class CsvDataAnalysisApp extends HTMLElement {
             }
           : { success: false, error: `Unable to toggle hide others for card ${cardId || ''}.` };
       }
+      case 'filterCard': {
+        const { cardId, column, values } = domAction;
+        if (!cardId) {
+          return { success: false, error: 'Card ID is required for filtering.' };
+        }
+        const card = findCard(cardId);
+        if (!card) {
+          return { success: false, error: `Card ${cardId} not found.` };
+        }
+        const columnName =
+          typeof column === 'string' && column.trim() ? column.trim() : card.plan?.groupByColumn;
+        if (!columnName) {
+          return { success: false, error: 'Filter requires a target column.' };
+        }
+        const filterResult = this.setCardFilter(cardId, {
+          column: columnName,
+          values: Array.isArray(values) ? values : [],
+        });
+        if (!filterResult.success) {
+          return { success: false, error: filterResult.error || 'Unable to apply filter.' };
+        }
+        if (filterResult.cleared) {
+          return {
+            success: true,
+            message: `Cleared filter for "${filterResult.cardTitle}".`,
+          };
+        }
+        const appliedValues = filterResult.filter?.values || [];
+        const previewValues = appliedValues.slice(0, 3).join(', ');
+        const remaining = appliedValues.length > 3 ? ` (+${appliedValues.length - 3} more)` : '';
+        return {
+          success: true,
+          message: `Applied filter for "${filterResult.cardTitle}" • ${columnName}: ${previewValues}${remaining}`,
+        };
+      }
       case 'clearCardSelection': {
         const { cardId } = domAction;
         const success = this.clearCardSelection(cardId);
@@ -2087,6 +2127,65 @@ class CsvDataAnalysisApp extends HTMLElement {
     return true;
   }
 
+  normalizeCardFilter(filterInput) {
+    if (!filterInput || typeof filterInput !== 'object') {
+      return null;
+    }
+    const column = typeof filterInput.column === 'string' ? filterInput.column.trim() : '';
+    if (!column) {
+      return null;
+    }
+    const values = Array.isArray(filterInput.values) ? filterInput.values : [];
+    const normalizedValues = Array.from(
+      new Set(
+        values
+          .map(value => {
+            if (value === null || value === undefined) {
+              return null;
+            }
+            if (typeof value === 'number' && Number.isFinite(value)) {
+              return String(value);
+            }
+            if (typeof value === 'boolean') {
+              return value ? 'true' : 'false';
+            }
+            const text = String(value).trim();
+            return text ? text : null;
+          })
+          .filter(Boolean)
+      )
+    );
+    if (!normalizedValues.length) {
+      return null;
+    }
+    return {
+      column,
+      values: normalizedValues,
+    };
+  }
+
+  setCardFilter(cardId, filterInput) {
+    if (!cardId) {
+      return { success: false, error: 'Missing card ID.' };
+    }
+    const card = this.state.analysisCards.find(item => item.id === cardId);
+    if (!card) {
+      return { success: false, error: `Card ${cardId} not found.` };
+    }
+    const normalized = this.normalizeCardFilter(filterInput);
+    this.updateCard(cardId, () => ({
+      filter: normalized,
+      selectedIndices: [],
+    }));
+    return {
+      success: true,
+      cleared: !normalized,
+      filter: normalized,
+      card,
+      cardTitle: card.plan?.title || cardId,
+    };
+  }
+
   setCardTopN(cardId, topN, hideOthers) {
     if (!cardId) return false;
     const card = this.state.analysisCards.find(item => item.id === cardId);
@@ -2589,7 +2688,7 @@ class CsvDataAnalysisApp extends HTMLElement {
 
     const chartType = card.displayChartType || plan.chartType;
     const legendData = this.getCardLegendData(card);
-    const chartData = chartType === 'scatter' ? card.aggregatedData : this.getCardDisplayData(card);
+    const chartData = this.getCardDisplayData(card);
     const groupKey = plan.groupByColumn;
     const valueKey = this.getCardValueKey(card);
     const selectedIndices = Array.isArray(card.selectedIndices) ? card.selectedIndices : [];
@@ -3668,6 +3767,10 @@ class CsvDataAnalysisApp extends HTMLElement {
     const isExporting = Boolean(card.isExporting);
     const showTopNControls = plan.chartType !== 'scatter' && legendData.length > 5;
     const valueKey = this.getCardValueKey(card);
+    const filter = card.filter;
+    const filterValues = filter && Array.isArray(filter.values) ? filter.values.join(', ') : '';
+    const filterColumn = filter && filter.column ? this.escapeHtml(filter.column) : '';
+    const filterValueDisplay = filterValues ? this.escapeHtml(filterValues) : '';
 
     const topNValue = card.topN ? String(card.topN) : 'all';
     const topNOptions = ['all', '5', '8', '10', '20']
@@ -3709,6 +3812,13 @@ class CsvDataAnalysisApp extends HTMLElement {
     const legendColumn = showLegend
       ? `<div class="flex flex-col">${legendHtml}</div>`
       : '';
+
+    const filterBanner =
+      filter && filter.column && Array.isArray(filter.values) && filter.values.length
+        ? `<div class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+            <strong>AI Filter Active:</strong> Showing where '${filterColumn}' is '${filterValueDisplay}'. Ask the assistant to "clear filter" to remove.
+          </div>`
+        : '';
 
     return `
       <article class="bg-white rounded-xl shadow border border-slate-200 p-4 flex flex-col gap-4 transition-shadow ${
@@ -3779,9 +3889,11 @@ class CsvDataAnalysisApp extends HTMLElement {
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /><path d="M12.293 5.293a1 1 0 011.414 0l2 2a1 1 0 01-1.414 1.414L13 7.414V10a1 1 0 11-2 0V7.414l-1.293 1.293a1 1 0 01-1.414-1.414l2-2zM7.707 14.707a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L7 12.586V10a1 1 0 112 0v2.586l1.293-1.293a1 1 0 011.414 1.414l-2 2z" /></svg>
               </button>` : ''}
             </div>
-          </div>
+        </div>
           ${legendColumn}
         </div>
+
+        ${filterBanner}
 
         <div class="border-t border-slate-200 pt-3 text-sm text-slate-700">
           <p>${this.escapeHtml(summary.primary)}</p>

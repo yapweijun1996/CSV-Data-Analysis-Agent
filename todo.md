@@ -14,9 +14,9 @@
   - [x] 使用 `html-to-image` 库实现 `handleExportPNG` 以捕获卡片的画布/容器。
   - [x] 实现 `handleExportCSV` 以将 `card.aggregatedData` 序列化为 CSV 字符串并触发文件下载。
 
-- [ ] **恢复卡片筛选功能**
-  - [ ] 支持 `filterCard` DOM 操作并持久化每个卡片的筛选状态。
-  - [ ] 在卡片上显示当前生效的筛选器横幅，并允许 AI/用户清除筛选器。
+- [x] **恢复卡片筛选功能**
+  - [x] 支持 `filterCard` DOM 操作并持久化每个卡片的筛选状态。
+  - [x] 在卡片上显示当前生效的筛选器横幅，并允许 AI/用户清除筛选器（通过发送空的筛选值或让助理执行“clear filter”操作）。
 
 ## P1：可维护性与开发者体验
 
