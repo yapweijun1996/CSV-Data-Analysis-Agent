@@ -3212,7 +3212,14 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (fileInput) {
       fileInput.addEventListener('change', e => {
         const target = e.target;
-        if (target.files && target.files[0]) {
+        if (!this.hasConfiguredApiKey()) {
+          this.ensureApiCredentials('API key is required before uploading files.');
+          if (target && typeof target.value === 'string') {
+            target.value = '';
+          }
+          return;
+        }
+        if (target && target.files && target.files[0]) {
           this.handleFileInput(target.files[0]);
           target.value = '';
         }
@@ -3221,14 +3228,46 @@ class CsvDataAnalysisApp extends HTMLElement {
 
     const uploadDropZone = this.querySelector('[data-drop-zone]');
     if (uploadDropZone) {
+      let dragDepth = 0;
+      const toggleDragActive = isActive => {
+        uploadDropZone.classList.toggle('border-blue-500', Boolean(isActive));
+        uploadDropZone.classList.toggle('bg-slate-100', Boolean(isActive));
+        uploadDropZone.classList.toggle('border-slate-300', !isActive);
+      };
       ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         uploadDropZone.addEventListener(eventName, event => {
           event.preventDefault();
           event.stopPropagation();
+          if (!this.hasConfiguredApiKey()) {
+            if (eventName === 'drop') {
+              this.ensureApiCredentials('Set your API key in settings before uploading files.');
+            }
+            if (eventName === 'drop' || eventName === 'dragleave') {
+              dragDepth = 0;
+              toggleDragActive(false);
+            }
+            return;
+          }
+
+          if (eventName === 'dragenter') {
+            dragDepth += 1;
+            toggleDragActive(true);
+          } else if (eventName === 'dragover') {
+            toggleDragActive(true);
+          } else if (eventName === 'dragleave') {
+            dragDepth = Math.max(dragDepth - 1, 0);
+            if (dragDepth === 0) toggleDragActive(false);
+          } else if (eventName === 'drop') {
+            dragDepth = 0;
+            toggleDragActive(false);
+          }
         });
       });
       uploadDropZone.addEventListener('drop', event => {
         const file = event.dataTransfer?.files?.[0];
+        if (!this.hasConfiguredApiKey()) {
+          return;
+        }
         if (file) this.handleFileInput(file);
       });
     }
@@ -4510,6 +4549,7 @@ class CsvDataAnalysisApp extends HTMLElement {
   render() {
     const { isBusy, csvData, analysisCards, finalSummary } = this.state;
     const isApiKeySet = this.hasConfiguredApiKey();
+    const disableUpload = isBusy || !isApiKeySet;
     const cardsHtml = analysisCards.map(card => this.renderAnalysisCard(card)).join('');
     let cardsSection;
     if (cardsHtml) {
@@ -4528,16 +4568,33 @@ class CsvDataAnalysisApp extends HTMLElement {
         </article>`
       : '';
 
-    const mainContent = !csvData
-      ? `<div class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center" data-drop-zone>
-          <p class="text-xl text-slate-500 mb-4">Drag and drop your CSV here or use the button above.</p>
-          <p class="text-sm text-slate-400">All processing happens locally in your browser.</p>
-        </div>`
-      : `
+    let mainContent;
+    if (!csvData) {
+      if (!isApiKeySet) {
+        mainContent = `<div class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center bg-white">
+            <svg class="w-16 h-16 text-slate-400 mb-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6.364-3.636l-1.414 1.414M21 12h-2M4 12H2m15.636-6.364l-1.414-1.414M6.364 6.364L4.95 4.95M12 3V1m0 18v-2M4.95 19.05l1.414-1.414m12.728 0l-1.414-1.414M12 6a6 6 0 100 12 6 6 0 000-12z"></path></svg>
+            <h3 class="text-xl font-semibold text-slate-800">API Key Required</h3>
+            <p class="mt-2 max-w-md mx-auto text-sm text-slate-500">
+              Add your Google Gemini API key in the settings panel to unlock CSV uploads and AI analysis features.
+            </p>
+            <button class="mt-6 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" data-toggle-settings>
+              Open Settings
+            </button>
+            <p class="mt-6 text-xs text-slate-400">Your CSV stays private—processing happens in your browser.</p>
+          </div>`;
+      } else {
+        mainContent = `<div class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center hover:border-blue-500 transition-colors" data-drop-zone>
+            <p class="text-xl text-slate-500 mb-4">Drag and drop your CSV here or use the button above.</p>
+            <p class="text-sm text-slate-400">All processing happens locally in your browser.</p>
+          </div>`;
+      }
+    } else {
+      mainContent = `
         ${summaryBlock}
         <div class="space-y-6">${cardsSection}</div>
         ${rawDataPanel}
       `;
+    }
 
     const disableNewSession = isBusy || this.state.isThinking;
     const isAsideVisible = this.state.isAsideVisible !== false;
@@ -4570,9 +4627,9 @@ class CsvDataAnalysisApp extends HTMLElement {
                 Settings
               </button>
               ${showAssistantButton}
-              <label class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 ${isBusy ? 'opacity-60 cursor-not-allowed' : ''}">
+              <label class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 ${disableUpload ? 'opacity-60 cursor-not-allowed' : ''}">
                 Upload CSV
-                <input id="file-upload-input" type="file" accept=".csv" class="hidden" ${isBusy ? 'disabled' : ''} />
+                <input id="file-upload-input" type="file" accept=".csv" class="hidden" ${disableUpload ? 'disabled' : ''} />
               </label>
             </div>
           </header>
