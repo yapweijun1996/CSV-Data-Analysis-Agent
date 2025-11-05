@@ -3410,6 +3410,39 @@ class CsvDataAnalysisApp extends HTMLElement {
           this.handleChartTypeChange(cardId, type);
         }
       });
+
+      // Keyboard support: Enter/Space = activate; ArrowLeft/ArrowRight = move focus across options
+      btn.addEventListener('keydown', event => {
+        const key = event.key;
+        if (key === 'Enter' || key === ' ') {
+          event.preventDefault();
+          btn.click();
+          return;
+        }
+        if (key === 'ArrowRight' || key === 'ArrowLeft') {
+          event.preventDefault();
+          const cardId = btn.dataset.card;
+          if (!cardId) return;
+
+          const cssEscape = value => {
+            try {
+              return typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+                ? CSS.escape(value)
+                : String(value).replace(/"/g, '\\"');
+            } catch {
+              return String(value);
+            }
+          };
+
+          const selector = `[data-chart-type][data-card="\${cssEscape(cardId)}"]`;
+          const all = Array.from(this.querySelectorAll(selector));
+          if (!all.length) return;
+          const index = all.indexOf(btn);
+          const dir = key === 'ArrowRight' ? 1 : -1;
+          const next = all[(index + dir + all.length) % all.length];
+          if (next && typeof next.focus === 'function') next.focus();
+        }
+      });
     });
 
     this.querySelectorAll('[data-export-menu-toggle]').forEach(btn => {
