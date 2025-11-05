@@ -45,6 +45,151 @@ const looksLikeDate = value => {
   return !Number.isNaN(parsed);
 };
 
+const QUARTER_REGEX = /^q([1-4])(?:\s*\/?\s*('?[\d]{2,4}))?$/i;
+
+const MONTHS = {
+  january: 1,
+  jan: 1,
+  february: 2,
+  feb: 2,
+  march: 3,
+  mar: 3,
+  april: 4,
+  apr: 4,
+  may: 5,
+  june: 6,
+  jun: 6,
+  july: 7,
+  jul: 7,
+  august: 8,
+  aug: 8,
+  september: 9,
+  sep: 9,
+  october: 10,
+  oct: 10,
+  november: 11,
+  nov: 11,
+  december: 12,
+  dec: 12,
+};
+
+const DAYS = {
+  monday: 1,
+  mon: 1,
+  tuesday: 2,
+  tue: 2,
+  wednesday: 3,
+  wed: 3,
+  thursday: 4,
+  thu: 4,
+  friday: 5,
+  fri: 5,
+  saturday: 6,
+  sat: 6,
+  sunday: 7,
+  sun: 7,
+};
+
+const getChronologicalSortValue = (value, sorter) => {
+  const rawValue = String(value ?? '').trim();
+  const lowerValue = rawValue.toLowerCase();
+
+  if (!rawValue) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  switch (sorter) {
+    case 'quarter': {
+      const match = lowerValue.match(QUARTER_REGEX);
+      if (!match) {
+        return Number.POSITIVE_INFINITY;
+      }
+      const quarter = Number.parseInt(match[1], 10);
+      if (Number.isNaN(quarter)) {
+        return Number.POSITIVE_INFINITY;
+      }
+      let year = 0;
+      if (match[2]) {
+        const yearString = match[2].replace(/'/g, '');
+        const parsedYear = Number.parseInt(yearString, 10);
+        if (!Number.isNaN(parsedYear)) {
+          year = parsedYear;
+          if (yearString.length === 2) {
+            year += parsedYear > 50 ? 1900 : 2000;
+          }
+        }
+      }
+      return year * 10 + quarter;
+    }
+    case 'month': {
+      const month = MONTHS[lowerValue];
+      return month ? month : Number.POSITIVE_INFINITY;
+    }
+    case 'day': {
+      const day = DAYS[lowerValue];
+      return day ? day : Number.POSITIVE_INFINITY;
+    }
+    default:
+      return Number.POSITIVE_INFINITY;
+  }
+};
+
+const tryChronologicalSort = (data, key) => {
+  if (!Array.isArray(data) || data.length < 2) {
+    return null;
+  }
+
+  const sample = data
+    .flatMap(row => {
+      const value = row?.[key];
+      return value === null || value === undefined ? [] : [String(value)];
+    })
+    .slice(0, 10)
+    .map(value => value.trim())
+    .filter(value => value.length > 0);
+
+  if (!sample.length) {
+    return null;
+  }
+
+  const normalised = sample.map(value => value.toLowerCase());
+  const denominator = normalised.length;
+  if (denominator === 0) {
+    return null;
+  }
+
+  const quarterMatches = normalised.filter(value => QUARTER_REGEX.test(value)).length;
+  const monthMatches = normalised.filter(value => Object.prototype.hasOwnProperty.call(MONTHS, value)).length;
+  const dayMatches = normalised.filter(value => Object.prototype.hasOwnProperty.call(DAYS, value)).length;
+  const dateMatches = normalised.filter(value => looksLikeDate(value)).length;
+
+  let sorter = null;
+
+  if (quarterMatches / denominator >= 0.5) {
+    sorter = 'quarter';
+  } else if (monthMatches / denominator >= 0.5) {
+    sorter = 'month';
+  } else if (dayMatches / denominator >= 0.5) {
+    sorter = 'day';
+  } else if (dateMatches / denominator >= 0.5) {
+    return [...data].sort(
+      (a, b) =>
+        new Date(String(a?.[key])).getTime() -
+        new Date(String(b?.[key])).getTime()
+    );
+  }
+
+  if (!sorter) {
+    return null;
+  }
+
+  return [...data].sort((a, b) => {
+    const valueA = getChronologicalSortValue(a?.[key], sorter);
+    const valueB = getChronologicalSortValue(b?.[key], sorter);
+    return valueA - valueB;
+  });
+};
+
 const determineExpectedColumnCount = rows => {
   const counter = new Map();
   rows.forEach(row => {
@@ -967,6 +1112,11 @@ export const executePlan = (csvData, plan) => {
   const finalValueKey = valueColumn || (aggregation === 'count' ? 'count' : 'value');
   if (!plan.valueColumn) {
     plan.valueColumn = finalValueKey;
+  }
+
+  const chronologicalOrder = tryChronologicalSort(aggregatedResult, groupByColumn);
+  if (chronologicalOrder) {
+    return chronologicalOrder;
   }
 
   if (
