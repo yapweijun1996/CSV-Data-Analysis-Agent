@@ -68,6 +68,37 @@ const ensureArray = value => {
   throw new Error('The AI response is not in the expected array format.');
 };
 
+const SUMMARY_KEYWORDS = [
+  'total',
+  'subtotal',
+  'grand total',
+  'sum',
+  'summary',
+  'notes',
+  'note',
+  'memo',
+  'remarks',
+  'remark',
+  'balance',
+  'balances'
+];
+const SUMMARY_KEYWORDS_DISPLAY = SUMMARY_KEYWORDS.map(keyword => `'${keyword}'`).join(', ');
+const rowContainsSummaryKeyword = row => {
+  if (!row || typeof row !== 'object') {
+    return false;
+  }
+  const values = Object.values(row);
+  for (const value of values) {
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) continue;
+    if (SUMMARY_KEYWORDS.some(keyword => trimmed === keyword || trimmed.startsWith(`${keyword} `))) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const getSinglePlanSchema = () => {
   if (!GeminiType) return null;
   if (!singlePlanSchema) {
@@ -144,6 +175,14 @@ const getDataPreparationSchema = () => {
           type: GeminiType.STRING,
           description: 'Plain-language explanation of the transformation.',
         },
+        analysisSteps: {
+          type: GeminiType.ARRAY,
+          description: 'Step-by-step observations and decisions that lead to the transformation.',
+          items: {
+            type: GeminiType.STRING,
+            description: 'Single reasoning step. Must be detailed and sequential.',
+          },
+        },
         jsFunctionBody: {
           type: GeminiType.STRING,
           description:
@@ -166,7 +205,7 @@ const getDataPreparationSchema = () => {
           },
         },
       },
-      required: ['explanation', 'outputColumns'],
+      required: ['explanation', 'analysisSteps', 'outputColumns'],
     };
   }
   return dataPreparationSchemaCache;
@@ -695,6 +734,7 @@ You MUST respond with a single valid JSON object, and nothing else. The JSON obj
     - A row is likely **valid data** if it has a value in its primary identifier column(s) (e.g., 'Account Code', 'Product ID') and in its metric columns.
     - **CRITICAL: Do not confuse hierarchical data with summary rows.** Look for patterns in identifier columns where one code is a prefix of another (e.g., '50' is a parent to '5010'). These hierarchical parent rows are **valid data** representing a higher level of aggregation and MUST be kept. Your role is to reshape the data, not to pre-summarize it by removing these levels.
     - A row is likely **non-data** and should be removed if it's explicitly a summary (e.g., contains 'Total', 'Subtotal' in a descriptive column) OR if it's metadata (e.g., the primary identifier column is empty but other columns contain text, like a section header).
+- **Summary Keyword Radar**: Treat any row whose textual cells match or start with these keywords as metadata/non-data unless strong evidence proves otherwise: ${SUMMARY_KEYWORDS_DISPLAY}.
 - **Crosstab/Wide Format**: Unpivot data where column headers are actually values (e.g., years, regions) so that each observation is one row.
 - **Multi-header Rows**: Skip any initial junk rows (titles, blank lines, headers split across rows) before the true header.
 
@@ -714,13 +754,14 @@ ${JSON.stringify(sampleRowsForPrompt, null, 2)}
 ${lastError ? `On the previous attempt, your generated code failed with this error: "${lastError.message}". Please analyze the error and provide a corrected response.` : ''}
 
 Your task:
-1. **Analyze**: Look at the initial schema and sample data.
-2. **Plan Transformation**: Decide if cleaning or reshaping is needed. If you identify date or time columns as strings, standardize them (e.g., 'YYYY-MM-DD').
+1. **Study (Think Step-by-Step)**: Describe what you observe in the dataset. List the problems (multi-row headers, totals, blank/title rows, etc.). Output this as \`analysisSteps\` — a detailed, ordered list of your reasoning before coding.
+2. **Plan Transformation**: Based on those steps, decide on the exact cleaning/reshaping actions (unpivot, drop rows, rename columns, parse numbers, etc.).
 3. **Define Output Schema**: Determine the exact column names and data types AFTER your transformation. Use specific types where possible: 'categorical', 'numerical', 'date', 'time', 'currency', 'percentage'.
 4. **Write Code**: If transformation is needed, write the body of a JavaScript function. It receives two arguments, \`data\` and \`_util\`, and must return the transformed array of objects.
 5. **Explain**: Provide a concise, user-facing explanation of what you did.
 
 **CRITICAL REQUIREMENTS:**
+- You MUST provide the \`analysisSteps\` array capturing your chain-of-thought (observations ➜ decisions ➜ actions). Each item should be a full sentence.
 - You MUST provide the \`outputColumns\` array. If no transformation is needed, it should match the input schema (but update types if you discovered more specific ones).
 - Your JavaScript MUST include a \`return\` statement that returns the transformed data array.
 - Whenever you convert numbers, you MUST use \`_util.parseNumber\`. Whenever you split comma-separated numeric strings, you MUST use \`_util.splitNumericString\`.
@@ -746,6 +787,16 @@ Your task:
         throw new Error('AI returned an empty plan.');
       }
 
+      if (Array.isArray(plan.analysisSteps)) {
+        plan.analysisSteps = plan.analysisSteps.map(step =>
+          typeof step === 'string' ? step.trim() : String(step)
+        ).filter(step => step);
+      } else if (typeof plan.analysisSteps === 'string') {
+        plan.analysisSteps = [plan.analysisSteps.trim()].filter(Boolean);
+      } else {
+        plan.analysisSteps = [];
+      }
+
       if (!plan.outputColumns || !Array.isArray(plan.outputColumns) || plan.outputColumns.length === 0) {
         plan.outputColumns = columns;
       }
@@ -755,6 +806,7 @@ Your task:
         console.log('Crosstab detected:', hasCrosstabShape);
         console.log('Plan explanation:', plan.explanation || '(none)');
         console.log('Returned jsFunctionBody:', Boolean(plan.jsFunctionBody));
+        console.log('Analysis steps:', plan.analysisSteps);
         console.log('Output columns:', plan.outputColumns);
         console.log('Sample rows sent to model (first 3):', sampleRowsForPrompt.slice(0, 3));
         if (!plan.jsFunctionBody && hasCrosstabShape) {
@@ -794,11 +846,15 @@ Your task:
             console.warn('[DataPrep] Transform function returned non-array during validation:', testResult);
             throw new Error('Generated function did not return an array.');
           }
-          if (testResult.length === 0) {
-            throw new Error('Generated function returned an empty array.');
+          if (!testResult.length) {
+            throw new Error('Generated function produced an empty dataset. Ensure valid rows remain after cleaning.');
           }
           if (typeof testResult[0] !== 'object' || testResult[0] === null) {
             throw new Error('Generated function did not return an array of objects.');
+          }
+          const summaryRowsDetected = testResult.some(rowContainsSummaryKeyword);
+          if (summaryRowsDetected) {
+            throw new Error('Transformed data still contains summary/metadata rows (e.g., total, subtotal, notes). Remove them and retry.');
           }
         } catch (error) {
           lastError = error instanceof Error ? error : new Error(String(error));

@@ -94,6 +94,18 @@ export const renderDataPrepDebugPanel = ({
           <h4 class="font-semibold text-slate-800 mb-2">AI's Plan</h4>
           <p class="text-sm bg-slate-50 p-3 rounded-md border border-slate-200 text-slate-700 italic">"${explanation}"</p>
         </div>
+        ${
+          Array.isArray(plan.analysisSteps) && plan.analysisSteps.length
+            ? `<div>
+                 <h4 class="font-semibold text-slate-800 mb-2">Analysis Steps (CoT)</h4>
+                 <ol class="list-decimal list-inside text-sm text-slate-700 space-y-1">
+                   ${plan.analysisSteps
+                     .map(step => `<li>${escapeHtml(step)}</li>`)
+                     .join('')}
+                 </ol>
+               </div>`
+            : ''
+        }
         <div>
           <h4 class="font-semibold text-slate-800 mb-2">Transformation Code</h4>
           <pre class="bg-slate-900 text-slate-100 p-3 rounded-md text-xs overflow-x-auto">

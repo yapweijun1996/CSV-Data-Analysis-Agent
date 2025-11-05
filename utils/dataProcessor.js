@@ -395,16 +395,18 @@ const inferNumericColumns = (rows, sampleSize = 200) => {
     .map(score => score.name);
 };
 
-export const processCsv = file => {
-  if (!PapaLib) {
-    return Promise.reject(new Error('CSV parser is not available.'));
-  }
+const isDataCloneError = error => {
+  if (!error) return false;
+  const message = error instanceof Error ? error.message : String(error);
+  return /DataCloneError/i.test(message);
+};
 
-  return new Promise((resolve, reject) => {
+const parseCsvWithWorkerOption = (file, useWorker) =>
+  new Promise((resolve, reject) => {
     PapaLib.parse(file, {
       header: false,
       skipEmptyLines: 'greedy',
-      worker: true,
+      worker: useWorker,
       dynamicTyping: false,
       complete: results => {
         try {
@@ -538,9 +540,25 @@ export const processCsv = file => {
         }
       },
       error: error => {
-        reject(error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       },
     });
+  });
+
+export const processCsv = file => {
+  if (!PapaLib) {
+    return Promise.reject(new Error('CSV parser is not available.'));
+  }
+
+  return parseCsvWithWorkerOption(file, true).catch(error => {
+    if (isDataCloneError(error)) {
+      console.warn(
+        'CSV worker parsing failed due to DataCloneError; retrying without Web Worker for this file.',
+        error
+      );
+      return parseCsvWithWorkerOption(file, false);
+    }
+    throw error;
   });
 };
 
