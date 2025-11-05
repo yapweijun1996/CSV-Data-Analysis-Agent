@@ -406,7 +406,6 @@ export const processCsv = file => {
       skipEmptyLines: 'greedy',
       worker: true,
       dynamicTyping: false,
-      transform: value => (typeof value === 'string' ? value.replace(/\u0000/g, '') : value),
       complete: results => {
         try {
           const rawRows = Array.isArray(results?.data)
