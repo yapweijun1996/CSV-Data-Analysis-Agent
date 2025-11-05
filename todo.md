@@ -32,6 +32,9 @@
         - [x] 同步 React 版的 data-prep prompt 约束（crosstab、multi-header、summary 识别、\`_util\` 使用规则）。
         - [x] 恢复 `executeJavaScriptDataTransform` 中向 AI 代码注入 \`_util.parseNumber\` 与 \`_util.splitNumericString\`。
         - [x] 重新引入 data-prep 自我修正重试循环并把错误信息反馈给下一轮 prompt。
+        - [ ] 对齐传入 `generateDataPreparationPlan` 的 sampleData 结构，避免 generic header 与 inferred header 键名不一致。
+        - [ ] 恢复 “AI Data Transformation Log” 的渲染判定：仅在 `jsFunctionBody` 存在且执行成功后显示、记录行数差异。
+        - [ ] 调查 `processCsv` 在 Worker 模式下触发的 `DataCloneError` 根因，必要时调整解析线程或元数据打包方式。
     - [ ] `generateAnalysisPlans` 采样窗口与 React 对齐（React 取前 5 行，原生当前取前 20 行），避免计划描述与排序差异。
     - [ ] `runAnalysisPipeline` 日志与记忆内容对齐 React：恢复 `View #XXXX indexed / Saved as View #XXXX` 进度文案，并将记忆文本格式调整为 `[Chart: 标题] Description: ... AI Summary: ...`。
     - [ ] **补充测试覆盖**：为 `normaliseAiAction` 思路传递与 `applyChatActions` 多步骤执行建立单元/集成测试，确保 DOM 动作与聊天队列稳定。
