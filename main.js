@@ -29,10 +29,7 @@ import {
   storeMemory,
   retrieveRelevantMemories,
   initMemoryVectorStore,
-  removeMemory,
-  clearMemoryStore,
 } from './services/memoryService.js';
-import { vectorStore } from './services/vectorStore.js';
 import { auditAnalysisState } from './utils/pipelineAudit.js';
 import {
   determineRepairActions,
@@ -46,6 +43,16 @@ import { renderDataPreviewPanel as renderDataPreviewPanelView } from './render/d
 import { renderRawDataPanel as renderRawDataPanelView } from './render/rawDataPanel.js';
 import { renderAnalysisCard as renderAnalysisCardView } from './render/analysisCard.js';
 import { renderAnalysisSection } from './render/analysisPanel.js';
+import { renderAssistantPanel as renderAssistantPanelView } from './render/assistantPanel.js';
+import { renderMemoryPanel as renderMemoryPanelView } from './render/memoryPanel.js';
+import { ENABLE_MEMORY_FEATURES } from './services/memoryConfig.js';
+import { bindMemoryPanelEvents as bindMemoryPanelEventsHelper } from './handlers/memoryPanelEvents.js';
+import {
+  refreshMemoryDocuments as refreshMemoryDocumentsHelper,
+  searchMemoryPanel as searchMemoryPanelHelper,
+  handleMemoryDelete as handleMemoryDeleteHelper,
+  handleMemoryClear as handleMemoryClearHelper,
+} from './handlers/memoryPanelHandlers.js';
 /** @typedef {import('./types/typedefs.js').AnalysisPlan} AnalysisPlan */
 /** @typedef {import('./types/typedefs.js').AnalysisCardData} AnalysisCardData */
 /** @typedef {import('./types/typedefs.js').ColumnProfile} ColumnProfile */
@@ -83,7 +90,6 @@ const DOM_ACTION_TOOL_NAMES = new Set([
 const MIN_ASIDE_WIDTH = 320;
 const MAX_ASIDE_WIDTH = 800;
 let zoomPluginRegistered = false;
-const ENABLE_MEMORY_FEATURES = true;
 const ENABLE_PIPELINE_REPAIR = false;
 
 const normaliseTitleKey = value => {
@@ -894,58 +900,15 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   refreshMemoryDocuments() {
-    if (!ENABLE_MEMORY_FEATURES) {
-      return;
-    }
-    const docs = vectorStore.getDocuments();
-    this.setState(prev => ({
-      memoryPanelDocuments: docs,
-      memoryPanelHighlightedId: docs.some(doc => doc.id === prev.memoryPanelHighlightedId)
-        ? prev.memoryPanelHighlightedId
-        : null,
-    }));
+    refreshMemoryDocumentsHelper({ app: this, enableMemory: ENABLE_MEMORY_FEATURES });
   }
 
   async searchMemoryPanel(query) {
-    if (!ENABLE_MEMORY_FEATURES) return;
-    const text = typeof query === 'string' ? query : '';
-    const trimmed = text.trim();
-    this.setState({
-      memoryPanelIsSearching: true,
-      memoryPanelHighlightedId: null,
-      memoryPanelQuery: text,
+    await searchMemoryPanelHelper({
+      app: this,
+      query,
+      enableMemory: ENABLE_MEMORY_FEATURES,
     });
-    if (!trimmed) {
-      if (text.length) {
-        this.addProgress('Enter non-whitespace characters to search memories.', 'error');
-      }
-      this.setState({
-        memoryPanelResults: [],
-        memoryPanelIsSearching: false,
-      });
-      return;
-    }
-    await this.ensureMemoryVectorReady();
-    try {
-      this.addProgress(`Searching memory for "${trimmed}"...`);
-      const results = await vectorStore.search(trimmed, 5);
-      this.setState({
-        memoryPanelResults: results,
-        memoryPanelIsSearching: false,
-      });
-      this.addProgress(
-        results.length
-          ? `Found ${results.length} matching memory item${results.length === 1 ? '' : 's'}.`
-          : 'No stored memories matched that query.'
-      );
-    } catch (error) {
-      console.warn('Memory search failed.', error);
-      this.setState({
-        memoryPanelResults: [],
-        memoryPanelIsSearching: false,
-      });
-      this.addProgress('Unable to search memory right now.', 'error');
-    }
   }
 
   focusMemoryDocument(docId) {
@@ -968,43 +931,18 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   async handleMemoryDelete(id) {
-    if (!id) return;
-    if (typeof window !== 'undefined' && !window.confirm('Delete this memory entry? This action cannot be undone.')) {
-      return;
-    }
-    const success = await removeMemory(id);
-    if (!success) {
-      this.addProgress('Failed to delete memory entry.', 'error');
-      return;
-    }
-    this.refreshMemoryDocuments();
-    this.setState(prev => ({
-      memoryPanelResults: Array.isArray(prev.memoryPanelResults)
-        ? prev.memoryPanelResults.filter(item => item.id !== id)
-        : [],
-      memoryPanelHighlightedId: prev.memoryPanelHighlightedId === id ? null : prev.memoryPanelHighlightedId,
-    }));
+    await handleMemoryDeleteHelper({
+      app: this,
+      id,
+      enableMemory: ENABLE_MEMORY_FEATURES,
+    });
   }
 
   async handleMemoryClear() {
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm('Clear all memorised items for this assistant? This cannot be undone.')
-    ) {
-      return;
-    }
-    try {
-      await clearMemoryStore();
-      this.refreshMemoryDocuments();
-      this.setState({
-        memoryPanelResults: [],
-        memoryPanelHighlightedId: null,
-        memoryPanelQuery: '',
-      });
-    } catch (error) {
-      console.warn('Failed to clear memory store.', error);
-      this.addProgress('Failed to clear AI memory entries.', 'error');
-    }
+    await handleMemoryClearHelper({
+      app: this,
+      enableMemory: ENABLE_MEMORY_FEATURES,
+    });
   }
 
   calculateMemoryUsage(documents) {
@@ -4572,195 +4510,17 @@ class CsvDataAnalysisApp extends HTMLElement {
   renderAssistantPanel(options = {}) {
     const isApiKeySet = options.isApiKeySet ?? this.hasConfiguredApiKey();
     const timeline = this.buildConversationTimeline();
-    const isBusy = this.state.isBusy;
-    const currentView = this.state.currentView;
-    const isChatDisabled =
-      !isApiKeySet || isBusy || this.state.isThinking || currentView === 'file_upload';
-    const placeholder = !isApiKeySet
-      ? 'Set API Key in settings to chat'
-      : currentView === 'analysis_dashboard'
-      ? 'Ask for a new analysis or data transformation...'
-      : 'Upload a file to begin chatting';
+    const { isBusy, currentView, isThinking } = this.state;
 
-    const conversationHtml = timeline
-      .map(entry => {
-        const timestamp = entry.timestamp instanceof Date ? entry.timestamp : new Date(entry.timestamp);
-        const hasTime = timestamp && !Number.isNaN(timestamp.getTime());
-        const timeLabel = hasTime
-          ? timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : '';
-        const showCardContext =
-          entry.cardId || entry.cardTitle
-            ? this.resolveCardReference(entry.cardId || null, entry.cardTitle || null)
-            : null;
-        const resolvedCardId = showCardContext?.cardId || entry.cardId || null;
-        const resolvedCardTitle = showCardContext?.fallbackTitle || entry.cardTitle || null;
-
-        if (entry.__kind === 'progress') {
-          const colorClass = entry.type === 'error' ? 'text-rose-600' : 'text-slate-500';
-          return `
-            <div class="flex text-xs ${colorClass}">
-              <span class="mr-2 text-slate-400">${this.escapeHtml(timeLabel)}</span>
-              <span>${this.escapeHtml(entry.text || '')}</span>
-            </div>`;
-        }
-
-        const sender = entry.sender;
-        if (entry.type === 'ai_thinking') {
-          return `
-            <div class="my-2 p-3 bg-white border border-blue-200 rounded-lg">
-              <div class="flex items-center text-blue-700 mb-2">
-                <span class="text-lg mr-2">🧠</span>
-                <h4 class="font-semibold">AI's Initial Analysis</h4>
-              </div>
-              <p class="text-sm text-slate-700 whitespace-pre-wrap">${this.escapeHtml(entry.text || '')}</p>
-            </div>`;
-        }
-
-        if (entry.type === 'ai_plan_start') {
-          return `
-            <div class="my-2 p-3 bg-slate-100 border border-slate-200 rounded-lg shadow-sm">
-              <div class="flex items-center text-slate-700 mb-2">
-                <span class="text-lg mr-2">⚙️</span>
-                <h4 class="font-semibold">Plan Execution</h4>
-              </div>
-              <p class="text-sm text-slate-700 whitespace-pre-wrap">${this.escapeHtml(entry.text || '')}</p>
-            </div>`;
-        }
-
-        if (entry.type === 'ai_proactive_insight') {
-          const insightButton = resolvedCardId
-            ? `<button type="button" class="mt-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md hover:bg-amber-200 transition-colors font-medium" data-show-card="${this.escapeHtml(resolvedCardId)}"${
-                resolvedCardTitle
-                  ? ` data-show-card-title="${this.escapeHtml(resolvedCardTitle)}"`
-                  : ''
-              }>
-                 → Show Related Card
-               </button>`
-            : '';
-          return `
-            <div class="my-2 p-3 bg-amber-50 border border-amber-200 rounded-lg shadow-sm">
-              <div class="flex items-center text-amber-700 mb-2">
-                <span class="text-lg mr-2">💡</span>
-                <h4 class="font-semibold">Proactive Insight</h4>
-              </div>
-              <p class="text-sm text-amber-800 whitespace-pre-wrap">${this.escapeHtml(entry.text || '')}</p>
-              ${insightButton}
-            </div>`;
-        }
-
-        if (sender === 'system') {
-          const badge = timeLabel
-            ? `<span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 font-semibold">${this.escapeHtml(timeLabel)}</span>`
-            : '';
-          return `
-            <div class="flex justify-start w-full">
-              <div class="flex items-start gap-2 max-w-full text-left">
-                <span class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 7a1 1 0 112 0v1a1 1 0 01-2 0V7zm2 3a1 1 0 10-2 0v4a1 1 0 102 0v-4z" clip-rule="evenodd" />
-                  </svg>
-                </span>
-                <div class="flex flex-col items-start gap-1 min-w-0">
-                  <div class="flex items-center gap-2 text-[10px] uppercase tracking-wide text-amber-500">
-                    ${badge}
-                    <span class="px-1.5 py-0.5 rounded-full bg-amber-50 font-semibold text-amber-600">System</span>
-                  </div>
-                  <div class="inline-block max-w-[28rem] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
-                    ${this.escapeHtml(entry.text || '')}
-                  </div>
-                </div>
-              </div>
-            </div>`;
-        }
-
-        const alignmentClass = sender === 'user' ? 'justify-end' : 'justify-start';
-        const orientationClass = sender === 'user' ? 'items-end text-right' : 'items-start text-left';
-        let bubbleClass;
-        if (entry.isError) {
-          bubbleClass = 'bg-rose-100 text-rose-800 border border-rose-200';
-        } else if (sender === 'user') {
-          bubbleClass = 'bg-blue-600 text-white shadow-sm';
-        } else {
-          bubbleClass = 'bg-slate-200 text-slate-800';
-        }
-
-        const metaParts = [];
-        if (timeLabel) metaParts.push(timeLabel);
-        if (resolvedCardId) metaParts.push(`Card ${resolvedCardId}`);
-        const metaLine = metaParts.filter(Boolean).map(part => this.escapeHtml(part)).join(' • ');
-
-        const senderBadge = sender === 'user'
-          ? '<span class="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 font-semibold text-[10px] uppercase tracking-wide">You</span>'
-          : sender === 'ai'
-          ? '<span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold text-[10px] uppercase tracking-wide">AI</span>'
-          : '';
-
-        const cardButton = resolvedCardId && !entry.isError
-          ? `<button type="button" class="mt-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md hover:bg-blue-200 transition-colors w-full text-left font-medium" data-show-card="${this.escapeHtml(resolvedCardId)}"${
-              resolvedCardTitle ? ` data-show-card-title="${this.escapeHtml(resolvedCardTitle)}"` : ''
-            }>
-                → Show Related Card
-             </button>`
-          : '';
-
-        return `
-          <div class="flex ${alignmentClass} w-full">
-            <div class="flex flex-col ${orientationClass} max-w-full gap-1">
-              <div class="flex items-center gap-2 text-[10px] uppercase tracking-wide text-slate-400">
-                ${senderBadge}
-                ${metaLine ? `<span>${metaLine}</span>` : ''}
-              </div>
-              <div class="inline-block max-w-[28rem] rounded-xl px-3 py-2 text-sm whitespace-pre-wrap ${bubbleClass}">
-                ${this.escapeHtml(entry.text || '')}
-                ${cardButton}
-              </div>
-            </div>
-          </div>`;
-      })
-      .join('');
-
-    const timelineFallback = isBusy
-      ? '<p class="text-xs text-slate-400">Processing... The assistant will respond shortly.</p>'
-      : '<p class="text-xs text-slate-400">No activity yet. Upload a CSV or start chatting to begin.</p>';
-
-    return `
-      <div class="flex flex-col h-full">
-        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-          <h2 class="text-xl font-semibold text-slate-900">Assistant</h2>
-          <div class="flex items-center gap-2">
-            <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Open Memory Panel" aria-label="Open Memory Panel" data-open-memory>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 2-1-2-1.257-.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 1 1 0 000-2zM6 8a1 1 0 112 0 1 1 0 01-2 0zm2 3a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" />
-              </svg>
-            </button>
-            <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Open Settings" aria-label="Open Settings" data-toggle-settings>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </button>
-            <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Hide Assistant Panel" aria-label="Hide Assistant Panel" data-toggle-aside="hide">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-            </button>
-          </div>
-        </div>
-        <div class="flex-1 overflow-y-auto space-y-4 p-4 bg-slate-100" data-conversation-log>
-          ${conversationHtml || timelineFallback}
-          ${isBusy ? `<div class="flex items-center text-blue-600"><svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...</div>` : ''}
-        </div>
-        <div class="p-4 border-t border-slate-200 bg-white">
-          <form id="chat-form" class="flex gap-2">
-            <input type="text" id="chat-input" data-focus-key="chat-input" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="${this.escapeHtml(placeholder)}" ${isChatDisabled ? 'disabled' : ''} />
-            <button type="submit" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg ${
-              !isChatDisabled ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'
-            }" ${isChatDisabled ? 'disabled' : ''}>Send</button>
-          </form>
-          <p class="text-xs text-slate-400 mt-2">${
-            currentView === 'analysis_dashboard'
-              ? 'e.g., "Sum of sales by region", or "Remove rows for USA"'
-              : ''
-          }</p>
-        </div>
-      </div>
-    `;
+    return renderAssistantPanelView({
+      timeline,
+      isApiKeySet,
+      isBusy,
+      isThinking,
+      currentView,
+      resolveCardReference: (cardId, cardTitle) =>
+        this.resolveCardReference(cardId, cardTitle),
+    });
   }
 
   bindSettingsEvents() {
@@ -4783,69 +4543,7 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   bindMemoryPanelEvents() {
-    if (!this.state.isMemoryPanelOpen) {
-      return;
-    }
-    const overlay = this.querySelector('[data-memory-overlay]');
-    if (overlay) {
-      overlay.addEventListener('click', () => this.closeMemoryPanel());
-    }
-    const panel = this.querySelector('[data-memory-panel]');
-    if (panel) {
-      panel.addEventListener('click', event => event.stopPropagation());
-    }
-    const closeBtn = this.querySelector('[data-memory-close]');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.closeMemoryPanel());
-    }
-    const clearBtn = this.querySelector('[data-memory-clear-all]');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => this.handleMemoryClear());
-    }
-    const refreshBtn = this.querySelector('[data-memory-refresh]');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => this.refreshMemoryDocuments());
-    }
-    const searchInput = this.querySelector('[data-memory-search-input]');
-    if (searchInput) {
-      searchInput.addEventListener('input', event => {
-        const value = event.target?.value ?? '';
-        this.setState({ memoryPanelQuery: value });
-      });
-      searchInput.addEventListener('keydown', event => {
-        if (event.key === 'Enter' && !event.isComposing) {
-          event.preventDefault();
-          const value = event.target?.value ?? '';
-          this.searchMemoryPanel(value);
-        }
-      });
-      if (searchInput instanceof HTMLElement) {
-        searchInput.focus();
-        searchInput.setSelectionRange?.(searchInput.value.length, searchInput.value.length);
-      }
-    }
-    const searchButton = this.querySelector('[data-memory-search]');
-    if (searchButton) {
-      searchButton.addEventListener('click', () => {
-        const input = this.querySelector('[data-memory-search-input]');
-        const value = input?.value || '';
-        this.searchMemoryPanel(value);
-      });
-    }
-    this.querySelectorAll('[data-memory-delete]').forEach(btn => {
-      const id = btn.getAttribute('data-memory-delete');
-      btn.addEventListener('click', () => {
-        this.handleMemoryDelete(id);
-      });
-    });
-    this.querySelectorAll('[data-memory-search-result]').forEach(btn => {
-      const docId = btn.getAttribute('data-memory-search-result');
-      btn.addEventListener('click', () => {
-        if (docId) {
-          this.focusMemoryDocument(docId);
-        }
-      });
-    });
+    bindMemoryPanelEventsHelper(this);
   }
 
   renderMemoryPanel() {
@@ -4855,163 +4553,26 @@ class CsvDataAnalysisApp extends HTMLElement {
     const documents = Array.isArray(this.state.memoryPanelDocuments)
       ? this.state.memoryPanelDocuments
       : [];
-    const query = typeof this.state.memoryPanelQuery === 'string' ? this.state.memoryPanelQuery : '';
+    const query =
+      typeof this.state.memoryPanelQuery === 'string' ? this.state.memoryPanelQuery : '';
     const results = Array.isArray(this.state.memoryPanelResults)
       ? this.state.memoryPanelResults
       : [];
     const isSearching = Boolean(this.state.memoryPanelIsSearching);
-    const highlightedId = this.state.memoryPanelHighlightedId;
+    const highlightedId = this.state.memoryPanelHighlightedId || null;
     const memoryUsage = this.calculateMemoryUsage(documents);
-    const usagePercentage = Math.min((memoryUsage / MEMORY_CAPACITY_KB) * 100, 100);
     const modelStatus = this.memoryVectorReady ? 'Model ready' : 'Loading memory model...';
 
-    const documentsHtml = documents.length
-      ? documents
-          .map(doc => {
-            const safeId = this.escapeHtml(doc.id || '');
-            const snippet = typeof doc.text === 'string' ? doc.text.slice(0, 280) : '';
-            const displayText =
-              snippet.length < (doc.text || '').length ? `${snippet}…` : snippet;
-            const metadata = doc.metadata || {};
-            const datasetLabel = metadata.datasetId ? `Dataset: ${metadata.datasetId}` : 'Dataset: default';
-            const intentLabel = metadata.intent ? `Intent: ${metadata.intent}` : '';
-            const kindLabel = metadata.kind ? metadata.kind : 'note';
-            const createdAt = metadata.createdAt ? new Date(metadata.createdAt) : null;
-            const createdLabel =
-              createdAt && !Number.isNaN(createdAt.getTime())
-                ? createdAt.toLocaleString()
-                : '';
-            const isHighlighted = highlightedId && doc.id === highlightedId;
-            const cardId = metadata.metadata?.cardId || metadata.cardId;
-            const highlightClasses = isHighlighted
-              ? 'border-blue-400 ring-2 ring-blue-300 bg-blue-50'
-              : 'border-slate-200 bg-white';
-            return `
-              <li class="border ${highlightClasses} rounded-lg p-4 shadow-sm transition-colors duration-200" data-memory-doc="${safeId}">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-                      <span class="px-2 py-0.5 bg-slate-100 rounded-md">${this.escapeHtml(kindLabel)}</span>
-                      ${intentLabel ? `<span class="px-2 py-0.5 bg-slate-100 rounded-md">${this.escapeHtml(intentLabel)}</span>` : ''}
-                      ${cardId ? `<span class="px-2 py-0.5 bg-slate-100 rounded-md">Card: ${this.escapeHtml(cardId)}</span>` : ''}
-                      ${isHighlighted ? '<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md font-semibold">Highlighted</span>' : ''}
-                    </div>
-                    <p class="mt-2 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${this.escapeHtml(displayText)}</p>
-                    <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                      <span>${this.escapeHtml(datasetLabel)}</span>
-                      ${createdLabel ? `<span>Saved: ${this.escapeHtml(createdLabel)}</span>` : ''}
-                      <span>Embedding: ${
-                        doc.embedding?.type === 'transformer' && Array.isArray(doc.embedding.values)
-                          ? `${doc.embedding.values.length} dims (transformer)`
-                          : doc.embedding?.type === 'bow' && doc.embedding.weights
-                          ? `${Object.keys(doc.embedding.weights).length} dims (lightweight)`
-                          : 'n/a'
-                      }</span>
-                    </div>
-                  </div>
-                  <button class="text-rose-500 hover:text-rose-700" type="button" title="Delete memory entry" aria-label="Delete memory entry" data-memory-delete="${safeId}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </li>
-            `;
-          })
-          .join('')
-      : '<li class="text-sm text-slate-500 py-6 text-center border border-dashed border-slate-200 rounded-lg">No memories stored yet. Interact with the assistant to build its long-term context.</li>';
-
-    const resultsHtml = results.length
-      ? `<ul class="space-y-2">
-            ${results
-              .map(result => {
-                const safeId = this.escapeHtml(result.id || result.text || '');
-                const score = typeof result.score === 'number' ? (result.score * 100).toFixed(1) : 'n/a';
-                const preview =
-                  typeof result.text === 'string'
-                    ? result.text.slice(0, 120).replace(/\s+/g, ' ')
-                    : '';
-                return `<li>
-                  <button type="button" class="w-full text-left px-3 py-2 rounded-md border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-colors" data-memory-search-result="${safeId}">
-                    <div class="flex items-center justify-between text-xs text-slate-500">
-                      <span>Score: ${score}</span>
-                      <span>ID: ${this.escapeHtml(result.id || 'unknown')}</span>
-                    </div>
-                    <p class="mt-1 text-sm text-slate-700">${this.escapeHtml(preview)}</p>
-                  </button>
-                </li>`;
-              })
-              .join('')}
-          </ul>`
-      : query.trim()
-      ? `<p class="text-sm text-slate-500 ${isSearching ? 'italic' : ''}">${isSearching ? 'Searching memories…' : 'No memories match that search query yet.'}</p>`
-      : '<p class="text-sm text-slate-500">Use search to find relevant memories. Results appear here.</p>';
-
-    return `
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6" data-memory-overlay>
-        <div class="relative w-full max-w-5xl max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col" data-memory-panel>
-          <header class="flex items-start justify-between gap-4 p-6 border-b border-slate-200">
-            <div>
-              <div class="flex items-center gap-3">
-                <span class="text-3xl">🧠</span>
-                <div>
-                  <h2 class="text-2xl font-semibold text-slate-900">AI Long-Term Memory</h2>
-                  <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
-                    <span>${documents.length} item${documents.length === 1 ? '' : 's'}</span>
-                    <span>Usage ~${memoryUsage.toFixed(2)} KB</span>
-                    <span>${this.escapeHtml(modelStatus)}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-3">
-                <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
-                  <div class="h-full bg-blue-500" style="width:${usagePercentage}%"></div>
-                </div>
-                <p class="mt-1 text-xs text-slate-400">${usagePercentage.toFixed(1)}% of visual capacity (soft limit ${MEMORY_CAPACITY_KB / 1024} MB)</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button class="px-3 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-100" type="button" data-memory-refresh>Refresh</button>
-              <button class="px-3 py-2 text-sm border border-rose-300 text-rose-600 rounded-md hover:bg-rose-50" type="button" data-memory-clear-all>Clear All</button>
-              <button class="p-2 text-slate-500 hover:text-slate-700 rounded-md" type="button" aria-label="Close memory panel" data-memory-close>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </header>
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 flex-1 overflow-hidden">
-            <div class="lg:col-span-2 flex flex-col border-r border-slate-200">
-              <div class="px-6 py-4 border-b border-slate-200">
-                <div class="flex items-center gap-2">
-                  <div class="relative flex-1">
-                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" /></svg>
-                    </span>
-                    <input type="text" class="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Search across saved memories..." value="${this.escapeHtml(query)}" data-memory-search-input />
-                  </div>
-                  <button type="button" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 ${isSearching ? 'opacity-70' : ''}" data-memory-search ${isSearching ? 'disabled' : ''}>
-                    ${isSearching ? 'Searching…' : 'Search'}
-                  </button>
-                </div>
-              </div>
-              <div class="flex-1 overflow-y-auto px-6 py-4">
-                <ul class="space-y-3">${documentsHtml}</ul>
-              </div>
-            </div>
-            <aside class="flex flex-col bg-slate-50">
-              <div class="px-5 py-4 border-b border-slate-200">
-                <h3 class="text-sm font-semibold text-slate-900">Search Results</h3>
-                <p class="text-xs text-slate-500 mt-1">Click a result to highlight the associated memory entry.</p>
-              </div>
-              <div class="flex-1 overflow-y-auto px-5 py-4">
-                ${resultsHtml}
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-    `;
+    return renderMemoryPanelView({
+      documents,
+      query,
+      results,
+      isSearching,
+      highlightedId,
+      memoryUsage,
+      capacityKb: MEMORY_CAPACITY_KB,
+      modelStatus,
+    });
   }
 
   renderAnalysisCard(card) {
