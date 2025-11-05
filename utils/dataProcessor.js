@@ -405,96 +405,138 @@ export const processCsv = file => {
       header: false,
       skipEmptyLines: 'greedy',
       worker: true,
+      dynamicTyping: false,
+      transform: value => (typeof value === 'string' ? value.replace(/\u0000/g, '') : value),
       complete: results => {
-        const rawRows = results.data.map(row => {
-          if (Array.isArray(row)) {
-            return row;
-          }
-          // Handle unexpected objects by converting to array of values
-          return Object.values(row);
-        });
+        try {
+          const rawRows = Array.isArray(results?.data)
+            ? results.data.map(row => (Array.isArray(row) ? row : Object.values(row || [])))
+            : [];
 
-        const rows = rawRows;
-        const { index: headerIndex, headerValues } = detectHeaderRow(rows);
-        const expectedColumns = determineExpectedColumnCount(rows);
-        const fallbackHeaderSource =
-          headerValues && headerValues.length
-            ? headerValues
-            : rows.find(row => countNonEmptyCells(row) > 0) || [];
-        const headers = buildHeaderNames(fallbackHeaderSource, expectedColumns || fallbackHeaderSource.length);
-
-        const dataRows =
-          headerIndex === null ? rows : rows.slice(headerIndex + 1);
-
-        const structuredRows = [];
-        const originalRows = [];
-        let filteredSummaryRows = 0;
-
-        dataRows.forEach(row => {
-          const normalisedCells = headers.map((header, idx) => {
-            const value = row[idx] !== undefined ? row[idx] : '';
-            return normaliseCell(value);
-          });
-
-          const hasContent = normalisedCells.some(cell => cell);
-          if (!hasContent) {
+          if (!rawRows.length) {
+            resolve({
+              fileName: file.name,
+              data: [],
+              originalData: [],
+              metadata: {
+                headerRow: [],
+                rawHeaderValues: [],
+                detectedHeaderIndex: null,
+                totalRowsBeforeFilter: 0,
+                originalRowCount: 0,
+                cleanedRowCount: 0,
+                removedSummaryRowCount: 0,
+                leadingRows: [],
+                totalLeadingRows: 0,
+                reportTitle: null,
+                sampleDataRows: [],
+                contextRows: [],
+                contextRowCount: 0,
+                genericHeaders: [],
+                inferredHeaders: [],
+                genericRowCount: 0,
+              },
+            });
             return;
           }
 
-          const record = {};
-          headers.forEach((header, idx) => {
-            record[header] = sanitizeValue(normalisedCells[idx]);
+          const maxColumns = rawRows.reduce((max, row) => Math.max(max, row.length || 0), 0);
+          const genericHeaders = Array.from({ length: maxColumns }, (_, i) => `column_${i + 1}`);
+          const genericRows = rawRows.map(rowArray => {
+            const record = {};
+            genericHeaders.forEach((header, idx) => {
+              const value = rowArray[idx] !== undefined ? rowArray[idx] : '';
+              record[header] = sanitizeValue(String(value));
+            });
+            return record;
           });
 
-          originalRows.push(record);
+          const { index: headerIndex, headerValues } = detectHeaderRow(rawRows);
+          const expectedColumns = determineExpectedColumnCount(rawRows);
+          const fallbackHeaderSource =
+            headerValues && headerValues.length
+              ? headerValues
+              : rawRows.find(row => countNonEmptyCells(row) > 0) || [];
+          const inferredHeaders = buildHeaderNames(
+            fallbackHeaderSource,
+            expectedColumns || fallbackHeaderSource.length
+          );
 
-          if (rowLooksLikeSummary(normalisedCells)) {
-            filteredSummaryRows += 1;
-            return;
-          }
+          const dataRows = headerIndex === null ? rawRows : rawRows.slice(headerIndex + 1);
+          const structuredRows = [];
+          const originalRows = [];
+          let summaryRowCount = 0;
 
-          structuredRows.push(record);
-        });
+          dataRows.forEach(row => {
+            const normalisedCells = inferredHeaders.map((header, idx) => {
+              const cellValue = row[idx] !== undefined ? row[idx] : '';
+              return normaliseCell(cellValue);
+            });
 
-        if (!structuredRows.length && dataRows.length) {
-          console.warn('CSV parsing produced rows but all were filtered out as non-data. Returning raw rows for debugging.');
+            if (!normalisedCells.some(Boolean)) {
+              return;
+            }
+
+            const record = {};
+            inferredHeaders.forEach((header, idx) => {
+              record[header] = sanitizeValue(normalisedCells[idx]);
+            });
+
+            originalRows.push(record);
+
+            if (rowLooksLikeSummary(normalisedCells)) {
+              summaryRowCount += 1;
+            }
+
+            structuredRows.push(record);
+          });
+
+          const leadingRows = headerIndex === null ? [] : rawRows.slice(0, headerIndex);
+          const leadingRowsNormalised = leadingRows.map(row => row.map(normaliseCell));
+          const dataContextRows = structuredRows
+            .slice(0, CONTEXT_ROWS_LIMIT)
+            .map(row => inferredHeaders.map(header => normaliseCell(row[header])));
+          const contextRows = [...leadingRowsNormalised, ...dataContextRows].slice(
+            0,
+            CONTEXT_ROWS_LIMIT
+          );
+          const reportTitleRow = leadingRowsNormalised.find(row => row.some(cell => cell));
+          const reportTitle = reportTitleRow
+            ? reportTitleRow
+                .map(cell => cell)
+                .filter(cell => cell)
+                .join(' ')
+                .trim()
+            : null;
+
+          const metadata = {
+            headerRow: inferredHeaders,
+            rawHeaderValues: (headerValues || []).map(normaliseCell),
+            detectedHeaderIndex: headerIndex,
+            totalRowsBeforeFilter: dataRows.length,
+            originalRowCount: originalRows.length,
+            cleanedRowCount: structuredRows.length,
+            removedSummaryRowCount: summaryRowCount,
+            leadingRows: leadingRowsNormalised.slice(0, 10),
+            totalLeadingRows: leadingRowsNormalised.length,
+            reportTitle: reportTitle || null,
+            sampleDataRows: structuredRows.slice(0, 10),
+            contextRows,
+            contextRowCount: contextRows.length,
+            genericHeaders,
+            inferredHeaders,
+            genericRowCount: genericRows.length,
+          };
+
+          resolve({
+            fileName: file.name,
+            data: genericRows,
+            originalData: originalRows,
+            metadata,
+          });
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error(String(error)));
         }
-
-        const leadingRows = headerIndex === null ? [] : rows.slice(0, headerIndex);
-        const leadingRowsNormalised = leadingRows.map(row => row.map(normaliseCell));
-        const dataContextRows = structuredRows
-          .slice(0, CONTEXT_ROWS_LIMIT)
-          .map(row => headers.map(header => normaliseCell(row[header])));
-        const contextRows = [...leadingRowsNormalised, ...dataContextRows].slice(
-          0,
-          CONTEXT_ROWS_LIMIT
-        );
-        const reportTitleRow = leadingRowsNormalised.find(row => row.some(cell => cell));
-        const reportTitle = reportTitleRow
-          ? reportTitleRow
-              .map(cell => cell)
-              .filter(cell => cell)
-              .join(' ')
-              .trim()
-          : null;
-
-        const metadata = {
-          headerRow: headers,
-          rawHeaderValues: (headerValues || []).map(normaliseCell),
-          detectedHeaderIndex: headerIndex,
-          totalRowsBeforeFilter: dataRows.length,
-          originalRowCount: originalRows.length,
-          cleanedRowCount: structuredRows.length,
-          removedSummaryRowCount: filteredSummaryRows,
-          leadingRows: leadingRowsNormalised.slice(0, 10),
-          totalLeadingRows: leadingRowsNormalised.length,
-          reportTitle: reportTitle || null,
-          sampleDataRows: structuredRows.slice(0, 10),
-          contextRows,
-          contextRowCount: contextRows.length,
-        };
-
-        resolve({ fileName: file.name, data: structuredRows, originalData: originalRows, metadata });
       },
       error: error => {
         reject(error);
