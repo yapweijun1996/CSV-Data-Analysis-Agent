@@ -4,19 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CSV Data Analysis Agent</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'brand-primary': '#2563eb', // A slightly brighter blue for light mode
-              'brand-secondary': '#3b82f6',
-            },
-          },
-        },
-      }
-    </script>
+    <link rel="stylesheet" href="./styles.css" />
     <!-- Chart.js for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
@@ -28,22 +16,15 @@
     <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <!-- html2canvas fallback for exporting -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
-    "idb": "https://aistudiocdn.com/idb@^8.0.3"
-  }
-}
-</script>
-<style>
-  .truncate {
-    white-space: break-spaces !important;
-    width: 100%;
-  }
-  
-</style>
-</head>
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
+          "idb": "https://aistudiocdn.com/idb@^8.0.3"
+        }
+      }
+    </script>
+  </head>
   <body class="bg-slate-50 text-slate-800">
     <div id="root"></div>
     <script type="module" src="./main.js"></script>

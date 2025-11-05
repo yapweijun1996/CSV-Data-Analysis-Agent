@@ -34,7 +34,7 @@
     - [ ] **补充测试覆盖**：为 `normaliseAiAction` 思路传递与 `applyChatActions` 多步骤执行建立单元/集成测试，确保 DOM 动作与聊天队列稳定。
 
 - [ ] **任务4：解决用户体验、策略和构建约束**
-    - [ ] **移除 Tailwind CSS**：项目当前在 `index.html` 中加载 Tailwind。根据项目规则，必须用纯CSS样式表替换。
+    - [x] **移除 Tailwind CSS**：项目当前在 `index.html` 中加载 Tailwind。根据项目规则，必须用纯CSS样式表替换。
     - [ ] **移除 CDN 依赖**：项目通过 `index.html` 中的 CDN 加载多个库。必须将这些库本地化或记录为临时措施。
     - [ ] **强制执行API密钥门控用户体验**：原始的 React `FileUpload` 在未设置API密钥时会阻止拖放。确认原生实现具有相同的行为。
 

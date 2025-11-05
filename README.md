@@ -32,7 +32,7 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 
 ### Key Files
 
-- `index.html` – loads Tailwind, Chart.js, PapaParse, idb, and bootstraps `main.js`
+- `index.html` – loads the custom stylesheet, Chart.js, PapaParse, idb, and bootstraps `main.js`
 - `main.js` – defines the `<csv-data-analysis-app>` Web Component handling UI and state
 - `utils/dataProcessor.js` – CSV parsing, profiling, aggregations, and AI transformation executor
 - `services/geminiService.js` – shared wrapper for Gemini/OpenAI requests (plans, summaries, chat)
