@@ -2392,7 +2392,7 @@ class CsvDataAnalysisApp extends HTMLElement {
         this.shouldAutoScrollConversation = true;
       }
       this.addProgress(`AI is executing a ${totalActions}-step plan.`);
-      await this.sleep(700);
+      await this.sleep(1000);
     }
 
     for (let index = 0; index < normalisedActions.length; index++) {
@@ -2400,7 +2400,7 @@ class CsvDataAnalysisApp extends HTMLElement {
 
       if (action.thought && (totalActions === 1 || index > 0)) {
         this.addProgress(`AI Thought: ${action.thought}`);
-        await this.sleep(totalActions === 1 ? 900 : 600);
+        await this.sleep(1500);
       }
 
       switch (action.responseType) {
@@ -2543,6 +2543,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         default:
           this.addProgress('AI returned an unsupported action type.', 'error');
           break;
+      }
+
+      if (totalActions > 1) {
+        await this.sleep(750);
       }
     }
   }
