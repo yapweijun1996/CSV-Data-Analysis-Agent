@@ -40,64 +40,49 @@ const renderThinkingEntry = entry => {
         <span class="text-lg mr-2">🧠</span>
         <h4 class="font-semibold">AI's Initial Analysis</h4>
       </div>
-      <div class="text-sm text-slate-700 space-y-2 leading-relaxed">${content}</div>
+      <div class="text-sm text-slate-700 whitespace-pre-wrap">${content}</div>
     </div>`;
 };
 
 const renderPlanEntry = entry => {
   const content = formatMessageMarkdown(entry.text || '');
   return `
-    <div class="my-2 p-3 bg-slate-100 border border-slate-200 rounded-lg shadow-sm">
+    <div class="my-2 p-3 bg-slate-100 border border-slate-200 rounded-lg">
       <div class="flex items-center text-slate-700 mb-2">
         <span class="text-lg mr-2">⚙️</span>
         <h4 class="font-semibold">Plan Execution</h4>
       </div>
-      <div class="text-sm text-slate-700 space-y-2 leading-relaxed">${content}</div>
+      <div class="text-sm text-slate-700 whitespace-pre-wrap">${content}</div>
     </div>`;
 };
 
 const renderProactiveInsightEntry = (entry, resolvedCardId, resolvedCardTitle) => {
   const content = formatMessageMarkdown(entry.text || '');
   const cardButton = resolvedCardId
-    ? `<button type="button" class="mt-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md hover:bg-amber-200 transition-colors font-medium" data-show-card="${escapeHtml(resolvedCardId)}"${
+    ? `<button type="button" class="mt-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-md hover:bg-yellow-200 transition-colors font-medium" data-show-card="${escapeHtml(resolvedCardId)}"${
         resolvedCardTitle ? ` data-show-card-title="${escapeHtml(resolvedCardTitle)}"` : ''
       }>
            → Show Related Card
          </button>`
     : '';
   return `
-    <div class="my-2 p-3 bg-amber-50 border border-amber-200 rounded-lg shadow-sm">
-      <div class="flex items-center text-amber-700 mb-2">
+    <div class="my-2 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+      <div class="flex items-center text-yellow-800 mb-2">
         <span class="text-lg mr-2">💡</span>
         <h4 class="font-semibold">Proactive Insight</h4>
       </div>
-      <div class="text-sm text-amber-800 space-y-2 leading-relaxed">${content}</div>
+      <div class="text-sm text-slate-700 whitespace-pre-wrap">${content}</div>
       ${cardButton}
     </div>`;
 };
 
 const renderSystemEntry = (entry, timeLabel) => {
   const content = formatMessageMarkdown(entry.text || '');
-  const badge = timeLabel
-    ? `<span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 font-semibold">${escapeHtml(timeLabel)}</span>`
-    : '';
   return `
-    <div class="flex justify-start w-full">
-      <div class="flex items-start gap-2 max-w-full text-left">
-        <span class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-500">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 7a1 1 0 112 0v1a1 1 0 01-2 0V7zm2 3a1 1 0 10-2 0v4a1 1 0 102 0v-4z" clip-rule="evenodd" />
-          </svg>
-        </span>
-        <div class="flex flex-col items-start gap-1 min-w-0">
-          <div class="flex items-center gap-2 text-[10px] uppercase tracking-wide text-amber-500">
-            ${badge}
-            <span class="px-1.5 py-0.5 rounded-full bg-amber-50 font-semibold text-amber-600">System</span>
-          </div>
-          <div class="inline-block max-w-[28rem] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm space-y-2 leading-relaxed">
-            ${content}
-          </div>
-        </div>
+    <div class="flex">
+      <div class="rounded-lg px-3 py-2 max-w-xs lg:max-w-md bg-slate-200">
+        <div class="text-xs text-slate-500 mb-1">${escapeHtml(timeLabel || 'System')}</div>
+        <div class="text-sm text-slate-800 whitespace-pre-wrap">${content}</div>
       </div>
     </div>`;
 };
@@ -105,29 +90,18 @@ const renderSystemEntry = (entry, timeLabel) => {
 const renderStandardEntry = (entry, timeLabel, resolvedCardId, resolvedCardTitle) => {
   const content = formatMessageMarkdown(entry.text || '');
   const sender = entry.sender;
-  const alignmentClass = sender === 'user' ? 'justify-end' : 'justify-start';
-  const orientationClass = sender === 'user' ? 'items-end text-right' : 'items-start text-left';
 
-  let bubbleClass;
-  if (entry.isError) {
-    bubbleClass = 'bg-rose-100 text-rose-800 border border-rose-200';
-  } else if (sender === 'user') {
-    bubbleClass = 'bg-blue-600 text-white shadow-sm';
-  } else {
-    bubbleClass = 'bg-slate-200 text-slate-800';
+  if (sender === 'user') {
+    return `
+      <div class="flex justify-end">
+        <div class="bg-blue-600 rounded-lg px-3 py-2 max-w-xs lg:max-w-md">
+          <div class="text-sm text-white whitespace-pre-wrap">${content}</div>
+        </div>
+      </div>`;
   }
 
-  const metaParts = [];
-  if (timeLabel) metaParts.push(timeLabel);
-  if (resolvedCardId) metaParts.push(`Card ${resolvedCardId}`);
-  const metaLine = metaParts.filter(Boolean).map(part => escapeHtml(part)).join(' • ');
-
-  const senderBadge =
-    sender === 'user'
-      ? '<span class="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 font-semibold text-[10px] uppercase tracking-wide">You</span>'
-      : sender === 'ai'
-      ? '<span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold text-[10px] uppercase tracking-wide">AI</span>'
-      : '';
+  const bubbleClass = entry.isError ? 'bg-red-100' : 'bg-slate-200';
+  const textClass = entry.isError ? 'text-red-800' : 'text-slate-800';
 
   const cardButton =
     resolvedCardId && !entry.isError
@@ -139,16 +113,10 @@ const renderStandardEntry = (entry, timeLabel, resolvedCardId, resolvedCardTitle
       : '';
 
   return `
-    <div class="flex ${alignmentClass} w-full">
-      <div class="flex flex-col ${orientationClass} max-w-full gap-1">
-        <div class="flex items-center gap-2 text-[10px] uppercase tracking-wide text-slate-400">
-          ${senderBadge}
-          ${metaLine ? `<span>${metaLine}</span>` : ''}
-        </div>
-        <div class="inline-block max-w-[28rem] rounded-xl px-3 py-2 text-sm ${bubbleClass} space-y-2 leading-relaxed text-left">
-          ${content}
-          ${cardButton}
-        </div>
+    <div class="flex">
+      <div class="rounded-lg px-3 py-2 max-w-xs lg:max-w-md ${bubbleClass}">
+        <div class="text-sm ${textClass} whitespace-pre-wrap">${content}</div>
+        ${cardButton}
       </div>
     </div>`;
 };
@@ -211,9 +179,10 @@ export const renderAssistantPanel = ({
   const timelineFallback = isBusy
     ? '<p class="text-xs text-slate-400">Processing... The assistant will respond shortly.</p>'
     : '<p class="text-xs text-slate-400">No activity yet. Upload a CSV or start chatting to begin.</p>';
+  const inputDisabledClass = isChatDisabled ? ' opacity-50 cursor-not-allowed' : '';
 
   return `
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-full bg-slate-100 rounded-lg md:rounded-none">
       <div class="p-4 border-b border-slate-200 flex justify-between items-center">
         <h2 class="text-xl font-semibold text-slate-900">Assistant</h2>
         <div class="flex items-center gap-2">
@@ -230,16 +199,13 @@ export const renderAssistantPanel = ({
           </button>
         </div>
       </div>
-      <div class="flex-1 overflow-y-auto space-y-4 p-4 bg-slate-100" data-conversation-log>
+      <div class="flex-1 overflow-y-auto space-y-4 p-4" data-conversation-log>
         ${conversationHtml || timelineFallback}
         ${isBusy ? `<div class="flex items-center text-blue-600"><svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...</div>` : ''}
       </div>
       <div class="p-4 border-t border-slate-200 bg-white">
-        <form id="chat-form" class="flex gap-2">
-          <input type="text" id="chat-input" data-focus-key="chat-input" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="${escapeHtml(placeholder)}" ${isChatDisabled ? 'disabled' : ''} />
-          <button type="submit" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg ${
-            !isChatDisabled ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'
-          }" ${isChatDisabled ? 'disabled' : ''}>Send</button>
+        <form id="chat-form">
+          <input type="text" id="chat-input" data-focus-key="chat-input" class="w-full bg-white border border-slate-300 rounded-md py-2 px-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500${inputDisabledClass}" placeholder="${escapeHtml(placeholder)}" ${isChatDisabled ? 'disabled' : ''} />
         </form>
         <p class="text-xs text-slate-400 mt-2">${
           currentView === 'analysis_dashboard'
