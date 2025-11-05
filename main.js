@@ -1236,9 +1236,14 @@ class CsvDataAnalysisApp extends HTMLElement {
 
       if (isApiKeySet) {
         this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
+        const metadataContextRows =
+          Array.isArray(dataForAnalysis.metadata?.sampleDataRows) &&
+          dataForAnalysis.metadata.sampleDataRows.length
+            ? dataForAnalysis.metadata.sampleDataRows.slice(0, 20)
+            : dataForAnalysis.data.slice(0, 20);
         prepPlan = await generateDataPreparationPlan(
           profiles,
-          dataForAnalysis.data.slice(0, 20),
+          metadataContextRows,
           this.settings,
           dataForAnalysis.metadata || metadata || null
         );
