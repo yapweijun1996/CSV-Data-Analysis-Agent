@@ -346,6 +346,36 @@ const formatMetadataContext = (metadata, options = {}) => {
     }
   }
 
+  if (
+    Array.isArray(metadata.genericHeaders) &&
+    Array.isArray(metadata.inferredHeaders) &&
+    metadata.genericHeaders.length
+  ) {
+    const mapping = metadata.genericHeaders
+      .map((header, index) => {
+        const target = metadata.inferredHeaders[index] || '(unknown)';
+        return `${header} -> ${target}`;
+      })
+      .slice(0, 40);
+    if (mapping.length) {
+      lines.push(`Generic header mapping:\n${mapping.join('\n')}`);
+    }
+  }
+
+  if (Array.isArray(metadata.sampleDataRows) && metadata.sampleDataRows.length) {
+    const preview = metadata.sampleDataRows.slice(0, 3).map((row, index) => {
+      try {
+        return `Row ${index + 1}: ${JSON.stringify(row)}`;
+      } catch (error) {
+        const values = row && typeof row === 'object' ? Object.values(row) : [];
+        return `Row ${index + 1}: ${values.filter(Boolean).join(' | ')}`;
+      }
+    });
+    if (preview.length) {
+      lines.push(`Sample data preview:\n${preview.join('\n')}`);
+    }
+  }
+
   return lines.join('\n');
 };
 
