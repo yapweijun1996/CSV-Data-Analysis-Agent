@@ -154,7 +154,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ progressMessages, chatHist
 
     return (
         <div className="flex flex-col h-full bg-slate-100 rounded-lg md:rounded-none">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center relative">
                 <h2 className="text-xl font-semibold text-slate-900">Assistant</h2>
                  <div className="flex items-center space-x-3">
                     <button
@@ -182,6 +182,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ progressMessages, chatHist
                         <HideIcon />
                     </button>
                 </div>
+                {isBusy && (
+                    <div
+                        className="absolute bottom-0 left-0 right-0 h-0.5 animate-loading-shimmer"
+                        style={{
+                            backgroundImage: 'linear-gradient(to right, #bfdbfe 25%, #3b82f6 50%, #bfdbfe 75%)',
+                            backgroundSize: '200% 100%',
+                        }}
+                    ></div>
+                )}
             </div>
             <div className="flex-1 p-4 overflow-y-auto space-y-4">
                 {timeline.map(renderMessage)}

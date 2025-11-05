@@ -57,7 +57,7 @@ const dataPreparationSchema = {
         explanation: { type: Type.STRING, description: "A brief, user-facing explanation of the transformations that will be applied to the data (e.g., 'Removed 3 summary rows and reshaped the data from a cross-tab format')." },
         jsFunctionBody: {
             type: Type.STRING,
-            description: "The body of a JavaScript function that takes one argument `data` (an array of objects) and returns the transformed array of objects. This code will be executed to clean and reshape the data. If no transformation is needed, this should be null."
+            description: "The body of a JavaScript function that takes two arguments `data` (an array of objects) and `_util` (a helper object) and returns the transformed array of objects. This code will be executed to clean and reshape the data. If no transformation is needed, this should be null."
         },
         outputColumns: {
             type: Type.ARRAY,
@@ -86,7 +86,17 @@ export const generateDataPreparationPlan = async (
 A tidy format has: 1. Each variable as a column. 2. Each observation as a row.
 You MUST respond with a single valid JSON object, and nothing else. The JSON object must adhere to the provided schema.`;
                 const userPrompt = `Common problems to fix:
-- **Summary Rows**: Filter out rows with 'Total', 'Subtotal'.
+- **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
+    - **YOU MUST use \`_util.parseNumber(value)\` for ALL numeric conversions.**
+    - **DO NOT use \`parseInt()\`, \`parseFloat()\`, or \`Number()\` directly.** The provided utility is guaranteed to handle various formats correctly.
+- **CRITICAL RULE on SPLITTING NUMERIC STRINGS**: If you encounter a single string field that contains multiple comma-separated numbers (which themselves may contain commas as thousand separators, e.g., "1,234.50,5,678.00,-9,123.45"), you are provided a utility \`_util.splitNumericString(value)\` to correctly split the string into an array of number strings.
+    - **YOU MUST use this utility for this specific case.**
+    - **DO NOT use a simple \`string.split(',')\`**, as this will incorrectly break up numbers.
+    - **Example**: To parse a field 'MonthlyValues' containing "1,500.00,2,000.00", your code should be: \`const values = _util.splitNumericString(row.MonthlyValues);\` This will correctly return \`['1,500.00', '2,000.00']\`.
+- **Distinguishing Data from Summaries**: Your most critical task is to differentiate between valid data rows and non-data rows (like summaries or metadata).
+    - A row is likely **valid data** if it has a value in its primary identifier column(s) (e.g., 'Account Code', 'Product ID') and in its metric columns.
+    - **CRITICAL: Do not confuse hierarchical data with summary rows.** Look for patterns in identifier columns where one code is a prefix of another (e.g., '50' is a parent to '5010'). These hierarchical parent rows are **valid data** representing a higher level of aggregation and MUST be kept. Your role is to reshape the data, not to pre-summarize it by removing these levels.
+    - A row is likely **non-data** and should be removed if it's explicitly a summary (e.g., contains 'Total', 'Subtotal' in a descriptive column) OR if it's metadata (e.g., the primary identifier column is empty but other columns contain text, like a section header).
 - **Crosstab/Wide Format**: Unpivot data where column headers are values (e.g., years, regions).
 - **Multi-header Rows**: Skip initial junk rows.
 Dataset Columns (Initial Schema):
@@ -102,15 +112,15 @@ Your task:
     - **'time'**: For columns with time values (e.g., "14:30:00").
     - **'currency'**: For columns representing money, especially if they contain symbols like '$' or ','.
     - **'percentage'**: For columns with '%' symbols or values that are clearly percentages.
-4.  **Write Code**: If transformation is needed, write the body of a JavaScript function. This function receives one argument, \`data\`, and must return the transformed array of objects.
+4.  **Write Code**: If transformation is needed, write the body of a JavaScript function. This function receives two arguments, \`data\` and \`_util\`, and must return the transformed array of objects.
 5.  **Explain**: Provide a concise 'explanation' of what you did.
 **CRITICAL REQUIREMENTS:**
 - You MUST provide the \`outputColumns\` array. If you don't transform the data, \`outputColumns\` should be identical to the initial schema (but with more specific types if you identified them). If you do transform it, it must accurately reflect the new structure your code creates.
 - Your JavaScript code MUST include a \`return\` statement as its final operation.
-**Example: Reshaping and identifying types**
+**Example: Reshaping and identifying types using the utility**
 - Initial Data: [{'Product': 'A', 'DateStr': 'Oct 26 2023', 'Revenue': '$1,500.00'}]
-- Explanation: "Standardized the date format and identified the revenue column as currency."
-- jsFunctionBody: "return data.map(row => ({ ...row, DateStr: new Date(row.DateStr).toISOString().split('T')[0] }));"
+- Explanation: "Standardized the date format and converted the revenue column to a number."
+- jsFunctionBody: "return data.map(row => ({ ...row, DateStr: new Date(row.DateStr).toISOString().split('T')[0], Revenue: _util.parseNumber(row.Revenue) }));"
 - outputColumns: [{'name': 'Product', 'type': 'categorical'}, {'name': 'DateStr', 'type': 'date'}, {'name': 'Revenue', 'type': 'currency'}]`;
                 
                 const response = await withRetry(async () => {
@@ -144,7 +154,17 @@ Your task:
                     You are an expert data engineer. Your task is to analyze a raw dataset and, if necessary, provide a JavaScript function to clean and reshape it into a tidy, analysis-ready format. CRITICALLY, you must also provide the schema of the NEW, transformed data with detailed data types.
                     A tidy format has: 1. Each variable as a column. 2. Each observation as a row.
                     Common problems to fix:
-                    - **Summary Rows**: Filter out rows with 'Total', 'Subtotal'.
+                    - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
+                        - **YOU MUST use \`_util.parseNumber(value)\` for ALL numeric conversions.**
+                        - **DO NOT use \`parseInt()\`, \`parseFloat()\`, or \`Number()\` directly.** The provided utility is guaranteed to handle various formats correctly.
+                    - **CRITICAL RULE on SPLITTING NUMERIC STRINGS**: If you encounter a single string field that contains multiple comma-separated numbers (which themselves may contain commas as thousand separators, e.g., "1,234.50,5,678.00,-9,123.45"), you are provided a utility \`_util.splitNumericString(value)\` to correctly split the string into an array of number strings.
+                        - **YOU MUST use this utility for this specific case.**
+                        - **DO NOT use a simple \`string.split(',')\`**, as this will incorrectly break up numbers.
+                        - **Example**: To parse a field 'MonthlyValues' containing "1,500.00,2,000.00", your code should be: \`const values = _util.splitNumericString(row.MonthlyValues);\` This will correctly return \`['1,500.00', '2,000.00']\`.
+                    - **Distinguishing Data from Summaries**: Your most critical task is to differentiate between valid data rows and non-data rows (like summaries or metadata).
+                        - A row is likely **valid data** if it has a value in its primary identifier column(s) (e.g., 'Account Code', 'Product ID') and in its metric columns.
+                        - **CRITICAL: Do not confuse hierarchical data with summary rows.** Look for patterns in identifier columns where one code is a prefix of another (e.g., '50' is a parent to '5010'). These hierarchical parent rows are **valid data** representing a higher level of aggregation and MUST be kept. Your role is to reshape the data, not to pre-summarize it by removing these levels.
+                        - A row is likely **non-data** and should be removed if it's explicitly a summary (e.g., contains 'Total', 'Subtotal' in a descriptive column) OR if it's metadata (e.g., the primary identifier column is empty but other columns contain text, like a section header).
                     - **Crosstab/Wide Format**: Unpivot data where column headers are values (e.g., years, regions).
                     - **Multi-header Rows**: Skip initial junk rows.
                     Dataset Columns (Initial Schema):
@@ -160,15 +180,15 @@ Your task:
                         - **'time'**: For columns with time values (e.g., "14:30:00").
                         - **'currency'**: For columns representing money, especially if they contain symbols like '$' or ','.
                         - **'percentage'**: For columns with '%' symbols or values that are clearly percentages.
-                    4.  **Write Code**: If transformation is needed, write the body of a JavaScript function. This function receives one argument, \`data\`, and must return the transformed array of objects.
+                    4.  **Write Code**: If transformation is needed, write the body of a JavaScript function. This function receives two arguments, \`data\` and \`_util\`, and must return the transformed array of objects.
                     5.  **Explain**: Provide a concise 'explanation' of what you did.
                     **CRITICAL REQUIREMENTS:**
                     - You MUST provide the \`outputColumns\` array. If you don't transform the data, \`outputColumns\` should be identical to the initial schema (but with more specific types if you identified them). If you do transform it, it must accurately reflect the new structure your code creates.
                     - Your JavaScript code MUST include a \`return\` statement as its final operation.
-                    **Example: Reshaping and identifying types**
+                    **Example: Reshaping and identifying types using the utility**
                     - Initial Data: [{'Product': 'A', 'DateStr': 'Oct 26 2023', 'Revenue': '$1,500.00'}]
-                    - Explanation: "Standardized the date format and identified the revenue column as currency."
-                    - jsFunctionBody: "return data.map(row => ({ ...row, DateStr: new Date(row.DateStr).toISOString().split('T')[0] }));"
+                    - Explanation: "Standardized the date format and converted the revenue column to a number."
+                    - jsFunctionBody: "return data.map(row => ({ ...row, DateStr: new Date(row.DateStr).toISOString().split('T')[0], Revenue: _util.parseNumber(row.Revenue) }));"
                     - outputColumns: [{'name': 'Product', 'type': 'categorical'}, {'name': 'DateStr', 'type': 'date'}, {'name': 'Revenue', 'type': 'currency'}]
                     Your response must be a valid JSON object adhering to the provided schema.
                 `;
@@ -188,8 +208,13 @@ Your task:
             // Test execution before returning
             if (plan.jsFunctionBody) {
                 try {
-                    const transformFunction = new Function('data', plan.jsFunctionBody);
-                    const sampleResult = transformFunction(sampleData);
+                    // This is a mock execution to validate syntax, the real one happens in dataProcessor
+                    const mockUtil = { 
+                        parseNumber: (v: any) => parseFloat(String(v).replace(/[$,%]/g, '')) || 0,
+                        splitNumericString: (v: string) => v.split(','), // Simple mock
+                    };
+                    const transformFunction = new Function('data', '_util', plan.jsFunctionBody);
+                    const sampleResult = transformFunction(sampleData, mockUtil);
                     if (!Array.isArray(sampleResult)) {
                         throw new Error("Generated function did not return an array.");
                     }

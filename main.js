@@ -51,6 +51,7 @@ import {
   handleMemoryClear as handleMemoryClearHelper,
 } from './handlers/memoryPanelHandlers.js';
 import { rawDataEditingMethods } from './handlers/rawDataEditing.js';
+import { bindRawDataPanelEvents as bindRawDataPanelEventsHelper } from './handlers/rawDataPanelEvents.js';
 import { chartRenderingMethods } from './render/chartRenderer.js';
 import {
   COLORS,
@@ -3457,81 +3458,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     });
 
-    const rawToggle = this.querySelector('[data-raw-toggle]');
-    if (rawToggle) {
-      rawToggle.addEventListener('click', () => this.handleRawDataToggle());
-    }
-
-    this.querySelectorAll('[data-raw-view]').forEach(button => {
-      button.addEventListener('click', () => {
-        const mode = button.dataset.rawView;
-        if (mode) {
-          this.handleRawDataViewChange(mode);
-        }
-      });
-    });
-
-    const rawSearch = this.querySelector('[data-raw-search]');
-    if (rawSearch) {
-      rawSearch.addEventListener('input', event => {
-        this.handleRawDataFilterChange(event.target.value);
-      });
-    }
-
-    const rawWholeWord = this.querySelector('[data-raw-whole]');
-    if (rawWholeWord) {
-      rawWholeWord.addEventListener('change', event => {
-        this.handleRawDataWholeWordChange(event.target.checked);
-      });
-    }
-
-    const rawReset = this.querySelector('[data-raw-reset]');
-    if (rawReset) {
-      rawReset.addEventListener('click', () => this.handleRawDataReset());
-    }
-
-    this.querySelectorAll('[data-raw-sort]').forEach(header => {
-      header.addEventListener('click', () => {
-        const column = header.dataset.rawSort;
-        if (column) {
-          this.handleRawDataSort(column);
-        }
-      });
-    });
-
-    const rawPrevPage = this.querySelector('[data-raw-page-prev]');
-    if (rawPrevPage) {
-      rawPrevPage.addEventListener('click', () => this.handleRawDataPageChange('prev'));
-    }
-
-    const rawNextPage = this.querySelector('[data-raw-page-next]');
-    if (rawNextPage) {
-      rawNextPage.addEventListener('click', () => this.handleRawDataPageChange('next'));
-    }
-
-    const rawSaveButton = this.querySelector('[data-raw-save]');
-    if (rawSaveButton) {
-      rawSaveButton.addEventListener('click', () => this.handleRawDataSave(rawSaveButton));
-    }
-
-    const rawDiscardButton = this.querySelector('[data-raw-discard]');
-    if (rawDiscardButton) {
-      rawDiscardButton.addEventListener('click', () => this.handleRawDataDiscard());
-    }
-
-    this.querySelectorAll('[data-raw-cell]').forEach(cell => {
-      if (cell.getAttribute('contenteditable') === 'true') {
-        cell.addEventListener('keydown', event => this.handleRawCellKeydown(event));
-        cell.addEventListener('input', event => this.handleRawCellInput(event));
-        cell.addEventListener('blur', event => this.handleRawCellBlur(event));
-      }
-    });
-
-    this.querySelectorAll('[data-raw-resize]').forEach(handle => {
-      handle.addEventListener('pointerdown', event => this.handleRawColumnResizeStart(event));
-    });
-
-    this.updateRawEditControls();
+    bindRawDataPanelEventsHelper(this);
   }
 
   restoreFocus() {

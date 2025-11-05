@@ -52,30 +52,48 @@ export const renderRawDataPanel = ({ app, rowsPerPage }) => {
   const metadataLines = [];
   if (metadata?.reportTitle) {
     metadataLines.push(
-      `<p class="text-xs font-semibold text-slate-600">${escapeHtml(metadata.reportTitle)}</p>`
+      `<p class="raw-panel-meta-line raw-panel-title text-xs font-semibold text-slate-600">${escapeHtml(
+        metadata.reportTitle
+      )}</p>`
     );
   }
   if (context.contextPreview) {
     metadataLines.push(
-      `<p class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(context.contextPreview)}</p>`
+      `<p class="raw-panel-meta-line raw-panel-preview text-[11px] text-slate-500 mt-0.5">${escapeHtml(
+        context.contextPreview
+      )}</p>`
     );
   }
   if (context.contextCount) {
     metadataLines.push(
-      `<p class="text-[11px] text-slate-400 mt-0.5">Extracted ${context.contextCount.toLocaleString()} rows of context data (including headers and initial data rows).</p>`
+      `<p class="raw-panel-meta-line text-[11px] text-slate-400 mt-0.5">Extracted ${context.contextCount.toLocaleString()} rows of context data (including headers and initial data rows).</p>`
     );
   }
   metadataLines.push(
-    `<p class="text-[11px] text-slate-400 mt-0.5">Original ${context.originalCount.toLocaleString()} rows • ${context.cleanedCount.toLocaleString()} rows after cleaning${context.removedCount > 0 ? ` • ${context.removedCount.toLocaleString()} rows removed` : ''}</p>`
+    `<p class="raw-panel-meta-line text-[11px] text-slate-400 mt-0.5">Original ${context.originalCount.toLocaleString()} rows • ${context.cleanedCount.toLocaleString()} rows after cleaning${
+      context.removedCount > 0 ? ` • ${context.removedCount.toLocaleString()} rows removed` : ''
+    }</p>`
   );
   metadataLines.push(
-    `<p class="text-[11px] ${context.resolvedView === 'original' ? 'text-amber-600' : 'text-slate-400'} mt-0.5">Current view: ${
+    `<p class="raw-panel-meta-line text-[11px] ${
+      context.resolvedView === 'original' ? 'text-amber-600' : 'text-slate-400'
+    } mt-0.5">Current view: ${
       context.resolvedView === 'original'
         ? 'Original CSV content (including title/total rows)'
         : 'Cleaned data ready for analysis'
     }</p>`
   );
-  const metadataBlock = metadataLines.join('');
+  metadataLines.push(
+    `<p class="raw-panel-meta-line raw-panel-dataset text-xs text-slate-500 mt-3">${escapeHtml(
+      csvData.fileName
+    )} • ${csvData.data.length.toLocaleString()} rows (${context.resolvedView === 'original' ? 'original' : 'cleaned'})</p>`
+  );
+  const metadataBlock = `<div class="raw-panel-meta">${metadataLines.join('')}</div>`;
+
+  const currentViewBadge =
+    context.resolvedView === 'original'
+      ? { label: 'Original CSV view', tone: 'warning' }
+      : { label: 'Cleaned dataset', tone: 'default' };
 
   const viewButtons = app
     .getDatasetViewOptions()
@@ -257,15 +275,21 @@ export const renderRawDataPanel = ({ app, rowsPerPage }) => {
   return `
       <section class="mx-auto max-w-6xl pb-8">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm">
-          <button type="button" class="flex justify-between items-center w-full px-4 py-3 text-left hover:bg-slate-50" data-raw-toggle>
-            <div>
-              <h3 class="text-base font-semibold text-slate-900">Raw Data Explorer</h3>
+          <button type="button" class="raw-panel-toggle flex justify-between items-start w-full px-4 py-3 text-left" data-raw-toggle aria-expanded="${
+            isRawDataVisible ? 'true' : 'false'
+          }">
+            <div class="raw-panel-toggle__content">
+              <div class="raw-panel-toggle__header">
+                <h3 class="text-base font-semibold text-slate-900">Raw Data Explorer</h3>
+                <span class="raw-panel-badge${
+                  currentViewBadge.tone === 'warning' ? ' raw-panel-badge--warning' : ''
+                }">${currentViewBadge.label}</span>
+              </div>
               ${metadataBlock}
-              <p class="text-xs text-slate-500">${escapeHtml(csvData.fileName)} • ${csvData.data.length.toLocaleString()} rows (cleaned)</p>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 transition-transform ${
-              isRawDataVisible ? 'transform rotate-180' : ''
-            }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            <span class="raw-panel-chevron" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </span>
           </button>
           ${
             isRawDataVisible

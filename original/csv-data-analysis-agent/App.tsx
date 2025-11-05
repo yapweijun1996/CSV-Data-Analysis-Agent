@@ -6,6 +6,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { MemoryPanel } from './components/MemoryPanel';
 import { SpreadsheetPanel } from './components/SpreadsheetPanel';
+import { DataPrepDebugPanel } from './components/DataPrepDebugPanel';
 import { AnalysisCardData, ChatMessage, ProgressMessage, CsvData, AnalysisPlan, AppState, ColumnProfile, AiAction, CardContext, ChartType, DomAction, Settings, Report, ReportListItem, AppView, CsvRow, DataPreparationPlan } from './types';
 import { processCsv, profileData, executePlan, executeJavaScriptDataTransform } from './utils/dataProcessor';
 import { generateAnalysisPlans, generateSummary, generateFinalSummary, generateChatResponse, generateDataPreparationPlan, generateCoreAnalysisSummary, generateProactiveInsights } from './services/geminiService';
@@ -44,6 +45,8 @@ const initialState: AppState = {
     finalSummary: null,
     aiCoreAnalysisSummary: null,
     dataPreparationPlan: null,
+    initialDataSample: null,
+    vectorStoreDocuments: [],
 };
 
 
@@ -53,6 +56,7 @@ const App: React.FC = () => {
     const [isAsideVisible, setIsAsideVisible] = useState(true);
     const [asideWidth, setAsideWidth] = useState(window.innerWidth / 4 > MIN_ASIDE_WIDTH ? window.innerWidth / 4 : MIN_ASIDE_WIDTH);
     const [isSpreadsheetVisible, setIsSpreadsheetVisible] = useState(true);
+    const [isDataPrepDebugVisible, setIsDataPrepDebugVisible] = useState(false);
 
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
@@ -94,12 +98,16 @@ const App: React.FC = () => {
                         ...currentSession.appState,
                         currentView: currentSession.appState.csvData ? 'analysis_dashboard' : 'file_upload',
                     });
+                     if (currentSession.appState.vectorStoreDocuments && vectorStore.getIsInitialized()) {
+                        vectorStore.rehydrate(currentSession.appState.vectorStoreDocuments);
+                        addProgress('Restored AI long-term memory from last session.');
+                    }
                 }
                 await loadReportsList();
             }
         };
         loadInitialData();
-    }, [loadReportsList]);
+    }, [loadReportsList, addProgress]);
 
     // Debounced saving of the current session state
     useEffect(() => {
@@ -108,12 +116,13 @@ const App: React.FC = () => {
         const saveCurrentState = async () => {
             if (appState.csvData && appState.csvData.data.length > 0) {
                  const existingReport = await getReport(CURRENT_SESSION_KEY);
+                 const stateToSave: AppState = { ...appState, vectorStoreDocuments: vectorStore.getDocuments() };
                  const currentReport: Report = {
                     id: CURRENT_SESSION_KEY,
                     filename: appState.csvData.fileName || 'Current Session',
                     createdAt: existingReport?.createdAt || new Date(),
                     updatedAt: new Date(),
-                    appState: appState,
+                    appState: stateToSave,
                 };
                 await saveReport(currentReport);
                 if (isHistoryPanelOpen) {
@@ -312,6 +321,9 @@ const App: React.FC = () => {
             const parsedData = await processCsv(file);
             if (!isMounted.current) return;
             addProgress(`Parsed ${parsedData.data.length} rows.`);
+
+            // Capture the initial data sample for the debug log before transformation
+            setAppState(prev => ({ ...prev, initialDataSample: parsedData.data.slice(0, 20) }));
             
             let dataForAnalysis = parsedData;
             let profiles: ColumnProfile[];
@@ -689,10 +701,17 @@ const App: React.FC = () => {
         addProgress(`Loading report ${id}...`);
         const report = await getReport(id);
         if (report && isMounted.current) {
+            // Must clear old vector store before loading new state
+            vectorStore.clear();
             setAppState({
                 ...report.appState,
                 currentView: 'analysis_dashboard'
             });
+            // Rehydrate vector store with documents from the loaded report
+            if (report.appState.vectorStoreDocuments) {
+                vectorStore.rehydrate(report.appState.vectorStoreDocuments);
+                addProgress('AI long-term memory restored from report.');
+            }
             setIsHistoryPanelOpen(false);
             addProgress(`Report "${report.filename}" loaded successfully.`);
         } else {
@@ -761,6 +780,17 @@ const App: React.FC = () => {
                     onHideOthersChange={handleHideOthersChange}
                     onToggleLegendLabel={handleToggleLegendLabel}
                 />
+                {appState.dataPreparationPlan && appState.dataPreparationPlan.jsFunctionBody && appState.initialDataSample && (
+                    <div className="mt-8">
+                        <DataPrepDebugPanel
+                            plan={appState.dataPreparationPlan}
+                            originalSample={appState.initialDataSample}
+                            transformedSample={csvData.data.slice(0, 20)}
+                            isVisible={isDataPrepDebugVisible}
+                            onToggleVisibility={() => setIsDataPrepDebugVisible(prev => !prev)}
+                        />
+                    </div>
+                )}
                 <div className="mt-8">
                     <SpreadsheetPanel
                         csvData={csvData}

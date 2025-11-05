@@ -1000,6 +1000,98 @@ button.w-full.flex.items-center.justify-between.p-1\.5.rounded-md.opacity-50 {
   box-shadow: none;
 }
 
+.raw-panel-toggle {
+  border: none;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.85), #ffffff);
+  border-radius: 0.75rem 0.75rem 0 0;
+  color: inherit;
+  gap: 1.25rem;
+  align-items: flex-start;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.raw-panel-toggle:hover {
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.45), #ffffff);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.2);
+  transform: translateY(-1px);
+}
+.raw-panel-toggle:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+}
+.raw-panel-toggle__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-right: 0.75rem;
+}
+.raw-panel-toggle__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.raw-panel-meta {
+  display: grid;
+  gap: 0.3rem;
+}
+.raw-panel-meta-line {
+  color: #64748b;
+}
+.raw-panel-title {
+  color: #1e293b;
+}
+.raw-panel-preview {
+  color: #475569;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.raw-panel-dataset {
+  font-weight: 500;
+  color: #475569;
+}
+.raw-panel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: rgba(14, 165, 233, 0.12);
+  color: #0f172a;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+.raw-panel-badge--warning {
+  background-color: rgba(251, 191, 36, 0.2);
+  border-color: rgba(217, 119, 6, 0.35);
+  color: #92400e;
+}
+.raw-panel-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background-color: rgba(226, 232, 240, 0.9);
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #64748b;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.raw-panel-toggle:hover .raw-panel-chevron {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #1d4ed8;
+}
+.raw-panel-chevron svg {
+  transition: transform 0.2s ease;
+}
+.raw-panel-toggle[aria-expanded='true'] .raw-panel-chevron svg {
+  transform: rotate(180deg);
+}
+
 .ring-blue-300 {
   --tw-ring-color: #93c5fd;
 }

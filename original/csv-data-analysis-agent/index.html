@@ -13,6 +13,15 @@
               'brand-primary': '#2563eb', // A slightly brighter blue for light mode
               'brand-secondary': '#3b82f6',
             },
+            animation: {
+                'loading-shimmer': 'loading-shimmer 2s infinite linear',
+            },
+            keyframes: {
+                'loading-shimmer': {
+                    '0%': { 'background-position': '-200% 0' },
+                    '100%': { 'background-position': '200% 0' },
+                }
+            }
           },
         },
       }

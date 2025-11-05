@@ -8,6 +8,17 @@ This advanced tool allows users to have a conversation with their data, asking f
 
 *   **Uncompromising Privacy (Local-First)**: Your privacy is paramount. All CSV parsing and data aggregation happens directly in your browser via Web Workers and JavaScript. Your raw data file **never** leaves your computer. For AI-powered analysis, only the column names (the schema) and a small, representative sample of the data (typically 5-20 rows) are sent to your chosen AI provider (Google Gemini or OpenAI) to generate insights. The full dataset remains local at all times.
 
+*   **🧠 Persistent Long-Term Memory (Local Vector Store)**: The AI has a true long-term memory powered by a fully in-browser vector database.
+    *   **Local AI**: Using Transformers.js, the agent creates text embeddings directly in your browser. The required AI model (~34MB) is downloaded once from a CDN (the Hugging Face Hub) and then cached by the browser for offline use.
+    *   **Persistent & Private**: Key insights from charts and conversations are stored in your browser's IndexedDB and are automatically loaded when you restore a session. This memory is never sent to any server.
+    *   **Smarter Conversations**: This allows the AI to have deeper, context-aware follow-up conversations, even across different sessions.
+    *   **Full Transparency**: A dedicated "Memory Panel" lets you inspect, search, and even delete items from the AI's knowledge base.
+
+*   **📊 Interactive Raw Data Explorer**: Go beyond the charts and inspect your data directly in a powerful, spreadsheet-like interface.
+    *   **Sort & Search**: Instantly sort any column or perform full-text searches across the entire dataset.
+    *   **Resizable Columns & Pagination**: Easily navigate large datasets with resizable columns and a paginated view.
+    *   **Verify Transformations**: See the direct results of any data cleaning or transformation the AI performs on your data.
+
 *   **Planner + ReAct Framework**: For complex requests, the agent now acts as a planner. It first formulates a step-by-step plan, announces it, and then executes that plan using the Reason+Act (ReAct) model.
     *   **Explicit Planning**: Before starting a multi-step task, the AI will state its plan in its "thought" process (e.g., "My plan is to: 1. Filter the data. 2. Create a chart. 3. Summarize the results."). This makes its strategy clear from the outset.
     *   **Sequential Execution**: The agent executes the plan by chaining multiple tools together in a sequence. It can perform a data transformation, then create several analysis cards from the new data, and finally provide a text summary that synthesizes the results, all in response to a single prompt.
@@ -64,18 +75,22 @@ Your settings are saved securely in your browser's local storage and are never t
     *   Use the "Show Top" dropdown to filter noisy charts.
     *   Use your mouse wheel to zoom and click-and-drag to pan on complex charts.
     *   Click on bars, slices, or points to select them. Hold `Ctrl` or `Cmd` to multi-select.
-5.  **Chat with the Assistant**:
+5.  **Explore Raw Data**: Expand the 'Raw Data Explorer' panel at the bottom to view, sort, and search your full dataset in a spreadsheet view.
+6.  **Chat with the Assistant**:
     *   Open the side panel to chat. Ask for a new view (e.g., "Count of products by category").
     *   Ask a question about the data (e.g., "What's the average order value in the sales performance chart?").
     *   Ask the AI to guide you (e.g., "Highlight the most important chart and explain it to me"). Click the "Show Related Card" button on the AI's response to navigate directly to the chart it is discussing.
     *   Ask the AI to perform complex actions (e.g., "Create a new column called 'Efficiency' by dividing 'Output' by 'Hours'").
-6.  **Manage History**: Click the "History" button in the main header to see all your past reports. You can load a previous session to continue your work or delete old reports.
-7.  **Export Your Findings**: Use the export menu on any card to save your work as a PNG, CSV, or a full HTML report.
+7.  **Manage History & Memory**:
+    *   Click the "History" button in the main header to see all your past reports. You can load a previous session to continue your work or delete old reports.
+    *   Click the "Memory" icon (🧠) in the Assistant panel to see what the AI has learned from your data and conversations.
+8.  **Export Your Findings**: Use the export menu on any card to save your work as a PNG, CSV, or a full HTML report.
 
 ## 🛠️ Tech Stack
 
 *   **Frontend**: React, TypeScript, Tailwind CSS
 *   **AI**: Google Gemini API, OpenAI API
+*   **Local AI Memory**: Transformers.js (`@xenova/transformers`) for in-browser embeddings.
 *   **Charting**: Chart.js with `chartjs-plugin-zoom`
 *   **CSV Parsing**: PapaParse
-*   **Local Storage**: IndexedDB (for session reports) & LocalStorage (for settings) via the `idb` library.
+*   **Local Storage**: IndexedDB (for session reports & AI memory) & LocalStorage (for settings) via the `idb` library.

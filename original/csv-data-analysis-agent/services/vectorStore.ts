@@ -52,6 +52,15 @@ class VectorStore {
             this.isInitializing = false;
         }
     }
+    
+    /**
+     * Rehydrates the store from a saved state. This is used when loading a report from history.
+     * It assumes the model is already initialized or will be shortly.
+     * @param documents - The array of documents (with embeddings) to load into the store.
+     */
+    public rehydrate(documents: VectorStoreDocument[]): void {
+        this.documents = documents;
+    }
 
     public async addDocument(doc: { id: string; text: string; metadata?: any }): Promise<void> {
         if (!this.embedder) {

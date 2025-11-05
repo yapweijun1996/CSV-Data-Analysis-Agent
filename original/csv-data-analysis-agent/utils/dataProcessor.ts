@@ -10,17 +10,45 @@ const sanitizeValue = (value: string): string => {
     return value;
 };
 
-const parseNumericValue = (value: any): number | null => {
-    if (value === null || value === undefined || String(value).trim() === '') {
+const robustParseFloat = (value: any): number | null => {
+    if (value === null || value === undefined) return null;
+
+    let s = String(value).trim();
+    if (s === '') return null;
+
+    // 1. Handle parentheses for negative values, e.g., (1,234.56)
+    let isNegative = false;
+    if (s.startsWith('(') && s.endsWith(')')) {
+        s = s.substring(1, s.length - 1);
+        isNegative = true;
+    }
+    
+    // 2. Remove common currency symbols and percentage signs
+    s = s.replace(/[$\s€£¥%]/g, '');
+
+    // 3. Standardize decimal separator
+    const lastComma = s.lastIndexOf(',');
+    const lastDot = s.lastIndexOf('.');
+    
+    if (lastComma > lastDot) {
+        // European format: 1.234,56 -> 1234.56
+        s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+        // US format: 1,234.56 -> 1234.56
+        s = s.replace(/,/g, '');
+    }
+
+    // 4. Parse the cleaned string
+    const num = parseFloat(s);
+
+    if (isNaN(num)) {
         return null;
     }
-    const cleanedString = String(value)
-        .replace(/[$€,]/g, '')
-        .trim();
-    
-    const num = Number(cleanedString);
-    return isNaN(num) ? null : num;
+
+    // 5. Apply negativity if detected from parentheses
+    return isNegative ? -num : num;
 };
+
 
 const looksLikeDate = (value: any): boolean => {
     if (typeof value !== 'string' || !value) return false;
@@ -145,19 +173,32 @@ export const applyTopNWithOthers = (data: CsvRow[], groupByKey: string, valueKey
 export const processCsv = (file: File): Promise<CsvData> => {
     return new Promise((resolve, reject) => {
         Papa.parse(file, {
-            header: true,
+            header: false, // CRITICAL FIX: Do not assume the first row is a header.
             skipEmptyLines: true,
             worker: true,
-            complete: (results: { data: CsvRow[] }) => {
-                const sanitizedData = results.data.map(row => {
+            complete: (results: { data: string[][] }) => {
+                if (results.data.length === 0) {
+                    resolve({ fileName: file.name, data: [] });
+                    return;
+                }
+                
+                // Find the maximum number of columns across all rows to create a consistent object structure.
+                const maxCols = results.data.reduce((max, row) => Math.max(max, row.length), 0);
+                // Create generic headers (e.g., column_1, column_2) for the AI to reference.
+                const genericHeaders = Array.from({ length: maxCols }, (_, i) => `column_${i + 1}`);
+                
+                // Convert the array of arrays into an array of objects with generic keys.
+                // This provides a stable structure for the AI to analyze, regardless of the file's header position.
+                const objectData = results.data.map(rowArray => {
                     const newRow: CsvRow = {};
-                    for (const key in row) {
-                        newRow[key] = sanitizeValue(String(row[key]));
-                    }
+                    genericHeaders.forEach((header, index) => {
+                        const value = rowArray[index] !== undefined ? rowArray[index] : ''; // Handle jagged rows
+                        newRow[header] = sanitizeValue(String(value));
+                    });
                     return newRow;
                 });
-                // Fix: Resolve with a CsvData object instead of just the array of rows.
-                resolve({ fileName: file.name, data: sanitizedData });
+
+                resolve({ fileName: file.name, data: objectData });
             },
             error: (error: Error) => {
                 reject(error);
@@ -177,7 +218,7 @@ export const profileData = (data: CsvRow[]): ColumnProfile[] => {
         let numericCount = 0;
         
         for (const value of values) {
-            const parsedNum = parseNumericValue(value);
+            const parsedNum = robustParseFloat(value);
             if (value !== null && String(value).trim() !== '') {
                 if (parsedNum === null) {
                     isNumerical = false;
@@ -188,7 +229,7 @@ export const profileData = (data: CsvRow[]): ColumnProfile[] => {
         }
 
         if (isNumerical && numericCount > 0) {
-            const numericValues = values.map(parseNumericValue).filter((v): v is number => v !== null);
+            const numericValues = values.map(robustParseFloat).filter((v): v is number => v !== null);
             profiles.push({
                 name: header,
                 type: 'numerical',
@@ -208,10 +249,42 @@ export const profileData = (data: CsvRow[]): ColumnProfile[] => {
     return profiles;
 };
 
+/**
+ * Splits a string containing multiple numbers, where the numbers themselves may contain commas.
+ * E.g., "10,000.00,0.00,-1,234.56" -> ["10,000.00", "0.00", "-1,234.56"]
+ * @param input The string to split.
+ * @returns An array of strings, where each string is a single number.
+ */
+const splitNumericString = (input: string | null | undefined): string[] => {
+    if (!input) return [];
+    // Replace commas that are delimiters with a pipe character.
+    // A comma is a delimiter if it is followed by a digit, or a minus sign then a digit.
+    // This reliably distinguishes it from a thousands-separator comma.
+    const parsableString = String(input).replace(/,(?=-?\d)/g, '|');
+    return parsableString.split('|');
+};
+
 export const executeJavaScriptDataTransform = (data: CsvRow[], jsFunctionBody: string): CsvRow[] => {
     try {
-        const transformFunction = new Function('data', jsFunctionBody);
-        const result = transformFunction(data);
+        // Create a utility object to be exposed to the AI's code.
+        const _util = {
+            /**
+             * Safely parses a string into a number, handling currency symbols, commas, and percentages.
+             * Returns null if parsing is not possible.
+             * @param value The value to parse.
+             * @returns A number or null.
+             */
+            parseNumber: robustParseFloat,
+            /**
+             * Safely splits a string containing multiple comma-separated numbers, where the numbers themselves may also contain commas as thousand separators.
+             * @param value The string to split.
+             * @returns An array of strings, each representing one number.
+             */
+            splitNumericString: splitNumericString,
+        };
+
+        const transformFunction = new Function('data', '_util', jsFunctionBody);
+        const result = transformFunction(data, _util);
         
         if (!Array.isArray(result)) {
             console.error("AI-generated transform function returned a non-array value. This is likely due to a missing 'return' statement in the generated code.", {
@@ -242,8 +315,8 @@ export const executePlan = (data: CsvData, plan: AnalysisPlan): CsvRow[] => {
         }
         return data.data
             .map(row => ({
-                [xValueColumn]: parseNumericValue(row[xValueColumn]),
-                [yValueColumn]: parseNumericValue(row[yValueColumn]),
+                [xValueColumn]: robustParseFloat(row[xValueColumn]),
+                [yValueColumn]: robustParseFloat(row[yValueColumn]),
             }))
             .filter(p => p[xValueColumn] !== null && p[yValueColumn] !== null) as CsvRow[];
     }
@@ -265,7 +338,7 @@ export const executePlan = (data: CsvData, plan: AnalysisPlan): CsvRow[] => {
         }
 
         if (valueColumn) {
-            const value = parseNumericValue(row[valueColumn]);
+            const value = robustParseFloat(row[valueColumn]);
             if (value !== null) {
                 groups[groupKey].push(value);
             }
