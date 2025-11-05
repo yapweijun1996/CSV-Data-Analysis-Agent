@@ -1,4 +1,5 @@
 import { escapeHtml } from './helpers.js';
+import { formatMessageMarkdown } from './messageFormatter.js';
 
 const formatTimeLabel = timestamp => {
   const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
@@ -31,25 +32,32 @@ const renderProgressEntry = (entry, timeLabel) => {
     </div>`;
 };
 
-const renderThinkingEntry = entry => `
-  <div class="my-2 p-3 bg-white border border-blue-200 rounded-lg">
-    <div class="flex items-center text-blue-700 mb-2">
-      <span class="text-lg mr-2">🧠</span>
-      <h4 class="font-semibold">AI's Initial Analysis</h4>
-    </div>
-    <p class="text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(entry.text || '')}</p>
-  </div>`;
+const renderThinkingEntry = entry => {
+  const content = formatMessageMarkdown(entry.text || '');
+  return `
+    <div class="my-2 p-3 bg-white border border-blue-200 rounded-lg">
+      <div class="flex items-center text-blue-700 mb-2">
+        <span class="text-lg mr-2">🧠</span>
+        <h4 class="font-semibold">AI's Initial Analysis</h4>
+      </div>
+      <div class="text-sm text-slate-700 space-y-2 leading-relaxed">${content}</div>
+    </div>`;
+};
 
-const renderPlanEntry = entry => `
-  <div class="my-2 p-3 bg-slate-100 border border-slate-200 rounded-lg shadow-sm">
-    <div class="flex items-center text-slate-700 mb-2">
-      <span class="text-lg mr-2">⚙️</span>
-      <h4 class="font-semibold">Plan Execution</h4>
-    </div>
-    <p class="text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(entry.text || '')}</p>
-  </div>`;
+const renderPlanEntry = entry => {
+  const content = formatMessageMarkdown(entry.text || '');
+  return `
+    <div class="my-2 p-3 bg-slate-100 border border-slate-200 rounded-lg shadow-sm">
+      <div class="flex items-center text-slate-700 mb-2">
+        <span class="text-lg mr-2">⚙️</span>
+        <h4 class="font-semibold">Plan Execution</h4>
+      </div>
+      <div class="text-sm text-slate-700 space-y-2 leading-relaxed">${content}</div>
+    </div>`;
+};
 
 const renderProactiveInsightEntry = (entry, resolvedCardId, resolvedCardTitle) => {
+  const content = formatMessageMarkdown(entry.text || '');
   const cardButton = resolvedCardId
     ? `<button type="button" class="mt-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md hover:bg-amber-200 transition-colors font-medium" data-show-card="${escapeHtml(resolvedCardId)}"${
         resolvedCardTitle ? ` data-show-card-title="${escapeHtml(resolvedCardTitle)}"` : ''
@@ -63,12 +71,13 @@ const renderProactiveInsightEntry = (entry, resolvedCardId, resolvedCardTitle) =
         <span class="text-lg mr-2">💡</span>
         <h4 class="font-semibold">Proactive Insight</h4>
       </div>
-      <p class="text-sm text-amber-800 whitespace-pre-wrap">${escapeHtml(entry.text || '')}</p>
+      <div class="text-sm text-amber-800 space-y-2 leading-relaxed">${content}</div>
       ${cardButton}
     </div>`;
 };
 
 const renderSystemEntry = (entry, timeLabel) => {
+  const content = formatMessageMarkdown(entry.text || '');
   const badge = timeLabel
     ? `<span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 font-semibold">${escapeHtml(timeLabel)}</span>`
     : '';
@@ -85,8 +94,8 @@ const renderSystemEntry = (entry, timeLabel) => {
             ${badge}
             <span class="px-1.5 py-0.5 rounded-full bg-amber-50 font-semibold text-amber-600">System</span>
           </div>
-          <div class="inline-block max-w-[28rem] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm">
-            ${escapeHtml(entry.text || '')}
+          <div class="inline-block max-w-[28rem] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 shadow-sm space-y-2 leading-relaxed">
+            ${content}
           </div>
         </div>
       </div>
@@ -94,6 +103,7 @@ const renderSystemEntry = (entry, timeLabel) => {
 };
 
 const renderStandardEntry = (entry, timeLabel, resolvedCardId, resolvedCardTitle) => {
+  const content = formatMessageMarkdown(entry.text || '');
   const sender = entry.sender;
   const alignmentClass = sender === 'user' ? 'justify-end' : 'justify-start';
   const orientationClass = sender === 'user' ? 'items-end text-right' : 'items-start text-left';
@@ -135,8 +145,8 @@ const renderStandardEntry = (entry, timeLabel, resolvedCardId, resolvedCardTitle
           ${senderBadge}
           ${metaLine ? `<span>${metaLine}</span>` : ''}
         </div>
-        <div class="inline-block max-w-[28rem] rounded-xl px-3 py-2 text-sm whitespace-pre-wrap ${bubbleClass}">
-          ${escapeHtml(entry.text || '')}
+        <div class="inline-block max-w-[28rem] rounded-xl px-3 py-2 text-sm ${bubbleClass} space-y-2 leading-relaxed text-left">
+          ${content}
           ${cardButton}
         </div>
       </div>
