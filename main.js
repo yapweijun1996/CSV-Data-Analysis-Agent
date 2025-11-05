@@ -1236,19 +1236,19 @@ class CsvDataAnalysisApp extends HTMLElement {
 
       if (isApiKeySet) {
         this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
-        const metadataContextRows =
-          Array.isArray(dataForAnalysis.metadata?.sampleDataRows) &&
-          dataForAnalysis.metadata.sampleDataRows.length
-            ? dataForAnalysis.metadata.sampleDataRows.slice(0, 20)
-            : dataForAnalysis.data.slice(0, 20);
+        const sampleRowsForPlan = dataForAnalysis.data.slice(0, 20);
         prepPlan = await generateDataPreparationPlan(
           profiles,
-          metadataContextRows,
+          sampleRowsForPlan,
           this.settings,
           dataForAnalysis.metadata || metadata || null
         );
         if (prepPlan && prepPlan.jsFunctionBody) {
-          this.addProgress(prepPlan.explanation || 'AI suggested applying a data transformation.');
+          const planExplanation =
+            (typeof prepPlan.explanation === 'string' && prepPlan.explanation.trim()) ||
+            'AI suggested applying a data transformation.';
+          this.addProgress(`AI Plan: ${planExplanation}`);
+          this.addProgress('Executing AI data transformation...');
           const originalCount = dataForAnalysis.data.length;
           dataForAnalysis.data = executeJavaScriptDataTransform(
             dataForAnalysis.data,

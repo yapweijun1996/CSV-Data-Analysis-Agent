@@ -379,6 +379,53 @@ const formatMetadataContext = (metadata, options = {}) => {
   return lines.join('\n');
 };
 
+const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
+  if (!Array.isArray(sampleData)) {
+    return [];
+  }
+
+  const columnNames = Array.isArray(columns)
+    ? columns
+        .map(column => (column && typeof column === 'object' ? column.name : null))
+        .filter(Boolean)
+    : [];
+
+  const genericHeaders = Array.isArray(metadata?.genericHeaders) ? metadata.genericHeaders : [];
+  const inferredHeaders = Array.isArray(metadata?.inferredHeaders) ? metadata.inferredHeaders : [];
+  const aliasMap = {};
+
+  if (genericHeaders.length && inferredHeaders.length) {
+    genericHeaders.forEach((generic, index) => {
+      if (generic) {
+        aliasMap[generic] = inferredHeaders[index];
+      }
+    });
+  }
+
+  return sampleData.map(row => {
+    if (!row || typeof row !== 'object') {
+      return row;
+    }
+    if (!columnNames.length) {
+      return { ...row };
+    }
+    const normalizedRow = { ...row };
+    columnNames.forEach(name => {
+      if (!Object.prototype.hasOwnProperty.call(normalizedRow, name)) {
+        const aliasKey = aliasMap[name];
+        if (aliasKey && Object.prototype.hasOwnProperty.call(row, aliasKey)) {
+          normalizedRow[name] = row[aliasKey];
+        } else if (Object.prototype.hasOwnProperty.call(row, name)) {
+          normalizedRow[name] = row[name];
+        } else {
+          normalizedRow[name] = '';
+        }
+      }
+    });
+    return normalizedRow;
+  });
+};
+
 const callOpenAIJson = async (settings, systemPrompt, userPrompt) => {
   const response = await withRetry(async () => {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -533,6 +580,30 @@ export const generateDataPreparationPlan = async (columns, sampleData, settings,
     return { explanation: 'No transformation needed as API key is not set.', jsFunctionBody: null, outputColumns: columns };
   }
 
+  const normalizedSampleData = normaliseSampleDataForPlan(columns, Array.isArray(sampleData) ? sampleData : [], metadata);
+  const sampleRowsForPrompt = normalizedSampleData.slice(0, 20);
+  const genericHeaders = Array.isArray(metadata?.genericHeaders) ? metadata.genericHeaders : [];
+  const inferredHeaders = Array.isArray(metadata?.inferredHeaders) ? metadata.inferredHeaders : [];
+  const headerMappingPreview = (() => {
+    if (!genericHeaders.length || !inferredHeaders.length) {
+      return '';
+    }
+    const pairs = genericHeaders
+      .map((header, index) => {
+        const alias = inferredHeaders[index];
+        if (!header) return '';
+        return `${header} -> ${alias || '(unknown)'}`;
+      })
+      .filter(Boolean)
+      .slice(0, 30);
+    return pairs.length ? pairs.join('\n') : '';
+  })();
+  const hasCrosstabShape =
+    genericHeaders.length >= 6 &&
+    normalizedSampleData.length > 0 &&
+    typeof normalizedSampleData[0] === 'object' &&
+    Object.keys(normalizedSampleData[0]).some(key => /^column_\d+$/i.test(key));
+
   const metadataContext = formatMetadataContext(metadata, {
     leadingRowLimit: 10,
     contextRowLimit: 20,
@@ -558,10 +629,17 @@ You MUST respond with a single valid JSON object, and nothing else. The JSON obj
 - **Crosstab/Wide Format**: Unpivot data where column headers are actually values (e.g., years, regions) so that each observation is one row.
 - **Multi-header Rows**: Skip any initial junk rows (titles, blank lines, headers split across rows) before the true header.
 
+${headerMappingPreview ? `Generic to inferred header mapping:\n${headerMappingPreview}\n` : ''}
+${hasCrosstabShape ? `CROSSTAB ALERT:
+- The dataset contains many generic columns (e.g., column_1, column_2...). Treat these as pivoted metrics that must be unpivoted/melted into tidy rows.
+- Preserve identifier columns (codes, descriptions, category labels) as-is.
+- For each pivot column, produce rows with explicit fields such as { Code, Description, PivotColumnName, PivotValue } so every numeric value becomes its own observation.
+- After reshaping, update outputColumns to reflect the tidy structure (e.g., 'code' categorical, 'project' categorical, 'metric_value' numerical).\n` : ''}
+
 Dataset Columns (Initial Schema):
 ${JSON.stringify(columns, null, 2)}
 Sample Data (up to 20 rows):
-${JSON.stringify(sampleData.slice(0, 20), null, 2)}
+${JSON.stringify(sampleRowsForPrompt, null, 2)}
 ${lastError ? `On the previous attempt, your generated code failed with this error: "${lastError.message}". Please analyze the error and provide a corrected response.` : ''}
 
 Your task:
@@ -618,7 +696,8 @@ Your task:
 
         try {
           const transformFunction = new Function('data', '_util', plan.jsFunctionBody);
-          const testResult = transformFunction(sampleData.slice(0, 10), mockUtil);
+          const testInput = normalizedSampleData.slice(0, 10);
+          const testResult = transformFunction(testInput, mockUtil);
           if (!Array.isArray(testResult)) {
             throw new Error('Generated function did not return an array.');
           }
