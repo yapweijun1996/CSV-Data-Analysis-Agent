@@ -45,6 +45,7 @@ import { renderFinalSummary } from './render/finalSummary.js';
 import { renderDataPreviewPanel as renderDataPreviewPanelView } from './render/dataPreviewPanel.js';
 import { renderRawDataPanel as renderRawDataPanelView } from './render/rawDataPanel.js';
 import { renderAnalysisCard as renderAnalysisCardView } from './render/analysisCard.js';
+import { renderAnalysisSection } from './render/analysisPanel.js';
 /** @typedef {import('./types/typedefs.js').AnalysisPlan} AnalysisPlan */
 /** @typedef {import('./types/typedefs.js').AnalysisCardData} AnalysisCardData */
 /** @typedef {import('./types/typedefs.js').ColumnProfile} ColumnProfile */
@@ -5013,55 +5014,6 @@ class CsvDataAnalysisApp extends HTMLElement {
     `;
   }
 
-  renderCardsLoadingState() {
-    const recentProgress = (this.state.progressMessages || []).slice(-5);
-    const progressItems = recentProgress
-      .map(message => {
-        const text = this.escapeHtml(message.text || '');
-        return `<li class="flex items-center gap-2 text-xs text-slate-500">
-          <span class="h-1.5 w-1.5 rounded-full bg-blue-400"></span>
-          <span class="truncate">${text}</span>
-        </li>`;
-      })
-      .join('');
-    const progressHtml = progressItems
-      ? `<ul class="mt-4 space-y-1">${progressItems}</ul>`
-      : '';
-
-    return `
-      <div class="bg-white border border-slate-200 rounded-xl p-6 flex items-start gap-4 shadow-sm">
-        <div class="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin"></div>
-        <div class="flex-1">
-          <h3 class="text-base font-semibold text-slate-900">AI is analyzing the data</h3>
-          <p class="text-sm text-slate-500">The system will complete data analysis, chart generation, and summary in sequence. Please wait.</p>
-          ${progressHtml}
-        </div>
-      </div>
-    `;
-  }
-
-  renderEmptyCardsState() {
-    const hasCsv = Boolean(this.state.csvData);
-    const title = hasCsv ? 'No analysis cards at the moment' : 'Analysis has not started yet';
-    const subtitle = hasCsv
-      ? 'You can ask the AI to create a new analysis through the conversation on the right, or re-upload data to explore.'
-      : 'After uploading the CSV, AI-generated analysis cards and insights will be displayed here.';
-
-    return `
-      <div class="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-sm">
-        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-500">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7l9-4 9 4-9 4-9-4z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12l-9 4-9-4" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 17l-9 4-9-4" />
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold text-slate-900">${this.escapeHtml(title)}</h3>
-        <p class="mt-2 text-sm text-slate-500">${this.escapeHtml(subtitle)}</p>
-      </div>
-    `;
-  }
-
   renderAnalysisCard(card) {
     return renderAnalysisCardView({ app: this, card, colors: COLORS });
   }
@@ -5137,14 +5089,12 @@ class CsvDataAnalysisApp extends HTMLElement {
     const isApiKeySet = this.hasConfiguredApiKey();
     const disableUpload = isBusy || !isApiKeySet;
     const cardsHtml = analysisCards.map(card => this.renderAnalysisCard(card)).join('');
-    let cardsSection;
-    if (cardsHtml) {
-      cardsSection = `<div class="grid gap-6 grid-cols-1 xl:grid-cols-2">${cardsHtml}</div>`;
-    } else if (isBusy && csvData) {
-      cardsSection = this.renderCardsLoadingState();
-    } else {
-      cardsSection = this.renderEmptyCardsState();
-    }
+    const cardsSection = renderAnalysisSection({
+      isBusy,
+      hasCsv: Boolean(csvData),
+      cardsHtml,
+      progressMessages: this.state.progressMessages || [],
+    });
     const dataPreviewPanel = this.renderDataPreviewPanel();
     const rawDataPanel = this.renderRawDataPanel();
 
