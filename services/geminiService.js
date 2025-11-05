@@ -573,11 +573,12 @@ Your task:
       if (plan.jsFunctionBody) {
         const mockUtil = {
           parseNumber: value => {
-            if (value === null || value === undefined) return null;
-            const cleaned = String(value).replace(/[$\s,%]/g, '').replace(/,/g, '');
-            if (!cleaned) return null;
+            const cleaned = String(value ?? '')
+              .replace(/[$\s,%]/g, '')
+              .replace(/,/g, '')
+              .trim();
             const parsed = Number.parseFloat(cleaned);
-            return Number.isNaN(parsed) ? null : parsed;
+            return Number.isNaN(parsed) ? 0 : parsed;
           },
           splitNumericString: value => {
             if (value === null || value === undefined) return [];

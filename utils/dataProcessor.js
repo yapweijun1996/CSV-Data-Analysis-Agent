@@ -314,15 +314,36 @@ const rowLooksLikeSummary = values => {
 };
 
 export const parseNumericValue = value => {
-  if (value === null || value === undefined || String(value).trim() === '') {
+  if (value === null || value === undefined) {
     return null;
   }
-  const cleanedString = String(value)
-    .replace(/[$€,]/g, '')
-    .trim();
+  let stringValue = String(value).trim();
+  if (!stringValue) {
+    return null;
+  }
 
-  const num = Number(cleanedString);
-  return Number.isNaN(num) ? null : num;
+  let isNegative = false;
+  if (stringValue.startsWith('(') && stringValue.endsWith(')')) {
+    stringValue = stringValue.slice(1, -1);
+    isNegative = true;
+  }
+
+  stringValue = stringValue.replace(/[$\s€£¥%]/g, '');
+
+  const lastComma = stringValue.lastIndexOf(',');
+  const lastDot = stringValue.lastIndexOf('.');
+  if (lastComma > lastDot) {
+    stringValue = stringValue.replace(/\./g, '').replace(',', '.');
+  } else {
+    stringValue = stringValue.replace(/,/g, '');
+  }
+
+  const parsed = Number.parseFloat(stringValue);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  return isNegative ? -parsed : parsed;
 };
 
 export const applyTopNWithOthers = (data, groupByKey, valueKey, topN) => {

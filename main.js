@@ -40,6 +40,7 @@ import { renderRawDataPanel as renderRawDataPanelView } from './render/rawDataPa
 import { renderAnalysisCard as renderAnalysisCardView } from './render/analysisCard.js';
 import { renderAnalysisSection } from './render/analysisPanel.js';
 import { renderAssistantPanel as renderAssistantPanelView } from './render/assistantPanel.js';
+import { renderDataPrepDebugPanel as renderDataPrepDebugPanelView } from './render/dataPrepDebugPanel.js';
 import { renderMemoryPanel as renderMemoryPanelView } from './render/memoryPanel.js';
 import { ENABLE_MEMORY_FEATURES } from './services/memoryConfig.js';
 import { ensureMemoryVectorReady as ensureMemoryVectorReadyHelper } from './services/memoryServiceHelpers.js';
@@ -92,6 +93,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       finalSummary: null,
       aiCoreAnalysisSummary: null,
       dataPreparationPlan: null,
+      initialDataSample: null,
+      isDataPrepDebugVisible: false,
       chatHistory: [],
       highlightedCardId: null,
       showSettings: false,
@@ -172,6 +175,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       finalSummary: this.state.finalSummary,
       aiCoreAnalysisSummary: this.state.aiCoreAnalysisSummary,
       dataPreparationPlan: this.state.dataPreparationPlan,
+      initialDataSample: this.state.initialDataSample,
+      isDataPrepDebugVisible: this.state.isDataPrepDebugVisible,
       chatHistory: cloneTimeline(this.state.chatHistory),
       highlightedCardId: this.state.highlightedCardId,
       showSettings: false,
@@ -221,6 +226,12 @@ class CsvDataAnalysisApp extends HTMLElement {
 
     if (!Object.prototype.hasOwnProperty.call(restored, 'dataPreparationPlan')) {
       restored.dataPreparationPlan = null;
+    }
+    if (!Object.prototype.hasOwnProperty.call(restored, 'initialDataSample')) {
+      restored.initialDataSample = null;
+    }
+    if (!Object.prototype.hasOwnProperty.call(restored, 'isDataPrepDebugVisible')) {
+      restored.isDataPrepDebugVisible = false;
     }
 
     if (Array.isArray(restored.analysisCards)) {
@@ -1180,6 +1191,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       finalSummary: null,
       aiCoreAnalysisSummary: null,
       dataPreparationPlan: null,
+      initialDataSample: null,
+      isDataPrepDebugVisible: false,
       chatHistory: [],
       highlightedCardId: null,
       currentView: 'analysis_dashboard',
@@ -1192,6 +1205,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       this.addProgress('Parsing CSV file...');
       const parsedData = await processCsv(file);
       this.addProgress(`Parsed ${parsedData.data.length} rows.`);
+      const initialSample = parsedData.data.slice(0, 20);
 
       const metadata = parsedData.metadata || null;
       if (metadata?.reportTitle) {
@@ -1288,6 +1302,8 @@ class CsvDataAnalysisApp extends HTMLElement {
         csvMetadata: dataForAnalysis.metadata || metadata || null,
         currentDatasetId: datasetId,
         dataPreparationPlan: prepPlan,
+        initialDataSample: initialSample,
+        isDataPrepDebugVisible: false,
         rawDataPage: 0,
         rawDataColumnWidths: {},
       });
@@ -2376,6 +2392,13 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
   }
 
+  toggleDataPrepDebugPanel(forceVisible) {
+    this.setState(prev => ({
+      isDataPrepDebugVisible:
+        typeof forceVisible === 'boolean' ? forceVisible : !prev.isDataPrepDebugVisible,
+    }));
+  }
+
   handleAsideMouseDown(event) {
     if (event) {
       event.preventDefault();
@@ -2496,6 +2519,9 @@ class CsvDataAnalysisApp extends HTMLElement {
       analysisCards: [],
       finalSummary: null,
       aiCoreAnalysisSummary: null,
+      dataPreparationPlan: null,
+      initialDataSample: null,
+      isDataPrepDebugVisible: false,
       chatHistory: [],
       highlightedCardId: null,
       isRawDataVisible: true,
@@ -3273,6 +3299,10 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     });
 
+    this.querySelectorAll('[data-toggle-data-prep]').forEach(btn => {
+      btn.addEventListener('click', () => this.toggleDataPrepDebugPanel());
+    });
+
     const asideResizer = this.querySelector('[data-aside-resizer]');
     if (asideResizer) {
       asideResizer.addEventListener('mousedown', event => this.handleAsideMouseDown(event));
@@ -3872,6 +3902,18 @@ class CsvDataAnalysisApp extends HTMLElement {
     return renderDataPreviewPanelView();
   }
 
+  renderDataPrepDebugPanel() {
+    return renderDataPrepDebugPanelView({
+      plan: this.state.dataPreparationPlan,
+      originalSample: this.state.initialDataSample,
+      transformedSample:
+        this.state.csvData && Array.isArray(this.state.csvData.data)
+          ? this.state.csvData.data.slice(0, 20)
+          : [],
+      isVisible: this.state.isDataPrepDebugVisible,
+    });
+  }
+
   renderRawDataPanel() {
     return renderRawDataPanelView({
       app: this,
@@ -3891,6 +3933,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       progressMessages: this.state.progressMessages || [],
     });
     const dataPreviewPanel = this.renderDataPreviewPanel();
+    const dataPrepDebugPanel = this.renderDataPrepDebugPanel();
+    const dataPrepDebugHtml = dataPrepDebugPanel ? `<div class="mt-6">${dataPrepDebugPanel}</div>` : '';
     const rawDataPanel = this.renderRawDataPanel();
 
     const summaryBlock = renderFinalSummary(finalSummary);
@@ -3920,6 +3964,7 @@ class CsvDataAnalysisApp extends HTMLElement {
         ${summaryBlock}
         ${dataPreviewPanel}
         <div class="space-y-6">${cardsSection}</div>
+        ${dataPrepDebugHtml}
         ${rawDataPanel}
       `;
     }

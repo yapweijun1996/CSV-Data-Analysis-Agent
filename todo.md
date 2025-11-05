@@ -29,9 +29,9 @@
     - [ ] **启用记忆功能**：在 `vectorStore.js` 实现并测试后，在 `main.js` 中将 `ENABLE_MEMORY_FEATURES` 设置为 `true`。
     - [ ] **启用管道修复**：启用并验证管道修复标志 (`ENABLE_PIPELINE_REPAIR`) 和 `utils/repairEngine.js` 的功能对齐。
     - [ ] **验证预处理流程**：通过比较 `dataProcessor.ts` 和 `geminiService.ts` 的逻辑，确保AI驱动的预处理流程与原始版本匹配。
-        - [ ] 同步 React 版的 data-prep prompt 约束（crosstab、multi-header、summary 识别、\`_util\` 使用规则）。
-        - [ ] 恢复 `executeJavaScriptDataTransform` 中向 AI 代码注入 \`_util.parseNumber\` 与 \`_util.splitNumericString\`。
-        - [ ] 重新引入 data-prep 自我修正重试循环并把错误信息反馈给下一轮 prompt。
+        - [x] 同步 React 版的 data-prep prompt 约束（crosstab、multi-header、summary 识别、\`_util\` 使用规则）。
+        - [x] 恢复 `executeJavaScriptDataTransform` 中向 AI 代码注入 \`_util.parseNumber\` 与 \`_util.splitNumericString\`。
+        - [x] 重新引入 data-prep 自我修正重试循环并把错误信息反馈给下一轮 prompt。
     - [ ] `generateAnalysisPlans` 采样窗口与 React 对齐（React 取前 5 行，原生当前取前 20 行），避免计划描述与排序差异。
     - [ ] `runAnalysisPipeline` 日志与记忆内容对齐 React：恢复 `View #XXXX indexed / Saved as View #XXXX` 进度文案，并将记忆文本格式调整为 `[Chart: 标题] Description: ... AI Summary: ...`。
     - [ ] **补充测试覆盖**：为 `normaliseAiAction` 思路传递与 `applyChatActions` 多步骤执行建立单元/集成测试，确保 DOM 动作与聊天队列稳定。
