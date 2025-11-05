@@ -136,62 +136,88 @@ export const renderMemoryPanel = ({
 
   return `
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6" data-memory-overlay>
-      <div class="relative w-full max-w-5xl max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col" data-memory-panel>
-        <header class="flex items-start justify-between gap-4 p-6 border-b border-slate-200">
-          <div>
-            <div class="flex items-center gap-3">
-              <span class="text-3xl">🧠</span>
-              <div>
-                <h2 class="text-2xl font-semibold text-slate-900">AI Long-Term Memory</h2>
-                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
-                  <span>${escapeHtml(docsLabel)}</span>
-                  <span>Usage ~${usage.toFixed(2)} KB</span>
-                  <span>${escapeHtml(modelStatus || '')}</span>
+      <div class="relative w-full max-w-5xl max-h-[90vh] bg-white border border-slate-200 rounded-3xl shadow-[0_32px_80px_-32px_rgba(15,23,42,0.45)] flex flex-col overflow-hidden" data-memory-panel>
+        <header class="relative border-b border-slate-200">
+          <div class="absolute inset-0 bg-gradient-to-r from-indigo-700 via-blue-600 to-cyan-500"></div>
+          <div class="relative flex flex-col gap-8 p-6 md:p-8 text-white">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div class="flex items-start gap-4">
+                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 backdrop-blur text-3xl leading-none shadow-inner">🧠</span>
+                <div>
+                  <h2 class="text-2xl font-semibold tracking-tight">AI Long-Term Memory</h2>
+                  <p class="mt-2 text-sm text-white/70 max-w-xl leading-relaxed">Keep an eye on what the assistant remembers. Review snapshots, trim outdated knowledge, and stay confident in every conversation.</p>
+                  <div class="mt-4 flex flex-wrap items-center gap-2 text-xs font-medium">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-white/80 ring-1 ring-white/20">${escapeHtml(docsLabel)}</span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-white/80 ring-1 ring-white/20">Usage ~${usage.toFixed(2)} KB</span>
+                    ${modelStatus ? `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-2.5 py-1 text-emerald-100 ring-1 ring-emerald-300/40">${escapeHtml(modelStatus)}</span>` : ''}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="mt-3">
-              <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
-                <div class="h-full bg-blue-500" style="width:${usagePercentage}%"></div>
-              </div>
-              <p class="mt-1 text-xs text-slate-400">${usagePercentLabel}% of visual capacity (soft limit ${capacityLabel} MB)</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button class="px-3 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-100" type="button" data-memory-refresh>Refresh</button>
-            <button class="px-3 py-2 text-sm border border-rose-300 text-rose-600 rounded-md hover:bg-rose-50" type="button" data-memory-clear-all>Clear All</button>
-            <button class="p-2 text-slate-500 hover:text-slate-700 rounded-md" type="button" aria-label="Close memory panel" data-memory-close>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </header>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 flex-1 overflow-hidden">
-          <div class="lg:col-span-2 flex flex-col border-r border-slate-200">
-            <div class="px-6 py-4 border-b border-slate-200">
               <div class="flex items-center gap-2">
-                <div class="relative flex-1">
-                  <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" /></svg>
-                  </span>
-                  <input type="text" class="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Search across saved memories..." value="${escapeHtml(query || '')}" data-memory-search-input />
-                </div>
-                <button type="button" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 ${isSearching ? 'opacity-70' : ''}" data-memory-search ${isSearching ? 'disabled' : ''}>
-                  ${isSearching ? 'Searching…' : 'Search'}
+                <button class="px-3 py-2 text-sm font-medium text-white/90 rounded-lg border border-white/30 bg-white/10 hover:bg-white/20 backdrop-blur transition" type="button" data-memory-refresh>Refresh</button>
+                <button class="px-3 py-2 text-sm font-medium rounded-lg border border-rose-200/60 bg-rose-400/20 text-white hover:bg-rose-400/30 transition" type="button" data-memory-clear-all>Clear All</button>
+                <button class="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/15 transition" type="button" aria-label="Close memory panel" data-memory-close>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </div>
-            <div class="flex-1 overflow-y-auto px-6 py-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-xl border border-white/20 bg-white/10 p-4 shadow-sm backdrop-blur">
+                <p class="text-xs uppercase tracking-wide text-white/60">Stored Items</p>
+                <p class="mt-2 text-xl font-semibold">${escapeHtml(docsLabel)}</p>
+                <p class="mt-1 text-xs text-white/60">Captured memory slices ready for review.</p>
+              </div>
+              <div class="rounded-xl border border-white/20 bg-white/10 p-4 shadow-sm backdrop-blur">
+                <p class="text-xs uppercase tracking-wide text-white/60">Storage Usage</p>
+                <div class="mt-2 flex items-baseline gap-2">
+                  <p class="text-xl font-semibold">${usage.toFixed(2)} KB</p>
+                  <span class="text-xs text-white/70">of ${capacityLabel} MB</span>
+                </div>
+                <p class="mt-1 text-xs text-white/60">Monitor footprint to avoid overflow.</p>
+              </div>
+              <div class="rounded-xl border border-white/20 bg-white/10 p-4 shadow-sm backdrop-blur">
+                <p class="text-xs uppercase tracking-wide text-white/60">Capacity Health</p>
+                <div class="mt-3 h-2 rounded-full bg-white/20 overflow-hidden">
+                  <div class="h-full rounded-full bg-white transition-all" style="width:${usagePercentage}%"></div>
+                </div>
+                <p class="mt-2 text-xs text-white/70">${usagePercentLabel}% of soft limit (${capacityLabel} MB)</p>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div class="grid grid-cols-1 lg:grid-cols-3 flex-1 overflow-hidden bg-slate-50">
+          <div class="lg:col-span-2 flex flex-col border-r border-slate-200 bg-white">
+            <div class="px-6 py-5 border-b border-slate-200 bg-slate-50">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="relative flex-1">
+                  <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" /></svg>
+                  </span>
+                  <input type="text" class="w-full rounded-full border border-slate-200 bg-white pl-11 pr-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Search saved memories by keywords, tags, or dates..." value="${escapeHtml(query || '')}" data-memory-search-input />
+                </div>
+                <div class="flex items-center gap-2">
+                  <button type="button" class="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isSearching ? 'opacity-70 cursor-wait' : ''}" data-memory-search ${isSearching ? 'disabled' : ''}>
+                    ${isSearching ? 'Searching…' : 'Search'}
+                  </button>
+                  <button type="button" class="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 bg-white hover:bg-slate-100 transition" data-memory-refresh>
+                    Refresh list
+                  </button>
+                </div>
+              </div>
+              <p class="mt-3 text-xs text-slate-500">Tip: combine a keyword with a date or topic to quickly narrow down long-running project memories.</p>
+            </div>
+            <div class="flex-1 overflow-y-auto px-6 py-5 bg-white">
               <ul class="space-y-3">${documentsHtml}</ul>
             </div>
           </div>
-          <aside class="flex flex-col bg-slate-50">
-            <div class="px-5 py-4 border-b border-slate-200">
+          <aside class="flex flex-col border-t lg:border-t-0 bg-gradient-to-b from-slate-100 via-slate-50 to-white">
+            <div class="px-5 py-6 border-b border-slate-200 bg-white/80 backdrop-blur">
               <h3 class="text-sm font-semibold text-slate-900">Search Results</h3>
-              <p class="text-xs text-slate-500 mt-1">Click a result to highlight the associated memory entry.</p>
+              <p class="mt-2 text-xs text-slate-500 leading-relaxed">Select a match to auto-scroll the memory list and spotlight the exact entry.</p>
             </div>
-            <div class="flex-1 overflow-y-auto px-5 py-4">
+            <div class="flex-1 overflow-y-auto px-5 py-6">
               ${resultsHtml}
             </div>
           </aside>

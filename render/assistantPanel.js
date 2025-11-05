@@ -187,8 +187,10 @@ export const renderAssistantPanel = ({
         <h2 class="text-xl font-semibold text-slate-900">Assistant</h2>
         <div class="flex items-center gap-2">
           <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Open Memory Panel" aria-label="Open Memory Panel" data-open-memory>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 2-1-2-1.257-.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 1 1 0 000-2zM6 8a1 1 0 112 0 1 1 0 01-2 0zm2 3a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="5" y="7" width="14" height="10" rx="2" />
+              <rect x="9" y="11" width="6" height="2" fill="currentColor" stroke="none" />
+              <path stroke-linecap="round" d="M8 4v2M12 4v2M16 4v2M8 18v2M12 18v2M16 18v2" />
             </svg>
           </button>
           <button class="p-1 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Open Settings" aria-label="Open Settings" data-toggle-settings>

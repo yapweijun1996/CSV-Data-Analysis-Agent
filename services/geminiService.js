@@ -439,6 +439,62 @@ const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
   });
 };
 
+const sanitizeJsFunctionBody = jsBody => {
+  if (typeof jsBody !== 'string') {
+    return jsBody;
+  }
+  let cleaned = jsBody.trim();
+
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:javascript|js)?\s*/i, '').replace(/```$/i, '').trim();
+  }
+
+  const stripLeadingComments = source => {
+    let result = source;
+    const commentPattern = /^(?:\/\*[\s\S]*?\*\/\s*|\/\/[^\n]*\n\s*)+/;
+    while (commentPattern.test(result)) {
+      result = result.replace(commentPattern, '').trimStart();
+    }
+    return result;
+  };
+
+  const stripTrailingSemicolon = source => source.replace(/;\s*$/, '').trim();
+
+  const wrapInvocation = expression => `return (${stripTrailingSemicolon(expression)})(data, _util);`;
+
+  const core = stripLeadingComments(cleaned);
+
+  if (/^function\b/i.test(core)) {
+    return wrapInvocation(core);
+  }
+
+  let match = core.match(
+    /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*(function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i
+  );
+  if (match && match[1]) {
+    return wrapInvocation(match[1]);
+  }
+
+  match = core.match(
+    /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*(\([^)]*\)\s*=>\s*(?:{[\s\S]*}|[^\n;]+))\s*;?\s*$/i
+  );
+  if (match && match[1]) {
+    return wrapInvocation(match[1]);
+  }
+
+  match = core.match(/^export\s+default\s+(function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i);
+  if (match && match[1]) {
+    return wrapInvocation(match[1]);
+  }
+
+  match = core.match(/^module\.exports\s*=\s*(function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*/i);
+  if (match && match[1]) {
+    return wrapInvocation(match[1]);
+  }
+
+  return core;
+};
+
 const callOpenAIJson = async (settings, systemPrompt, userPrompt) => {
   const response = await withRetry(async () => {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -712,6 +768,9 @@ Your task:
       }
 
       if (plan.jsFunctionBody) {
+        const normalizedJsBody = sanitizeJsFunctionBody(plan.jsFunctionBody);
+        plan.jsFunctionBody = normalizedJsBody;
+        console.log('Sanitized jsFunctionBody preview:', normalizedJsBody);
         const mockUtil = {
           parseNumber: value => {
             const cleaned = String(value ?? '')
@@ -728,11 +787,18 @@ Your task:
         };
 
         try {
-          const transformFunction = new Function('data', '_util', plan.jsFunctionBody);
+          const transformFunction = new Function('data', '_util', normalizedJsBody);
           const testInput = normalizedSampleData.slice(0, 10);
           const testResult = transformFunction(testInput, mockUtil);
           if (!Array.isArray(testResult)) {
+            console.warn('[DataPrep] Transform function returned non-array during validation:', testResult);
             throw new Error('Generated function did not return an array.');
+          }
+          if (testResult.length === 0) {
+            throw new Error('Generated function returned an empty array.');
+          }
+          if (typeof testResult[0] !== 'object' || testResult[0] === null) {
+            throw new Error('Generated function did not return an array of objects.');
           }
         } catch (error) {
           lastError = error instanceof Error ? error : new Error(String(error));
