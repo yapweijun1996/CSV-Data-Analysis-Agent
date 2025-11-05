@@ -1,6 +1,7 @@
 import { removeMemory, clearMemoryStore } from '../services/memoryService.js';
 import { vectorStore } from '../services/vectorStore.js';
 import { ENABLE_MEMORY_FEATURES } from '../services/memoryConfig.js';
+import { ensureMemoryVectorReady } from '../services/memoryServiceHelpers.js';
 
 const ensureMemoryEnabled = enableMemory => {
   const isEnabled = enableMemory ?? ENABLE_MEMORY_FEATURES;
@@ -46,7 +47,7 @@ export const searchMemoryPanel = async ({ app, query, enableMemory }) => {
     });
     return;
   }
-  await app.ensureMemoryVectorReady();
+  await ensureMemoryVectorReady({ app });
   try {
     app.addProgress(`Searching memory for "${trimmed}"...`);
     const results = await vectorStore.search(trimmed, 5);

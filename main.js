@@ -25,11 +25,7 @@ import {
 } from './storageService.js';
 import { getSkillCatalog } from './services/skillLibrary.js';
 import { detectIntent } from './utils/intentClassifier.js';
-import {
-  storeMemory,
-  retrieveRelevantMemories,
-  initMemoryVectorStore,
-} from './services/memoryService.js';
+import { storeMemory, retrieveRelevantMemories } from './services/memoryService.js';
 import { auditAnalysisState } from './utils/pipelineAudit.js';
 import {
   determineRepairActions,
@@ -46,6 +42,7 @@ import { renderAnalysisSection } from './render/analysisPanel.js';
 import { renderAssistantPanel as renderAssistantPanelView } from './render/assistantPanel.js';
 import { renderMemoryPanel as renderMemoryPanelView } from './render/memoryPanel.js';
 import { ENABLE_MEMORY_FEATURES } from './services/memoryConfig.js';
+import { ensureMemoryVectorReady as ensureMemoryVectorReadyHelper } from './services/memoryServiceHelpers.js';
 import { bindMemoryPanelEvents as bindMemoryPanelEventsHelper } from './handlers/memoryPanelEvents.js';
 import {
   refreshMemoryDocuments as refreshMemoryDocumentsHelper,
@@ -858,19 +855,10 @@ class CsvDataAnalysisApp extends HTMLElement {
   }
 
   async ensureMemoryVectorReady(progressCallback) {
-    if (!ENABLE_MEMORY_FEATURES) {
-      return false;
-    }
-    if (this.memoryVectorReady) {
-      return true;
-    }
-    const callback =
-      typeof progressCallback === 'function'
-        ? progressCallback
-        : message => this.addProgress(message);
-    const initialised = await initMemoryVectorStore(callback);
-    this.memoryVectorReady = Boolean(initialised);
-    return this.memoryVectorReady;
+    return ensureMemoryVectorReadyHelper({
+      app: this,
+      progressCallback,
+    });
   }
 
   async openMemoryPanel() {
