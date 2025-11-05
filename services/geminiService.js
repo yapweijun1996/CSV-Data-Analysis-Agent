@@ -503,51 +503,109 @@ export const generateDataPreparationPlan = async (columns, sampleData, settings,
     return { explanation: 'No transformation needed as API key is not set.', jsFunctionBody: null, outputColumns: columns };
   }
 
-  const systemPrompt = `You are an expert data engineer. Analyze the raw dataset and decide whether it needs cleaning or reshaping.
-If needed, provide a JavaScript function body that transforms the array of row objects and describe the resulting columns.
-Always respond with JSON: { "explanation": string, "jsFunctionBody": string | null, "outputColumns": [{ "name": string, "type": "numerical" | "categorical" }] }.`;
   const metadataContext = formatMetadataContext(metadata, {
     leadingRowLimit: 10,
     contextRowLimit: 20,
   });
   const contextSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
-  const userPrompt = `${contextSection}Columns: ${JSON.stringify(columns)}
-Sample rows: ${JSON.stringify(sampleData.slice(0, 20), null, 2)}
-- Explain the transformation in plain language.
-- If no changes are required, set "jsFunctionBody" to null and keep outputColumns identical.`;
 
-  let plan;
+  const systemPrompt = `You are an expert data engineer. Your task is to analyze a raw dataset and, if necessary, provide a JavaScript function to clean and reshape it into a tidy, analysis-ready format. CRITICALLY, you must also provide the schema of the NEW, transformed data with detailed data types.
+A tidy format has: 1. Each variable as a column. 2. Each observation as a row.
+You MUST respond with a single valid JSON object, and nothing else. The JSON object must adhere to the provided schema.`;
+
+  const buildUserPrompt = lastError => `${contextSection}Common problems to fix:
+- **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
+    - **YOU MUST use \`_util.parseNumber(value)\` for ALL numeric conversions.**
+    - **DO NOT use \`parseInt()\`, \`parseFloat()\`, or \`Number()\` directly.** The provided utility is guaranteed to handle various formats correctly.
+- **CRITICAL RULE on SPLITTING NUMERIC STRINGS**: If you encounter a single string field that contains multiple comma-separated numbers (which themselves may contain commas as thousand separators, e.g., "1,234.50,5,678.00,-9,123.45"), you are provided a utility \`_util.splitNumericString(value)\` to correctly split the string into an array of number strings.
+    - **YOU MUST use this utility for this specific case.**
+    - **DO NOT use a simple \`string.split(',')\`**, as this will incorrectly break up numbers.
+    - **Example**: To parse a field 'MonthlyValues' containing "1,500.00,2,000.00", your code should be: \`const values = _util.splitNumericString(row.MonthlyValues);\` This will correctly return \`['1,500.00', '2,000.00']\`.
+- **Distinguishing Data from Summaries**: Your most critical task is to differentiate between valid data rows and non-data rows (like summaries or metadata).
+    - A row is likely **valid data** if it has a value in its primary identifier column(s) (e.g., 'Account Code', 'Product ID') and in its metric columns.
+    - **CRITICAL: Do not confuse hierarchical data with summary rows.** Look for patterns in identifier columns where one code is a prefix of another (e.g., '50' is a parent to '5010'). These hierarchical parent rows are **valid data** representing a higher level of aggregation and MUST be kept. Your role is to reshape the data, not to pre-summarize it by removing these levels.
+    - A row is likely **non-data** and should be removed if it's explicitly a summary (e.g., contains 'Total', 'Subtotal' in a descriptive column) OR if it's metadata (e.g., the primary identifier column is empty but other columns contain text, like a section header).
+- **Crosstab/Wide Format**: Unpivot data where column headers are actually values (e.g., years, regions) so that each observation is one row.
+- **Multi-header Rows**: Skip any initial junk rows (titles, blank lines, headers split across rows) before the true header.
+
+Dataset Columns (Initial Schema):
+${JSON.stringify(columns, null, 2)}
+Sample Data (up to 20 rows):
+${JSON.stringify(sampleData.slice(0, 20), null, 2)}
+${lastError ? `On the previous attempt, your generated code failed with this error: "${lastError.message}". Please analyze the error and provide a corrected response.` : ''}
+
+Your task:
+1. **Analyze**: Look at the initial schema and sample data.
+2. **Plan Transformation**: Decide if cleaning or reshaping is needed. If you identify date or time columns as strings, standardize them (e.g., 'YYYY-MM-DD').
+3. **Define Output Schema**: Determine the exact column names and data types AFTER your transformation. Use specific types where possible: 'categorical', 'numerical', 'date', 'time', 'currency', 'percentage'.
+4. **Write Code**: If transformation is needed, write the body of a JavaScript function. It receives two arguments, \`data\` and \`_util\`, and must return the transformed array of objects.
+5. **Explain**: Provide a concise, user-facing explanation of what you did.
+
+**CRITICAL REQUIREMENTS:**
+- You MUST provide the \`outputColumns\` array. If no transformation is needed, it should match the input schema (but update types if you discovered more specific ones).
+- Your JavaScript MUST include a \`return\` statement that returns the transformed data array.
+- Whenever you convert numbers, you MUST use \`_util.parseNumber\`. Whenever you split comma-separated numeric strings, you MUST use \`_util.splitNumericString\`.
+`;
+
   const schema = getDataPreparationSchema();
-  if (provider === 'openai') {
-    plan = await callOpenAIJson(settings, systemPrompt, userPrompt);
-  } else {
-    plan = await callGeminiJson(settings, `${systemPrompt}\n${userPrompt}`, { schema });
-  }
+  let lastError = null;
 
-  if (!plan) {
-    return { explanation: 'No changes applied.', jsFunctionBody: null, outputColumns: columns };
-  }
-
-  if (!plan.outputColumns || !Array.isArray(plan.outputColumns) || plan.outputColumns.length === 0) {
-    plan.outputColumns = columns;
-  }
-
-  if (plan.jsFunctionBody) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const transformFunction = new Function('data', plan.jsFunctionBody);
-      const result = transformFunction(sampleData.slice(0, 10));
-      if (!Array.isArray(result)) {
-        throw new Error('Transform result is not an array.');
+      let plan;
+      const userPrompt = buildUserPrompt(lastError);
+
+      if (provider === 'openai') {
+        plan = await callOpenAIJson(settings, systemPrompt, userPrompt);
+      } else {
+        const combinedPrompt = `${systemPrompt}\n${userPrompt}`;
+        plan = await callGeminiJson(settings, combinedPrompt, { schema });
       }
+
+      if (!plan) {
+        throw new Error('AI returned an empty plan.');
+      }
+
+      if (!plan.outputColumns || !Array.isArray(plan.outputColumns) || plan.outputColumns.length === 0) {
+        plan.outputColumns = columns;
+      }
+
+      if (plan.jsFunctionBody) {
+        const mockUtil = {
+          parseNumber: value => {
+            if (value === null || value === undefined) return null;
+            const cleaned = String(value).replace(/[$\s,%]/g, '').replace(/,/g, '');
+            if (!cleaned) return null;
+            const parsed = Number.parseFloat(cleaned);
+            return Number.isNaN(parsed) ? null : parsed;
+          },
+          splitNumericString: value => {
+            if (value === null || value === undefined) return [];
+            return String(value).split(',');
+          },
+        };
+
+        try {
+          const transformFunction = new Function('data', '_util', plan.jsFunctionBody);
+          const testResult = transformFunction(sampleData.slice(0, 10), mockUtil);
+          if (!Array.isArray(testResult)) {
+            throw new Error('Generated function did not return an array.');
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          console.warn(`AI-generated transformation failed validation (attempt ${attempt + 1}).`, lastError);
+          continue;
+        }
+      }
+
+      return plan;
     } catch (error) {
-      console.warn('AI-generated transformation code failed; skipping this transformation.', error);
-      plan.jsFunctionBody = null;
-      plan.explanation = `${plan.explanation || 'AI transformation failed.'} Transformation skipped.`;
-      plan.outputColumns = columns;
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.warn(`Error in data preparation plan generation (attempt ${attempt + 1}):`, lastError);
     }
   }
 
-  return plan;
+  throw new Error(`AI failed to generate a valid data preparation plan after multiple attempts. Last error: ${lastError?.message}`);
 };
 
 const buildAnalysisPlanPrompt = (columns, sampleData, numPlans, metadata) => {

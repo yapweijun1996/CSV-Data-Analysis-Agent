@@ -527,10 +527,20 @@ export const profileData = data => {
   return profiles;
 };
 
+const splitNumericString = input => {
+  if (input === null || input === undefined) return [];
+  const parsableString = String(input).replace(/,(?=-?\d)/g, '|');
+  return parsableString.split('|');
+};
+
 export const executeJavaScriptDataTransform = (data, jsFunctionBody) => {
   try {
-    const transformFunction = new Function('data', jsFunctionBody);
-    const result = transformFunction(data);
+    const utils = {
+      parseNumber: value => parseNumericValue(value),
+      splitNumericString,
+    };
+    const transformFunction = new Function('data', '_util', jsFunctionBody);
+    const result = transformFunction(data, utils);
 
     if (!Array.isArray(result)) {
       console.error('The AI-generated transform function did not return an array. It may be missing a return statement.', {
