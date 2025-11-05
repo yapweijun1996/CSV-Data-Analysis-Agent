@@ -1106,15 +1106,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       type,
       timestamp,
     };
-    const chatMessage = {
-      sender: 'system',
-      text,
-      timestamp,
-      type: type === 'error' ? 'system_error' : 'system_progress',
-    };
     this.setState(prev => ({
       progressMessages: [...prev.progressMessages, newMessage],
-      chatHistory: [...prev.chatHistory, chatMessage],
     }));
     if (shouldStick) {
       this.shouldAutoScrollConversation = true;
