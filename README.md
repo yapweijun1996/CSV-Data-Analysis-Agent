@@ -58,6 +58,16 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 - The sidebar surfaces the latest audit summary, outstanding issues, and recent auto-repair notes for quick diagnostics.
 - The chat panel streams status updates, accepts freeform questions, and routes AI responses into actions: new plans, JavaScript transforms, DOM/UI adjustments, or plain text replies.
 
+### Autonomy Scope
+
+This build aims to automate the CSV-insight workflow inside the browser, but it is **not** a fully autonomous employee-style agent yet.
+
+- **What it can automate:** Upload-time parsing, AI-authored preprocessing, chart creation, DOM interactions, JavaScript transforms, audits, and repair loops all run without additional prompts once the user starts a session.
+- **What still needs a human:** Providing CSVs, configuring API keys, and initiating new analyses or chat intents. The assistant only touches data inside the current tab—there is no shell access, external web search, API crawling, or filesystem probing.
+- **Memory boundaries:** IndexedDB memories persist per browser profile. They help the LLM remain context-aware, but they are not a global knowledge base, nor do they support multi-user learning.
+- **Safety considerations:** AI-generated JavaScript executes via `new Function` in the browser. There is no sandboxed rollback, test harness, or permission model, so treat transformations as untrusted code and keep the app in controlled environments.
+- **Growing into a “worker”:** Reaching hands-off autonomy would require adding background schedulers, policy-enforced tool runners (HTTP, shell, databases), secure credential management, human-in-the-loop auditing, and a shared long-term memory service. Those features are outside the current vanilla scope.
+
 ### Skill Catalog & Intent Handling
 
 - `utils/intentClassifier.js` tags each prompt as analysis, cleaning, narrative, or general based on keywords and column metadata.

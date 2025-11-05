@@ -210,13 +210,14 @@ export const renderAnalysisCard = ({ app, card, colors }) => {
           <p class="text-sm text-slate-500">${escapeHtml(plan.description || '')}</p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <div class="flex items-center bg-slate-100 rounded-md p-0.5 space-x-0.5">
+          <div class="chart-switcher" role="group" aria-label="Chart type">
             ${CHART_TYPES.map(type => `
               <button
                 type="button"
-                class="p-1.5 rounded-md transition-colors ${displayType === type ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-200'}"
+                class="chart-switcher__btn ${displayType === type ? 'is-active' : ''}"
                 data-chart-type="${type}"
                 data-card="${card.id}"
+                aria-pressed="${displayType === type ? 'true' : 'false'}"
                 title="Switch to ${type} chart"
               >
                 ${renderChartTypeIcon(type)}
@@ -225,9 +226,7 @@ export const renderAnalysisCard = ({ app, card, colors }) => {
           <div class="relative" data-export-menu-container data-export-ignore>
             <button
               type="button"
-              class="p-1.5 rounded-md border border-transparent transition-colors ${
-                isExporting ? 'opacity-60 cursor-wait text-slate-400' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'
-              }"
+              class="chart-switcher__export ${isExporting ? 'cursor-wait' : ''}"
               data-export-menu-toggle
               data-card="${card.id}"
               aria-haspopup="true"

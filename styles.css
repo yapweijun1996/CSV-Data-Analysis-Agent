@@ -1839,3 +1839,107 @@ button.w-full.flex.items-center.justify-between.p-1\.5.rounded-md.opacity-50 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 }
+
+/* === Chart Switcher (scoped, non-intrusive) === */
+.chart-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  background-color: #f1f5f9; /* slate-100 */
+  border: 1px solid #e2e8f0; /* slate-200 */
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+
+.chart-switcher__btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #64748b; /* slate-500 */
+  border: 1px solid rgba(148, 163, 184, 0.35); /* slate-400 alpha */
+  box-shadow:
+    inset 0 0 0 1px rgba(148, 163, 184, 0.12),
+    0 1px 2px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+.chart-switcher__btn:hover {
+  background: #e2e8f0; /* slate-200 */
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #1e293b; /* slate-800 */
+  transform: translateY(-1px);
+}
+.chart-switcher__btn.is-active {
+  background: #2563eb; /* blue-600 */
+  color: #ffffff;
+  border-color: #1d4ed8; /* blue-700 */
+  box-shadow:
+    0 0 0 1px rgba(37, 99, 235, 0.45),
+    0 6px 14px rgba(37, 99, 235, 0.28);
+  transform: none;
+}
+.chart-switcher__btn:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.35), /* blue ring */
+    0 1px 2px rgba(15, 23, 42, 0.06);
+}
+.chart-switcher__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.chart-switcher__btn svg {
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+/* Export button styled as tile to match switcher */
+.chart-switcher__export {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #475569; /* slate-600 */
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow:
+    inset 0 0 0 1px rgba(148, 163, 184, 0.12),
+    0 1px 2px rgba(15, 23, 42, 0.06);
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+.chart-switcher__export:hover {
+  background: #eef2ff; /* blue-50 */
+  color: #1e293b; /* slate-800 */
+  border-color: rgba(148, 163, 184, 0.6);
+  transform: translateY(-1px);
+}
+.chart-switcher__export:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.35),
+    0 1px 2px rgba(15, 23, 42, 0.06);
+}
+.chart-switcher__export:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
