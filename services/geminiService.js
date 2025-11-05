@@ -409,19 +409,32 @@ const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
     if (!columnNames.length) {
       return { ...row };
     }
+
     const normalizedRow = { ...row };
+
     columnNames.forEach(name => {
+      const aliasKey = aliasMap[name];
+      const baseValue = Object.prototype.hasOwnProperty.call(row, name)
+        ? row[name]
+        : aliasKey && Object.prototype.hasOwnProperty.call(row, aliasKey)
+          ? row[aliasKey]
+          : '';
+
       if (!Object.prototype.hasOwnProperty.call(normalizedRow, name)) {
-        const aliasKey = aliasMap[name];
-        if (aliasKey && Object.prototype.hasOwnProperty.call(row, aliasKey)) {
-          normalizedRow[name] = row[aliasKey];
-        } else if (Object.prototype.hasOwnProperty.call(row, name)) {
-          normalizedRow[name] = row[name];
-        } else {
-          normalizedRow[name] = '';
+        normalizedRow[name] = baseValue;
+      } else if (normalizedRow[name] === '' && baseValue !== '') {
+        normalizedRow[name] = baseValue;
+      }
+
+      if (aliasKey) {
+        if (!Object.prototype.hasOwnProperty.call(normalizedRow, aliasKey)) {
+          normalizedRow[aliasKey] = baseValue;
+        } else if (normalizedRow[aliasKey] === '' && baseValue !== '') {
+          normalizedRow[aliasKey] = baseValue;
         }
       }
     });
+
     return normalizedRow;
   });
 };
@@ -634,7 +647,9 @@ ${hasCrosstabShape ? `CROSSTAB ALERT:
 - The dataset contains many generic columns (e.g., column_1, column_2...). Treat these as pivoted metrics that must be unpivoted/melted into tidy rows.
 - Preserve identifier columns (codes, descriptions, category labels) as-is.
 - For each pivot column, produce rows with explicit fields such as { Code, Description, PivotColumnName, PivotValue } so every numeric value becomes its own observation.
-- After reshaping, update outputColumns to reflect the tidy structure (e.g., 'code' categorical, 'project' categorical, 'metric_value' numerical).\n` : ''}
+- You MUST return a non-null \`jsFunctionBody\` that performs this unpivot; returning null is not acceptable when this pattern is detected.
+- After reshaping, update \`outputColumns\` to reflect the tidy structure (e.g., 'code' categorical, 'project' categorical, 'pivot_column' categorical, 'pivot_value' numerical).
+- Include logic to drop empty or subtotal rows but keep hierarchical parent rows.\n` : ''}
 
 Dataset Columns (Initial Schema):
 ${JSON.stringify(columns, null, 2)}
@@ -653,6 +668,7 @@ Your task:
 - You MUST provide the \`outputColumns\` array. If no transformation is needed, it should match the input schema (but update types if you discovered more specific ones).
 - Your JavaScript MUST include a \`return\` statement that returns the transformed data array.
 - Whenever you convert numbers, you MUST use \`_util.parseNumber\`. Whenever you split comma-separated numeric strings, you MUST use \`_util.splitNumericString\`.
+- If the dataset exhibits the Crosstab alert above, you MUST return a non-null \`jsFunctionBody\` that unpivots the data into tidy rows. Do not respond with null in this situation.
 `;
 
   const schema = getDataPreparationSchema();
@@ -676,6 +692,23 @@ Your task:
 
       if (!plan.outputColumns || !Array.isArray(plan.outputColumns) || plan.outputColumns.length === 0) {
         plan.outputColumns = columns;
+      }
+
+      console.groupCollapsed('[DataPrep] AI plan result');
+      try {
+        console.log('Crosstab detected:', hasCrosstabShape);
+        console.log('Plan explanation:', plan.explanation || '(none)');
+        console.log('Returned jsFunctionBody:', Boolean(plan.jsFunctionBody));
+        console.log('Output columns:', plan.outputColumns);
+        console.log('Sample rows sent to model (first 3):', sampleRowsForPrompt.slice(0, 3));
+        if (!plan.jsFunctionBody && hasCrosstabShape) {
+          console.warn(
+            '[DataPrep] Gemini skipped transformation even though Crosstab alert was triggered. Inspect plan payload below.'
+          );
+        }
+        console.log('Full plan payload:', plan);
+      } finally {
+        console.groupEnd();
       }
 
       if (plan.jsFunctionBody) {

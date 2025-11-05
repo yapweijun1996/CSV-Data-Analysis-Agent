@@ -1273,7 +1273,9 @@ class CsvDataAnalysisApp extends HTMLElement {
           this.addProgress(`Transformation complete. Row count changed from ${originalCount} to ${newCount}.`);
           profiles = prepPlan.outputColumns || profileData(dataForAnalysis.data);
         } else {
-          this.addProgress('AI determined no additional transformation is required.');
+          const tip =
+            'AI determined no additional transformation is required. (For debugging, open the console to review the AI plan payload.)';
+          this.addProgress(tip);
         }
       } else {
         this.ensureApiCredentials({
