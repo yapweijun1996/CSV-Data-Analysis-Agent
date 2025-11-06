@@ -869,21 +869,27 @@ const detectHardCodedPatternsInJs = source => {
     issueSet.add('direct array indexing like data[1]');
   }
 
+  const usesDynamicHeaderResolution =
+    /\b(?:_util\.)?applyHeaderMapping\s*\(/.test(stripped) ||
+    /\bHEADER_MAPPING\b/.test(stripped) ||
+    /\bheaderMapping\b/.test(stripped) ||
+    /\bmetadata\.(?:genericHeaders|headerMap)\b/.test(stripped);
+
   const genericColumnLiterals = mappingStripped.match(/['"]column_(\d+)['"]/gi);
-  if (genericColumnLiterals) {
+  if (genericColumnLiterals && !usesDynamicHeaderResolution) {
     issueSet.add('hard-coded generic headers such as "column_3"');
   }
 
   const columnLabelLiterals = mappingStripped.match(/['"]Column\s+\d+['"]/g);
-  if (columnLabelLiterals) {
+  if (columnLabelLiterals && !usesDynamicHeaderResolution) {
     issueSet.add('hard-coded "Column N" labels');
   }
 
-  if (/`column_\s*\$\{/i.test(mappingStripped)) {
+  if (/`column_\s*\$\{/i.test(mappingStripped) && !usesDynamicHeaderResolution) {
     issueSet.add('hard-coded generic headers via template literal');
   }
 
-  if (/`Column\s*\$\{/i.test(mappingStripped)) {
+  if (/`Column\s*\$\{/i.test(mappingStripped) && !usesDynamicHeaderResolution) {
     issueSet.add('hard-coded "Column" template literal');
   }
 

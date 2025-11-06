@@ -33,7 +33,6 @@ describe('executePlan month sorting', () => {
     const labels = result.map(entry => entry['Invoice Month']);
 
     expect(labels).toEqual([
-      'JAN/11',
       'JAN/10',
       'FEB/10',
       'MAR/10',
@@ -46,6 +45,7 @@ describe('executePlan month sorting', () => {
       'OCT/10',
       'NOV/10',
       'DEC/10',
+      'JAN/11',
     ]);
   });
 

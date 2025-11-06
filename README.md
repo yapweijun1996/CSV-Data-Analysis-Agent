@@ -69,6 +69,24 @@ Then launch the dev server (`npm run dev`). The vector store will first check fo
 - The sidebar surfaces the latest audit summary, outstanding issues, and recent auto-repair notes for quick diagnostics.
 - The chat panel streams status updates, accepts freeform questions, and routes AI responses into actions: new plans, JavaScript transforms, DOM/UI adjustments, or plain text replies.
 
+### Error Handling & Self-Heal Roadmap
+
+- **Diagnose (Upload/Parsing)** – Failed CSV parses keep the file buffer alive, surface explicit reasons in the workflow timeline, and prepare the next run to reuse the same artifact. Upcoming work adds alternate parsing profiles plus a lightweight “manual header” prompt when repeated failures occur.
+- **Data Prep Iterations** – The existing preprocessing loop already retries malformed AI plans, tracks violations (hard-coded columns, malformed JSON), and expands its iteration budget when mistakes repeat. The roadmap extends this by auto-injecting header-mapping or summary-removal tools before giving up and by downgrading to “minimal cleaning” after three zero-row outcomes.
+- **Plan Generation** – When Gemini/OpenAI refuses to yield viable chart plans, the agent falls back to the curated skill catalog (categorical sums, counts, time trends). Each rejected plan logs its validation error so the next prompt knows what to avoid.
+- **Execution Guardrails** – `executePlan` failures trigger a pipeline audit and, once `ENABLE_PIPELINE_REPAIR` is toggled on, patched plans are rebuilt automatically (fixing missing chart type/group-by/value columns). The roadmap adds retries that switch to simplified aggregations (for example, count by the top-ranked categorical column) after two failed rebuilds.
+- **Chat Tool Recovery** – Unsupported or malformed DOM/JS tool calls already degrade to text replies. Future iterations attach structured error codes so the agent can refill missing `cardId`, recompile transforms, or replace a DOM action with an explanatory message before replaying the remaining steps in its multi-step plan.
+- **Memory & History Consistency** – Every auto-heal attempt captures a lightweight snapshot (dataset id, card list, audit summary) so failures can roll back without user intervention. Chat logs label these intervals as “Agent 自我修復中” to keep operators informed.
+- **Governance & Telemetry** – Audit reports (critical/warning/info) stay the single source of truth. Each repair action is tied to those stats, and retry counters plus repair success rates are mirrored in the workflow timeline so engineers can tune or debug cheaply.
+
+#### Enabling Pipeline Repair (Experimental)
+
+1. Open `state/constants.js` and switch `ENABLE_PIPELINE_REPAIR` from `false` to `true`. This flag is read during component bootstrap, so a hard refresh (or restarting `npm run dev`) is required.
+2. Load a CSV that produces at least one audit issue (for example, delete a `chartType` from an analysis card via DevTools or upload a file with missing columns) and trigger an analysis run.
+3. Watch the Progress log: after `runPipelineAudit`, the agent should log `Auto-repair starting...` followed by the patch summary. Cards with missing metadata will be rebuilt automatically and a follow-up audit will run.
+4. Validate regression risk by inspecting the DevTools console for `Repair action failure` entries and by confirming the rebuilt cards now have valid `plan.chartType`, `plan.groupByColumn`, and `plan.valueColumn` values.
+5. For CI/manual testing, capture the three expected states: (a) audit clean → no repair actions, (b) audit critical issues but no skills available, (c) audit issues patched successfully (cards rebuilt, second audit clean). This ensures engineers can toggle the flag confidently before shipping.
+
 ### Agent Tool Protocol
 
 The vanilla agent behaves like a multi-step worker: every action contains a `thought`, the first action outlines the full plan, and subsequent actions update progress logs. To keep the toolchain predictable:

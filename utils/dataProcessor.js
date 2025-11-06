@@ -100,6 +100,24 @@ const DAYS = {
   sun: 7,
 };
 
+const parseYearToken = token => {
+  if (!token) {
+    return null;
+  }
+  const cleaned = token.replace(/[^0-9]/g, '');
+  if (!cleaned) {
+    return null;
+  }
+  let year = Number.parseInt(cleaned, 10);
+  if (Number.isNaN(year)) {
+    return null;
+  }
+  if (cleaned.length === 2) {
+    year += year >= 50 ? 1900 : 2000;
+  }
+  return year;
+};
+
 const extractTokenFromDictionary = (rawValue, dictionary) => {
   if (rawValue === null || rawValue === undefined) {
     return '';
@@ -151,18 +169,33 @@ const extractQuarterDetails = rawValue => {
     }
   }
 
-  let year = 0;
-  if (yearString) {
-    year = Number.parseInt(yearString, 10);
-    if (!Number.isNaN(year) && yearString.length === 2) {
-      year += year > 50 ? 1900 : 2000;
-    }
-    if (Number.isNaN(year)) {
-      year = 0;
-    }
-  }
+  const year = yearString ? parseYearToken(yearString) || 0 : 0;
 
   return { quarter, year };
+};
+
+const extractMonthDetails = rawValue => {
+  const monthToken = extractMonthToken(rawValue);
+  if (!monthToken) {
+    return null;
+  }
+  const month = MONTHS[monthToken];
+  if (!month) {
+    return null;
+  }
+  const source = String(rawValue);
+  let year = null;
+  const longYear = source.match(/(\d{4})/);
+  if (longYear && longYear[1]) {
+    year = parseYearToken(longYear[1]);
+  }
+  if (year === null) {
+    const shortYear = source.match(/(\d{2})(?![\d])/);
+    if (shortYear && shortYear[1]) {
+      year = parseYearToken(shortYear[1]);
+    }
+  }
+  return { month, year };
 };
 
 const getChronologicalSortValue = (value, sorter) => {
@@ -183,12 +216,13 @@ const getChronologicalSortValue = (value, sorter) => {
       return year * 10 + quarter;
     }
     case 'month': {
-      const monthToken = extractMonthToken(rawValue);
-      if (!monthToken) {
+      const details = extractMonthDetails(rawValue);
+      if (!details) {
         return Number.POSITIVE_INFINITY;
       }
-      const month = MONTHS[monthToken];
-      return month ? month : Number.POSITIVE_INFINITY;
+      const { month, year } = details;
+      const resolvedYear = year ?? 0;
+      return resolvedYear * 100 + month;
     }
     case 'day': {
       const dayToken = extractDayToken(rawValue);

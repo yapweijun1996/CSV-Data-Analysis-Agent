@@ -72,12 +72,16 @@ const renderThought = thought => {
 const renderPhase = phase => {
   const heading = humanisePhase(phase.phase);
   const statusCls = statusClass(phase.status);
+  const isActive = phase.status === 'in_progress';
   const steps = Array.isArray(phase.steps) ? phase.steps.map(renderStep).join('') : '';
   const thoughts = Array.isArray(phase.thoughts) ? phase.thoughts.map(renderThought).join('') : '';
   return `
     <section class="wt-phase ${statusCls}">
       <header class="wt-phase-header">
-        <div class="wt-phase-title">${escapeHtml(heading)}</div>
+        <div class="wt-phase-title">
+          ${isActive ? '<span class="wt-phase-pill">Active</span>' : ''}
+          <span>${escapeHtml(heading)}</span>
+        </div>
         <div class="wt-phase-meta">
           <span class="wt-phase-status">${escapeHtml(phase.status || '')}</span>
           ${phase.startedAt ? `<span class="wt-phase-time">開始 ${escapeHtml(formatTime(phase.startedAt))}</span>` : ''}
@@ -108,6 +112,7 @@ const renderPlanOverview = planItems => {
     .map(item => {
       const label = humanisePhase(item.step);
       const status = statusClass(item.status);
+      const isActive = item.status === 'in_progress';
       const statusText =
         item.status === 'in_progress'
           ? '進行中'
@@ -118,7 +123,10 @@ const renderPlanOverview = planItems => {
           : '等待中';
       return `
         <li class="wt-plan-item ${status}">
-          <span class="wt-plan-label">${escapeHtml(label)}</span>
+          <span class="wt-plan-label">
+            ${isActive ? '<span class="wt-plan-pill">Active</span>' : ''}
+            <span>${escapeHtml(label)}</span>
+          </span>
           <span class="wt-plan-status">${escapeHtml(statusText)}</span>
         </li>
       `;

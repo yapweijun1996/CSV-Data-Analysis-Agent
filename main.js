@@ -78,6 +78,9 @@ import { normaliseTitleKey } from './utils/stringUtils.js';
 import { pickFirstString, parseValueList } from './utils/domActionUtils.js';
 
 const DEFAULT_WORKFLOW_CONSTRAINTS = ['Vanilla frontend', 'No backend server'];
+const DOM_ACTION_TOOL_NAME_LOOKUP = new Set(
+  Array.from(DOM_ACTION_TOOL_NAMES).map(name => name.toLowerCase())
+);
 /** @typedef {import('./types/typedefs.js').AnalysisPlan} AnalysisPlan */
 /** @typedef {import('./types/typedefs.js').AnalysisCardData} AnalysisCardData */
 /** @typedef {import('./types/typedefs.js').ColumnProfile} ColumnProfile */
@@ -1343,6 +1346,7 @@ this.state = {
       csvMetadata: null,
       analysisCards: [],
       finalSummary: null,
+      generatedReport: null,
       aiCoreAnalysisSummary: null,
       dataPreparationPlan: null,
       initialDataSample: null,
@@ -1847,6 +1851,8 @@ this.state = {
       this.setState({
         isBusy: false,
         currentView: prevCsv ? 'analysis_dashboard' : 'file_upload',
+        generatedReport: null,
+        finalSummary: null,
       });
     }
   }
@@ -3502,6 +3508,34 @@ this.state = {
     return matches;
   }
 
+  isAutomationCommandKeyword(text) {
+    if (typeof text !== 'string') {
+      return false;
+    }
+    const normalized = text.trim();
+    if (!normalized) {
+      return false;
+    }
+    return DOM_ACTION_TOOL_NAME_LOOKUP.has(normalized.toLowerCase());
+  }
+
+  isLikelyRawFilterHint(text) {
+    if (typeof text !== 'string') {
+      return false;
+    }
+    const normalized = text.trim();
+    if (!normalized) {
+      return false;
+    }
+    if (normalized.length > 160) {
+      return false;
+    }
+    if (this.isAutomationCommandKeyword(normalized)) {
+      return false;
+    }
+    return true;
+  }
+
   deriveRawFilterQueryHint(action, domAction) {
     const sources = [];
     if (action && typeof action.thought === 'string') {
@@ -3520,9 +3554,11 @@ this.state = {
     for (const source of sources) {
       const quoted = this.extractQuotedTerms(source);
       if (quoted.length) {
-        const hint = quoted[quoted.length - 1];
-        if (hint) {
-          return hint;
+        for (let index = quoted.length - 1; index >= 0; index -= 1) {
+          const hint = quoted[index];
+          if (hint && this.isLikelyRawFilterHint(hint)) {
+            return hint;
+          }
         }
       }
     }
@@ -3537,7 +3573,7 @@ this.state = {
       return;
     }
     const queryHint = this.deriveRawFilterQueryHint(action, domAction);
-    if (queryHint && typeof queryHint === 'string') {
+    if (queryHint && typeof queryHint === 'string' && this.isLikelyRawFilterHint(queryHint)) {
       domAction.query = queryHint;
       domAction.__inferredQuery = true;
     }
