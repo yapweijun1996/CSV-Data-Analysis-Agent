@@ -17,6 +17,9 @@ let GeminiType = null;
 let planArraySchema = null;
 let singlePlanSchema = null;
 let dataPreparationSchemaCache = null;
+let stageDetailSchemaCache = null;
+let stagePlanSchemaCache = null;
+let agentLogEntrySchemaCache = null;
 let multiActionChatResponseSchemaCache = null;
 let proactiveInsightSchemaCache = null;
 let chatPlanSchemaCache = null;
@@ -154,6 +157,120 @@ const rowContainsSummaryKeyword = row => {
     }
   }
   return false;
+};
+
+const STAGE_PLAN_DEFAULTS = [
+  {
+    key: 'titleExtraction',
+    label: 'Title & Metadata',
+    fallbackGoal: 'Detect report titles and metadata-only rows before data starts.',
+  },
+  {
+    key: 'headerResolution',
+    label: 'Header Identification',
+    fallbackGoal: 'Resolve multi-row headers into canonical column names.',
+  },
+  {
+    key: 'dataNormalization',
+    label: 'Data Rows',
+    fallbackGoal: 'Clean numerical values, unpivot wide columns, and remove summary rows.',
+  },
+];
+
+const normaliseStringArray = value =>
+  Array.isArray(value)
+    ? value
+        .map(entry => (typeof entry === 'string' ? entry.trim() : String(entry || '')).trim())
+        .filter(Boolean)
+    : [];
+
+const normaliseStageDetail = (stage, fallbackGoal, label) => {
+  if (!stage || typeof stage !== 'object') {
+    return {
+      goal: fallbackGoal,
+      checkpoints: [],
+      heuristics: [],
+      fallbackStrategies: [],
+      expectedArtifacts: [],
+      nextAction: null,
+      status: 'pending',
+      logMessage: `${label}: pending`,
+    };
+  }
+  const normaliseString = value =>
+    typeof value === 'string' ? value.trim() : value == null ? null : String(value).trim();
+  return {
+    goal: normaliseString(stage.goal) || fallbackGoal,
+    checkpoints: normaliseStringArray(stage.checkpoints),
+    heuristics: normaliseStringArray(stage.heuristics),
+    fallbackStrategies: normaliseStringArray(stage.fallbackStrategies),
+    expectedArtifacts: normaliseStringArray(stage.expectedArtifacts),
+    nextAction: normaliseString(stage.nextAction),
+    status:
+      stage.status && typeof stage.status === 'string'
+        ? stage.status.toLowerCase()
+        : 'pending',
+    logMessage: normaliseString(stage.logMessage) || `${label}: pending`,
+  };
+};
+
+const normaliseStagePlan = rawPlan => {
+  if (!rawPlan || typeof rawPlan !== 'object') {
+    return STAGE_PLAN_DEFAULTS.reduce((acc, descriptor) => {
+      acc[descriptor.key] = normaliseStageDetail(null, descriptor.fallbackGoal, descriptor.label);
+      return acc;
+    }, {});
+  }
+  return STAGE_PLAN_DEFAULTS.reduce((acc, descriptor) => {
+    acc[descriptor.key] = normaliseStageDetail(
+      rawPlan[descriptor.key],
+      descriptor.fallbackGoal,
+      descriptor.label
+    );
+    return acc;
+  }, {});
+};
+
+const normaliseAgentLogEntries = entries => {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+  return entries
+    .map(entry => {
+      if (!entry || typeof entry !== 'object') {
+        return null;
+      }
+      const stage =
+        typeof entry.stage === 'string' ? entry.stage.toLowerCase().trim() : 'general';
+      const thought =
+        typeof entry.thought === 'string'
+          ? entry.thought.trim()
+          : entry.thought != null
+          ? String(entry.thought).trim()
+          : '';
+      if (!thought) {
+        return null;
+      }
+      const action =
+        typeof entry.action === 'string'
+          ? entry.action.trim()
+          : entry.action != null
+          ? String(entry.action).trim()
+          : null;
+      const status =
+        typeof entry.status === 'string'
+          ? entry.status.trim()
+          : stage === 'general'
+          ? null
+          : 'pending';
+      return {
+        stage: stage || 'general',
+        thought,
+        action,
+        status,
+      };
+    })
+    .filter(Boolean);
 };
 
 const trimChatHistory = (history = [], limit = MAX_CHAT_HISTORY_MESSAGES, systemLimit = MAX_SYSTEM_MESSAGES) => {
@@ -507,6 +624,120 @@ const getPlanArraySchema = () => {
   return planArraySchema;
 };
 
+const getStageDetailSchema = () => {
+  if (!GeminiType) return null;
+  if (!stageDetailSchemaCache) {
+    stageDetailSchemaCache = {
+      type: GeminiType.OBJECT,
+      properties: {
+        goal: {
+          type: GeminiType.STRING,
+          description: 'High-level objective for this stage.',
+        },
+        checkpoints: {
+          type: GeminiType.ARRAY,
+          description: 'Ordered micro-steps the agent will follow.',
+          items: {
+            type: GeminiType.STRING,
+            description: 'Single actionable checkpoint.',
+          },
+        },
+        heuristics: {
+          type: GeminiType.ARRAY,
+          description: 'Rules of thumb or signals to watch for while executing this stage.',
+          items: {
+            type: GeminiType.STRING,
+          },
+        },
+        fallbackStrategies: {
+          type: GeminiType.ARRAY,
+          description: 'Contingency plans if the primary checkpoints fail.',
+          items: {
+            type: GeminiType.STRING,
+          },
+        },
+        expectedArtifacts: {
+          type: GeminiType.ARRAY,
+          description: 'Concrete outputs produced by this stage (e.g. detected title string).',
+          items: {
+            type: GeminiType.STRING,
+          },
+        },
+        nextAction: {
+          type: GeminiType.STRING,
+          description: 'What the agent should do immediately after completing this stage.',
+        },
+        status: {
+          type: GeminiType.STRING,
+          enum: ['pending', 'in_progress', 'ready'],
+          description: 'Stage readiness indicator.',
+        },
+        logMessage: {
+          type: GeminiType.STRING,
+          description: 'Single sentence summarizing the current progress for UI logs.',
+        },
+      },
+      required: ['goal', 'checkpoints'],
+    };
+  }
+  return stageDetailSchemaCache;
+};
+
+const getStagePlanSchema = () => {
+  if (!GeminiType) return null;
+  if (!stagePlanSchemaCache) {
+    stagePlanSchemaCache = {
+      type: GeminiType.OBJECT,
+      properties: {
+        titleExtraction: {
+          description: 'Plan for isolating report titles and metadata rows.',
+          ...getStageDetailSchema(),
+        },
+        headerResolution: {
+          description: 'Plan for detecting header rows and producing canonical column names.',
+          ...getStageDetailSchema(),
+        },
+        dataNormalization: {
+          description: 'Plan for row-level cleansing/unpivoting/number normalization.',
+          ...getStageDetailSchema(),
+        },
+      },
+      required: ['titleExtraction', 'headerResolution', 'dataNormalization'],
+    };
+  }
+  return stagePlanSchemaCache;
+};
+
+const getAgentLogEntrySchema = () => {
+  if (!GeminiType) return null;
+  if (!agentLogEntrySchemaCache) {
+    agentLogEntrySchemaCache = {
+      type: GeminiType.OBJECT,
+      properties: {
+        stage: {
+          type: GeminiType.STRING,
+          enum: ['title', 'header', 'data', 'general'],
+          description: 'Which stage this log entry refers to.',
+        },
+        thought: {
+          type: GeminiType.STRING,
+          description: 'What the agent is thinking/observing.',
+        },
+        action: {
+          type: GeminiType.STRING,
+          description: 'Concrete action or tool call to perform next.',
+        },
+        status: {
+          type: GeminiType.STRING,
+          description: 'Optional status label such as pending/in_progress/done.',
+        },
+      },
+      required: ['stage', 'thought'],
+    };
+  }
+  return agentLogEntrySchemaCache;
+};
+
 const getDataPreparationSchema = () => {
   if (!GeminiType) return null;
   if (!dataPreparationSchemaCache) {
@@ -529,6 +760,16 @@ const getDataPreparationSchema = () => {
           type: GeminiType.STRING,
           description:
             'JavaScript function body that transforms the data array. Use null when no change is required.',
+        },
+        stagePlan: {
+          description:
+            'Structured multi-stage plan (title/header/data) describing how the agent will iteratively clean the dataset.',
+          ...getStagePlanSchema(),
+        },
+        agentLog: {
+          type: GeminiType.ARRAY,
+          description: 'Running log of agent thoughts/actions for UI display.',
+          items: getAgentLogEntrySchema(),
         },
         outputColumns: {
           type: GeminiType.ARRAY,
@@ -567,7 +808,7 @@ const getDataPreparationSchema = () => {
           },
         },
       },
-      required: ['explanation', 'analysisSteps', 'outputColumns'],
+      required: ['explanation', 'analysisSteps', 'outputColumns', 'stagePlan'],
     };
   }
   return dataPreparationSchemaCache;
@@ -1277,8 +1518,9 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
           .join('\n')}\n`
       : '\n';
   const helpersDescription = `\nAvailable Helpers (invoke via _util.<name>):\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\nIf you need to run a dedicated tool instead of writing code, respond with "toolCalls": [{"tool":"detect_headers","args":"{\"strategies\":[\"metadata\",\"sample\"]}"}] and omit jsFunctionBody. The "args" field MUST be a JSON string.`;
+  const stagePlanContract = `\nStage Planning Contract (Vanilla Agent):\n- ALWAYS populate \`stagePlan\` with three objects: \`titleExtraction\`, \`headerResolution\`, and \`dataNormalization\`.\n- Each stage must include: goal, ordered checkpoints, heuristics, fallbackStrategies, expectedArtifacts, nextAction, status, and a concise logMessage for UI display.\n- Provide \`agentLog\` entries (e.g., {"stage":"title","thought":"Row 0 looks like a title","action":"store row 0 as metadata"}) so the frontend can surface multi-step reasoning in the chat log.\n- Prefer setting \`jsFunctionBody\` to null. Only emit code if the transformation is trivial; otherwise describe the algorithm inside \`stagePlan\` so the Vanilla Agent can execute it tool-by-tool.\n- When a Crosstab/wide layout is detected, outline the unpivot logic inside \`dataNormalization\` (reference helper calls, identifier detection, iteration ranges, etc.) rather than relying on hard-coded indices.`;
 
-  return `${contextSection}${columnContextBlock}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}
+  return `${contextSection}${columnContextBlock}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}${stagePlanContract}
 
 Common problems to fix:
 - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
