@@ -1067,38 +1067,6 @@ const sanitizeJsFunctionBody = jsBody => {
   return core;
 };
 
-const stripJsComments = source =>
-  typeof source === 'string'
-    ? source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*$/gm, '')
-    : '';
-
-const stripHeaderMappingBlocks = source => {
-  if (typeof source !== 'string' || !source.trim()) {
-    return '';
-  }
-  return source.replace(/(const|let|var)\s+HEADER_MAPPING\s*=\s*{[\s\S]*?};?/gi, '');
-};
-
-const detectHardCodedPatternsInJs = source => {
-  if (typeof source !== 'string' || !source.trim()) {
-    return [];
-  }
-
-  const stripped = stripJsComments(source);
-  const mappingStripped = stripHeaderMappingBlocks(stripped);
-  const issueSet = new Set();
-
-  if (/\bdata\s*\[\s*\d+\s*\]/.test(mappingStripped)) {
-    issueSet.add('direct array indexing like data[1]');
-  }
-
-  if (/\basync\s+function\b/.test(mappingStripped) || /=\s*async\s*\(/i.test(mappingStripped)) {
-    issueSet.add('async functions are not supported in this environment');
-  }
-
-  return Array.from(issueSet);
-};
-
 const callOpenAIJson = async (settings, systemPrompt, userPrompt, options = {}) => {
   const response = await withRetry(async () => {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -1650,21 +1618,6 @@ Your task:
         const normalizedJsBody = sanitizeJsFunctionBody(plan.jsFunctionBody);
         plan.jsFunctionBody = normalizedJsBody;
         console.log('Sanitized jsFunctionBody preview:', normalizedJsBody);
-        const hardCodedIssues = detectHardCodedPatternsInJs(normalizedJsBody);
-        if (hardCodedIssues.length) {
-          const message = `Generated transform relies on hard-coded structure (${hardCodedIssues.join(
-            '; '
-          )}). Detect headers and identifier columns dynamically instead of using fixed indexes.`;
-          lastError = new Error(message);
-          console.warn('[DataPrep] Rejected transform due to brittle structure assumptions:', message);
-          if (typeof iterationContext === 'object' && iterationContext && typeof iterationContext.onViolation === 'function') {
-            iterationContext.onViolation({
-              type: 'hard_coded_structure',
-              message,
-            });
-          }
-          continue;
-        }
         // Mirror the runtime helper surface so validation executes exactly what the agent can do.
         const mockUtil = {
           parseNumber: value => {

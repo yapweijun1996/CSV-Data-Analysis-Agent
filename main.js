@@ -46,6 +46,7 @@ import { renderDataPrepDebugPanel as renderDataPrepDebugPanelView } from './rend
 import { renderMemoryPanel as renderMemoryPanelView } from './render/memoryPanel.js';
 import { createTaskOrchestrator } from './services/taskOrchestrator.js';
 import { createHeaderMapping } from './utils/headerMapping.js';
+import { executeStagePlanPipeline } from './utils/stagePlanExecutor.js';
 import {
   detectHeadersTool as detectHeadersHelper,
   removeSummaryRowsTool as removeSummaryRowsHelper,
@@ -1651,6 +1652,66 @@ this.state = {
                 'system'
               );
               continue;
+            }
+
+            let stageExecutionApplied = false;
+            if (iterationPlan.stagePlan) {
+              const stageResult = executeStagePlanPipeline({
+                data: dataForAnalysis.data,
+                metadata: activeMetadata,
+                stagePlan: iterationPlan.stagePlan,
+              });
+              if (stageResult?.applied) {
+                stageExecutionApplied = true;
+                if (Array.isArray(stageResult.logs)) {
+                  stageResult.logs.forEach(entry => {
+                    this.addProgress(
+                      `${iterationLabel} · ${entry.stageLabel || entry.stage}: ${entry.message}`,
+                      'plan'
+                    );
+                  });
+                }
+                const originalCount = stageResult.originalRowCount ?? dataForAnalysis.data.length;
+                const newCount = stageResult.rowCount ?? stageResult.data.length;
+                dataForAnalysis.data = stageResult.data;
+                dataForAnalysis.metadata = stageResult.metadata;
+                activeMetadata = stageResult.metadata;
+                iterationPlan.stagePlan = stageResult.stagePlan;
+                this.completeWorkflowStep({
+                  label: `${iterationLabel} transformation`,
+                  outcome: `${originalCount} → ${newCount}`,
+                });
+                this.addProgress(
+                  `${iterationLabel} 完成 Stage Plan 清理：${stageResult.summary}`,
+                  'system'
+                );
+                this.clearViolationCounter();
+                this.resetAdditionalPrepIterations();
+                profiles = profileData(dataForAnalysis.data);
+                iterationPlan.outputColumns = profiles;
+                prepIterationsLog.push({
+                  iteration,
+                  status: 'done',
+                  summary: stageResult.summary,
+                  explanation: stageResult.summary,
+                  code: null,
+                  stagePlan: iterationPlan.stagePlan,
+                  agentLog: iterationPlan.agentLog,
+                  lastError: null,
+                  rowCountBefore: originalCount,
+                  rowCountAfter: newCount,
+                });
+                lastSuccessfulPlan = iterationPlan;
+                lastIterationError = null;
+                continueIterating = false;
+                iterationCompleted = true;
+                break;
+              } else if (stageResult?.reason) {
+                this.addProgress(
+                  `${iterationLabel} 的 Stage Plan 無法自動執行：${stageResult.reason}`,
+                  'warning'
+                );
+              }
             }
 
             if (!iterationPlan.jsFunctionBody) {
