@@ -177,15 +177,39 @@ const buildDatasetOverview = ({ columns, metadata, currentView, intent, language
   return lines.join('\n');
 };
 
+const STAGE_PLAN_TEXT_LABELS = [
+  { key: 'titleExtraction', label: 'Title & Metadata' },
+  { key: 'headerResolution', label: 'Header Resolution' },
+  { key: 'dataNormalization', label: 'Data Rows' },
+];
+
+const summariseStagePlanText = stagePlan => {
+  if (!stagePlan || typeof stagePlan !== 'object') {
+    return 'Stage Plan: (not provided)';
+  }
+  const lines = STAGE_PLAN_TEXT_LABELS.map(section => {
+    const detail = stagePlan[section.key];
+    if (!detail) return null;
+    const checkpoints =
+      Array.isArray(detail.checkpoints) && detail.checkpoints.length
+        ? ` | checkpoints: ${detail.checkpoints.slice(0, 3).join(' → ')}`
+        : '';
+    const nextAction = detail.nextAction ? ` | next: ${detail.nextAction}` : '';
+    return `- ${section.label}: ${detail.goal || 'goal missing'}${checkpoints}${nextAction}`;
+  }).filter(Boolean);
+  return lines.length ? `Stage Plan:\n${lines.join('\n')}` : 'Stage Plan: (not provided)';
+};
+
 const buildDataPreparationLog = dataPreparationPlan => {
   if (!dataPreparationPlan) {
     return '**DATA PREPARATION LOG:**\nNo AI-driven data preparation was performed.';
   }
   const explanation = dataPreparationPlan.explanation || 'AI suggested preparing the data before analysis.';
+  const stageSummary = summariseStagePlanText(dataPreparationPlan.stagePlan);
   const codeBlock = dataPreparationPlan.jsFunctionBody
     ? `Code Executed: \`\`\`javascript\n${dataPreparationPlan.jsFunctionBody}\n\`\`\``
     : 'Code Executed: None (AI determined no transformation was necessary).';
-  return `**DATA PREPARATION LOG:**\n${explanation}\n${codeBlock}`;
+  return `**DATA PREPARATION LOG:**\n${explanation}\n${stageSummary}\n${codeBlock}`;
 };
 
 const buildSkillLibrary = skillCatalog => {
@@ -237,7 +261,13 @@ export const getDatasetOverviewFragment = params => {
 };
 
 export const getDataPreparationFragment = dataPreparationPlan => {
-  const key = dataPreparationPlan ? fnv1a([dataPreparationPlan.explanation, dataPreparationPlan.jsFunctionBody]) : 'none';
+  const key = dataPreparationPlan
+    ? fnv1a([
+        dataPreparationPlan.explanation,
+        dataPreparationPlan.jsFunctionBody,
+        JSON.stringify(dataPreparationPlan.stagePlan || {}),
+      ])
+    : 'none';
   if (dataPrepCache.has(key)) {
     return dataPrepCache.get(key);
   }

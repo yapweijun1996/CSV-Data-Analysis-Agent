@@ -1641,11 +1641,6 @@ Your task:
           console.log('Agent log:', plan.agentLog);
         }
         console.log('Sample rows sent to model (first 3):', sampleRowsForPrompt.slice(0, 3));
-        if (!plan.jsFunctionBody && hasCrosstabShape) {
-          console.warn(
-            '[DataPrep] Gemini skipped transformation even though Crosstab alert was triggered. Inspect plan payload below.'
-          );
-        }
         console.log('Full plan payload:', plan);
       } finally {
         console.groupEnd();

@@ -82,6 +82,57 @@ const DEFAULT_WORKFLOW_CONSTRAINTS = ['Vanilla frontend', 'No backend server'];
 const DOM_ACTION_TOOL_NAME_LOOKUP = new Set(
   Array.from(DOM_ACTION_TOOL_NAMES).map(name => name.toLowerCase())
 );
+const STAGE_PLAN_SECTIONS = [
+  { key: 'titleExtraction', label: 'Title & Metadata' },
+  { key: 'headerResolution', label: 'Header Resolution' },
+  { key: 'dataNormalization', label: 'Data Rows' },
+];
+const STAGE_PLAN_STAGE_LABELS = {
+  titleExtraction: 'Title & Metadata',
+  headerResolution: 'Header Resolution',
+  dataNormalization: 'Data Rows',
+  title: 'Title & Metadata',
+  header: 'Header Resolution',
+  data: 'Data Rows',
+  general: 'General',
+};
+
+const formatStagePlanMessages = stagePlan => {
+  if (!stagePlan || typeof stagePlan !== 'object') {
+    return [];
+  }
+  return STAGE_PLAN_SECTIONS.map(section => {
+    const detail = stagePlan[section.key];
+    if (!detail) return null;
+    const parts = [];
+    if (detail.goal) {
+      parts.push(detail.goal);
+    }
+    if (detail.status) {
+      parts.push(`status=${detail.status}`);
+    }
+    if (Array.isArray(detail.checkpoints) && detail.checkpoints.length) {
+      parts.push(`checkpoints → ${detail.checkpoints.slice(0, 3).join(' → ')}`);
+    }
+    if (detail.nextAction) {
+      parts.push(`next=${detail.nextAction}`);
+    }
+    return `${section.label}: ${parts.join(' | ')}`;
+  }).filter(Boolean);
+};
+
+const formatAgentLogMessages = agentLog => {
+  if (!Array.isArray(agentLog)) return [];
+  return agentLog
+    .map(entry => {
+      if (!entry || !entry.thought) return null;
+      const label = STAGE_PLAN_STAGE_LABELS[entry.stage] || 'General';
+      const action = entry.action ? ` → ${entry.action}` : '';
+      const status = entry.status ? ` [${entry.status}]` : '';
+      return `${label}: ${entry.thought}${action}${status}`;
+    })
+    .filter(Boolean);
+};
 /** @typedef {import('./types/typedefs.js').AnalysisPlan} AnalysisPlan */
 /** @typedef {import('./types/typedefs.js').AnalysisCardData} AnalysisCardData */
 /** @typedef {import('./types/typedefs.js').ColumnProfile} ColumnProfile */
@@ -1578,6 +1629,14 @@ this.state = {
               this.addProgress('上一輪檢查：轉換結果為零筆資料，AI 正在重新定位 header/欄位以避免資料被全部濾掉。');
             }
 
+            const stagePlanMessages = formatStagePlanMessages(iterationPlan.stagePlan);
+            stagePlanMessages.forEach(message => {
+              this.addProgress(`${iterationLabel} · ${message}`, 'plan');
+            });
+            formatAgentLogMessages(iterationPlan.agentLog).forEach(message => {
+              this.addProgress(`${iterationLabel} · ${message}`, 'system');
+            });
+
             if (Array.isArray(iterationPlan.toolCalls) && iterationPlan.toolCalls.length) {
               const toolOutputs = await this.executeDataPrepToolCalls(
                 iterationPlan.toolCalls,
@@ -1612,6 +1671,8 @@ this.state = {
                 summary: rawExplanation,
                 explanation: rawExplanation,
                 code: null,
+                stagePlan: iterationPlan.stagePlan || null,
+                agentLog: iterationPlan.agentLog || null,
                 lastError:
                   attemptErrorForPrompt && attemptErrorForPrompt.message
                     ? attemptErrorForPrompt.message
@@ -1683,6 +1744,8 @@ this.state = {
                 summary: rawExplanation,
                 explanation: rawExplanation,
                 code: iterationPlan.jsFunctionBody,
+                stagePlan: iterationPlan.stagePlan || null,
+                agentLog: iterationPlan.agentLog || null,
                 lastError:
                   attemptErrorForPrompt && attemptErrorForPrompt.message
                     ? attemptErrorForPrompt.message
