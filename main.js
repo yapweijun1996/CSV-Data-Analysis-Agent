@@ -2817,6 +2817,8 @@ this.state = {
 
     // Disable chat UI while agent is working
     this.setState({ isThinking: true });
+    this.ensureWorkflowSession('Chat assistant workflow');
+    this.startWorkflowPhase('diagnose', '解析使用者訊息，確認需求與上下文。');
 
     const userMessage = {
       sender: 'user',
@@ -2833,9 +2835,23 @@ this.state = {
       this.shouldAutoScrollConversation = true;
     }
 
+    const finishActivePhaseSafely = () => {
+      if (this.workflowActivePhase) {
+        this.endWorkflowPhase('completed');
+      }
+    };
+
     try {
       this.addProgress('AI is composing a reply...');
+      this.completeWorkflowStep({
+        label: '記錄使用者訊息',
+        outcome: message.slice(0, 240),
+      });
       const userIntent = detectIntent(message, this.state.columnProfiles);
+      this.completeWorkflowStep({
+        label: '偵測使用者意圖',
+        outcome: userIntent,
+      });
       const datasetId = this.getCurrentDatasetId();
       if (ENABLE_MEMORY_FEATURES) {
         try {
@@ -2866,6 +2882,39 @@ this.state = {
         await this.ensureMemoryVectorReady();
         memoryContext = await retrieveRelevantMemories(datasetId, message, 6);
       }
+
+      this.startWorkflowPhase('plan', '請 LLM 規劃可執行的小步驟。');
+      const chatPlanResult = await generateChatStepPlan(
+        {
+          columns: this.state.columnProfiles,
+          metadata,
+          currentView: this.state.currentView,
+          intent: userIntent,
+          skillCatalog,
+          memoryContext,
+          cardContext,
+          userPrompt: message,
+          aiCoreAnalysisSummary: this.state.aiCoreAnalysisSummary,
+          dataPreparationPlan: this.state.dataPreparationPlan,
+        },
+        this.settings
+      );
+      const planSteps = Array.isArray(chatPlanResult?.steps) ? chatPlanResult.steps : [];
+      const planSummary = planSteps.length
+        ? planSteps
+            .map((step, index) => {
+              const phaseLabel = step.phase ? step.phase.toUpperCase() : 'STEP';
+              return `${index + 1}. [${phaseLabel}] ${step.goal}`;
+            })
+            .join(' | ')
+        : 'Fallback: Diagnose ➜ Execute';
+      this.completeWorkflowStep({
+        label: chatPlanResult?.source === 'llm' ? 'LLM 規劃完成' : '使用預設計畫',
+        outcome: planSummary.slice(0, 240),
+      });
+      this.appendWorkflowThought(`接下來依序執行：${planSummary}`);
+
+      this.startWorkflowPhase('execute', '依計畫執行回覆與操作。');
       const response = await generateChatResponse(
         this.state.columnProfiles,
         this.state.chatHistory,
@@ -2879,18 +2928,26 @@ this.state = {
         userIntent,
         skillCatalog,
         memoryContext,
-        this.state.dataPreparationPlan
+        this.state.dataPreparationPlan,
+        chatPlanResult
       );
 
       await this.applyChatActions(response.actions || []);
+      this.completeWorkflowStep({
+        label: '執行聊天策略',
+        outcome: `完成 ${Array.isArray(response.actions) ? response.actions.length : 0} 個動作`,
+      });
+      finishActivePhaseSafely();
     } catch (error) {
       console.error(error);
+      this.failWorkflowStep({ label: 'Chat 工作階段', error });
       this.addProgress(
         `AI response failed: ${error instanceof Error ? error.message : String(error)}`,
         'error'
       );
     } finally {
       // Re-enable chat UI after agent completes work
+      finishActivePhaseSafely();
       this.setState({ isThinking: false });
     }
   }
