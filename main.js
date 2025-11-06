@@ -2672,14 +2672,31 @@ this.state = {
       return null;
     }
 
-    if (toolName === 'dom_action' && action.domAction && typeof action.domAction === 'object') {
-      const domAction = { ...action.domAction };
+    if (toolName === 'dom_action') {
+      const domAction =
+        action.domAction && typeof action.domAction === 'object' ? { ...action.domAction } : {};
       if (domAction.args && typeof domAction.args === 'object') {
         Object.entries(domAction.args).forEach(([key, value]) => {
           if (!Object.prototype.hasOwnProperty.call(domAction, key)) {
             domAction[key] = value;
           }
         });
+        delete domAction.args;
+      }
+      Object.entries(props).forEach(([key, value]) => {
+        if (!Object.prototype.hasOwnProperty.call(domAction, key)) {
+          domAction[key] = value;
+        }
+      });
+      if (!domAction.toolName && typeof domAction.action === 'string') {
+        domAction.toolName = domAction.action;
+        delete domAction.action;
+      }
+      if (!domAction.toolName && props.toolName && typeof props.toolName === 'string') {
+        domAction.toolName = props.toolName;
+      }
+      if (!domAction.toolName || !DOM_ACTION_TOOL_NAMES.has(domAction.toolName)) {
+        return null;
       }
       if (action.cardId && !Object.prototype.hasOwnProperty.call(domAction, 'cardId')) {
         domAction.cardId = action.cardId;
