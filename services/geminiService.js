@@ -54,8 +54,9 @@ const cleanJson = text => {
   try {
     return JSON.parse(withoutFence);
   } catch (error) {
-    console.error('Failed to parse JSON returned by the AI:', withoutFence);
-    throw new Error('The AI response cannot be parsed as JSON.');
+    const parseError = new Error('AI response is not valid JSON.');
+    parseError.rawResponse = withoutFence;
+    throw parseError;
   }
 };
 
@@ -202,6 +203,27 @@ const getDataPreparationSchema = () => {
               },
             },
             required: ['name', 'type'],
+          },
+        },
+        toolCalls: {
+          type: GeminiType.ARRAY,
+          description:
+            'Optional list of tool invocations to run before writing code. Each call must specify a recognized tool name and args.',
+          items: {
+            type: GeminiType.OBJECT,
+            properties: {
+              tool: {
+                type: GeminiType.STRING,
+                enum: ['detect_headers', 'remove_summary_rows', 'detect_identifier_columns'],
+                description: 'Tool identifier to execute.',
+              },
+              args: {
+                type: GeminiType.OBJECT,
+                description: 'Arguments for the tool call.',
+                additionalProperties: true,
+              },
+            },
+            required: ['tool'],
           },
         },
       },
@@ -650,6 +672,11 @@ const callGeminiJson = async (settings, prompt, options = {}) => {
   const ai = await callGeminiClient(settings);
   const config = {
     responseMimeType: 'application/json',
+    generationConfig: {
+      thinkingConfig: {
+        thinkingBudget: 1888,
+      },
+    },
   };
   if (options?.schema) {
     config.responseSchema = options.schema;
@@ -662,7 +689,8 @@ const callGeminiJson = async (settings, prompt, options = {}) => {
     })
   );
   const rawText = typeof response.text === 'function' ? await response.text() : response.text;
-  return cleanJson(rawText);
+  const parsed = cleanJson(rawText);
+  return { parsed, rawText };
 };
 
 const callGeminiText = async (settings, prompt) => {
@@ -967,7 +995,13 @@ Your task:
         plan = await callOpenAIJson(settings, systemPrompt, userPrompt);
       } else {
         const combinedPrompt = `${systemPrompt}\n${userPrompt}`;
-        plan = await callGeminiJson(settings, combinedPrompt, { schema });
+        const { parsed, rawText } = await callGeminiJson(settings, combinedPrompt, { schema });
+        plan = parsed;
+        if (!plan) {
+          const parseError = new Error('AI response is empty.');
+          parseError.rawResponse = rawText;
+          throw parseError;
+        }
       }
 
       if (!plan) {
@@ -1091,7 +1125,13 @@ Your task:
     }
   }
 
-  throw new Error(`AI failed to generate a valid data preparation plan after multiple attempts. Last error: ${lastError?.message}`);
+  const finalError = new Error(
+    `AI failed to generate a valid data preparation plan after multiple attempts. Last error: ${lastError?.message}`
+  );
+  if (lastError && lastError.rawResponse) {
+    finalError.rawResponse = lastError.rawResponse;
+  }
+  throw finalError;
 };
 
 const buildAnalysisPlanPrompt = (columns, sampleData, numPlans, metadata) => {

@@ -216,6 +216,7 @@ this.state = {
       lastRepairTimestamp: this.state.lastRepairTimestamp,
       workflowTimeline: this.state.workflowTimeline,
       workflowPlan: this.state.workflowPlan,
+      generatedReport: this.state.generatedReport,
     };
   }
 
@@ -247,6 +248,7 @@ this.state = {
       showSettings: false,
       reportsList: Array.isArray(this.state.reportsList) ? this.state.reportsList : [],
       isHistoryPanelOpen: false,
+      generatedReport: appState.generatedReport || null,
     };
 
     if (!Object.prototype.hasOwnProperty.call(restored, 'dataPreparationPlan')) {
@@ -1498,14 +1500,34 @@ this.state = {
                 lastIterationError = attemptErrorForPrompt;
               }
             };
-            iterationPlan = await generateDataPreparationPlan(
-              profiles,
-              sampleRowsForPlan,
-              this.settings,
-              activeMetadata,
-              attemptErrorForPrompt,
-              iterationContextPayload
-            );
+            try {
+              iterationPlan = await generateDataPreparationPlan(
+                profiles,
+                sampleRowsForPlan,
+                this.settings,
+                activeMetadata,
+                attemptErrorForPrompt,
+                iterationContextPayload
+              );
+            } catch (planError) {
+              const rawResponse = planError && planError.rawResponse ? String(planError.rawResponse) : null;
+              if (rawResponse) {
+                this.addProgress(
+                  `${iterationLabel} 無法解析模型 JSON，請求重新輸出有效格式。`,
+                  'error'
+                );
+                attemptErrorForPrompt = new Error('Malformed JSON response from model.');
+                attemptErrorForPrompt.rawResponse = rawResponse;
+                lastIterationError = attemptErrorForPrompt;
+                const violationCount = this.incrementViolationCounter('malformed_json');
+                if (violationCount >= 2) {
+                  this.enterAdjustPhase('因模型多次輸出無效 JSON，進入調整階段修正提示。');
+                  this.extendPrepIterationBudget(1);
+                }
+                continue;
+              }
+              throw planError;
+            }
             if (!iterationPlan) {
               this.addProgress(
                 `${iterationLabel} did not return a plan. Skipping remaining preprocessing.`,
@@ -1701,6 +1723,20 @@ this.state = {
                 'Agent 正在調整：轉換結果為零筆資料，可能 header 偵測錯誤，已要求模型重新定位欄位。',
                 'info'
               );
+            } else if (prepError instanceof Error && prepError.rawResponse) {
+              this.addProgress(
+                `${iterationLabel} attempt ${attemptLabel} 無法解析模型 JSON 回應，通知模型重新輸出有效格式。`,
+                'error'
+              );
+              const violationCount = this.incrementViolationCounter('malformed_json');
+              if (violationCount >= 2) {
+                this.enterAdjustPhase('多次解析失敗，進入調整階段修正提示。');
+                this.extendPrepIterationBudget(1);
+              }
+              attemptErrorForPrompt = new Error('Malformed JSON response from model.');
+              attemptErrorForPrompt.rawResponse = prepError.rawResponse;
+              lastIterationError = attemptErrorForPrompt;
+              continue;
             }
               if (attempt === maxRetriesPerIteration - 1) {
                   this.addProgress(
