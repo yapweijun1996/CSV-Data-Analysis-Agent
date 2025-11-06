@@ -1546,7 +1546,7 @@ ${hasCrosstabShape ? `CROSSTAB ALERT:
 - The dataset contains many generic columns (e.g., column_1, column_2...). Treat these as pivoted metrics that must be unpivoted/melted into tidy rows.
 - Preserve identifier columns (codes, descriptions, category labels) as-is.
 - For each pivot column, produce rows with explicit fields such as { Code, Description, PivotColumnName, PivotValue } so every numeric value becomes its own observation.
-- You MUST return a non-null \`jsFunctionBody\` that performs this unpivot; returning null is not acceptable when this pattern is detected.
+- Document the unpivot procedure explicitly inside \`stagePlan.dataNormalization\` (list identifier detection, iteration ranges, helper calls). Only include code if the plan cannot be expressed clearly.
 - After reshaping, update \`outputColumns\` to reflect the tidy structure (e.g., 'code' categorical, 'project' categorical, 'pivot_column' categorical, 'pivot_value' numerical).
 - Include logic to drop empty or subtotal rows but keep hierarchical parent rows.\n` : ''}
 
@@ -1558,18 +1558,18 @@ ${lastError ? `On the previous attempt, your generated code failed with this err
 
 Your task:
 1. **Study (Think Step-by-Step)**: Describe what you observe in the dataset. List the problems (multi-row headers, totals, blank/title rows, etc.). Output this as \`analysisSteps\` — a detailed, ordered list of your reasoning before coding.
-2. **Plan Transformation**: Based on those steps, decide on the exact cleaning/reshaping actions (unpivot, drop rows, rename columns, parse numbers, etc.).
+2. **Plan Transformation**: Based on those steps, decide on the exact cleaning/reshaping actions (unpivot, drop rows, rename columns, parse numbers, etc.) and fill the \`stagePlan\` object (title → header → data).
 3. **Define Output Schema**: Determine the exact column names and data types AFTER your transformation. Use specific types where possible: 'categorical', 'numerical', 'date', 'time', 'currency', 'percentage'.
-4. **Write Code**: If transformation is needed, write the body of a JavaScript function. It receives two arguments, \`data\` and \`_util\`, and must return the transformed array of objects.
+4. **Stage Deliverable (Optional Code)**: If a concise JavaScript snippet is necessary, write the body of a function that receives \`data\` and \`_util\` and returns the transformed array. Otherwise set \`jsFunctionBody\` to null and rely on the stage plan.
 5. **Explain**: Provide a concise, user-facing explanation of what you did.
 
 **CRITICAL REQUIREMENTS:**
 - Never assume specific header text exists. If you cannot confidently locate headers or identifier columns, throw an Error explaining what data was missing instead of returning an empty array.
 - You MUST provide the \`analysisSteps\` array capturing your chain-of-thought (observations ➜ decisions ➜ actions). Each item should be a full sentence.
 - You MUST provide the \`outputColumns\` array. If no transformation is needed, it should match the input schema (but update types if you discovered more specific ones).
-- Your JavaScript MUST include a \`return\` statement that returns the transformed data array.
+- If you provide JavaScript, it MUST include a \`return\` statement that returns the transformed data array.
 - Whenever you convert numbers, you MUST use \`_util.parseNumber\`. Whenever you split comma-separated numeric strings, you MUST use \`_util.splitNumericString\`.
-- If the dataset exhibits the Crosstab alert above, you MUST return a non-null \`jsFunctionBody\` that unpivots the data into tidy rows. Do not respond with null in this situation.
+- When the dataset exhibits the Crosstab alert, your \`stagePlan.dataNormalization\` must detail the unpivot algorithm (identifier detection, per-column iteration, parsing). Include code only if absolutely necessary.
 `;
 };
 
@@ -1621,6 +1621,9 @@ Your task:
       } else {
         plan.analysisSteps = [];
       }
+
+      plan.stagePlan = normaliseStagePlan(plan.stagePlan);
+      plan.agentLog = normaliseAgentLogEntries(plan.agentLog);
 
       if (!plan.outputColumns || !Array.isArray(plan.outputColumns) || plan.outputColumns.length === 0) {
         plan.outputColumns = columns;
