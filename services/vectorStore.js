@@ -1,20 +1,13 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@latest';
 import { embedText, cosineSimilarity as bowCosineSimilarity } from './ragService.js';
 
-const HUGGING_FACE_BASE = 'https://huggingface.co';
+const XENOVA_JSDELIVR_BASE =
+  'https://cdn.jsdelivr.net/gh/xenova/transformers.js@v2.17.1/packages/transformers/models';
 const TRANSFORMER_MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
-const TRANSFORMER_RESOLVE_BASE = `${HUGGING_FACE_BASE}/${TRANSFORMER_MODEL_ID}/resolve/main`;
+const TRANSFORMER_RESOLVE_BASE = `${XENOVA_JSDELIVR_BASE}/${TRANSFORMER_MODEL_ID}`;
 const TRANSFORMER_CONFIG_URL = `${TRANSFORMER_RESOLVE_BASE}/config.json`;
 
-const appendDownloadQuery = url => {
-  if (typeof url !== 'string') return url;
-  if (/[?&]download=1(?:$|&)/i.test(url)) {
-    return url;
-  }
-  const [base, hash] = url.split('#');
-  const separator = base.includes('?') ? '&' : '?';
-  return `${base}${separator}download=1${hash ? `#${hash}` : ''}`;
-};
+const appendDownloadQuery = url => url;
 
 class VectorStore {
   constructor() {
@@ -199,7 +192,10 @@ class VectorStore {
       return;
     }
     env.fetch = async (url, options) => {
-      const target = appendDownloadQuery(url);
+      const normalizedUrl = typeof url === 'string' ? url : String(url);
+      const target = normalizedUrl.includes(TRANSFORMER_MODEL_ID)
+        ? normalizedUrl
+        : normalizedUrl.replace(/\/models\/([^/]+)\/?$/, `/models/${TRANSFORMER_MODEL_ID}`);
       const response = await baseFetch(target, options);
       if (!response || !response.ok) {
         throw new Error(
@@ -225,7 +221,7 @@ class VectorStore {
       if (!remoteFetch) {
         throw new Error('Fetch API is not available in this environment.');
       }
-      const response = await remoteFetch(appendDownloadQuery(TRANSFORMER_CONFIG_URL), {
+      const response = await remoteFetch(TRANSFORMER_CONFIG_URL, {
         cache: 'no-cache',
         mode: 'cors',
       });
@@ -252,7 +248,7 @@ class VectorStore {
     try {
       env.allowLocalModels = false;
       env.allowRemoteModels = true;
-      env.remoteModelPath = HUGGING_FACE_BASE;
+      env.remoteModelPath = XENOVA_JSDELIVR_BASE;
       this.configureRemoteFetch();
       await this.verifyRemoteModelAvailability(progressCallback);
       progressCallback?.('Downloading AI memory model from Hugging Face (~34MB)...');

@@ -47,12 +47,19 @@ const renderThinkingEntry = entry => {
 const renderPlanEntry = entry => {
   const content = formatMessageMarkdown(entry.text || '');
   return `
-    <div class="my-2 p-3 bg-slate-100 border border-slate-200 rounded-lg">
-      <div class="flex items-center text-slate-700 mb-2">
-        <span class="text-lg mr-2">⚙️</span>
-        <h4 class="font-semibold">Plan Execution</h4>
-      </div>
-      <div class="text-sm text-slate-700 whitespace-pre-wrap">${content}</div>
+    <div class="my-2 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+      <details class="group" open>
+        <summary class="flex items-center justify-between p-3 text-blue-800 cursor-pointer select-none hover:bg-blue-50/40 transition-colors">
+          <div class="flex items-center">
+            <span class="text-lg mr-2">⚙️</span>
+            <h4 class="font-semibold">Plan Execution</h4>
+          </div>
+          <span class="text-slate-500 text-xs">Toggle</span>
+        </summary>
+        <div class="text-sm text-slate-700 whitespace-pre-wrap px-3 pb-3">
+          ${content}
+        </div>
+      </details>
     </div>`;
 };
 

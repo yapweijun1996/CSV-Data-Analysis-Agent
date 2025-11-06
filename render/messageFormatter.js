@@ -46,25 +46,51 @@ export const formatMessageMarkdown = value => {
   const lines = safe.split(/\r?\n/);
   const htmlParts = [];
   let inList = false;
+  let inOrderedList = false;
 
-  const closeList = () => {
+  const closeLists = () => {
     if (inList) {
       htmlParts.push('</ul>');
       inList = false;
+    }
+    if (inOrderedList) {
+      htmlParts.push('</ol>');
+      inOrderedList = false;
     }
   };
 
   lines.forEach(rawLine => {
     const line = rawLine.trim();
     if (!line.length) {
-      closeList();
+      closeLists();
       htmlParts.push('<br />');
       return;
     }
 
+    // Ordered list lines like "1. Step"
+    const olMatch = line.match(/^\d+\.\s+(.*)/);
+    if (olMatch) {
+      if (!inOrderedList) {
+        if (inList) {
+          htmlParts.push('</ul>');
+          inList = false;
+        }
+        htmlParts.push('<ol class="list-decimal list-outside pl-5 space-y-1 text-left">');
+        inOrderedList = true;
+      }
+      const itemContent = applyInlineFormatting(olMatch[1]);
+      htmlParts.push(`<li>${itemContent}</li>`);
+      return;
+    }
+
+    // Unordered list lines like "- item" or "* item"
     const listMatch = line.match(/^[-*]\s+(.*)/);
     if (listMatch) {
       if (!inList) {
+        if (inOrderedList) {
+          htmlParts.push('</ol>');
+          inOrderedList = false;
+        }
         htmlParts.push('<ul class="list-disc list-outside pl-5 space-y-1 text-left">');
         inList = true;
       }
@@ -73,11 +99,12 @@ export const formatMessageMarkdown = value => {
       return;
     }
 
-    closeList();
+    // Paragraph
+    closeLists();
     const paragraphContent = applyInlineFormatting(rawLine);
     htmlParts.push(`<p class="leading-relaxed">${paragraphContent}</p>`);
   });
 
-  closeList();
+  closeLists();
   return coalesceBreaks(htmlParts).join('');
 };

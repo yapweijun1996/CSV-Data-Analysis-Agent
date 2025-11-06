@@ -2272,13 +2272,24 @@ class CsvDataAnalysisApp extends HTMLElement {
       return normalised;
     }
 
-    const toolName =
+    const explicitAction =
+      typeof action.action === 'string'
+        ? action.action
+        : typeof (action.action?.type ?? action.action?.toolName) === 'string'
+        ? action.action.type || action.action.toolName
+        : null;
+    const toolNameCandidate =
       typeof action.toolName === 'string'
         ? action.toolName
         : typeof action.type === 'string'
         ? action.type
         : null;
     const props = action && typeof action.props === 'object' && action.props ? { ...action.props } : {};
+    if (!toolNameCandidate && !explicitAction && typeof props.action === 'string') {
+      props.toolName = props.toolName || props.action;
+      delete props.action;
+    }
+    const toolName = toolNameCandidate || explicitAction || (typeof props.toolName === 'string' ? props.toolName : null);
     if (action && typeof action.args === 'object' && action.args) {
       Object.assign(props, action.args);
     }
