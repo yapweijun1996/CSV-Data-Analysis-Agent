@@ -2900,6 +2900,11 @@ this.state = {
         this.settings
       );
       const planSteps = Array.isArray(chatPlanResult?.steps) ? chatPlanResult.steps : [];
+      const planSource = chatPlanResult?.source === 'llm' ? 'LLM' : 'fallback';
+      const fallbackReason =
+        chatPlanResult?.reason && chatPlanResult.source !== 'llm'
+          ? chatPlanResult.reason
+          : null;
       const planSummary = planSteps.length
         ? planSteps
             .map((step, index) => {
@@ -2908,9 +2913,20 @@ this.state = {
             })
             .join(' | ')
         : 'Fallback: Diagnose ➜ Execute';
+      const planOutcomeDetails = fallbackReason
+        ? `${planSummary} | Source: ${planSource.toUpperCase()} (${fallbackReason})`
+        : `${planSummary} | Source: ${planSource.toUpperCase()}`;
+      const progressLabel =
+        planSource === 'LLM'
+          ? 'LLM 已產生聊天計畫，準備執行小步驟。'
+          : `使用 fallback 計畫：${fallbackReason || 'LLM 不可用'}`;
+      this.addProgress(progressLabel);
+      if (fallbackReason) {
+        this.appendWorkflowThought(`LLM 規劃失敗，改用 fallback：${fallbackReason}`);
+      }
       this.completeWorkflowStep({
         label: chatPlanResult?.source === 'llm' ? 'LLM 規劃完成' : '使用預設計畫',
-        outcome: planSummary.slice(0, 240),
+        outcome: planOutcomeDetails.slice(0, 240),
       });
       this.appendWorkflowThought(`接下來依序執行：${planSummary}`);
 
