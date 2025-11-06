@@ -40,6 +40,7 @@ import { renderRawDataPanel as renderRawDataPanelView } from './render/rawDataPa
 import { renderAnalysisCard as renderAnalysisCardView } from './render/analysisCard.js';
 import { renderAnalysisSection } from './render/analysisPanel.js';
 import { renderAssistantPanel as renderAssistantPanelView } from './render/assistantPanel.js';
+import { renderWorkflowTimeline } from './render/workflowTimeline.js';
 import { renderDataPrepDebugPanel as renderDataPrepDebugPanelView } from './render/dataPrepDebugPanel.js';
 import { renderMemoryPanel as renderMemoryPanelView } from './render/memoryPanel.js';
 import { createTaskOrchestrator } from './services/taskOrchestrator.js';
@@ -4965,6 +4966,7 @@ this.state = {
     const rawDataPanel = this.renderRawDataPanel();
 
     const summaryBlock = renderFinalSummary(finalSummary);
+    const workflowTimelineHtml = renderWorkflowTimeline(this.state.workflowTimeline);
 
     let mainContent;
     if (!csvData) {
@@ -5033,8 +5035,9 @@ this.state = {
               </label>
             </div>
           </header>
-          <div class="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 lg:px-8 py-6 space-y-6" data-main-scroll>
-            ${mainContent}
+	        <div class="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 lg:px-8 py-6 space-y-6" data-main-scroll>
+	            ${workflowTimelineHtml}
+	            ${mainContent}
           </div>
         </main>
         ${assistantPanelHtml}
