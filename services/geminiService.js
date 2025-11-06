@@ -64,15 +64,56 @@ const withRetry = async (fn, retries = 2) => {
 
 const cleanJson = text => {
   if (!text) return null;
-  const trimmed = text.trim();
-  const withoutFence = trimmed.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
-  try {
-    return JSON.parse(withoutFence);
-  } catch (error) {
-    const parseError = new Error('AI response is not valid JSON.');
-    parseError.rawResponse = withoutFence;
-    throw parseError;
+  const ensureString = typeof text === 'string' ? text : String(text);
+  // Gemini responses may prepend thinking traces such as <think>...</think>; strip them eagerly.
+  const withoutThinking = ensureString.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  const stripFences = value =>
+    value.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
+  const candidates = [];
+  candidates.push(stripFences(withoutThinking.trim()));
+
+  const attemptParse = candidate => {
+    if (!candidate) return null;
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      return null;
+    }
+  };
+
+  for (const candidate of candidates) {
+    const parsed = attemptParse(candidate);
+    if (parsed !== null) {
+      return parsed;
+    }
   }
+
+  const fallbackSlices = (() => {
+    const fallback = [];
+    const normalized = candidates[0] || '';
+    const objectStart = normalized.indexOf('{');
+    const objectEnd = normalized.lastIndexOf('}');
+    if (objectStart !== -1 && objectEnd > objectStart) {
+      fallback.push(normalized.slice(objectStart, objectEnd + 1));
+    }
+    const arrayStart = normalized.indexOf('[');
+    const arrayEnd = normalized.lastIndexOf(']');
+    if (arrayStart !== -1 && arrayEnd > arrayStart) {
+      fallback.push(normalized.slice(arrayStart, arrayEnd + 1));
+    }
+    return fallback;
+  })();
+
+  for (const candidate of fallbackSlices) {
+    const parsed = attemptParse(candidate);
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+  const parseError = new Error('AI response is not valid JSON.');
+  parseError.rawResponse = candidates[0];
+  throw parseError;
 };
 
 const ensureArray = value => {
