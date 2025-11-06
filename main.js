@@ -6001,6 +6001,8 @@ this.state = {
       currentView,
       resolveCardReference: (cardId, cardTitle) =>
         this.resolveCardReference(cardId, cardTitle),
+      workflowPhase: this.workflowActivePhase,
+      isWorkflowActive: Boolean(this.workflowSessionId),
     });
   }
 
