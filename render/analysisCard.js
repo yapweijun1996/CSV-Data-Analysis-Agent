@@ -219,6 +219,7 @@ export const renderAnalysisCard = ({ app, card, colors }) => {
                 aria-selected="${displayType === type ? 'true' : 'false'}"
                 aria-controls="${card.id}-chart"
                 title="Switch to ${type} chart"
+                data-tooltip="${type} chart"
               >
                 ${renderChartTypeIcon(type)}
               </button>`).join('')}

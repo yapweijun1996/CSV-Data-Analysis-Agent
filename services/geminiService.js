@@ -855,7 +855,7 @@ const buildUserPrompt = (lastError, iterationContext = null) => {
     const fallbackReminder = headerMapping.hasUnmapped
       ? '\nSome targets still fall back to generic names. Detect descriptive headers dynamically whenever possible.'
       : '';
-    return `Header mapping (already detected — NEVER hard-code "column_N"):
+    return `Header mapping (already detected — NEVER hard-code "column_N" outside this block):
 ${preview || '- (mapping summary available)'}
 Embed and use it like this:
 const HEADER_MAPPING = ${mappingJson};
@@ -868,8 +868,17 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
     : '- **MANDATORY SUMMARY REMOVAL**: Any row matching the summary keywords must be excluded from the transformed dataset. When uncertain, remove the row and mention it in your status message.';
 
   const headerMappingBlock = headerMappingSection ? `\n${headerMappingSection}\n` : '\n';
+  const violationGuidance =
+    iterationContext &&
+    typeof iterationContext === 'object' &&
+    typeof iterationContext.violationGuidance === 'string'
+      ? iterationContext.violationGuidance.trim()
+      : '';
+  const violationGuidanceBlock = violationGuidance
+    ? `\n**Immediate Fix Guidance:**\n${violationGuidance}\n`
+    : '\n';
 
-  return `${contextSection}${iterationSummary}${multiPassRules}${headerMappingBlock}
+  return `${contextSection}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}
 
 Common problems to fix:
 - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.

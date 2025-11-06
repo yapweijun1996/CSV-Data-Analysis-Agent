@@ -1403,14 +1403,24 @@ this.state = {
 
       if (isApiKeySet) {
         this.startWorkflowPhase('plan', '規劃資料清理與前處理步驟。');
-        const maxPrepIterations = 3;
+        this.resetAdditionalPrepIterations();
+        this.clearViolationCounter();
+        const basePrepIterations = 3;
         const maxRetriesPerIteration = 3;
         let iteration = 0;
         let continueIterating = true;
         let lastIterationError = null;
         let lastSuccessfulPlan = null;
 
-        while (continueIterating && iteration < maxPrepIterations) {
+        while (continueIterating) {
+          const maxPrepIterations = basePrepIterations + this.getAdditionalPrepIterations();
+          if (iteration >= maxPrepIterations) {
+            this.addProgress(
+              `AI preprocessing reached the maximum of ${maxPrepIterations} iterations. Stopping further retries.`,
+              'error'
+            );
+            break;
+          }
           iteration += 1;
           const iterationLabel = `AI prep iteration ${iteration}`;
           const sampleRowsForPlan = dataForAnalysis.data.slice(0, 20);
@@ -1453,6 +1463,13 @@ this.state = {
                   `${iterationLabel} attempt ${attemptLabel} 被拒絕：${violationMessage}`,
                   'error'
                 );
+                const violationCount = this.incrementViolationCounter(violation.type);
+                if (violationCount >= 2) {
+                  this.enterAdjustPhase('偵測到重複的欄位硬編錯誤，進入調整階段修正策略。');
+                  this.extendPrepIterationBudget(1);
+                }
+                iterationContextPayload.violationGuidance =
+                  'Do NOT hard-code column names (e.g., "column_3") anywhere in the transform. Use metadata.genericHeaders and `_util.applyHeaderMapping(row, mapping)` to resolve canonical column names dynamically.';
                 const updatedContext = this.ensureHeaderMappingContext(activeMetadata, {
                   reason: 'hard_coded_structure',
                   logStep: true,
@@ -1463,6 +1480,11 @@ this.state = {
                 if (updatedContext) {
                   headerMappingContext = updatedContext;
                   iterationContextPayload.headerMapping = updatedContext;
+                  this.addProgress(
+                    'Plan 調整：套用 header mapping，準備重新嘗試資料轉換。',
+                    'system'
+                  );
+                  this.resumePlanPhase('完成調整，返回規劃步驟重新嘗試。');
                 }
                 attemptErrorForPrompt = new Error(violationMessage);
                 lastIterationError = attemptErrorForPrompt;
@@ -1586,6 +1608,9 @@ this.state = {
               this.addProgress(
                 `${iterationLabel} completed. Row count changed from ${originalCount} to ${newCount}.`
               );
+              this.clearViolationCounter();
+              this.resetAdditionalPrepIterations();
+              this.resumePlanPhase('資料清理流程已調整完成，返回規劃。');
 
               profiles = iterationPlan.outputColumns || profileData(dataForAnalysis.data);
               prepIterationsLog.push({
@@ -2026,14 +2051,159 @@ this.state = {
     const mapped = Array.isArray(planItems)
       ? planItems.map(item => ({
           step: item.step,
-          status: item.status
+          status: item.status,
         }))
       : [];
+    const previousPlan = Array.isArray(this.state.workflowPlan) ? this.state.workflowPlan : [];
+    const changeMessages = [];
+
+    mapped.forEach(item => {
+      const prev = previousPlan.find(entry => entry.step === item.step);
+      const label = this.getPlanStepLabel(item.step);
+      const statusLabel = this.getPlanStatusLabel(item.status);
+
+      if (!prev) {
+        changeMessages.push(`Plan 更新：加入 ${label}（狀態：${statusLabel}）`);
+      } else if (prev.status !== item.status) {
+        const prevStatusLabel = this.getPlanStatusLabel(prev.status);
+        changeMessages.push(`Plan 更新：${label} 從 ${prevStatusLabel} → ${statusLabel}`);
+      }
+    });
+
     let timeline = null;
     if (this.orchestrator && typeof this.orchestrator.getTimeline === 'function') {
       timeline = this.orchestrator.getTimeline();
     }
     this.setState({ workflowPlan: mapped, workflowTimeline: timeline });
+
+    if (changeMessages.length) {
+      changeMessages.forEach(message => this.addProgress(message, 'system'));
+    }
+  }
+
+  getPlanStepLabel(step) {
+    const STEP_LABELS = {
+      diagnose: 'Diagnose 診斷',
+      plan: 'Plan 規劃',
+      execute: 'Execute 執行',
+      adjust: 'Adjust 調整',
+      verify: 'Verify 驗證',
+    };
+    if (typeof step === 'string' && STEP_LABELS[step]) {
+      return STEP_LABELS[step];
+    }
+    if (typeof step === 'string' && step.trim()) {
+      return step.trim();
+    }
+    return '未知階段';
+  }
+
+  getPlanStatusLabel(status) {
+    const STATUS_LABELS = {
+      pending: '待開始',
+      in_progress: '進行中',
+      completed: '已完成',
+      failed: '失敗',
+    };
+    if (typeof status === 'string' && STATUS_LABELS[status]) {
+      return STATUS_LABELS[status];
+    }
+    return status ? status : '未知';
+  }
+
+  incrementViolationCounter(type) {
+    if (!type || !this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
+      return 1;
+    }
+    const counters = this.orchestrator.getContextValue('violationCounts') || {};
+    const nextValue = (counters[type] || 0) + 1;
+    counters[type] = nextValue;
+    if (typeof this.orchestrator.setContextValue === 'function') {
+      this.orchestrator.setContextValue('violationCounts', counters);
+    }
+    return nextValue;
+  }
+
+  clearViolationCounter(type = null) {
+    if (!this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
+      return;
+    }
+    if (typeof this.orchestrator.setContextValue !== 'function') {
+      return;
+    }
+    const counters = this.orchestrator.getContextValue('violationCounts') || {};
+    if (!type) {
+      this.orchestrator.setContextValue('violationCounts', {});
+      return;
+    }
+    if (counters[type]) {
+      delete counters[type];
+      this.orchestrator.setContextValue('violationCounts', counters);
+    }
+  }
+
+  enterAdjustPhase(reason) {
+    if (!this.orchestrator) {
+      return;
+    }
+    const adjustActive =
+      typeof this.orchestrator.getAutoTaskFlag === 'function'
+        ? this.orchestrator.getAutoTaskFlag('adjust_phase_active')
+        : false;
+    if (adjustActive) {
+      if (reason) {
+        this.appendWorkflowThought(reason);
+      }
+      return;
+    }
+    this.startWorkflowPhase('adjust', reason || '進入調整階段，修正策略。');
+    if (typeof this.orchestrator.setAutoTaskFlag === 'function') {
+      this.orchestrator.setAutoTaskFlag('adjust_phase_active', true);
+    }
+  }
+
+  resumePlanPhase(reason) {
+    if (!this.orchestrator) {
+      return;
+    }
+    const adjustActive =
+      typeof this.orchestrator.getAutoTaskFlag === 'function'
+        ? this.orchestrator.getAutoTaskFlag('adjust_phase_active')
+        : false;
+    if (!adjustActive) {
+      return;
+    }
+    this.startWorkflowPhase('plan', reason || '調整完成，返回規劃階段。');
+    if (typeof this.orchestrator.setAutoTaskFlag === 'function') {
+      this.orchestrator.setAutoTaskFlag('adjust_phase_active', false);
+    }
+  }
+
+  getAdditionalPrepIterations() {
+    if (!this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
+      return 0;
+    }
+    const value = this.orchestrator.getContextValue('additionalPrepIterations');
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  }
+
+  extendPrepIterationBudget(increment = 1) {
+    if (!this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
+      return 0;
+    }
+    const current = this.getAdditionalPrepIterations();
+    const next = Math.min(current + increment, 3);
+    if (typeof this.orchestrator.setContextValue === 'function') {
+      this.orchestrator.setContextValue('additionalPrepIterations', next);
+    }
+    return next;
+  }
+
+  resetAdditionalPrepIterations() {
+    if (!this.orchestrator || typeof this.orchestrator.setContextValue !== 'function') {
+      return;
+    }
+    this.orchestrator.setContextValue('additionalPrepIterations', 0);
   }
 
   handleWorkflowProgress(entry) {
