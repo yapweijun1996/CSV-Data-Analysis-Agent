@@ -31,6 +31,9 @@ const formatTime = iso => {
   }
 };
 
+const humanisePhase = phaseId =>
+  typeof phaseId === 'string' && PHASE_LABELS[phaseId] ? PHASE_LABELS[phaseId] : phaseId || 'Phase';
+
 const renderStep = step => {
   const label = escapeHtml(step.label || 'Step');
   const status = escapeHtml(step.status || 'completed');
@@ -67,18 +70,14 @@ const renderThought = thought => {
 };
 
 const renderPhase = phase => {
-  const heading = PHASE_LABELS[phase.phase] || escapeHtml(phase.phase || 'Phase');
+  const heading = humanisePhase(phase.phase);
   const statusCls = statusClass(phase.status);
-  const steps = Array.isArray(phase.steps)
-    ? phase.steps.map(renderStep).join('')
-    : '';
-  const thoughts = Array.isArray(phase.thoughts)
-    ? phase.thoughts.map(renderThought).join('')
-    : '';
+  const steps = Array.isArray(phase.steps) ? phase.steps.map(renderStep).join('') : '';
+  const thoughts = Array.isArray(phase.thoughts) ? phase.thoughts.map(renderThought).join('') : '';
   return `
     <section class="wt-phase ${statusCls}">
       <header class="wt-phase-header">
-        <div class="wt-phase-title">${heading}</div>
+        <div class="wt-phase-title">${escapeHtml(heading)}</div>
         <div class="wt-phase-meta">
           <span class="wt-phase-status">${escapeHtml(phase.status || '')}</span>
           ${phase.startedAt ? `<span class="wt-phase-time">開始 ${escapeHtml(formatTime(phase.startedAt))}</span>` : ''}
@@ -91,4 +90,95 @@ const renderPhase = phase => {
   `;
 };
 
-export const renderWorkflowTimeline = () => '';
+const formatConstraints = constraints => {
+  if (Array.isArray(constraints) && constraints.length) {
+    return constraints
+      .filter(item => typeof item === 'string' && item.trim())
+      .map(item => `<li>${escapeHtml(item.trim())}</li>`)
+      .join('');
+  }
+  return '';
+};
+
+const renderPlanOverview = planItems => {
+  if (!Array.isArray(planItems) || !planItems.length) {
+    return '';
+  }
+  const items = planItems
+    .map(item => {
+      const label = humanisePhase(item.step);
+      const status = statusClass(item.status);
+      const statusText =
+        item.status === 'in_progress'
+          ? '進行中'
+          : item.status === 'completed'
+          ? '完成'
+          : item.status === 'failed'
+          ? '失敗'
+          : '等待中';
+      return `
+        <li class="wt-plan-item ${status}">
+          <span class="wt-plan-label">${escapeHtml(label)}</span>
+          <span class="wt-plan-status">${escapeHtml(statusText)}</span>
+        </li>
+      `;
+    })
+    .join('');
+  return `
+    <section class="wt-plan">
+      <header class="wt-plan-header">
+        <h3>工作計畫</h3>
+        <p>Agent 會依序完成 Diagnose → Plan → Execute → Adjust → Verify。</p>
+      </header>
+      <ol class="wt-plan-list">${items}</ol>
+    </section>
+  `;
+};
+
+export const renderWorkflowTimeline = (timeline, planItems = []) => {
+  const hasTimeline = Boolean(timeline);
+  const hasPlan = Array.isArray(planItems) && planItems.length > 0;
+  if (!hasTimeline && !hasPlan) {
+    return '';
+  }
+
+  const phases = hasTimeline && Array.isArray(timeline.phases) ? timeline.phases : [];
+  const constraints = formatConstraints(timeline?.constraints);
+  const headerMeta = timeline
+    ? `
+        ${timeline.goal ? `<p class="wt-goal">🎯 ${escapeHtml(timeline.goal)}</p>` : ''}
+        ${
+          constraints
+            ? `<div class="wt-constraints"><span>🔒 限制：</span><ul>${constraints}</ul></div>`
+            : ''
+        }
+        ${
+          timeline.summary
+            ? `<p class="wt-summary">✅ ${escapeHtml(timeline.summary)}</p>`
+            : ''
+        }
+        ${
+          timeline.completedAt
+            ? `<p class="wt-meta">完成時間：${escapeHtml(formatTime(timeline.completedAt))}</p>`
+            : ''
+        }
+      `
+    : '<p class="wt-goal">Workflow tracker will appear once the agent starts.</p>';
+
+  const phaseContent = phases.length
+    ? phases.map(renderPhase).join('')
+    : '<div class="wt-empty-text">尚未有階段紀錄。啟動任務後會顯示 AI 的逐步行動與思考。</div>';
+
+  return `
+    <section class="workflow-timeline${!phases.length ? ' is-empty' : ''}">
+      <header class="wt-header">
+        <h2>Workflow Timeline</h2>
+        ${headerMeta}
+      </header>
+      ${hasPlan ? renderPlanOverview(planItems) : ''}
+      <div class="wt-body">
+        ${phaseContent}
+      </div>
+    </section>
+  `;
+};

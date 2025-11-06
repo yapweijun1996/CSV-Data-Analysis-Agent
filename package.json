@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "download:model": "bash scripts/download-model.sh"
+    "download:model": "bash scripts/download-model.sh",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "vite": "^6.4.1"
+    "vite": "^6.4.1",
+    "vitest": "^1.6.0"
   }
 }

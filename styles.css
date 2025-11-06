@@ -165,10 +165,85 @@ table { border-collapse: collapse; }
   color: #475569;
 }
 
+.workflow-timeline .wt-summary,
+.workflow-timeline .wt-meta {
+  font-size: 0.85rem;
+  color: #475569;
+  margin: 0.2rem 0;
+}
+
+.workflow-timeline .wt-constraints ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+}
+
 .workflow-timeline .wt-body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.workflow-timeline .wt-plan {
+  border: 1px dashed #cbd5f5;
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.workflow-timeline .wt-plan-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #0f172a;
+}
+
+.workflow-timeline .wt-plan-header p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.workflow-timeline .wt-plan-list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.workflow-timeline .wt-plan-item {
+  flex: 1 1 160px;
+  border: 1px solid #cbd5f5;
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #0f172a;
+  background: #fff;
+}
+
+.workflow-timeline .wt-plan-item.status-active {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.workflow-timeline .wt-plan-item.status-completed {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.workflow-timeline .wt-plan-item.status-failed {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.workflow-timeline .wt-plan-status {
+  font-weight: 500;
+  color: #475569;
 }
 
 .workflow-timeline .wt-phase {

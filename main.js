@@ -75,6 +75,9 @@ import {
   ENABLE_PIPELINE_REPAIR,
 } from './state/constants.js';
 import { normaliseTitleKey } from './utils/stringUtils.js';
+import { pickFirstString, parseValueList } from './utils/domActionUtils.js';
+
+const DEFAULT_WORKFLOW_CONSTRAINTS = ['Vanilla frontend', 'No backend server'];
 /** @typedef {import('./types/typedefs.js').AnalysisPlan} AnalysisPlan */
 /** @typedef {import('./types/typedefs.js').AnalysisCardData} AnalysisCardData */
 /** @typedef {import('./types/typedefs.js').ColumnProfile} ColumnProfile */
@@ -1318,6 +1321,9 @@ this.state = {
     if (!file) return;
     this.clearPendingRawEdits();
     this.resetCardRegistries();
+    if (this.workflowSessionId) {
+      this.finalizeWorkflow('切換到新的 CSV 檔案，結束上一段工作流程。');
+    }
     const prevCsv = this.state.csvData;
     if (prevCsv && Array.isArray(prevCsv.data) && prevCsv.data.length) {
       await this.archiveCurrentSession();
@@ -1349,7 +1355,7 @@ this.state = {
       rawDataColumnWidths: {},
     });
 
-    this.startWorkflowSession(`分析資料集 ${file.name}`, ['Vanilla frontend', 'No backend server']);
+    this.startWorkflowSession(`分析資料集 ${file.name}`, DEFAULT_WORKFLOW_CONSTRAINTS);
     this.startWorkflowPhase('diagnose', '先快速檢查 CSV 檔案格式與欄位資訊。');
     this.hasSavedHistoryEntry = false;
 
@@ -2180,6 +2186,9 @@ this.state = {
     if (!type || !this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
       return 1;
     }
+    if (!this.ensureWorkflowSession()) {
+      return 1;
+    }
     const counters = this.orchestrator.getContextValue('violationCounts') || {};
     const nextValue = (counters[type] || 0) + 1;
     counters[type] = nextValue;
@@ -2196,6 +2205,9 @@ this.state = {
     if (typeof this.orchestrator.setContextValue !== 'function') {
       return;
     }
+    if (!this.ensureWorkflowSession()) {
+      return;
+    }
     const counters = this.orchestrator.getContextValue('violationCounts') || {};
     if (!type) {
       this.orchestrator.setContextValue('violationCounts', {});
@@ -2209,6 +2221,9 @@ this.state = {
 
   enterAdjustPhase(reason) {
     if (!this.orchestrator) {
+      return;
+    }
+    if (!this.ensureWorkflowSession(reason)) {
       return;
     }
     const adjustActive =
@@ -2231,6 +2246,9 @@ this.state = {
     if (!this.orchestrator) {
       return;
     }
+    if (!this.ensureWorkflowSession(reason)) {
+      return;
+    }
     const adjustActive =
       typeof this.orchestrator.getAutoTaskFlag === 'function'
         ? this.orchestrator.getAutoTaskFlag('adjust_phase_active')
@@ -2248,12 +2266,18 @@ this.state = {
     if (!this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
       return 0;
     }
+    if (!this.ensureWorkflowSession()) {
+      return 0;
+    }
     const value = this.orchestrator.getContextValue('additionalPrepIterations');
     return typeof value === 'number' && Number.isFinite(value) ? value : 0;
   }
 
   extendPrepIterationBudget(increment = 1) {
     if (!this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
+      return 0;
+    }
+    if (!this.ensureWorkflowSession()) {
       return 0;
     }
     const current = this.getAdditionalPrepIterations();
@@ -2266,6 +2290,9 @@ this.state = {
 
   resetAdditionalPrepIterations() {
     if (!this.orchestrator || typeof this.orchestrator.setContextValue !== 'function') {
+      return;
+    }
+    if (!this.ensureWorkflowSession()) {
       return;
     }
     this.orchestrator.setContextValue('additionalPrepIterations', 0);
@@ -2457,10 +2484,45 @@ this.state = {
     }
   }
 
-  startWorkflowSession(goal, constraints = []) {
+  deriveWorkflowGoal(goalOverride = null) {
+    if (typeof goalOverride === 'string' && goalOverride.trim()) {
+      return goalOverride.trim();
+    }
+    if (this.state?.csvData?.fileName) {
+      return `分析資料集 ${this.state.csvData.fileName}`;
+    }
+    if (Array.isArray(this.state?.csvData?.data) && this.state.csvData.data.length) {
+      return '分析資料集 (未命名)';
+    }
+    return 'CSV 資料分析工作流程';
+  }
+
+  ensureWorkflowSession(goalOverride = null, constraintsOverride = null) {
+    if (!this.orchestrator) {
+      return false;
+    }
+    if (this.workflowSessionId) {
+      return true;
+    }
+    const goal = this.deriveWorkflowGoal(goalOverride);
+    const constraints =
+      Array.isArray(constraintsOverride) && constraintsOverride.length
+        ? constraintsOverride
+        : DEFAULT_WORKFLOW_CONSTRAINTS;
+    this.startWorkflowSession(goal, constraints);
+    return Boolean(this.workflowSessionId);
+  }
+
+  startWorkflowSession(goal, constraints = DEFAULT_WORKFLOW_CONSTRAINTS) {
     if (!this.orchestrator) return;
     try {
-      this.workflowSessionId = this.orchestrator.startSession({ goal, constraints });
+      const appliedConstraints =
+        Array.isArray(constraints) && constraints.length ? constraints : DEFAULT_WORKFLOW_CONSTRAINTS;
+      const resolvedGoal = this.deriveWorkflowGoal(goal);
+      this.workflowSessionId = this.orchestrator.startSession({
+        goal: resolvedGoal,
+        constraints: appliedConstraints,
+      });
       this.workflowActivePhase = null;
       this.syncWorkflowTimeline();
     } catch (error) {
@@ -2470,6 +2532,9 @@ this.state = {
 
   startWorkflowPhase(phaseId, thought = null) {
     if (!this.orchestrator) return;
+    if (!this.ensureWorkflowSession()) {
+      return;
+    }
     try {
       const alreadyActive = this.workflowActivePhase === phaseId;
       if (!alreadyActive) {
@@ -2513,6 +2578,9 @@ this.state = {
 
   appendWorkflowThought(message) {
     if (!this.orchestrator) return;
+    if (!this.ensureWorkflowSession()) {
+      return;
+    }
     try {
       this.orchestrator.appendThought(message);
       this.syncWorkflowTimeline();
@@ -2523,6 +2591,9 @@ this.state = {
 
   completeWorkflowStep(payload) {
     if (!this.orchestrator) return;
+    if (!this.ensureWorkflowSession()) {
+      return;
+    }
     try {
       this.orchestrator.completeStep(payload);
       this.syncWorkflowTimeline();
@@ -2533,6 +2604,13 @@ this.state = {
 
   failWorkflowStep(payload) {
     if (!this.orchestrator) return;
+    const hadSession = Boolean(this.workflowSessionId);
+    if (!this.ensureWorkflowSession('AI 工作流程')) {
+      return;
+    }
+    if (!hadSession) {
+      this.startWorkflowPhase('diagnose', '啟動工作流程以追蹤錯誤。');
+    }
     try {
       this.orchestrator.failStep(payload);
       this.syncWorkflowTimeline();
@@ -2559,6 +2637,9 @@ this.state = {
         detectedHeaderIndex: metadata.detectedHeaderIndex ?? null,
       });
     if (!this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
+      return null;
+    }
+    if (!this.ensureWorkflowSession()) {
       return null;
     }
     const existing = this.orchestrator.getContextValue('headerMapping');
@@ -2595,6 +2676,9 @@ this.state = {
 
   logHeaderMappingStep(context, options = {}) {
     if (!context || !this.orchestrator) {
+      return;
+    }
+    if (!this.ensureWorkflowSession()) {
       return;
     }
 
@@ -2659,10 +2743,11 @@ this.state = {
   }
 
   finalizeWorkflow(summary = null) {
-    if (!this.orchestrator) return;
+    if (!this.orchestrator || !this.workflowSessionId) return;
     try {
       const timeline = this.orchestrator.endSession({ summary });
       this.workflowActivePhase = null;
+      this.workflowSessionId = null;
       if (timeline) {
         this.setState({ workflowTimeline: timeline });
       }
@@ -3039,14 +3124,166 @@ this.state = {
             };
       }
       case 'setRawDataVisibility': {
-        const { visible } = domAction;
-        this.setRawDataVisibility(visible);
-        return { success: true, message: `Raw data explorer ${visible === false ? 'collapsed' : 'expanded'}.` };
+        const resolvedVisibility =
+          typeof domAction.visible === 'boolean'
+            ? domAction.visible
+            : typeof domAction.open === 'boolean'
+            ? domAction.open
+            : typeof domAction.expanded === 'boolean'
+            ? domAction.expanded
+            : typeof domAction.show === 'boolean'
+            ? domAction.show
+            : true;
+        this.setRawDataVisibility(resolvedVisibility);
+        return {
+          success: true,
+          message: `Raw data explorer ${resolvedVisibility ? 'expanded' : 'collapsed'}.`,
+        };
       }
       case 'setRawDataFilter': {
-        const { query, wholeWord } = domAction;
-        this.setRawDataFilterValue(query, wholeWord);
-        return { success: true, message: 'Updated raw data filter.' };
+        const usedInferredQuery = domAction.__inferredQuery === true;
+        if (Object.prototype.hasOwnProperty.call(domAction, '__inferredQuery')) {
+          delete domAction.__inferredQuery;
+        }
+        const candidateKeys = [
+          'query',
+          'value',
+          'term',
+          'text',
+          'filter',
+          'filterValue',
+          'filter_value',
+          'filterQuery',
+          'filter_query',
+          'filterTerm',
+          'filter_term',
+          'keyword',
+          'search',
+          'searchTerm',
+          'search_term',
+          'searchQuery',
+          'search_query',
+          'queryText',
+          'textQuery',
+          'text_query',
+          'query_string',
+        ];
+        const valueKeys = ['values', 'value', 'targets', 'terms', 'matchValues', 'match_values', 'options'];
+        const columnKeys = ['column', 'columnName', 'field'];
+        let columnHintRaw = null;
+        const containers = [];
+        const seenContainers = new Set();
+        const registerContainer = candidate => {
+          if (!candidate || typeof candidate !== 'object') {
+            return;
+          }
+          if (seenContainers.has(candidate)) {
+            return;
+          }
+          seenContainers.add(candidate);
+          if (Array.isArray(candidate)) {
+            candidate.forEach(item => registerContainer(item));
+            return;
+          }
+          containers.push(candidate);
+          const nestedKeys = ['args', 'toolInput', 'tool_input', 'payload', 'input', 'data', 'options', 'config'];
+          nestedKeys.forEach(key => {
+            if (candidate[key] && typeof candidate[key] === 'object') {
+              registerContainer(candidate[key]);
+            }
+          });
+        };
+        registerContainer(domAction);
+
+        const pickFirstStringFromContainers = keys => {
+          for (const container of containers) {
+            const value = pickFirstString(container, keys);
+            if (value) {
+              return value;
+            }
+          }
+          return null;
+        };
+
+        const pickValueListItem = keys => {
+          for (const container of containers) {
+            if (!container || typeof container !== 'object') continue;
+            for (const key of keys) {
+              if (!Object.prototype.hasOwnProperty.call(container, key)) continue;
+              const list = parseValueList(container[key]);
+              if (list.length) {
+                const first = String(list[0]).trim();
+                if (first) return first;
+              }
+            }
+          }
+          return null;
+        };
+
+        let resolvedQuery = pickFirstStringFromContainers(candidateKeys);
+        if (!resolvedQuery) {
+          resolvedQuery = pickValueListItem(valueKeys);
+        }
+        const wantsReset =
+          domAction.reset === true ||
+          domAction.clear === true ||
+          domAction.clearFilter === true ||
+          domAction.resetFilter === true;
+        if (!resolvedQuery) {
+          const nestedFilter =
+            domAction.filter ||
+            (domAction.args && domAction.args.filter) ||
+            (Array.isArray(domAction.filters) ? domAction.filters[0] : null);
+          if (nestedFilter && typeof nestedFilter === 'object') {
+            const nestedValue =
+              nestedFilter.query ||
+              nestedFilter.value ||
+              pickFirstString(nestedFilter, ['term']) ||
+              (parseValueList(nestedFilter.values).find(Boolean) || null);
+            if (typeof nestedValue === 'string' && nestedValue.trim()) {
+              resolvedQuery = nestedValue.trim();
+            }
+            if (!columnHintRaw && typeof nestedFilter.column === 'string') {
+              columnHintRaw = nestedFilter.column;
+            }
+          }
+        }
+        if (!resolvedQuery) {
+          if (wantsReset) {
+            this.handleRawDataReset();
+            return { success: true, message: 'Cleared raw data filters.' };
+          }
+          if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+            console.warn('setRawDataFilter missing query payload:', {
+              domAction,
+              expectedKeys: candidateKeys,
+            });
+          }
+          return {
+            success: false,
+            error: 'Raw data filter query is missing. Include a `query` or `value` when calling setRawDataFilter.',
+          };
+        }
+        const wholeWord =
+          typeof domAction.wholeWord === 'boolean'
+            ? domAction.wholeWord
+            : typeof domAction.matchWholeWord === 'boolean'
+            ? domAction.matchWholeWord
+            : undefined;
+        this.setRawDataFilterValue(resolvedQuery, wholeWord);
+        const columnHintRawFinal = columnHintRaw || (pickFirstStringFromContainers(columnKeys) || null);
+        const columnHint =
+          typeof columnHintRawFinal === 'string' && columnHintRawFinal.trim()
+            ? columnHintRawFinal.trim()
+            : null;
+        const suffix = columnHint ? ` in ${columnHint}` : '';
+        const displayQuery =
+          resolvedQuery.length > 80 ? `${resolvedQuery.slice(0, 77)}...` : resolvedQuery;
+        const baseMessage = `Filtered raw data for "${displayQuery}"${suffix}.`;
+        return {
+          success: true,
+          message: usedInferredQuery ? `Auto-filled query. ${baseMessage}` : baseMessage,
+        };
       }
       case 'setRawDataWholeWord': {
         const { wholeWord } = domAction;
@@ -3189,6 +3426,120 @@ this.state = {
       }
       default:
         return { success: false, error: `Unknown DOM action: ${toolName}.` };
+    }
+  }
+
+  domActionHasFilterValue(domAction) {
+    if (!domAction || typeof domAction !== 'object') {
+      return false;
+    }
+    const candidateKeys = [
+      'query',
+      'value',
+      'term',
+      'text',
+      'filter',
+      'filterValue',
+      'filter_value',
+      'filterQuery',
+      'filter_query',
+      'filterTerm',
+      'filter_term',
+      'keyword',
+      'search',
+      'searchTerm',
+      'search_term',
+      'searchQuery',
+      'search_query',
+      'queryText',
+      'textQuery',
+      'text_query',
+      'query_string',
+    ];
+    for (const key of candidateKeys) {
+      const raw = domAction[key];
+      if (typeof raw === 'string' && raw.trim()) {
+        return true;
+      }
+    }
+    const valueKeys = ['values', 'targets', 'terms', 'matchValues', 'match_values', 'options'];
+    for (const key of valueKeys) {
+      const raw = domAction[key];
+      if (Array.isArray(raw) && raw.some(item => typeof item === 'string' && item.trim())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  getLastUserChatText() {
+    const history = Array.isArray(this.state.chatHistory) ? this.state.chatHistory : [];
+    for (let index = history.length - 1; index >= 0; index -= 1) {
+      const entry = history[index];
+      if (entry && entry.sender === 'user' && typeof entry.text === 'string') {
+        const trimmed = entry.text.trim();
+        if (trimmed) {
+          return trimmed;
+        }
+      }
+    }
+    return null;
+  }
+
+  extractQuotedTerms(text) {
+    if (typeof text !== 'string' || !text.trim()) {
+      return [];
+    }
+    const matches = [];
+    const pattern = /["'“”‘’`´]([^"'“”‘’`´]+)["'“”‘’`´]/g;
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      const candidate = match[1].trim();
+      if (candidate && candidate.length <= 120) {
+        matches.push(candidate);
+      }
+    }
+    return matches;
+  }
+
+  deriveRawFilterQueryHint(action, domAction) {
+    const sources = [];
+    if (action && typeof action.thought === 'string') {
+      sources.push(action.thought);
+    }
+    if (action && typeof action.text === 'string') {
+      sources.push(action.text);
+    }
+    if (domAction && typeof domAction.reason === 'string') {
+      sources.push(domAction.reason);
+    }
+    const lastUser = this.getLastUserChatText();
+    if (lastUser) {
+      sources.push(lastUser);
+    }
+    for (const source of sources) {
+      const quoted = this.extractQuotedTerms(source);
+      if (quoted.length) {
+        const hint = quoted[quoted.length - 1];
+        if (hint) {
+          return hint;
+        }
+      }
+    }
+    return null;
+  }
+
+  maybeAttachInferredRawFilter(domAction, action) {
+    if (!domAction || domAction.toolName !== 'setRawDataFilter') {
+      return;
+    }
+    if (this.domActionHasFilterValue(domAction)) {
+      return;
+    }
+    const queryHint = this.deriveRawFilterQueryHint(action, domAction);
+    if (queryHint && typeof queryHint === 'string') {
+      domAction.query = queryHint;
+      domAction.__inferredQuery = true;
     }
   }
 
@@ -3578,6 +3929,7 @@ this.state = {
     });
 
     const totalActions = normalisedActions.length;
+    let abortActionSequence = null;
     const firstThought = normalisedActions[0].thought;
     if (totalActions > 1) {
       const planText =
@@ -3825,6 +4177,7 @@ this.state = {
                 ? domAction.toolName.trim()
                 : 'dom_action';
             this.addProgress(`AI is performing action: ${label}...`);
+            this.maybeAttachInferredRawFilter(domAction, action);
             const result = await this.handleDomAction(domAction);
             if (result.success) {
               if (domAction && typeof domAction === 'object') {
@@ -3854,6 +4207,37 @@ this.state = {
               }
             } else if (result.error) {
               this.addProgress(result.error, 'error');
+              this.failWorkflowStep({
+                label: `DOM action: ${label}`,
+                error: result.error,
+              });
+              const shouldStick = this.isConversationNearBottom();
+              this.setState(prev => ({
+                chatHistory: [
+                  ...prev.chatHistory,
+                  {
+                    sender: 'system',
+                    text: `⚠️ ${label} failed: ${result.error}`,
+                    timestamp: new Date(),
+                    type: 'ai_action_error',
+                  },
+                ],
+              }));
+              if (shouldStick) {
+                this.shouldAutoScrollConversation = true;
+              }
+              const isMissingFilterQuery =
+                label === 'setRawDataFilter' &&
+                typeof result.error === 'string' &&
+                result.error.toLowerCase().includes('filter query');
+              if (isMissingFilterQuery) {
+                abortActionSequence = {
+                  label,
+                  error: result.error,
+                };
+                break;
+              }
+              continue;
             }
             if (result.success && ENABLE_MEMORY_FEATURES && action.domAction) {
               try {
@@ -3877,6 +4261,28 @@ this.state = {
         default:
           this.addProgress('AI returned an unsupported action type.', 'error');
           break;
+      }
+
+      if (abortActionSequence) {
+        const guidanceText =
+          'setRawDataFilter requires a `query` or `value`. 請重新送出包含查詢字串的 dom_action，例如 {"toolName":"setRawDataFilter","query":"<keyword>"}。';
+        this.addProgress('Aborted remaining actions because filter query was missing.', 'warning');
+        const shouldStick = this.isConversationNearBottom();
+        this.setState(prev => ({
+          chatHistory: [
+            ...prev.chatHistory,
+            {
+              sender: 'system',
+              text: `⚠️ ${abortActionSequence.label} aborted: ${abortActionSequence.error}\n\n${guidanceText}`,
+              timestamp: new Date(),
+              type: 'ai_action_error',
+            },
+          ],
+        }));
+        if (shouldStick) {
+          this.shouldAutoScrollConversation = true;
+        }
+        break;
       }
 
       if (totalActions > 1) {
@@ -4096,6 +4502,7 @@ this.state = {
     if (!reportId) return;
     try {
       this.addProgress(`Loading report ${reportId}...`);
+      this.finalizeWorkflow('載入歷史報告前關閉目前的工作流程。');
       const report = await getReport(reportId);
       if (!report?.appState) {
         this.addProgress('Unable to load the selected report.', 'error');
@@ -4115,6 +4522,8 @@ this.state = {
         isHistoryPanelOpen: false,
       }));
       this.isRestoringSession = previousFlag;
+      this.workflowSessionId = null;
+      this.workflowActivePhase = null;
       await saveReport({
         id: CURRENT_SESSION_KEY,
         filename: report.filename,
@@ -4150,6 +4559,7 @@ this.state = {
     const hasExistingData =
       this.state.csvData && Array.isArray(this.state.csvData.data) && this.state.csvData.data.length;
     this.addProgress('Starting new session...');
+    this.finalizeWorkflow('使用者啟動新的空白工作階段。');
     if (hasExistingData) {
       await this.archiveCurrentSession();
     } else {
@@ -4192,8 +4602,12 @@ this.state = {
       lastRepairSummary: null,
       lastRepairTimestamp: null,
       isHistoryPanelOpen: false,
+      workflowTimeline: null,
+      workflowPlan: [],
     }));
     this.isRestoringSession = previousFlag;
+    this.workflowSessionId = null;
+    this.workflowActivePhase = null;
     await this.loadReportsList();
     this.addProgress('New session started. Please upload a CSV file to begin.');
   }
@@ -5744,7 +6158,10 @@ this.state = {
     const rawDataPanel = this.renderRawDataPanel();
 
     const summaryBlock = renderFinalSummary(finalSummary, this.state.generatedReport || null);
-    const workflowTimelineHtml = renderWorkflowTimeline(this.state.workflowTimeline);
+    const workflowTimelineHtml = renderWorkflowTimeline(
+      this.state.workflowTimeline,
+      this.state.workflowPlan
+    );
 
     let mainContent;
     if (!csvData) {

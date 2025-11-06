@@ -1785,6 +1785,7 @@ Always follow this structure unless the user requests something extremely specif
    - {"toolName":"setRawDataSort","column":"Region","direction":"ascending"}
    - {"toolName":"removeRawDataRows","column":"Status","values":["Cancelled"],"operator":"equals"}
 4. \`execute_js_code\`: Supply complex JavaScript transformations for data cleansing/prep. Always accompany with a \`text_response\` describing the change.
+- **Critical:** Never call \`setRawDataFilter\` without a \`query\` (or \`value\`) string. If you do not have a keyword yet, ask the user instead of firing the tool. Include the column hint when known.
 
 **ReAct Requirements**
 - Every action MUST include a \`thought\` explaining the reasoning immediately before acting.

@@ -69,6 +69,30 @@ Then launch the dev server (`npm run dev`). The vector store will first check fo
 - The sidebar surfaces the latest audit summary, outstanding issues, and recent auto-repair notes for quick diagnostics.
 - The chat panel streams status updates, accepts freeform questions, and routes AI responses into actions: new plans, JavaScript transforms, DOM/UI adjustments, or plain text replies.
 
+### Agent Tool Protocol
+
+The vanilla agent behaves like a multi-step worker: every action contains a `thought`, the first action outlines the full plan, and subsequent actions update progress logs. To keep the toolchain predictable:
+
+- Always emit a `responseType` (`text_response`, `dom_action`, `execute_js_code`, or `plan_creation`) plus the matching payload. The CLI now also accepts a literal `text_response` field, but declaring `responseType` remains the preferred path.
+- DOM interactions must live under `domAction.toolName` with snake/camel/hyphen case all resolving to the same canonical name. Additional arguments go directly on `domAction`; avoid burying them under extra wrappers so parsers do not have to guess.
+- `setRawDataFilter` **requires** either `query` or `value` (string) and optionally a `column` hint. Nested shapes such as `{ "filters": [{ "column": "...", "query": "..." }] }` are supported, but keeping `query` at the top level provides the most reliable path. Example:
+
+```json
+{
+  "responseType": "dom_action",
+  "thought": "Focus the raw data on a single payee before writing the summary.",
+  "domAction": {
+    "toolName": "setRawDataFilter",
+    "query": "General Ledger",
+    "column": "Payee Name",
+    "wholeWord": false
+  }
+}
+```
+
+- When a text reply should be sent without any DOM work, return `{"responseType":"text_response","thought":"...", "text":"...markdown..."}` (or set `toolName: "text_response"`). The normalizer also accepts `text_response`/`textResponse` fields for compatibility, but sticking to the canonical shape keeps telemetry consistent.
+- If an action fails (for example, the query is missing), the agent surfaces the exact error in the chat log so the LLM can immediately retry with corrected parameters.
+
 ### Autonomy Scope
 
 This build aims to automate the CSV-insight workflow inside the browser, but it is **not** a fully autonomous employee-style agent yet.
@@ -85,6 +109,14 @@ This build aims to automate the CSV-insight workflow inside the browser, but it 
 - `services/skillLibrary.js` lists reusable skills (group sums, Top-N, time trends, cleaning actions) that the LLM can reference instead of writing raw code.
 - `services/geminiService.js` injects the detected intent and available skills into the system prompt so the agent can self-correct before asking users for clarification.
 - `utils/repairEngine.js` ranks fallback categorical/numeric columns by coverage and variance so repaired plans default to meaningful dimensions.
+
+### Agent Workflow Timeline & Lifecycle
+
+- **Iterative phases.** `services/taskOrchestrator.js` mirrors Diagnose → Plan → Execute → Adjust → Verify. Each phase records start/end timestamps, completed steps, and 🤔 thoughts so you can audit the agent’s reasoning trail.
+- **Session management.** `main.js` starts a workflow session when a CSV upload begins (or when a chat action needs orchestration) and calls `finalizeWorkflow` whenever the dataset is replaced, a new session starts, or a history report is loaded. This prevents prior plans from leaking into the next dataset.
+- **UI surface.** `render/workflowTimeline.js` now renders the live plan snapshot, constraints, and phase cards inside the main scroll area. Engineers can confirm the agent is progressing in small, verifiable steps without digging through console logs.
+- **Persistence.** The orchestrator snapshot (goal, constraints, phases, steps, summary) is serialized in `captureSerializableAppState()`. If users reopen a saved report, the timeline immediately explains what the agent already tried, which repairs succeeded, and where it paused.
+- **Context helpers.** Header mapping context, auto-task flags, and chat history entries are all written through the orchestrator so retries can reference prior knowledge (for example, “header mapping already detected”).
 
 ### Raw Data Explorer
 

@@ -100,6 +100,71 @@ const DAYS = {
   sun: 7,
 };
 
+const extractTokenFromDictionary = (rawValue, dictionary) => {
+  if (rawValue === null || rawValue === undefined) {
+    return '';
+  }
+  const trimmed = String(rawValue).trim().toLowerCase();
+  if (!trimmed) {
+    return '';
+  }
+  if (Object.prototype.hasOwnProperty.call(dictionary, trimmed)) {
+    return trimmed;
+  }
+  const tokens = trimmed.split(/[^a-z]+/).filter(Boolean);
+  for (const token of tokens) {
+    if (Object.prototype.hasOwnProperty.call(dictionary, token)) {
+      return token;
+    }
+  }
+  return '';
+};
+
+const extractMonthToken = rawValue => extractTokenFromDictionary(rawValue, MONTHS);
+const extractDayToken = rawValue => extractTokenFromDictionary(rawValue, DAYS);
+
+const extractQuarterDetails = rawValue => {
+  if (rawValue === null || rawValue === undefined) {
+    return null;
+  }
+  const source = String(rawValue).toLowerCase();
+  const quarterMatch = source.match(/q\s*([1-4])/);
+  if (!quarterMatch) {
+    return null;
+  }
+  const quarter = Number.parseInt(quarterMatch[1], 10);
+  if (Number.isNaN(quarter)) {
+    return null;
+  }
+
+  const after = source.slice(quarterMatch.index + quarterMatch[0].length);
+  const before = source.slice(0, quarterMatch.index);
+
+  let yearString = null;
+  const afterYear = after.match(/'?([\d]{2,4})/);
+  if (afterYear && afterYear[1]) {
+    yearString = afterYear[1];
+  } else {
+    const beforeYear = before.match(/([\d]{2,4})'?$/);
+    if (beforeYear && beforeYear[1]) {
+      yearString = beforeYear[1];
+    }
+  }
+
+  let year = 0;
+  if (yearString) {
+    year = Number.parseInt(yearString, 10);
+    if (!Number.isNaN(year) && yearString.length === 2) {
+      year += year > 50 ? 1900 : 2000;
+    }
+    if (Number.isNaN(year)) {
+      year = 0;
+    }
+  }
+
+  return { quarter, year };
+};
+
 const getChronologicalSortValue = (value, sorter) => {
   const rawValue = String(value ?? '').trim();
   const lowerValue = rawValue.toLowerCase();
@@ -110,33 +175,27 @@ const getChronologicalSortValue = (value, sorter) => {
 
   switch (sorter) {
     case 'quarter': {
-      const match = lowerValue.match(QUARTER_REGEX);
-      if (!match) {
+      const details = extractQuarterDetails(rawValue);
+      if (!details) {
         return Number.POSITIVE_INFINITY;
       }
-      const quarter = Number.parseInt(match[1], 10);
-      if (Number.isNaN(quarter)) {
-        return Number.POSITIVE_INFINITY;
-      }
-      let year = 0;
-      if (match[2]) {
-        const yearString = match[2].replace(/'/g, '');
-        const parsedYear = Number.parseInt(yearString, 10);
-        if (!Number.isNaN(parsedYear)) {
-          year = parsedYear;
-          if (yearString.length === 2) {
-            year += parsedYear > 50 ? 1900 : 2000;
-          }
-        }
-      }
+      const { quarter, year } = details;
       return year * 10 + quarter;
     }
     case 'month': {
-      const month = MONTHS[lowerValue];
+      const monthToken = extractMonthToken(rawValue);
+      if (!monthToken) {
+        return Number.POSITIVE_INFINITY;
+      }
+      const month = MONTHS[monthToken];
       return month ? month : Number.POSITIVE_INFINITY;
     }
     case 'day': {
-      const day = DAYS[lowerValue];
+      const dayToken = extractDayToken(rawValue);
+      if (!dayToken) {
+        return Number.POSITIVE_INFINITY;
+      }
+      const day = DAYS[dayToken];
       return day ? day : Number.POSITIVE_INFINITY;
     }
     default:
@@ -168,9 +227,9 @@ const tryChronologicalSort = (data, key) => {
     return null;
   }
 
-  const quarterMatches = normalised.filter(value => QUARTER_REGEX.test(value)).length;
-  const monthMatches = normalised.filter(value => Object.prototype.hasOwnProperty.call(MONTHS, value)).length;
-  const dayMatches = normalised.filter(value => Object.prototype.hasOwnProperty.call(DAYS, value)).length;
+  const quarterMatches = sample.filter(value => extractQuarterDetails(value)).length;
+  const monthMatches = sample.filter(value => extractMonthToken(value)).length;
+  const dayMatches = sample.filter(value => extractDayToken(value)).length;
   const dateMatches = normalised.filter(value => looksLikeDate(value)).length;
 
   let sorter = null;
