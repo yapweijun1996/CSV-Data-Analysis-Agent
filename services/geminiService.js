@@ -714,7 +714,8 @@ export const generateDataPreparationPlan = async (
   sampleData,
   settings,
   metadata = null,
-  previousError = null
+  previousError = null,
+  iterationContext = null
 ) => {
   const provider = settings.provider || 'google';
   if (provider === 'openai' && !settings.openAIApiKey) {
@@ -758,7 +759,61 @@ const systemPrompt = `You are an expert data engineer. Your task is to analyze a
 A tidy format has: 1. Each variable as a column. 2. Each observation as a row.
 You MUST respond with a single valid JSON object, and nothing else. The JSON object must adhere to the provided schema.`;
 
-const buildUserPrompt = lastError => `${contextSection}Common problems to fix:
+const buildUserPrompt = (lastError, iterationContext = null) => {
+  const iterationSummary = (() => {
+    if (!iterationContext || typeof iterationContext !== 'object') {
+      return '';
+    }
+    const { iteration, maxIterations, history } = iterationContext;
+    const parts = [];
+    if (typeof iteration === 'number' && typeof maxIterations === 'number') {
+      parts.push(
+        `You are working in multi-pass mode. This is iteration ${iteration} of ${maxIterations}. Focus this iteration on a single coherent transformation.`
+      );
+    }
+    if (Array.isArray(history) && history.length) {
+      const recent = history.slice(-5);
+      parts.push(
+        'Previous iterations:',
+        ...recent.map(entry => {
+          const statusLabel = entry.status ? String(entry.status).toUpperCase() : 'UNKNOWN';
+          const explanation = entry.summary || entry.explanation || '(no explanation provided)';
+          return `- Iteration ${entry.iteration}: status=${statusLabel}. ${explanation}`;
+        })
+      );
+    }
+    return parts.length ? `${parts.join('\n')}\n\n` : '';
+  })();
+
+  const offendingSummaryText = (() => {
+    if (!lastError || typeof lastError.message !== 'string') return null;
+    const marker = 'Offending rows include:';
+    const index = lastError.message.indexOf(marker);
+    if (index === -1) return null;
+    const extracted = lastError.message
+      .slice(index + marker.length)
+      .trim()
+      .replace(/\.$/, '');
+    return extracted || null;
+  })();
+
+  const multiPassRules = `Multi-pass requirements:
+- You MUST set the "status" field: use "continue" if more passes will be needed after this step, "done" when the dataset is tidy, or "abort" if cleanup cannot proceed safely.
+- When status is "continue", provide code that performs ONLY the next logical step and describe what will remain afterwards.
+- When status is "done", omit the JavaScript body (or return null) and explain why no further steps are required.
+- Do not repeat work already finished in prior iterations; build on the current cleaned dataset.${
+    offendingSummaryText
+      ? `\n- Previously flagged summary rows that MUST be removed this iteration: ${offendingSummaryText}`
+      : ''
+  }`;
+
+  const mandatorySummaryBullet = offendingSummaryText
+    ? `- **MANDATORY SUMMARY REMOVAL**: The following rows were identified as summaries and must be excluded from the transformed dataset: ${offendingSummaryText}. If any should remain, set status="abort" and explain why.`
+    : '- **MANDATORY SUMMARY REMOVAL**: Any row matching the summary keywords must be excluded from the transformed dataset. When uncertain, remove the row and justify in your status message.';
+
+  return `${contextSection}${iterationSummary}${multiPassRules}
+
+Common problems to fix:
 - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
     - **YOU MUST use \`_util.parseNumber(value)\` for ALL numeric conversions.**
     - **DO NOT use \`parseInt()\`, \`parseFloat()\`, or \`Number()\` directly.** The provided utility is guaranteed to handle various formats correctly.
@@ -771,6 +826,7 @@ const buildUserPrompt = lastError => `${contextSection}Common problems to fix:
     - **CRITICAL: Do not confuse hierarchical data with summary rows.** Look for patterns in identifier columns where one code is a prefix of another (e.g., '50' is a parent to '5010'). These hierarchical parent rows are **valid data** representing a higher level of aggregation and MUST be kept. Your role is to reshape the data, not to pre-summarize it by removing these levels.
     - A row is likely **non-data** and should be removed if it's explicitly a summary (e.g., contains 'Total', 'Subtotal' in a descriptive column) OR if it's metadata (e.g., the primary identifier column is empty but other columns contain text, like a section header).
 - **Summary Keyword Radar**: Treat any row whose textual cells match or start with these keywords as metadata/non-data unless strong evidence proves otherwise: ${SUMMARY_KEYWORDS_DISPLAY}.
+${mandatorySummaryBullet}
 - **Crosstab/Wide Format**: Unpivot data where column headers are actually values (e.g., years, regions) so that each observation is one row.
 - **Multi-header Rows**: Skip any initial junk rows (titles, blank lines, headers split across rows) before the true header.
 - **NO HARD-CODED INDEXES**: You must dynamically detect header rows and identifier columns by examining the provided sample rows. Never assume fixed row numbers or literal labels (e.g., "Code", "Description") will exist. Use fallbacks (e.g., scanning for rows with many text cells followed by rows with numeric cells) so the transform works even when column labels change.
@@ -805,6 +861,7 @@ Your task:
 - Whenever you convert numbers, you MUST use \`_util.parseNumber\`. Whenever you split comma-separated numeric strings, you MUST use \`_util.splitNumericString\`.
 - If the dataset exhibits the Crosstab alert above, you MUST return a non-null \`jsFunctionBody\` that unpivots the data into tidy rows. Do not respond with null in this situation.
 `;
+};
 
   const schema = getDataPreparationSchema();
   let lastError =
@@ -823,7 +880,7 @@ Your task:
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       let plan;
-      const userPrompt = buildUserPrompt(lastError);
+      const userPrompt = buildUserPrompt(lastError, iterationContext);
 
       if (provider === 'openai') {
         plan = await callOpenAIJson(settings, systemPrompt, userPrompt);

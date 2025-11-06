@@ -1,9 +1,19 @@
 # Convert "Original" React Project to Vanilla Frontend Project
 
 * help to convert the react js project(folder "Original") to vanilla frontend project. 
+* In this process we can improve Vanilla Project better than react, if some features from react No good, then we can make it better in Vanilla Project.
 * Vanilla Frontend is HTML CSS Javascript.
 * Dont use React JS and Tailwind CSS.
 * Do not amend folder "Original"
+* Keep the Vanilla Project Agent logic is multi-step, like iterative worker method style, able to solve complex issues or problem by tools.
+
+## CSV Agent Ability Design
+* 像員工一樣 small step、小步驟連續執行multi-step task
+* Able to plan next step, agent know what to do next.
+* Show log in chatlog to let user know what the Agent doing.
+* Show Agent thinking.
+* Step-by-step perform task sequential
+* Agent like iterative worker.
 
 ## Rules
 

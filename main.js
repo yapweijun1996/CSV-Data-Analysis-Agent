@@ -1312,91 +1312,225 @@ class CsvDataAnalysisApp extends HTMLElement {
 
       const isApiKeySet = this.hasConfiguredApiKey();
       let prepPlan = null;
+      let prepIterationsLog = [];
 
       if (isApiKeySet) {
-        this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
-        const sampleRowsForPlan = dataForAnalysis.data.slice(0, 20);
-        const maxPrepAttempts = 3;
-        let prepErrorForPrompt = null;
-        for (let attempt = 0; attempt < maxPrepAttempts; attempt += 1) {
-          const attemptLabel = attempt + 1;
-          prepPlan = await generateDataPreparationPlan(
-            profiles,
-            sampleRowsForPlan,
-            this.settings,
-            dataForAnalysis.metadata || metadata || null,
-            prepErrorForPrompt
-          );
-          if (!prepPlan || !prepPlan.jsFunctionBody) {
-            if (prepErrorForPrompt) {
-              this.addProgress('Skipping AI-driven preprocessing after repeated failures. Proceeding with original data.');
-            } else {
-              const tip =
-                'AI determined no additional transformation is required. (For debugging, open the console to review the AI plan payload.)';
-              this.addProgress(tip);
-            }
-            prepPlan = prepErrorForPrompt ? null : prepPlan;
-            break;
+        const maxPrepIterations = 3;
+        const maxRetriesPerIteration = 3;
+        let iteration = 0;
+        let continueIterating = true;
+        let lastIterationError = null;
+        let lastSuccessfulPlan = null;
+
+        while (continueIterating && iteration < maxPrepIterations) {
+          iteration += 1;
+          const iterationLabel = `AI prep iteration ${iteration}`;
+          const sampleRowsForPlan = dataForAnalysis.data.slice(0, 20);
+          let iterationPlan = null;
+          let attemptErrorForPrompt = lastIterationError;
+          let iterationCompleted = false;
+
+          if (iteration === 1 && !lastIterationError) {
+            this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
+          } else {
+            this.addProgress(`${iterationLabel} in progress...`);
           }
 
-          const planExplanation =
-            (typeof prepPlan.explanation === 'string' && prepPlan.explanation.trim()) ||
-            'AI suggested applying a data transformation.';
-          this.addProgress(
-            attempt > 0 ? `AI Plan Retry ${attemptLabel}: ${planExplanation}` : `AI Plan: ${planExplanation}`
-          );
-          this.addProgress('Executing AI data transformation...');
+          for (let attempt = 0; attempt < maxRetriesPerIteration; attempt += 1) {
+            const attemptLabel = attempt + 1;
+            iterationPlan = await generateDataPreparationPlan(
+              profiles,
+              sampleRowsForPlan,
+              this.settings,
+              dataForAnalysis.metadata || metadata || null,
+              attemptErrorForPrompt,
+              {
+                iteration,
+                maxIterations: maxPrepIterations,
+                attempt: attemptLabel,
+                history: prepIterationsLog.map(entry => ({
+                  iteration: entry.iteration,
+                  status: entry.status,
+                  summary: entry.summary,
+                  explanation: entry.explanation,
+                })),
+              }
+            );
 
-          try {
-            const originalCount = dataForAnalysis.data.length;
-            const transformed = executeJavaScriptDataTransform(
-              dataForAnalysis.data,
-              prepPlan.jsFunctionBody
-            );
-            if (!Array.isArray(transformed) || !transformed.length) {
-              throw new Error('Transformation returned zero rows. Headers or filters may be incorrect.');
-            }
-
-            dataForAnalysis.data = transformed;
-            const newCount = dataForAnalysis.data.length;
-            if (dataForAnalysis.metadata) {
-              dataForAnalysis.metadata = {
-                ...dataForAnalysis.metadata,
-                cleanedRowCount: newCount,
-              };
-              dataForAnalysis.metadata = this.updateMetadataContext(
-                dataForAnalysis.metadata,
-                dataForAnalysis.data
+            if (!iterationPlan) {
+              this.addProgress(
+                `${iterationLabel} did not return a plan. Skipping remaining preprocessing.`,
+                'error'
               );
-            } else {
-              dataForAnalysis.metadata = this.updateMetadataContext(
-                { cleanedRowCount: newCount },
-                dataForAnalysis.data
-              );
-            }
-            this.addProgress(
-              `Transformation complete. Row count changed from ${originalCount} to ${newCount}.`
-            );
-            profiles = prepPlan.outputColumns || profileData(dataForAnalysis.data);
-            break;
-          } catch (prepError) {
-            const prepMessage =
-              prepError instanceof Error ? prepError.message : String(prepError);
-            this.addProgress(
-              attempt > 0
-                ? `AI transformation retry ${attemptLabel} failed: ${prepMessage}`
-                : `AI transformation failed: ${prepMessage}`
-            );
-            if (attempt === maxPrepAttempts - 1) {
-              this.addProgress('Reached maximum retries. Proceeding without AI preprocessing.');
-              prepPlan = null;
+              continueIterating = false;
               break;
             }
-            this.addProgress('Requesting AI to adjust preprocessing plan and retry...');
-            prepErrorForPrompt =
-              prepError instanceof Error ? prepError : new Error(prepMessage);
+
+            const rawExplanation =
+              (typeof iterationPlan.explanation === 'string' && iterationPlan.explanation.trim()) ||
+              'AI suggested applying a data transformation.';
+            const iterationStatus =
+              typeof iterationPlan.status === 'string' ? iterationPlan.status : null;
+            const statusLabel = iterationStatus ? iterationStatus.toUpperCase() : 'UNSPECIFIED';
+            const summaryMessage =
+              attempt > 0
+                ? `${iterationLabel} retry ${attemptLabel} (${statusLabel}): ${rawExplanation}`
+                : `${iterationLabel} (${statusLabel}): ${rawExplanation}`;
+            const failureHint =
+              attemptErrorForPrompt && attemptErrorForPrompt.message
+                ? attemptErrorForPrompt.message.toLowerCase()
+                : null;
+            if (failureHint && failureHint.includes('summary')) {
+              this.addProgress('上一輪檢查：資料仍含 Total/Subtotal 等摘要列，AI 正在嘗試移除這些摘要行。');
+            } else if (failureHint && failureHint.includes('zero rows')) {
+              this.addProgress('上一輪檢查：轉換結果為零筆資料，AI 正在重新定位 header/欄位以避免資料被全部濾掉。');
+            }
+
+            if (!iterationPlan.jsFunctionBody) {
+              if (iterationStatus === 'continue') {
+                this.addProgress(
+                  `${iterationLabel} reported that more passes are required but did not supply code. Stopping preprocessing.`,
+                  'error'
+                );
+              }
+              this.addProgress(summaryMessage);
+              prepIterationsLog.push({
+                iteration,
+                status: iterationStatus || 'done',
+                summary: rawExplanation,
+                explanation: rawExplanation,
+                code: null,
+                lastError:
+                  attemptErrorForPrompt && attemptErrorForPrompt.message
+                    ? attemptErrorForPrompt.message
+                    : null,
+                rowCountBefore: dataForAnalysis.data.length,
+                rowCountAfter: dataForAnalysis.data.length,
+              });
+              lastSuccessfulPlan = iterationPlan;
+              lastIterationError = null;
+              continueIterating = false;
+              iterationCompleted = true;
+              break;
+            }
+
+            this.addProgress(`${summaryMessage} Executing transformation...`);
+
+            try {
+              const originalCount = dataForAnalysis.data.length;
+              const transformed = executeJavaScriptDataTransform(
+                dataForAnalysis.data,
+                iterationPlan.jsFunctionBody
+              );
+              if (!Array.isArray(transformed) || !transformed.length) {
+                throw new Error('Transformation returned zero rows. Headers or filters may be incorrect.');
+              }
+
+              dataForAnalysis.data = transformed;
+              const newCount = dataForAnalysis.data.length;
+              if (dataForAnalysis.metadata) {
+                dataForAnalysis.metadata = {
+                  ...dataForAnalysis.metadata,
+                  cleanedRowCount: newCount,
+                };
+                dataForAnalysis.metadata = this.updateMetadataContext(
+                  dataForAnalysis.metadata,
+                  dataForAnalysis.data
+                );
+              } else {
+                dataForAnalysis.metadata = this.updateMetadataContext(
+                  { cleanedRowCount: newCount },
+                  dataForAnalysis.data
+                );
+              }
+
+              this.addProgress(
+                `${iterationLabel} completed. Row count changed from ${originalCount} to ${newCount}.`
+              );
+
+              profiles = iterationPlan.outputColumns || profileData(dataForAnalysis.data);
+              prepIterationsLog.push({
+                iteration,
+                status: iterationStatus || 'continue',
+                summary: rawExplanation,
+                explanation: rawExplanation,
+                code: iterationPlan.jsFunctionBody,
+                lastError:
+                  attemptErrorForPrompt && attemptErrorForPrompt.message
+                    ? attemptErrorForPrompt.message
+                    : null,
+                rowCountBefore: originalCount,
+                rowCountAfter: newCount,
+              });
+              lastSuccessfulPlan = iterationPlan;
+              iterationCompleted = true;
+
+              if (iterationStatus === 'done' || !iterationStatus) {
+                continueIterating = false;
+              } else if (iterationStatus === 'abort') {
+                this.addProgress(
+                  `${iterationLabel} requested to abort further preprocessing.`,
+                  'error'
+                );
+                continueIterating = false;
+              } else {
+                this.addProgress(`${iterationLabel} completed. AI requested another pass to finish cleanup.`);
+                continueIterating = iteration < maxPrepIterations;
+              }
+
+              lastIterationError = null;
+              break;
+            } catch (prepError) {
+              const prepMessage =
+                prepError instanceof Error ? prepError.message : String(prepError);
+              this.addProgress(
+                attempt > 0
+                  ? `${iterationLabel} retry ${attemptLabel} failed: ${prepMessage}`
+                  : `${iterationLabel} failed: ${prepMessage}`
+              );
+            if (prepMessage && prepMessage.toLowerCase().includes('summary')) {
+              this.addProgress(
+                'Agent 正在調整：目前資料仍含 Total/Subtotal 等摘要列，正在請求模型移除這些摘要行後再試。',
+                'info'
+              );
+              const offendingIndex = prepMessage.indexOf('Offending rows include:');
+              if (offendingIndex !== -1) {
+                const offendingText = prepMessage.slice(offendingIndex + 'Offending rows include:'.length).trim();
+                if (offendingText) {
+                  this.addProgress(
+                    `摘要列範例：${offendingText.replace(/\.$/, '')}`,
+                    'info'
+                  );
+                }
+              }
+            } else if (prepMessage && prepMessage.toLowerCase().includes('zero rows')) {
+              this.addProgress(
+                'Agent 正在調整：轉換結果為零筆資料，可能 header 偵測錯誤，已要求模型重新定位欄位。',
+                'info'
+              );
+            }
+            if (attempt === maxRetriesPerIteration - 1) {
+                this.addProgress(
+                  `${iterationLabel} reached maximum retries. Stopping AI preprocessing.`,
+                  'error'
+                );
+                continueIterating = false;
+                lastIterationError = prepError instanceof Error ? prepError : new Error(prepMessage);
+              } else {
+                this.addProgress('Requesting AI to adjust preprocessing plan and retry...');
+                attemptErrorForPrompt =
+                  prepError instanceof Error ? prepError : new Error(prepMessage);
+                lastIterationError = attemptErrorForPrompt;
+              }
+            }
+          }
+
+          if (!continueIterating || iterationCompleted) {
+            continue;
           }
         }
+
+        prepPlan = lastSuccessfulPlan;
       } else {
         this.ensureApiCredentials({
           reason:
@@ -1428,7 +1562,11 @@ class CsvDataAnalysisApp extends HTMLElement {
           : null,
         csvMetadata: dataForAnalysis.metadata || metadata || null,
         currentDatasetId: datasetId,
-        dataPreparationPlan: prepPlan,
+        dataPreparationPlan: prepPlan
+          ? { ...prepPlan, iterations: prepIterationsLog }
+          : prepIterationsLog.length
+          ? { explanation: 'AI performed partial preprocessing steps.', iterations: prepIterationsLog, jsFunctionBody: null }
+          : prepPlan,
         initialDataSample: initialSample,
         isDataPrepDebugVisible: false,
         rawDataPage: 0,
