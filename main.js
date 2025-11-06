@@ -2282,6 +2282,24 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (action && typeof action.args === 'object' && action.args) {
       Object.assign(props, action.args);
     }
+    if (action && typeof action.toolInput === 'object' && action.toolInput) {
+      Object.entries(action.toolInput).forEach(([key, value]) => {
+        if (!Object.prototype.hasOwnProperty.call(props, key)) {
+          props[key] = value;
+        }
+      });
+      if (!Object.prototype.hasOwnProperty.call(props, 'cardId') && action.toolInput?.cardId) {
+        props.cardId = action.toolInput.cardId;
+      }
+    }
+    if (props.toolInput && typeof props.toolInput === 'object') {
+      Object.entries(props.toolInput).forEach(([key, value]) => {
+        if (!Object.prototype.hasOwnProperty.call(props, key)) {
+          props[key] = value;
+        }
+      });
+      delete props.toolInput;
+    }
     const thought = getThought(action) || getThought(props);
 
     if (toolName === 'text_response') {
@@ -2385,6 +2403,11 @@ class CsvDataAnalysisApp extends HTMLElement {
           const nested = raw.action && typeof raw.action === 'object' ? raw.action : null;
           if (nested && typeof nested.text === 'string' && nested.text.trim()) {
             return nested.text.trim();
+          }
+          const toolPayload =
+            raw.toolInput && typeof raw.toolInput === 'object' ? raw.toolInput : null;
+          if (toolPayload && typeof toolPayload.text === 'string' && toolPayload.text.trim()) {
+            return toolPayload.text.trim();
           }
           if (nested && Array.isArray(nested.actions) && nested.actions.length) {
             for (const inner of nested.actions) {
