@@ -539,37 +539,45 @@ const stripJsComments = source =>
     ? source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*$/gm, '')
     : '';
 
+const stripHeaderMappingBlocks = source => {
+  if (typeof source !== 'string' || !source.trim()) {
+    return '';
+  }
+  return source.replace(/(const|let|var)\s+HEADER_MAPPING\s*=\s*{[\s\S]*?};?/gi, '');
+};
+
 const detectHardCodedPatternsInJs = source => {
   if (typeof source !== 'string' || !source.trim()) {
     return [];
   }
 
   const stripped = stripJsComments(source);
+  const mappingStripped = stripHeaderMappingBlocks(stripped);
   const issueSet = new Set();
 
-  if (/\bdata\s*\[\s*\d+\s*\]/.test(stripped)) {
+  if (/\bdata\s*\[\s*\d+\s*\]/.test(mappingStripped)) {
     issueSet.add('direct array indexing like data[1]');
   }
 
-  const genericColumnLiterals = stripped.match(/['"]column_(\d+)['"]/gi);
+  const genericColumnLiterals = mappingStripped.match(/['"]column_(\d+)['"]/gi);
   if (genericColumnLiterals) {
     issueSet.add('hard-coded generic headers such as "column_3"');
   }
 
-  const columnLabelLiterals = stripped.match(/['"]Column\s+\d+['"]/g);
+  const columnLabelLiterals = mappingStripped.match(/['"]Column\s+\d+['"]/g);
   if (columnLabelLiterals) {
     issueSet.add('hard-coded "Column N" labels');
   }
 
-  if (/`column_\s*\$\{/i.test(stripped)) {
+  if (/`column_\s*\$\{/i.test(mappingStripped)) {
     issueSet.add('hard-coded generic headers via template literal');
   }
 
-  if (/`Column\s*\$\{/i.test(stripped)) {
+  if (/`Column\s*\$\{/i.test(mappingStripped)) {
     issueSet.add('hard-coded "Column" template literal');
   }
 
-  if (/\basync\s+function\b/.test(stripped) || /=\s*async\s*\(/i.test(stripped)) {
+  if (/\basync\s+function\b/.test(mappingStripped) || /=\s*async\s*\(/i.test(mappingStripped)) {
     issueSet.add('async functions are not supported in this environment');
   }
 
@@ -823,11 +831,45 @@ const buildUserPrompt = (lastError, iterationContext = null) => {
       : ''
   }`;
 
+  const headerMappingSection = (() => {
+    if (!iterationContext || typeof iterationContext !== 'object') {
+      return '';
+    }
+    const headerMapping = iterationContext.headerMapping;
+    if (!headerMapping || typeof headerMapping !== 'object') {
+      return '';
+    }
+    const mapping = headerMapping.mapping;
+    if (!mapping || typeof mapping !== 'object') {
+      return '';
+    }
+    const entries = Object.entries(mapping);
+    if (!entries.length) {
+      return '';
+    }
+    const preview = entries
+      .slice(0, 12)
+      .map(([from, to]) => `- ${from} -> ${to}`)
+      .join('\n');
+    const mappingJson = JSON.stringify(mapping, null, 2);
+    const fallbackReminder = headerMapping.hasUnmapped
+      ? '\nSome targets still fall back to generic names. Detect descriptive headers dynamically whenever possible.'
+      : '';
+    return `Header mapping (already detected — NEVER hard-code "column_N"):
+${preview || '- (mapping summary available)'}
+Embed and use it like this:
+const HEADER_MAPPING = ${mappingJson};
+const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
+// Always reference canonical["Field Name"] to avoid brittle code.${fallbackReminder}`;
+  })();
+
   const mandatorySummaryBullet = offendingSummaryText
     ? `- **MANDATORY SUMMARY REMOVAL**: These rows were flagged as summaries and must be excluded from the transformed dataset: ${offendingSummaryText}. If any should remain, set status="abort" and justify.`
     : '- **MANDATORY SUMMARY REMOVAL**: Any row matching the summary keywords must be excluded from the transformed dataset. When uncertain, remove the row and mention it in your status message.';
 
-  return `${contextSection}${iterationSummary}${multiPassRules}
+  const headerMappingBlock = headerMappingSection ? `\n${headerMappingSection}\n` : '\n';
+
+  return `${contextSection}${iterationSummary}${multiPassRules}${headerMappingBlock}
 
 Common problems to fix:
 - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.

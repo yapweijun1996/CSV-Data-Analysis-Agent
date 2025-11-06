@@ -44,6 +44,7 @@ import { renderWorkflowTimeline } from './render/workflowTimeline.js';
 import { renderDataPrepDebugPanel as renderDataPrepDebugPanelView } from './render/dataPrepDebugPanel.js';
 import { renderMemoryPanel as renderMemoryPanelView } from './render/memoryPanel.js';
 import { createTaskOrchestrator } from './services/taskOrchestrator.js';
+import { createHeaderMapping } from './utils/headerMapping.js';
 import { ENABLE_MEMORY_FEATURES } from './services/memoryConfig.js';
 import { ensureMemoryVectorReady as ensureMemoryVectorReadyHelper } from './services/memoryServiceHelpers.js';
 import { bindMemoryPanelEvents as bindMemoryPanelEventsHelper } from './handlers/memoryPanelEvents.js';
@@ -1343,6 +1344,15 @@ this.state = {
     this.startWorkflowPhase('diagnose', '先快速檢查 CSV 檔案格式與欄位資訊。');
 
     try {
+      if (this.orchestrator) {
+        const { clearContextValue, setAutoTaskFlag } = this.orchestrator;
+        if (typeof clearContextValue === 'function') {
+          clearContextValue('headerMapping');
+        }
+        if (typeof setAutoTaskFlag === 'function') {
+          setAutoTaskFlag('header_mapping_logged', false);
+        }
+      }
       this.addProgress('Parsing CSV file...');
       this.appendWorkflowThought('開始解析 CSV，確認原始列數。');
       const parsedData = await processCsv(file);
@@ -1385,6 +1395,11 @@ this.state = {
       const isApiKeySet = this.hasConfiguredApiKey();
       let prepPlan = null;
       let prepIterationsLog = [];
+      let activeMetadata = dataForAnalysis.metadata || metadata || null;
+      let headerMappingContext = this.ensureHeaderMappingContext(activeMetadata, {
+        reason: 'preflight',
+        logStep: false,
+      });
 
       if (isApiKeySet) {
         this.startWorkflowPhase('plan', '規劃資料清理與前處理步驟。');
@@ -1414,47 +1429,65 @@ this.state = {
             this.addProgress(
               `${iterationLabel} attempt ${attemptLabel}: requesting updated preprocessing plan...`
             );
+            const iterationContextPayload = {
+              iteration,
+              maxIterations: maxPrepIterations,
+              attempt: attemptLabel,
+              history: prepIterationsLog.map(entry => ({
+                iteration: entry.iteration,
+                status: entry.status,
+                summary: entry.summary,
+                explanation: entry.explanation,
+                lastError: entry.lastError || null,
+              })),
+              headerMapping: headerMappingContext,
+            };
+            iterationContextPayload.onViolation = violation => {
+              if (!violation || typeof violation !== 'object') return;
+              if (violation.type === 'hard_coded_structure') {
+                const violationMessage =
+                  typeof violation.message === 'string' && violation.message.trim()
+                    ? violation.message.trim()
+                    : 'Generated transform relies on hard-coded structure.';
+                this.addProgress(
+                  `${iterationLabel} attempt ${attemptLabel} 被拒絕：${violationMessage}`,
+                  'error'
+                );
+                const updatedContext = this.ensureHeaderMappingContext(activeMetadata, {
+                  reason: 'hard_coded_structure',
+                  logStep: true,
+                  iterationLabel,
+                  attemptLabel,
+                  violationMessage,
+                });
+                if (updatedContext) {
+                  headerMappingContext = updatedContext;
+                  iterationContextPayload.headerMapping = updatedContext;
+                }
+                attemptErrorForPrompt = new Error(violationMessage);
+                lastIterationError = attemptErrorForPrompt;
+              }
+            };
             iterationPlan = await generateDataPreparationPlan(
               profiles,
               sampleRowsForPlan,
               this.settings,
-              dataForAnalysis.metadata || metadata || null,
+              activeMetadata,
               attemptErrorForPrompt,
-              {
-                iteration,
-                maxIterations: maxPrepIterations,
-                attempt: attemptLabel,
-                history: prepIterationsLog.map(entry => ({
-                  iteration: entry.iteration,
-                  status: entry.status,
-                  summary: entry.summary,
-                  explanation: entry.explanation,
-                  lastError: entry.lastError || null,
-                })),
-                onViolation: violation => {
-                  if (!violation || typeof violation !== 'object') return;
-                  if (violation.type === 'hard_coded_structure') {
-                    this.addProgress(
-                      `${iterationLabel} attempt ${attemptLabel} 被拒絕：${violation.message}`,
-                      'error'
-                    );
-                  }
-                },
-              }
+              iterationContextPayload
             );
-
-          if (!iterationPlan) {
-            this.addProgress(
-              `${iterationLabel} did not return a plan. Skipping remaining preprocessing.`,
-              'error'
-            );
-            this.failWorkflowStep({
-              label: iterationLabel,
-              error: 'AI 未提供可執行的 preprocessing plan。',
-            });
-            continueIterating = false;
-            break;
-          }
+            if (!iterationPlan) {
+              this.addProgress(
+                `${iterationLabel} did not return a plan. Skipping remaining preprocessing.`,
+                'error'
+              );
+              this.failWorkflowStep({
+                label: iterationLabel,
+                error: 'AI 未提供可執行的 preprocessing plan。',
+              });
+              continueIterating = false;
+              break;
+            }
 
             const rawExplanation =
               (typeof iterationPlan.explanation === 'string' && iterationPlan.explanation.trim()) ||
@@ -1540,6 +1573,14 @@ this.state = {
                   { cleanedRowCount: newCount },
                   dataForAnalysis.data
                 );
+              }
+              activeMetadata = dataForAnalysis.metadata || activeMetadata;
+              if (activeMetadata) {
+                headerMappingContext =
+                  this.ensureHeaderMappingContext(activeMetadata, {
+                    reason: 'post_transform',
+                    logStep: false,
+                  }) || headerMappingContext;
               }
 
               this.addProgress(
@@ -2118,6 +2159,100 @@ this.state = {
       this.syncWorkflowTimeline();
     } catch (error) {
       console.warn('Failed to record workflow failure:', error);
+    }
+  }
+
+  ensureHeaderMappingContext(metadata, options = {}) {
+    if (
+      !metadata ||
+      !Array.isArray(metadata.genericHeaders) ||
+      metadata.genericHeaders.length === 0
+    ) {
+      return null;
+    }
+    const reason = typeof options.reason === 'string' ? options.reason : 'auto';
+    const fingerprintSource =
+      metadata.datasetFingerprint ||
+      metadata.datasetId ||
+      JSON.stringify({
+        headers: metadata.headerRow || [],
+        generic: metadata.genericHeaders,
+        detectedHeaderIndex: metadata.detectedHeaderIndex ?? null,
+      });
+    if (!this.orchestrator || typeof this.orchestrator.getContextValue !== 'function') {
+      return null;
+    }
+    const existing = this.orchestrator.getContextValue('headerMapping');
+    if (existing && existing.fingerprint === fingerprintSource && !options.forceRefresh) {
+      if (options.logStep) {
+        this.logHeaderMappingStep(existing, options);
+      }
+      return existing;
+    }
+
+    const details = createHeaderMapping(metadata);
+    const payload = {
+      ...details,
+      fingerprint: fingerprintSource,
+      datasetId: metadata.datasetId ?? null,
+      createdAt: new Date().toISOString(),
+      reason,
+      violationMessage: typeof options.violationMessage === 'string' ? options.violationMessage : null,
+    };
+
+    if (typeof this.orchestrator.setContextValue === 'function') {
+      this.orchestrator.setContextValue('headerMapping', payload);
+    }
+    if (typeof this.orchestrator.setAutoTaskFlag === 'function') {
+      this.orchestrator.setAutoTaskFlag('header_mapping_logged', false);
+    }
+
+    if (options.logStep) {
+      this.logHeaderMappingStep(payload, options);
+    }
+
+    return payload;
+  }
+
+  logHeaderMappingStep(context, options = {}) {
+    if (!context || !this.orchestrator) {
+      return;
+    }
+
+    const alreadyLogged =
+      typeof this.orchestrator.getAutoTaskFlag === 'function'
+        ? this.orchestrator.getAutoTaskFlag('header_mapping_logged')
+        : false;
+    if (alreadyLogged) {
+      return;
+    }
+
+    const iterationLabel =
+      typeof options.iterationLabel === 'string' && options.iterationLabel.trim()
+        ? options.iterationLabel.trim()
+        : null;
+    const attemptLabel =
+      typeof options.attemptLabel === 'number' || typeof options.attemptLabel === 'string'
+        ? ` attempt ${options.attemptLabel}`
+        : '';
+    const prefix = iterationLabel ? `${iterationLabel}${attemptLabel}` : 'Auto detect header mapping';
+    const mappedSummary = context.total
+      ? `${context.detected}/${context.total} mapped${context.hasUnmapped ? ' (fallback for remaining columns)' : ''}`
+      : 'Mapping ready';
+
+    this.addProgress(`${prefix}：已建立 header mapping (${mappedSummary})，將在下一輪重試使用動態欄位。`, 'info');
+    if (typeof options.violationMessage === 'string' && options.violationMessage.trim()) {
+      this.addProgress(`上一輪錯誤：${options.violationMessage.trim()}`, 'error');
+    }
+    this.appendWorkflowThought('已建立 header mapping，接下來會以動態欄位名稱重新撰寫轉換程式。');
+    if (this.workflowActivePhase) {
+      this.completeWorkflowStep({
+        label: 'Detect header mapping',
+        outcome: mappedSummary,
+      });
+    }
+    if (typeof this.orchestrator.setAutoTaskFlag === 'function') {
+      this.orchestrator.setAutoTaskFlag('header_mapping_logged', true);
     }
   }
 

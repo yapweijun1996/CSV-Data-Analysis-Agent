@@ -24,6 +24,8 @@ export const createTaskOrchestrator = ({
   let session = null;
   let activePhase = null;
   let planSnapshot = createInitialPlanSnapshot();
+  let contextStore = {};
+  let autoTaskFlags = {};
 
   const emitPlanUpdate = () => {
     if (typeof onPlanUpdate === 'function') {
@@ -96,9 +98,13 @@ export const createTaskOrchestrator = ({
       phases: [],
       summary: null,
       completedAt: null,
+      context: {},
+      autoTasks: {},
     };
     activePhase = null;
     planSnapshot = createInitialPlanSnapshot();
+    contextStore = {};
+    autoTaskFlags = {};
     emitPlanUpdate();
     emitProgress(`Start session: ${session.goal}`);
     emitChat(`準備進行任務：「${session.goal}」`, 'ai_plan_intro');
@@ -207,6 +213,66 @@ export const createTaskOrchestrator = ({
 
   const getTimeline = () => (session ? deepClone(session) : null);
 
+  const setContextValue = (key, value) => {
+    ensureSession();
+    if (typeof key !== 'string' || !key.trim()) {
+      return;
+    }
+    contextStore[key] = value;
+    if (session) {
+      session.context[key] = value;
+    }
+  };
+
+  const getContextValue = key => {
+    ensureSession();
+    if (!session) return null;
+    if (typeof key === 'string' && key.trim()) {
+      const stored = contextStore[key.trim()];
+      if (stored === undefined) {
+        return undefined;
+      }
+      return deepClone(stored);
+    }
+    return deepClone(contextStore);
+  };
+
+  const clearContextValue = key => {
+    ensureSession();
+    if (typeof key !== 'string' || !key.trim()) {
+      contextStore = {};
+      if (session) {
+        session.context = {};
+      }
+      return;
+    }
+    delete contextStore[key.trim()];
+    if (session) {
+      delete session.context[key.trim()];
+    }
+  };
+
+  const setAutoTaskFlag = (taskId, flagValue) => {
+    ensureSession();
+    if (typeof taskId !== 'string' || !taskId.trim()) {
+      return;
+    }
+    const normalisedId = taskId.trim();
+    autoTaskFlags[normalisedId] = Boolean(flagValue);
+    if (session && session.autoTasks) {
+      session.autoTasks[normalisedId] = autoTaskFlags[normalisedId];
+    }
+  };
+
+  const getAutoTaskFlag = taskId => {
+    ensureSession();
+    if (typeof taskId === 'string' && taskId.trim()) {
+      const normalisedId = taskId.trim();
+      return Boolean(autoTaskFlags[normalisedId]);
+    }
+    return deepClone(autoTaskFlags);
+  };
+
   return {
     startSession,
     startPhase,
@@ -216,5 +282,10 @@ export const createTaskOrchestrator = ({
     endPhase,
     endSession,
     getTimeline,
+    setContextValue,
+    getContextValue,
+    clearContextValue,
+    setAutoTaskFlag,
+    getAutoTaskFlag,
   };
 };

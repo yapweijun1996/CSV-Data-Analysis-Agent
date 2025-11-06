@@ -130,4 +130,24 @@ describe('TaskOrchestrator', () => {
     expect(finalTimeline.phases.find(phase => phase.phase === 'execute').status).toBe('failed');
     expect(finalTimeline.phases.find(phase => phase.phase === 'adjust').status).toBe('completed');
   });
+
+  it('stores context values and auto-task flags', () => {
+    const orchestrator = createTaskOrchestrator(callbacks);
+    orchestrator.startSession({ goal: 'Context tracking' });
+
+    orchestrator.setContextValue('headerMapping', { mapping: { column_1: 'Invoice No' }, total: 4 });
+    expect(orchestrator.getContextValue('headerMapping')).toEqual({
+      mapping: { column_1: 'Invoice No' },
+      total: 4,
+    });
+
+    orchestrator.setAutoTaskFlag('header_mapping_logged', true);
+    expect(orchestrator.getAutoTaskFlag('header_mapping_logged')).toBe(true);
+
+    orchestrator.clearContextValue('headerMapping');
+    expect(orchestrator.getContextValue('headerMapping')).toBeUndefined();
+
+    const autoTasksSnapshot = orchestrator.getAutoTaskFlag();
+    expect(autoTasksSnapshot).toMatchObject({ header_mapping_logged: true });
+  });
 });

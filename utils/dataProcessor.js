@@ -1,3 +1,5 @@
+import { applyHeaderMapping as applyHeaderMappingHelper } from './headerMapping.js';
+
 const PapaLib = typeof window !== 'undefined' ? window.Papa : null;
 
 if (!PapaLib) {
@@ -618,6 +620,7 @@ export const executeJavaScriptDataTransform = (data, jsFunctionBody) => {
     const utils = {
       parseNumber: value => parseNumericValue(value),
       splitNumericString,
+      applyHeaderMapping: (row, mapping) => applyHeaderMappingHelper(row, mapping),
     };
     const transformFunction = new Function('data', '_util', jsFunctionBody);
     const result = transformFunction(data, utils);
