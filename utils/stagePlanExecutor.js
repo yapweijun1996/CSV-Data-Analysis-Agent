@@ -430,12 +430,17 @@ export const executeStagePlanPipeline = ({
   };
 
   // Stage 1: Title / metadata rows
-  const preferredMetadataCount = Number.isFinite(hints.metadataRowCount) ? hints.metadataRowCount : null;
+  const preferredMetadataCount = Number.isFinite(hints.metadataRowCount)
+    ? hints.metadataRowCount
+    : Number.isFinite(metadata?.detectedHeaderIndex)
+    ? metadata.detectedHeaderIndex
+    : null;
   const { metadataRows, remainingRows } = stripMetadataRows(
     workingData,
     options.maxMetadataRows || 3,
     preferredMetadataCount
   );
+  const metadataRemovedCount = metadataRows.length;
   if (metadataRows.length) {
     const titleCandidate = extractTitleFromRow(metadataRows[0]);
     const existingTitle = normaliseString(updatedMetadata.reportTitle);
@@ -488,7 +493,7 @@ export const executeStagePlanPipeline = ({
   });
   const detectedHeaderIndex =
     typeof headerDetection.headerIndex === 'number' && headerDetection.headerIndex >= 0
-      ? headerDetection.headerIndex
+      ? Math.max(headerDetection.headerIndex - metadataRemovedCount, 0)
       : null;
   if (!headerRows.length && detectedHeaderIndex !== null) {
     const headerSliceCount = Math.min(detectedHeaderIndex + 1, workingData.length);
