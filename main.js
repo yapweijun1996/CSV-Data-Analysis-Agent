@@ -1316,45 +1316,86 @@ class CsvDataAnalysisApp extends HTMLElement {
       if (isApiKeySet) {
         this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
         const sampleRowsForPlan = dataForAnalysis.data.slice(0, 20);
-        prepPlan = await generateDataPreparationPlan(
-          profiles,
-          sampleRowsForPlan,
-          this.settings,
-          dataForAnalysis.metadata || metadata || null
-        );
-        if (prepPlan && prepPlan.jsFunctionBody) {
+        const maxPrepAttempts = 3;
+        let prepErrorForPrompt = null;
+        for (let attempt = 0; attempt < maxPrepAttempts; attempt += 1) {
+          const attemptLabel = attempt + 1;
+          prepPlan = await generateDataPreparationPlan(
+            profiles,
+            sampleRowsForPlan,
+            this.settings,
+            dataForAnalysis.metadata || metadata || null,
+            prepErrorForPrompt
+          );
+          if (!prepPlan || !prepPlan.jsFunctionBody) {
+            if (prepErrorForPrompt) {
+              this.addProgress('Skipping AI-driven preprocessing after repeated failures. Proceeding with original data.');
+            } else {
+              const tip =
+                'AI determined no additional transformation is required. (For debugging, open the console to review the AI plan payload.)';
+              this.addProgress(tip);
+            }
+            prepPlan = prepErrorForPrompt ? null : prepPlan;
+            break;
+          }
+
           const planExplanation =
             (typeof prepPlan.explanation === 'string' && prepPlan.explanation.trim()) ||
             'AI suggested applying a data transformation.';
-          this.addProgress(`AI Plan: ${planExplanation}`);
-          this.addProgress('Executing AI data transformation...');
-          const originalCount = dataForAnalysis.data.length;
-          dataForAnalysis.data = executeJavaScriptDataTransform(
-            dataForAnalysis.data,
-            prepPlan.jsFunctionBody
+          this.addProgress(
+            attempt > 0 ? `AI Plan Retry ${attemptLabel}: ${planExplanation}` : `AI Plan: ${planExplanation}`
           );
-          const newCount = dataForAnalysis.data.length;
-          if (dataForAnalysis.metadata) {
-            dataForAnalysis.metadata = {
-              ...dataForAnalysis.metadata,
-              cleanedRowCount: newCount,
-            };
-            dataForAnalysis.metadata = this.updateMetadataContext(
-              dataForAnalysis.metadata,
-              dataForAnalysis.data
+          this.addProgress('Executing AI data transformation...');
+
+          try {
+            const originalCount = dataForAnalysis.data.length;
+            const transformed = executeJavaScriptDataTransform(
+              dataForAnalysis.data,
+              prepPlan.jsFunctionBody
             );
-          } else {
-            dataForAnalysis.metadata = this.updateMetadataContext(
-              { cleanedRowCount: newCount },
-              dataForAnalysis.data
+            if (!Array.isArray(transformed) || !transformed.length) {
+              throw new Error('Transformation returned zero rows. Headers or filters may be incorrect.');
+            }
+
+            dataForAnalysis.data = transformed;
+            const newCount = dataForAnalysis.data.length;
+            if (dataForAnalysis.metadata) {
+              dataForAnalysis.metadata = {
+                ...dataForAnalysis.metadata,
+                cleanedRowCount: newCount,
+              };
+              dataForAnalysis.metadata = this.updateMetadataContext(
+                dataForAnalysis.metadata,
+                dataForAnalysis.data
+              );
+            } else {
+              dataForAnalysis.metadata = this.updateMetadataContext(
+                { cleanedRowCount: newCount },
+                dataForAnalysis.data
+              );
+            }
+            this.addProgress(
+              `Transformation complete. Row count changed from ${originalCount} to ${newCount}.`
             );
+            profiles = prepPlan.outputColumns || profileData(dataForAnalysis.data);
+            break;
+          } catch (prepError) {
+            const prepMessage =
+              prepError instanceof Error ? prepError.message : String(prepError);
+            this.addProgress(
+              attempt > 0
+                ? `AI transformation retry ${attemptLabel} failed: ${prepMessage}`
+                : `AI transformation failed: ${prepMessage}`
+            );
+            if (attempt === maxPrepAttempts - 1) {
+              this.addProgress('Reached maximum retries. Proceeding without AI preprocessing.');
+              prepPlan = null;
+              break;
+            }
+            this.addProgress('Requesting AI to adjust preprocessing plan and retry...');
+            prepErrorForPrompt =
+              prepError instanceof Error ? prepError : new Error(prepMessage);
           }
-          this.addProgress(`Transformation complete. Row count changed from ${originalCount} to ${newCount}.`);
-          profiles = prepPlan.outputColumns || profileData(dataForAnalysis.data);
-        } else {
-          const tip =
-            'AI determined no additional transformation is required. (For debugging, open the console to review the AI plan payload.)';
-          this.addProgress(tip);
         }
       } else {
         this.ensureApiCredentials({

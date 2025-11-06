@@ -679,7 +679,13 @@ const normalisePlanShape = (plan, columns = []) => {
   return normalized;
 };
 
-export const generateDataPreparationPlan = async (columns, sampleData, settings, metadata = null) => {
+export const generateDataPreparationPlan = async (
+  columns,
+  sampleData,
+  settings,
+  metadata = null,
+  previousError = null
+) => {
   const provider = settings.provider || 'google';
   if (provider === 'openai' && !settings.openAIApiKey) {
     return { explanation: 'No transformation needed as API key is not set.', jsFunctionBody: null, outputColumns: columns };
@@ -718,11 +724,11 @@ export const generateDataPreparationPlan = async (columns, sampleData, settings,
   });
   const contextSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
 
-  const systemPrompt = `You are an expert data engineer. Your task is to analyze a raw dataset and, if necessary, provide a JavaScript function to clean and reshape it into a tidy, analysis-ready format. CRITICALLY, you must also provide the schema of the NEW, transformed data with detailed data types.
+const systemPrompt = `You are an expert data engineer. Your task is to analyze a raw dataset and, if necessary, provide a JavaScript function to clean and reshape it into a tidy, analysis-ready format. CRITICALLY, you must also provide the schema of the NEW, transformed data with detailed data types.
 A tidy format has: 1. Each variable as a column. 2. Each observation as a row.
 You MUST respond with a single valid JSON object, and nothing else. The JSON object must adhere to the provided schema.`;
 
-  const buildUserPrompt = lastError => `${contextSection}Common problems to fix:
+const buildUserPrompt = lastError => `${contextSection}Common problems to fix:
 - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
     - **YOU MUST use \`_util.parseNumber(value)\` for ALL numeric conversions.**
     - **DO NOT use \`parseInt()\`, \`parseFloat()\`, or \`Number()\` directly.** The provided utility is guaranteed to handle various formats correctly.
@@ -737,6 +743,7 @@ You MUST respond with a single valid JSON object, and nothing else. The JSON obj
 - **Summary Keyword Radar**: Treat any row whose textual cells match or start with these keywords as metadata/non-data unless strong evidence proves otherwise: ${SUMMARY_KEYWORDS_DISPLAY}.
 - **Crosstab/Wide Format**: Unpivot data where column headers are actually values (e.g., years, regions) so that each observation is one row.
 - **Multi-header Rows**: Skip any initial junk rows (titles, blank lines, headers split across rows) before the true header.
+- **NO HARD-CODED INDEXES**: You must dynamically detect header rows and identifier columns by examining the provided sample rows. Never assume fixed row numbers or literal labels (e.g., "Code", "Description") will exist. Use fallbacks (e.g., scanning for rows with many text cells followed by rows with numeric cells) so the transform works even when column labels change.
 
 ${headerMappingPreview ? `Generic to inferred header mapping:\n${headerMappingPreview}\n` : ''}
 ${hasCrosstabShape ? `CROSSTAB ALERT:
@@ -761,6 +768,7 @@ Your task:
 5. **Explain**: Provide a concise, user-facing explanation of what you did.
 
 **CRITICAL REQUIREMENTS:**
+- Never assume specific header text exists. If you cannot confidently locate headers or identifier columns, throw an Error explaining what data was missing instead of returning an empty array.
 - You MUST provide the \`analysisSteps\` array capturing your chain-of-thought (observations ➜ decisions ➜ actions). Each item should be a full sentence.
 - You MUST provide the \`outputColumns\` array. If no transformation is needed, it should match the input schema (but update types if you discovered more specific ones).
 - Your JavaScript MUST include a \`return\` statement that returns the transformed data array.
@@ -769,7 +777,18 @@ Your task:
 `;
 
   const schema = getDataPreparationSchema();
-  let lastError = null;
+  let lastError =
+    previousError instanceof Error
+      ? previousError
+      : previousError
+      ? new Error(
+          typeof previousError === 'string'
+            ? previousError
+            : previousError.message
+            ? previousError.message
+            : String(previousError)
+        )
+      : null;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
