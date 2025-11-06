@@ -58,7 +58,7 @@ const renderPlanEntry = entry => {
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.4a.75.75 0 01-1.08 0l-4.24-4.4a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
           </svg>
         </summary>
-        <div class="plan-card__content text-sm text-slate-700 whitespace-pre-wrap">
+        <div class="plan-card__content text-sm text-slate-700">
           ${content}
         </div>
       </details>
