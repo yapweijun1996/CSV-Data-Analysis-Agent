@@ -230,6 +230,8 @@ export const renderAssistantPanel = ({
   isThinking,
   currentView,
   resolveCardReference,
+  workflowPhase,
+  isWorkflowActive,
 }) => {
   const entries = Array.isArray(timeline) ? timeline : [];
   const isChatDisabled =
@@ -249,10 +251,17 @@ export const renderAssistantPanel = ({
     : '<p class="assistant-panel__empty">No activity yet. Upload a CSV or start chatting to begin.</p>';
   const inputClass = `assistant-input${isChatDisabled ? ' assistant-input--disabled' : ''}`;
 
+  const workflowStatus = workflowPhase
+    ? `<span class="assistant-panel__status-badge" data-workflow-status>${
+        isWorkflowActive ? 'Working' : 'Paused'
+      } · ${escapeHtml(workflowPhase)}</span>`
+    : '';
+
   return `
     <div class="assistant-panel">
       <div class="assistant-panel__header">
         <h2 class="assistant-panel__title">Assistant</h2>
+        ${workflowStatus ? `<div class="assistant-panel__status">${workflowStatus}</div>` : ''}
         <div class="assistant-panel__toolbar">
           <button class="assistant-toolbar__btn" title="Open Memory Panel" aria-label="Open Memory Panel" data-open-memory>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -273,7 +282,24 @@ export const renderAssistantPanel = ({
         <div class="assistant-log" data-conversation-log>
           ${conversationHtml || timelineFallback}
         </div>
-        ${isBusy ? `<div class="assistant-processing"><svg class="assistant-processing__icon animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="assistant-processing__track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="assistant-processing__indicator" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Processing...</span></div>` : ''}
+        ${
+          isBusy || isThinking
+            ? `<div class="assistant-processing" aria-live="polite" data-assistant-loader>
+                <svg class="assistant-processing__icon animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" role="img" aria-label="Assistant is working">
+                  <circle class="assistant-processing__track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="assistant-processing__indicator" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div class="assistant-processing__text">
+                  <span class="assistant-processing__label">Agent is working</span>
+                  ${
+                    workflowPhase
+                      ? `<span class="assistant-processing__phase">Phase：${escapeHtml(workflowPhase)}</span>`
+                      : ''
+                  }
+                </div>
+              </div>`
+            : ''
+        }
       </div>
       <div class="assistant-panel__footer">
         <form id="chat-form">
