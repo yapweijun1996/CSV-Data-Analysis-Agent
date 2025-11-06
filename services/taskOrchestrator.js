@@ -8,6 +8,56 @@ const createInitialPlanSnapshot = () =>
 
 const isoNow = () => new Date().toISOString();
 
+const normaliseColumnName = value => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim();
+  return trimmed;
+};
+
+const summariseColumnContext = (columnProfiles = [], metadata = null) => {
+  const columns = Array.isArray(columnProfiles) ? columnProfiles : [];
+  const totalColumns = columns.length;
+  const categoricalColumns = columns.filter(profile => profile?.type === 'categorical').length;
+  const numericalColumns = columns.filter(profile => profile?.type === 'numerical').length;
+  const sampleNames = columns
+    .map(profile => normaliseColumnName(profile?.name))
+    .filter(Boolean)
+    .slice(0, 15);
+  const genericHeaders = Array.isArray(metadata?.genericHeaders)
+    ? metadata.genericHeaders.map(normaliseColumnName).filter(Boolean)
+    : [];
+  const inferredHeaders = Array.isArray(metadata?.inferredHeaders)
+    ? metadata.inferredHeaders.map(normaliseColumnName)
+    : [];
+  const headerPairs = genericHeaders
+    .map((header, index) => {
+      if (!header) {
+        return null;
+      }
+      const alias = inferredHeaders[index];
+      const target = alias && alias.trim() ? alias.trim() : '(unknown)';
+      return `${header} -> ${target}`;
+    })
+    .filter(Boolean)
+    .slice(0, 15);
+
+  if (!totalColumns && !headerPairs.length) {
+    return null;
+  }
+
+  return {
+    totalColumns,
+    categoricalColumns,
+    numericalColumns,
+    sampleNames,
+    headerPairs,
+    datasetFingerprint: metadata?.datasetFingerprint || metadata?.datasetId || null,
+    updatedAt: isoNow(),
+  };
+};
+
 const deepClone = value => JSON.parse(JSON.stringify(value));
 
 const normaliseConstraints = constraints => {
@@ -273,6 +323,19 @@ export const createTaskOrchestrator = ({
     return deepClone(autoTaskFlags);
   };
 
+  const injectColumnContext = (columns, metadata) => {
+    ensureSession();
+    const summary = summariseColumnContext(columns, metadata);
+    if (!summary) {
+      return null;
+    }
+    contextStore.columnSummary = summary;
+    if (session) {
+      session.context.columnSummary = summary;
+    }
+    return deepClone(summary);
+  };
+
   return {
     startSession,
     startPhase,
@@ -287,5 +350,6 @@ export const createTaskOrchestrator = ({
     clearContextValue,
     setAutoTaskFlag,
     getAutoTaskFlag,
+    injectColumnContext,
   };
 };

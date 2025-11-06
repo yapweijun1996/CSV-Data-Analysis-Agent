@@ -1417,6 +1417,7 @@ this.state = {
       let prepIterationsLog = [];
       let toolHistory = [];
       let activeMetadata = dataForAnalysis.metadata || metadata || null;
+      this.updateColumnContext(profiles, activeMetadata);
       let headerMappingContext = this.ensureHeaderMappingContext(activeMetadata, {
         reason: 'preflight',
         logStep: false,
@@ -1448,6 +1449,7 @@ this.state = {
           let iterationPlan = null;
           let attemptErrorForPrompt = lastIterationError;
           let iterationCompleted = false;
+          this.updateColumnContext(profiles, activeMetadata);
 
           if (iteration === 1 && !lastIterationError) {
             this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
@@ -1460,6 +1462,7 @@ this.state = {
             this.addProgress(
               `${iterationLabel} attempt ${attemptLabel}: requesting updated preprocessing plan...`
             );
+            const columnContextSummary = this.getColumnContextSummary();
             const iterationContextPayload = {
               iteration,
               maxIterations: maxPrepIterations,
@@ -1473,6 +1476,7 @@ this.state = {
               })),
               headerMapping: headerMappingContext,
               toolHistory: toolHistory.slice(-5),
+              columnContext: columnContextSummary,
             };
             iterationContextPayload.onViolation = violation => {
               if (!violation || typeof violation !== 'object') return;
@@ -1671,6 +1675,7 @@ this.state = {
               this.resumePlanPhase('資料清理流程已調整完成，返回規劃。');
 
               profiles = iterationPlan.outputColumns || profileData(dataForAnalysis.data);
+              this.updateColumnContext(profiles, activeMetadata);
               prepIterationsLog.push({
                 iteration,
                 status: iterationStatus || 'continue',
@@ -2622,6 +2627,40 @@ this.state = {
       this.syncWorkflowTimeline();
     } catch (error) {
       console.warn('Failed to record workflow failure:', error);
+    }
+  }
+
+  updateColumnContext(columns, metadata = null) {
+    if (
+      !this.orchestrator ||
+      typeof this.orchestrator.injectColumnContext !== 'function' ||
+      !this.ensureWorkflowSession()
+    ) {
+      return;
+    }
+    try {
+      this.orchestrator.injectColumnContext(
+        Array.isArray(columns) ? columns : [],
+        metadata || this.state.csvMetadata || null
+      );
+    } catch (error) {
+      console.warn('Failed to update column context:', error);
+    }
+  }
+
+  getColumnContextSummary() {
+    if (
+      !this.orchestrator ||
+      typeof this.orchestrator.getContextValue !== 'function' ||
+      !this.ensureWorkflowSession()
+    ) {
+      return null;
+    }
+    try {
+      return this.orchestrator.getContextValue('columnSummary');
+    } catch (error) {
+      console.warn('Failed to read column context summary:', error);
+      return null;
     }
   }
 
@@ -6213,6 +6252,10 @@ this.state = {
       this.state.workflowTimeline,
       this.state.workflowPlan
     );
+    // Wrap workflow timeline so it always anchors at the bottom of the scrollable column.
+    const timelineFooter = workflowTimelineHtml
+      ? `<div class="mt-auto">${workflowTimelineHtml}</div>`
+      : '';
 
     let mainContent;
     if (!csvData) {
@@ -6281,10 +6324,12 @@ this.state = {
               </label>
             </div>
           </header>
-	        <div class="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 lg:px-8 py-6 space-y-6" data-main-scroll>
-	            ${workflowTimelineHtml}
+	        <div class="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 lg:px-8 py-6" data-main-scroll>
+	          <div class="flex flex-col min-h-full space-y-6">
 	            ${mainContent}
-          </div>
+	            ${timelineFooter}
+	          </div>
+	        </div>
         </main>
         ${assistantPanelHtml}
       </div>

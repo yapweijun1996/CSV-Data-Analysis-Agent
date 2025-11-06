@@ -1,4 +1,14 @@
 import { executePlan } from '../utils/dataProcessor.js';
+import { applyHeaderMapping as applyHeaderMappingHelper } from '../utils/headerMapping.js';
+import {
+  detectHeadersTool,
+  removeSummaryRowsTool,
+  detectIdentifierColumnsTool,
+  normalizeCurrencyValue,
+  isLikelyIdentifierValue,
+  describeColumns as describeColumnsHelper,
+} from '../utils/dataPrepTools.js';
+import { buildPromptFragments, formatMetadataContext } from './promptFragments.js';
 
 const GENAI_MODULE_URL = 'https://aistudiocdn.com/@google/genai@1.28.0';
 let googleModulePromise = null;
@@ -626,107 +636,6 @@ const getProactiveInsightSchema = () => {
   return proactiveInsightSchemaCache;
 };
 
-const formatMetadataContext = (metadata, options = {}) => {
-  if (!metadata || typeof metadata !== 'object') {
-    return '';
-  }
-  const {
-    includeLeadingRows = true,
-    leadingRowLimit = 5,
-    includeContextRows = true,
-    contextRowLimit = 10,
-  } = options;
-
-  const lines = [];
-
-  if (metadata.reportTitle) {
-    lines.push(`Report title: ${metadata.reportTitle}`);
-  }
-
-  if (Array.isArray(metadata.headerRow) && metadata.headerRow.length) {
-    lines.push(`Detected header columns: ${metadata.headerRow.join(', ')}`);
-  } else if (Array.isArray(metadata.rawHeaderValues) && metadata.rawHeaderValues.length) {
-    lines.push(`Header row text: ${metadata.rawHeaderValues.join(', ')}`);
-  }
-
-  if (typeof metadata.totalRowsBeforeFilter === 'number') {
-    lines.push(`Rows before cleaning: ${metadata.totalRowsBeforeFilter}`);
-  }
-  if (typeof metadata.cleanedRowCount === 'number') {
-    lines.push(`Rows after cleaning: ${metadata.cleanedRowCount}`);
-  }
-  if (typeof metadata.removedSummaryRowCount === 'number' && metadata.removedSummaryRowCount > 0) {
-    lines.push(`Filtered summary rows: ${metadata.removedSummaryRowCount}`);
-  }
-
-  if (
-    includeContextRows &&
-    Array.isArray(metadata.contextRows) &&
-    metadata.contextRows.length
-  ) {
-    const limit = Math.max(1, contextRowLimit);
-    const contextPreview = metadata.contextRows
-      .slice(0, limit)
-      .map((row, index) => {
-        if (!Array.isArray(row)) return '';
-        const text = row.filter(cell => cell).join(' | ');
-        const label = `Row ${index + 1}`;
-        return text ? `${label}: ${text}` : '';
-      })
-      .filter(Boolean);
-    if (contextPreview.length) {
-      lines.push(`Context rows:\n${contextPreview.join('\n')}`);
-    }
-  } else if (
-    includeLeadingRows &&
-    Array.isArray(metadata.leadingRows) &&
-    metadata.leadingRows.length
-  ) {
-    const leading = metadata.leadingRows
-      .slice(0, leadingRowLimit)
-      .map((row, index) => {
-        if (!Array.isArray(row)) return '';
-        const text = row.filter(cell => cell).join(' | ');
-        return text ? `Leading row ${index + 1}: ${text}` : '';
-      })
-      .filter(Boolean);
-    if (leading.length) {
-      lines.push(`Leading rows:\n${leading.join('\n')}`);
-    }
-  }
-
-  if (
-    Array.isArray(metadata.genericHeaders) &&
-    Array.isArray(metadata.inferredHeaders) &&
-    metadata.genericHeaders.length
-  ) {
-    const mapping = metadata.genericHeaders
-      .map((header, index) => {
-        const target = metadata.inferredHeaders[index] || '(unknown)';
-        return `${header} -> ${target}`;
-      })
-      .slice(0, 40);
-    if (mapping.length) {
-      lines.push(`Generic header mapping:\n${mapping.join('\n')}`);
-    }
-  }
-
-  if (Array.isArray(metadata.sampleDataRows) && metadata.sampleDataRows.length) {
-    const preview = metadata.sampleDataRows.slice(0, 3).map((row, index) => {
-      try {
-        return `Row ${index + 1}: ${JSON.stringify(row)}`;
-      } catch (error) {
-        const values = row && typeof row === 'object' ? Object.values(row) : [];
-        return `Row ${index + 1}: ${values.filter(Boolean).join(' | ')}`;
-      }
-    });
-    if (preview.length) {
-      lines.push(`Sample data preview:\n${preview.join('\n')}`);
-    }
-  }
-
-  return lines.join('\n');
-};
 
 const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
   if (!Array.isArray(sampleData)) {
@@ -817,28 +726,28 @@ const sanitizeJsFunctionBody = jsBody => {
     return wrapInvocation(core);
   }
 
-  let match = core.match(
-    /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i
-  );
-  if (match && match[1]) {
-    return wrapInvocation(match[1]);
-  }
+  const tryMatchAndWrap = patterns => {
+    for (const pattern of patterns) {
+      const match = core.match(pattern);
+      if (match && match[1]) {
+        return wrapInvocation(match[1]);
+      }
+    }
+    return null;
+  };
 
-  match = core.match(
-    /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*((?:async\s*)?\([^)]*\)\s*=>\s*(?:{[\s\S]*}|[^\n;]+))\s*;?\s*$/i
-  );
-  if (match && match[1]) {
-    return wrapInvocation(match[1]);
-  }
+  const wrapped =
+    tryMatchAndWrap([
+      /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i,
+      /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*((?:async\s*)?\([^)]*\)\s*=>\s*(?:{[\s\S]*}|[^\n;]+))\s*;?\s*$/i,
+      /^export\s+default\s+((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i,
+      /^module\.exports\s*=\s*((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*/i,
+      /^((?:async\s*)?\([^)]*\)\s*=>\s*(?:{[\s\S]*}|[^\n;]+))\s*;?\s*$/i,
+      /^((?:async\s*)?[a-zA-Z_$][\w$]*\s*=>\s*(?:{[\s\S]*}|[^\n;]+))\s*;?\s*$/i,
+    ]) || null;
 
-  match = core.match(/^export\s+default\s+((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i);
-  if (match && match[1]) {
-    return wrapInvocation(match[1]);
-  }
-
-  match = core.match(/^module\.exports\s*=\s*((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*/i);
-  if (match && match[1]) {
-    return wrapInvocation(match[1]);
+  if (wrapped) {
+    return wrapped;
   }
 
   return core;
@@ -867,30 +776,6 @@ const detectHardCodedPatternsInJs = source => {
 
   if (/\bdata\s*\[\s*\d+\s*\]/.test(mappingStripped)) {
     issueSet.add('direct array indexing like data[1]');
-  }
-
-  const usesDynamicHeaderResolution =
-    /\b(?:_util\.)?applyHeaderMapping\s*\(/.test(stripped) ||
-    /\bHEADER_MAPPING\b/.test(stripped) ||
-    /\bheaderMapping\b/.test(stripped) ||
-    /\bmetadata\.(?:genericHeaders|headerMap)\b/.test(stripped);
-
-  const genericColumnLiterals = mappingStripped.match(/['"]column_(\d+)['"]/gi);
-  if (genericColumnLiterals && !usesDynamicHeaderResolution) {
-    issueSet.add('hard-coded generic headers such as "column_3"');
-  }
-
-  const columnLabelLiterals = mappingStripped.match(/['"]Column\s+\d+['"]/g);
-  if (columnLabelLiterals && !usesDynamicHeaderResolution) {
-    issueSet.add('hard-coded "Column N" labels');
-  }
-
-  if (/`column_\s*\$\{/i.test(mappingStripped) && !usesDynamicHeaderResolution) {
-    issueSet.add('hard-coded generic headers via template literal');
-  }
-
-  if (/`Column\s*\$\{/i.test(mappingStripped) && !usesDynamicHeaderResolution) {
-    issueSet.add('hard-coded "Column" template literal');
   }
 
   if (/\basync\s+function\b/.test(mappingStripped) || /=\s*async\s*\(/i.test(mappingStripped)) {
@@ -1198,6 +1083,37 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
     ? `- **MANDATORY SUMMARY REMOVAL**: These rows were flagged as summaries and must be excluded from the transformed dataset: ${offendingSummaryText}. If any should remain, set status="abort" and justify.`
     : '- **MANDATORY SUMMARY REMOVAL**: Any row matching the summary keywords must be excluded from the transformed dataset. When uncertain, remove the row and mention it in your status message.';
 
+  const columnContextBlock = (() => {
+    if (!iterationContext || typeof iterationContext !== 'object') {
+      return '\n';
+    }
+    const columnContext = iterationContext.columnContext;
+    if (!columnContext || typeof columnContext !== 'object') {
+      return '\n';
+    }
+    const lines = [];
+    if (typeof columnContext.totalColumns === 'number') {
+      const categorical =
+        typeof columnContext.categoricalColumns === 'number' ? columnContext.categoricalColumns : 0;
+      const numerical =
+        typeof columnContext.numericalColumns === 'number' ? columnContext.numericalColumns : 0;
+      lines.push(
+        `Columns detected: ${columnContext.totalColumns} (categorical: ${categorical}, numerical: ${numerical}).`
+      );
+    }
+    if (Array.isArray(columnContext.sampleNames) && columnContext.sampleNames.length) {
+      lines.push(`Canonical column samples: ${columnContext.sampleNames.join(', ')}`);
+    }
+    if (Array.isArray(columnContext.headerPairs) && columnContext.headerPairs.length) {
+      const preview = columnContext.headerPairs
+        .slice(0, 12)
+        .map(entry => `- ${entry}`)
+        .join('\n');
+      lines.push(`Generic → canonical mapping hints:\n${preview}`);
+    }
+    return lines.length ? `Column context:\n${lines.join('\n')}\n\n` : '\n';
+  })();
+
   const headerMappingBlock = headerMappingSection ? `\n${headerMappingSection}\n` : '\n';
   const violationGuidance =
     iterationContext &&
@@ -1223,7 +1139,7 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
       : '\n';
   const helpersDescription = `\nAvailable Helpers (invoke via _util.<name>):\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\nIf you need to run a dedicated tool instead of writing code, respond with "toolCalls": [{"tool":"detect_headers","args":"{\"strategies\":[\"metadata\",\"sample\"]}"}] and omit jsFunctionBody. The "args" field MUST be a JSON string.`;
 
-  return `${contextSection}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}
+  return `${contextSection}${columnContextBlock}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}
 
 Common problems to fix:
 - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
@@ -1241,6 +1157,7 @@ Common problems to fix:
 ${mandatorySummaryBullet}
 - **Crosstab/Wide Format**: Unpivot data where column headers are actually values (e.g., years, regions) so that each observation is one row.
 - **Multi-header Rows**: Skip any initial junk rows (titles, blank lines, headers split across rows) before the true header.
+- **HEADER MAPPING IS MANDATORY**: Always embed the provided \`HEADER_MAPPING\` snippet (or dynamically detect one) and access fields via \`const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING)\`. If no mapping is supplied, call the detection helpers first.
 - **NO HARD-CODED INDEXES**: You must dynamically detect header rows and identifier columns by examining the provided sample rows. Never assume fixed row numbers or literal labels (e.g., "Code", "Description") will exist. Use fallbacks (e.g., scanning for rows with many text cells followed by rows with numeric cells) so the transform works even when column labels change.
 
 ${headerMappingPreview ? `Generic to inferred header mapping:\n${headerMappingPreview}\n` : ''}
@@ -1365,6 +1282,7 @@ Your task:
           }
           continue;
         }
+        // Mirror the runtime helper surface so validation executes exactly what the agent can do.
         const mockUtil = {
           parseNumber: value => {
             const cleaned = String(value ?? '')
@@ -1378,25 +1296,15 @@ Your task:
             if (value === null || value === undefined) return [];
             return String(value).split(',');
           },
-          applyHeaderMapping: (row, mapping) => {
-            if (!row || typeof row !== 'object') {
-              return {};
-            }
-            if (!mapping || typeof mapping !== 'object') {
-              return { ...row };
-            }
-            const result = {};
-            Object.keys(row).forEach(key => {
-              const trimmed = typeof key === 'string' ? key.trim() : key;
-              const targetKey =
-                (typeof trimmed === 'string' && mapping[trimmed]) ||
-                mapping[key] ||
-                trimmed ||
-                key;
-              result[targetKey] = row[key];
-            });
-            return result;
-          },
+          applyHeaderMapping: (row, mapping) => applyHeaderMappingHelper(row, mapping),
+          detectHeaders: metadata => detectHeadersTool({ metadata }),
+          removeSummaryRows: (rows, keywords) =>
+            removeSummaryRowsTool({ data: rows, keywords }).cleanedData,
+          detectIdentifierColumns: (rows, metadata) =>
+            detectIdentifierColumnsTool({ data: rows, metadata }).identifiers,
+          isValidIdentifierValue: value => isLikelyIdentifierValue(value),
+          normalizeNumber: (value, options) => normalizeCurrencyValue(value, options),
+          describeColumns: metadata => describeColumnsHelper(metadata),
         };
 
         try {
@@ -1692,43 +1600,25 @@ export const generateChatResponse = async (
     };
   }
 
-  const metadataContext = formatMetadataContext(metadata, {
-    leadingRowLimit: 10,
-    contextRowLimit: 15,
+  const fragments = buildPromptFragments({
+    columns,
+    metadata,
+    currentView,
+    intent,
+    language: settings.language,
+    dataPreparationPlan,
+    skillCatalog: Array.isArray(skillCatalog) ? skillCatalog.slice(0, MAX_SKILL_PROMPT_ENTRIES) : [],
+    memoryContext: Array.isArray(memoryContext)
+      ? memoryContext.slice(0, MAX_MEMORY_PROMPT_ENTRIES)
+      : [],
   });
-  const metadataSection = metadataContext ? `**Dataset Context:**\n${metadataContext}\n` : '';
-
-  const limitedSkillCatalog = Array.isArray(skillCatalog) ? skillCatalog.slice(0, MAX_SKILL_PROMPT_ENTRIES) : [];
-  const limitedMemoryContext = Array.isArray(memoryContext) ? memoryContext.slice(0, MAX_MEMORY_PROMPT_ENTRIES) : [];
-
-  const skillSection = limitedSkillCatalog.length
-    ? `**Skill Library (${limitedSkillCatalog.length} available):**
-${limitedSkillCatalog
-  .map(skill => `- [${skill.id}] ${skill.label}: ${skill.description}`)
-  .join('\n')}
-`
-    : '';
-
-  const memorySection = limitedMemoryContext.length
-    ? `**LONG-TERM MEMORY (Top Matches):**
-${limitedMemoryContext
-  .map(item => {
-    const score = typeof item.score === 'number' ? item.score.toFixed(2) : 'n/a';
-    const summary = item.summary || item.text || '';
-    return `- (${item.kind || 'note'} | score ${score}) ${summary}`;
-  })
-  .join('\n')}
-`
-    : `**LONG-TERM MEMORY (Top Matches):**
-No specific long-term memories seem relevant to this query.
-`;
 
   const cardsPreview = cardContext && cardContext.length
     ? JSON.stringify(cardContext.slice(0, 6), null, 2)
     : 'No analysis cards yet.';
 
   const rawDataPreview = rawDataSample && rawDataSample.length
-    ? JSON.stringify(rawDataSample.slice(0, 20), null, 2)
+    ? JSON.stringify(rawDataSample.slice(0, 12), null, 2)
     : 'No raw data available.';
 
   const coreBriefing = aiCoreAnalysisSummary || 'No core analysis has been performed yet. This is your first look at the data.';
@@ -1736,21 +1626,7 @@ No specific long-term memories seem relevant to this query.
 ${coreBriefing}
 `;
 
-  const dataPreparationDetails = (() => {
-    if (!dataPreparationPlan) {
-      return 'No AI-driven data preparation was performed.';
-    }
-    const explanation = dataPreparationPlan.explanation || 'AI suggested preparing the data before analysis.';
-    const codeBlock = dataPreparationPlan.jsFunctionBody
-      ? `Code Executed: \`\`\`javascript
-${dataPreparationPlan.jsFunctionBody}
-\`\`\``
-      : 'Code Executed: None (AI determined no transformation was necessary).';
-    return `${explanation}\n${codeBlock}`;
-  })();
-  const dataPreparationSection = `**DATA PREPARATION LOG (How the raw data was cleaned):**
-${dataPreparationDetails}
-`;
+  const dataPreparationSection = fragments.dataPreparationLog;
 
   const guidingPrinciples = `**Guiding Principles & Common Sense:**
 1. Synthesize and interpret: connect insights and explain the business implications—the "so what?".
@@ -1759,13 +1635,7 @@ ${dataPreparationDetails}
 4. Use business language focused on performance, contribution, and impact.
 `;
 
-  const datasetOverview = `**Dataset Overview**
-- Title: ${datasetTitle}
-- Current View: ${currentView}
-- Detected Intent: ${intent}
-- Categorical Columns: ${categoricalCols.join(', ') || 'None'}
-- Numerical Columns: ${numericalCols.join(', ') || 'None'}
-${metadataSection}`;
+  const datasetOverview = fragments.datasetOverview;
 
   const responseTemplate = `**Response Template (use for text_response):**
 1. Opening summary (1-2 sentences) stating the main takeaway.
@@ -1774,25 +1644,7 @@ ${metadataSection}`;
 4. Recommended actions / next step for the user.
 Always follow this structure unless the user requests something extremely specific that conflicts with it.`;
 
-  const actionsInstructions = `**Available Actions & Tools**
-1. \`text_response\`: Conversational reply. If the text references a specific card, include its \`cardId\`.
-2. \`plan_creation\`: Propose a NEW chart. Provide a full plan object. For wide categorical charts, set \`defaultTopN\` (e.g., 8) and \`defaultHideOthers\` to \`true\` to keep charts readable.
-3. \`dom_action\`: Interact with existing UI elements. Provide objects like:
-   - {"toolName":"highlightCard","cardId":"card-123","scrollIntoView":true}
-   - {"toolName":"changeCardChartType","cardId":"card-123","chartType":"line"}
-   - {"toolName":"toggleCardData","cardId":"card-123","visible":true}
-   - {"toolName":"setCardTopN","cardId":"card-123","topN":8,"hideOthers":true}
-   - {"toolName":"setCardHideOthers","cardId":"card-123","hideOthers":false}
-   - {"toolName":"clearCardSelection","cardId":"card-123"}
-   - {"toolName":"resetCardZoom","cardId":"card-123"}
-   - {"toolName":"setRawDataVisibility","visible":false}
-   - {"toolName":"setRawDataFilter","query":"Asia","wholeWord":false}
-   - {"toolName":"setRawDataWholeWord","wholeWord":true}
-   - {"toolName":"setRawDataSort","column":"Region","direction":"ascending"}
-   - {"toolName":"removeRawDataRows","column":"Status","values":["Cancelled"],"operator":"equals"}
-4. \`execute_js_code\`: Supply complex JavaScript transformations for data cleansing/prep. Always accompany with a \`text_response\` describing the change.
-- **Critical:** Never call \`setRawDataFilter\` without a \`query\` (or \`value\`) string. If you do not have a keyword yet, ask the user instead of firing the tool. Include the column hint when known.
-
+  const actionsInstructions = `${fragments.toolInstructions}
 **ReAct Requirements**
 - Every action MUST include a \`thought\` explaining the reasoning immediately before acting.
 - For multi-step tasks, outline the full plan in the FIRST action's \`thought\`, then execute the steps in order.
@@ -1814,10 +1666,12 @@ ${dataPreparationSection}
 **Analysis Cards on Screen:**
 ${cardsPreview}
 
-**Raw Data Sample (first 20 rows for context):**
+**Raw Data Sample (first 12 rows for context):**
 ${rawDataPreview}
 
-${skillSection}${memorySection}${systemSection}${conversationSection}
+${fragments.skillLibrary}
+${fragments.memoryPreview}
+${systemSection}${conversationSection}
 **Latest User Message:** "${userPrompt}"
 
 ${responseTemplate}
