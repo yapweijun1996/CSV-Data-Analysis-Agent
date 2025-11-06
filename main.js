@@ -2231,15 +2231,20 @@ this.state = {
     if (!domAction || typeof domAction !== 'object') {
       return { success: false, error: 'Missing DOM action payload.' };
     }
-    const { toolName } = domAction;
-    if (!toolName) {
-      return { success: false, error: 'DOM action requires a toolName.' };
+    const rawToolName =
+      (typeof domAction.toolName === 'string' && domAction.toolName) ||
+      (typeof domAction.action === 'string' && domAction.action) ||
+      null;
+    const toolName = this.normaliseDomToolName(rawToolName);
+    if (!toolName || !DOM_ACTION_TOOL_NAMES.has(toolName)) {
+      return { success: false, error: `Unknown DOM action: ${rawToolName || 'unknown'}.` };
     }
+    domAction.toolName = toolName;
 
     const resolveCardContext = payload => {
       const args = payload && typeof payload.args === 'object' ? payload.args : {};
       const cardIdInput =
-        payload.cardId ??
+        (Array.isArray(payload.cardId) ? payload.cardId[0] : payload.cardId) ??
         payload.card_id ??
         args.cardId ??
         args.card_id ??
@@ -2529,9 +2534,154 @@ this.state = {
       case 'removeRawDataRows': {
         return this.removeRawDataRows(domAction);
       }
+      case 'removeCard':
+      case 'removeAnalysisCard':
+      case 'deleteCard':
+      case 'deleteAnalysisCard': {
+        const cardIds = [
+          ...(Array.isArray(domAction.cardIds) ? domAction.cardIds : []),
+          ...(Array.isArray(domAction.cardId) ? domAction.cardId : []),
+        ]
+          .concat(
+            typeof domAction.cardId === 'string' ? [domAction.cardId] : [],
+            typeof domAction.id === 'string' ? [domAction.id] : []
+          )
+          .filter(id => typeof id === 'string' && id.trim().length);
+
+        if (cardIds.length) {
+          let removedCount = 0;
+          cardIds.forEach(rawId => {
+            const id = rawId.trim();
+            const targetCard = this.getCardByIdOrAlias(id);
+            if (targetCard) {
+              this.removeCardById(targetCard.id);
+              removedCount += 1;
+            }
+          });
+          if (removedCount) {
+            return {
+              success: true,
+              message: `Removed ${removedCount} card${removedCount > 1 ? 's' : ''}.`,
+            };
+          }
+          return {
+            success: false,
+            error: 'No matching cards found to remove.',
+          };
+        }
+
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
+        }
+        this.removeCardById(cardId);
+        return { success: true, message: `Removed ${describeCardTarget(card)}.` };
+      }
+      case 'setCardTitle':
+      case 'updateCardTitle':
+      case 'renameCard': {
+        const updateCandidates = [
+          domAction.newTitle,
+          domAction.title,
+          domAction.value,
+          domAction.label,
+          domAction.text,
+        ];
+        const newTitleRaw = updateCandidates.find(
+          candidate => typeof candidate === 'string' && candidate.trim().length
+        );
+        if (!newTitleRaw) {
+          return { success: false, error: 'New title is required.' };
+        }
+        const newTitle = newTitleRaw.trim();
+        const titles = [
+          domAction.newTitle,
+          domAction.title,
+          domAction.label,
+          domAction.text,
+          domAction.value,
+        ];
+        const newTitleRaw = titles.find(item => typeof item === 'string' && item.trim().length);
+        if (!newTitleRaw) {
+          return { success: false, error: 'New title is required.' };
+        }
+        const newTitle = newTitleRaw.trim();
+
+        const ids = Array.isArray(domAction.cardId)
+          ? domAction.cardId.filter(id => typeof id === 'string' && id.trim().length)
+          : [];
+        if (ids.length) {
+          let updated = 0;
+          ids.forEach(rawId => {
+            const id = rawId.trim();
+            const targetCard = this.getCardByIdOrAlias(id);
+            if (targetCard) {
+              this.updateCard(targetCard.id, current => {
+                const plan = current.plan ? { ...current.plan, title: newTitle } : { title: newTitle };
+                return { plan };
+              });
+              const updatedCard = this.getCardByIdOrAlias(targetCard.id);
+              if (updatedCard) {
+                this.linkAliasToCard(updatedCard);
+                this.lastReferencedCard = {
+                  id: updatedCard.id,
+                  title: newTitle,
+                };
+              }
+              updated += 1;
+            }
+          });
+          if (updated) {
+            return {
+              success: true,
+              message: `Updated title for ${updated} card${updated > 1 ? 's' : ''}.`,
+            };
+          }
+        }
+        const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
+        if (!cardId || !card) {
+          return {
+            success: false,
+            error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
+          };
+        }
+        this.updateCard(cardId, current => {
+          const plan = current.plan ? { ...current.plan, title: newTitle } : { title: newTitle };
+          return { plan };
+        });
+        const updatedCard = this.getCardByIdOrAlias(cardId);
+        if (updatedCard) {
+          this.linkAliasToCard(updatedCard);
+        }
+        this.lastReferencedCard = {
+          id: cardId,
+          title: newTitle,
+        };
+        return { success: true, message: `Card title updated to "${newTitle}".` };
+      }
       default:
         return { success: false, error: `Unknown DOM action: ${toolName}.` };
     }
+  }
+
+  normaliseDomToolName(name) {
+    if (typeof name !== 'string') {
+      return null;
+    }
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (/[_\s-]/.test(trimmed)) {
+      const camel = trimmed
+        .toLowerCase()
+        .replace(/[_\s-]+([a-z0-9])/g, (_, char) => (char ? char.toUpperCase() : ''));
+      return camel.charAt(0).toLowerCase() + camel.slice(1);
+    }
+    return trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
   }
 
   normaliseAiAction(action, depth = 0) {
@@ -2695,17 +2845,52 @@ this.state = {
       if (!domAction.toolName && props.toolName && typeof props.toolName === 'string') {
         domAction.toolName = props.toolName;
       }
-      if (!domAction.toolName || !DOM_ACTION_TOOL_NAMES.has(domAction.toolName)) {
+      let candidateTool =
+        domAction.toolName ||
+        props.toolName ||
+        domAction.action ||
+        props.action ||
+        props.tool ||
+        props.command ||
+        action.toolName ||
+        action.action ||
+        null;
+      let canonicalTool = this.normaliseDomToolName(candidateTool);
+      if (!canonicalTool) {
+        if (domAction.remove === true || domAction.delete === true) {
+          canonicalTool = 'removeCard';
+        } else if (
+          typeof domAction.newTitle === 'string' ||
+          typeof domAction.title === 'string' ||
+          typeof domAction.label === 'string'
+        ) {
+          canonicalTool = 'setCardTitle';
+        }
+      }
+      if (!canonicalTool || !DOM_ACTION_TOOL_NAMES.has(canonicalTool)) {
         return null;
       }
+      domAction.toolName = canonicalTool;
       if (action.cardId && !Object.prototype.hasOwnProperty.call(domAction, 'cardId')) {
         domAction.cardId = action.cardId;
       }
       return { responseType: 'dom_action', domAction, thought };
     }
 
-    if (toolName && DOM_ACTION_TOOL_NAMES.has(toolName)) {
-      const domAction = { toolName, ...props };
+    let canonicalToolName =
+      typeof toolName === 'string' ? this.normaliseDomToolName(toolName) : null;
+    if (!canonicalToolName) {
+      if (props && (props.remove === true || props.delete === true)) {
+        canonicalToolName = 'removeCard';
+      } else if (
+        props &&
+        (typeof props.newTitle === 'string' || typeof props.title === 'string' || typeof props.label === 'string')
+      ) {
+        canonicalToolName = 'setCardTitle';
+      }
+    }
+    if (canonicalToolName && DOM_ACTION_TOOL_NAMES.has(canonicalToolName)) {
+      const domAction = { ...props, toolName: canonicalToolName };
       if (action.cardId && !Object.prototype.hasOwnProperty.call(domAction, 'cardId')) {
         domAction.cardId = action.cardId;
       }
@@ -4690,7 +4875,17 @@ this.state = {
       : [];
 
     const combined = [...progress, ...chat];
-    combined.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    combined.sort((a, b) => {
+      const timeA = a.timestamp.getTime();
+      const timeB = b.timestamp.getTime();
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+      if (a.__kind === b.__kind) {
+        return 0;
+      }
+      return a.__kind === 'chat' ? -1 : 1;
+    });
     return combined.slice(-300);
   }
 

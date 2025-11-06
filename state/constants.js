@@ -45,6 +45,13 @@ export const DOM_ACTION_TOOL_NAMES = new Set([
   'setRawDataSort',
   'removeRawDataRows',
   'focusRawDataPanel',
+  'removeCard',
+  'removeAnalysisCard',
+  'deleteCard',
+  'deleteAnalysisCard',
+  'renameCard',
+  'setCardTitle',
+  'updateCardTitle',
 ]);
 
 export const MIN_ASIDE_WIDTH = 320;
