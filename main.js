@@ -4243,3 +4243,66 @@ if (!root) {
   throw new Error('Root element not found; unable to initialise the application.');
 }
 root.innerHTML = '<csv-data-analysis-app></csv-data-analysis-app>';
+
+const appElement = root.querySelector('csv-data-analysis-app');
+const messageOrigin = window.location.origin;
+
+const notifyOpenerReady = () => {
+  if (!window.opener || window.opener.closed) return;
+  try {
+    window.opener.postMessage({ type: 'ready' }, messageOrigin);
+  } catch (error) {
+    console.warn('Unable to notify opener about readiness:', error);
+  }
+};
+
+if (document.readyState === 'complete') {
+  notifyOpenerReady();
+} else {
+  window.addEventListener('load', () => {
+    notifyOpenerReady();
+  });
+}
+
+const sanitiseFileStem = input => {
+  const stem = String(input || '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w.-]/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return stem || 'table-export';
+};
+
+let lastReceivedSignature = null;
+
+window.addEventListener('message', event => {
+  if (event.origin !== messageOrigin) return;
+  const payload = event.data;
+  if (!payload || payload.type !== 'table_csv' || typeof payload.csv !== 'string') return;
+  if (!appElement || typeof appElement.handleFileInput !== 'function') {
+    console.warn('CSV payload received before app initialised; ignoring.');
+    return;
+  }
+
+  const signature = `${payload.header ?? ''}::${payload.csv.length}`;
+  if (signature === lastReceivedSignature) {
+    return;
+  }
+  lastReceivedSignature = signature;
+
+  const fileStem = sanitiseFileStem(payload.header);
+  const fileName = `${fileStem}.csv`;
+  const blob = new Blob([payload.csv], { type: 'text/csv' });
+  let file;
+  if (typeof File === 'function') {
+    file = new File([blob], fileName, { type: 'text/csv' });
+  } else {
+    blob.name = fileName;
+    file = blob;
+  }
+  try {
+    appElement.handleFileInput(file);
+  } catch (error) {
+    console.error('Failed to ingest CSV payload from postMessage:', error);
+  }
+});
