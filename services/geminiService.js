@@ -1504,7 +1504,7 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
     }
     return `${lines.join('\n')}\n`;
   })();
-  const stagePlanContract = `\nStage Planning Contract (Vanilla Agent):\n- ALWAYS populate \`stagePlan\` with three objects: \`titleExtraction\`, \`headerResolution\`, and \`dataNormalization\`.\n- Each stage must include: goal, ordered checkpoints, heuristics, fallbackStrategies, expectedArtifacts, nextAction, status, and a concise logMessage for UI display.\n- Provide \`agentLog\` entries (e.g., {"stage":"title","thought":"Row 0 looks like a title","action":"store row 0 as metadata"}) so the frontend can surface multi-step reasoning in the chat log.\n- Prefer setting \`jsFunctionBody\` to null. Only emit code if the transformation is trivial; otherwise describe the algorithm inside \`stagePlan\` so the Vanilla Agent can execute it tool-by-tool.\n- When a Crosstab/wide layout is detected, outline the unpivot logic inside \`dataNormalization\` (reference helper calls, identifier detection, iteration ranges, etc.) rather than relying on hard-coded indices.`;
+  const stagePlanContract = `\nStage Planning Contract (Vanilla Agent):\n- ALWAYS populate \`stagePlan\` with three objects: \`titleExtraction\`, \`headerResolution\`, and \`dataNormalization\`.\n- Treat每個階段 as an independent micro-goal: checkpoints must be tiny, verifiable actions (e.g., “Inspect rows 0–2 for title text”, “Call detectHeaders to confirm canonical names”) rather than a single large paragraph.\n- Each stage must include: goal, ordered checkpoints, heuristics, fallbackStrategies, expectedArtifacts, nextAction, status, and a concise logMessage so the UI can narrate progress step by step.\n- Provide \`agentLog\` entries (e.g., {"stage":"title","thought":"Row 0 looks like a title","action":"store row 0 as metadata"}) so engineers can audit the thinking trail and Raw Data Explorer can explain what changed.\n- Prefer setting \`jsFunctionBody\` to null. Only emit code if the transformation is trivial or you can faithfully translate the stage plan into deterministic steps; otherwise describe the algorithm inside \`stagePlan\` so the Vanilla Agent can execute it tool-by-tool.\n- When a Crosstab/wide layout is detected, explicitly outline the unpivot logic inside \`dataNormalization\` (identifier detection, iteration ranges, helper calls) and avoid relying on hard-coded indices.`;
 
   return `${contextSection}${columnContextBlock}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}${stagePlanContract}${failureContextBlock}
 
@@ -1554,6 +1554,7 @@ Your task:
 - You MUST provide the \`analysisSteps\` array capturing your chain-of-thought (observations ➜ decisions ➜ actions). Each item should be a full sentence.
 - You MUST provide the \`outputColumns\` array. If no transformation is needed, it should match the input schema (but update types if you discovered more specific ones).
 - If you provide JavaScript, it MUST include a \`return\` statement that returns the transformed data array.
+- Mirror your \`stagePlan\` checkpoints in code and comments. Each checkpoint should translate into a tiny sequential action (e.g., remove metadata rows → resolve headers → normalize rows) so the UI can narrate progress and verify Raw Data Explorer shows the same result.
 - Never access \`data\` using numeric literals (e.g., \`data[0]\`, \`data[3]\`, \`data[data.length - 1]\`). Determine headers/rows dynamically via the provided helper utilities.
 - Whenever you convert numbers, you MUST use \`_util.parseNumber\`. Whenever you split comma-separated numeric strings, you MUST use \`_util.splitNumericString\`.
 - When the dataset exhibits the Crosstab alert, your \`stagePlan.dataNormalization\` must detail the unpivot algorithm (identifier detection, per-column iteration, parsing). Include code only if absolutely necessary.
@@ -1627,7 +1628,7 @@ Your task:
         if (plan.agentLog && plan.agentLog.length) {
           console.log('Agent log:', plan.agentLog);
         }
-        console.log('Sample rows sent to model (first 3):', sampleRowsForPrompt.slice(0, 3));
+        console.log('Sample rows sent to model (first 20):', sampleRowsForPrompt.slice(0, 20));
         console.log('Full plan payload:', plan);
       } finally {
         console.groupEnd();
