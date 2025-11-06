@@ -2220,8 +2220,11 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
   }
 
-  normaliseAiAction(action) {
+  normaliseAiAction(action, depth = 0) {
     if (!action || typeof action !== 'object') {
+      return null;
+    }
+    if (depth > 3) {
       return null;
     }
     const getThought = source => {
@@ -2229,6 +2232,35 @@ class CsvDataAnalysisApp extends HTMLElement {
       const value = source.thought ?? source.reason ?? null;
       return typeof value === 'string' ? value : null;
     };
+
+    const unwrapNestedAction = candidate => {
+      if (!candidate || typeof candidate !== 'object') return null;
+      const merged = { ...candidate };
+      const nestedThought = getThought(candidate) || getThought(action);
+      if (nestedThought && typeof merged.thought !== 'string') {
+        merged.thought = nestedThought;
+      }
+      if (action.cardId && !Object.prototype.hasOwnProperty.call(merged, 'cardId')) {
+        merged.cardId = action.cardId;
+      }
+      return this.normaliseAiAction(merged, depth + 1);
+    };
+
+    if (!action.responseType) {
+      if (action.action && typeof action.action === 'object' && action.action !== action) {
+        const result = unwrapNestedAction(action.action);
+        if (result) {
+          return result;
+        }
+      }
+      if (Array.isArray(action.actions) && action.actions.length === 1) {
+        const result = unwrapNestedAction(action.actions[0]);
+        if (result) {
+          return result;
+        }
+      }
+    }
+
     if (action.responseType) {
       const normalised = { ...action };
       const thought = getThought(action);
@@ -2240,7 +2272,12 @@ class CsvDataAnalysisApp extends HTMLElement {
       return normalised;
     }
 
-    const toolName = typeof action.toolName === 'string' ? action.toolName : typeof action.type === 'string' ? action.type : null;
+    const toolName =
+      typeof action.toolName === 'string'
+        ? action.toolName
+        : typeof action.type === 'string'
+        ? action.type
+        : null;
     const props = action && typeof action.props === 'object' && action.props ? { ...action.props } : {};
     if (action && typeof action.args === 'object' && action.args) {
       Object.assign(props, action.args);
@@ -2339,6 +2376,53 @@ class CsvDataAnalysisApp extends HTMLElement {
       .filter(Boolean);
 
     if (!normalisedActions.length) {
+      const fallbackText = (() => {
+        for (const raw of actions) {
+          if (!raw || typeof raw !== 'object') continue;
+          if (typeof raw.text === 'string' && raw.text.trim()) {
+            return raw.text.trim();
+          }
+          const nested = raw.action && typeof raw.action === 'object' ? raw.action : null;
+          if (nested && typeof nested.text === 'string' && nested.text.trim()) {
+            return nested.text.trim();
+          }
+          if (nested && Array.isArray(nested.actions) && nested.actions.length) {
+            for (const inner of nested.actions) {
+              if (inner && typeof inner.text === 'string' && inner.text.trim()) {
+                return inner.text.trim();
+              }
+            }
+          }
+        }
+        return null;
+      })();
+
+      if (fallbackText) {
+        const shouldStick = this.isConversationNearBottom();
+        this.setState(prev => ({
+          chatHistory: [
+            ...prev.chatHistory,
+            {
+              sender: 'ai',
+              text: fallbackText,
+              timestamp: new Date(),
+              type: 'ai_fallback_message',
+            },
+          ],
+        }));
+        if (shouldStick) {
+          this.shouldAutoScrollConversation = true;
+        }
+        this.addProgress(
+          'AI response used fallback mode due to unsupported action format.',
+          'warning'
+        );
+      } else {
+        this.addProgress(
+          'AI response could not be interpreted. Please retry or rephrase your request.',
+          'error'
+        );
+      }
       return;
     }
 

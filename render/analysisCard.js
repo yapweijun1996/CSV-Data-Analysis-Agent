@@ -289,7 +289,12 @@ export const renderAnalysisCard = ({ app, card, colors }) => {
       </div>
 
       <div class="flex flex-wrap justify-between items-center gap-3 text-sm">
-        <button type="button" class="text-blue-600 hover:underline" data-toggle-data="${card.id}">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-toggle-data="${card.id}"
+          aria-expanded="${card.isDataVisible ? 'true' : 'false'}"
+        >
           ${card.isDataVisible ? 'Hide' : 'Show'} full data table
         </button>
         ${

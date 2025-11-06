@@ -1,8 +1,8 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
 import { embedText, cosineSimilarity as bowCosineSimilarity } from './ragService.js';
 
-const DEFAULT_REMOTE_MODEL_PATH = 'https://huggingface.co/';
-const DEFAULT_LOCAL_MODEL_PATH = '/model/';
+const HUGGING_FACE_MODEL_BASE = 'https://huggingface.co/';
+const TRANSFORMER_MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 
 class VectorStore {
   constructor() {
@@ -172,35 +172,28 @@ class VectorStore {
   }
 
   async tryLoadTransformer(progressCallback) {
-    const localEnabled = typeof env.allowLocalModels === 'undefined' || env.allowLocalModels;
-    const remoteEnabled = typeof env.allowRemoteModels === 'undefined' || env.allowRemoteModels;
-    if (localEnabled) {
-      try {
-        env.allowLocalModels = true;
-        env.localModelPath = env.localModelPath || DEFAULT_LOCAL_MODEL_PATH;
-        env.allowRemoteModels = false;
-        progressCallback?.('Loading AI memory model from local cache...');
-        return await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-      } catch (error) {
-        console.warn('Local model load failed, trying remote CDN next.', error);
-      }
-    }
-    if (remoteEnabled) {
-      try {
-        env.allowRemoteModels = true;
-        env.remoteModelPath = env.remoteModelPath || DEFAULT_REMOTE_MODEL_PATH;
-        progressCallback?.('Downloading AI memory model (~34MB)...');
-        return await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-          progress_callback: progress => {
-            if (progress?.status === 'progress' && progress.total > 0) {
-              const loaded = (progress.loaded / 1024 / 1024).toFixed(2);
-              const total = (progress.total / 1024 / 1024).toFixed(2);
-              progressCallback?.(`Downloading AI memory model: ${loaded}MB / ${total}MB`);
-            }
-          },
-        });
-      } catch (error) {
-        console.warn('Remote model load failed, switching to lightweight embeddings.', error);
+    try {
+      env.allowLocalModels = false;
+      env.allowRemoteModels = true;
+      env.remoteModelPath = HUGGING_FACE_MODEL_BASE;
+      progressCallback?.('Downloading AI memory model from Hugging Face (~34MB)...');
+      return await pipeline('feature-extraction', TRANSFORMER_MODEL_ID, {
+        progress_callback: progress => {
+          if (progress?.status === 'progress' && progress.total > 0) {
+            const loaded = (progress.loaded / 1024 / 1024).toFixed(2);
+            const total = (progress.total / 1024 / 1024).toFixed(2);
+            progressCallback?.(`Downloading AI memory model: ${loaded}MB / ${total}MB`);
+          }
+        },
+      });
+    } catch (error) {
+      const hint =
+        error instanceof Error && /json\.parse/i.test(error.message)
+          ? 'Hugging Face returned a non-JSON response. Check that the model is publicly accessible or provide the correct CDN URL.'
+          : null;
+      console.warn('Remote model load failed, switching to lightweight embeddings.', error);
+      if (hint) {
+        progressCallback?.(hint);
       }
     }
     return null;
