@@ -1486,9 +1486,27 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
           .join('\n')}\n`
       : '\n';
   const helpersDescription = `\nAvailable Helpers (invoke via _util.<name>):\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\nIf you need to run a dedicated tool instead of writing code, respond with "toolCalls": [{"tool":"detect_headers","args":"{\"strategies\":[\"metadata\",\"sample\"]}"}] and omit jsFunctionBody. The "args" field MUST be a JSON string.`;
+  const failureContextBlock = (() => {
+    const context = lastError?.failureContext;
+    if (!context) {
+      return '\n';
+    }
+    const lines = ['\n**Previous Failure Diagnostics:**'];
+    if (context.reason) {
+      lines.push(`- Reason: ${context.reason}`);
+    }
+    if (context.codePreview) {
+      lines.push('- Code preview (first 400 chars):', '```javascript', context.codePreview.slice(0, 400), '```');
+    }
+    if (context.sampleRows) {
+      const sampleText = JSON.stringify(context.sampleRows, null, 2);
+      lines.push('- Sample rows excerpt:', '```json', sampleText.slice(0, 400), '```');
+    }
+    return `${lines.join('\n')}\n`;
+  })();
   const stagePlanContract = `\nStage Planning Contract (Vanilla Agent):\n- ALWAYS populate \`stagePlan\` with three objects: \`titleExtraction\`, \`headerResolution\`, and \`dataNormalization\`.\n- Each stage must include: goal, ordered checkpoints, heuristics, fallbackStrategies, expectedArtifacts, nextAction, status, and a concise logMessage for UI display.\n- Provide \`agentLog\` entries (e.g., {"stage":"title","thought":"Row 0 looks like a title","action":"store row 0 as metadata"}) so the frontend can surface multi-step reasoning in the chat log.\n- Prefer setting \`jsFunctionBody\` to null. Only emit code if the transformation is trivial; otherwise describe the algorithm inside \`stagePlan\` so the Vanilla Agent can execute it tool-by-tool.\n- When a Crosstab/wide layout is detected, outline the unpivot logic inside \`dataNormalization\` (reference helper calls, identifier detection, iteration ranges, etc.) rather than relying on hard-coded indices.`;
 
-  return `${contextSection}${columnContextBlock}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}${stagePlanContract}
+  return `${contextSection}${columnContextBlock}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}${stagePlanContract}${failureContextBlock}
 
 Common problems to fix:
 - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
@@ -1663,8 +1681,15 @@ Your task:
             throw new Error('Transformed data still contains summary/metadata rows (e.g., total, subtotal, notes). Remove them and retry.');
           }
         } catch (error) {
-          lastError = error instanceof Error ? error : new Error(String(error));
-          console.warn(`AI-generated transformation failed validation (attempt ${attempt + 1}).`, lastError);
+          const wrappedError = error instanceof Error ? error : new Error(String(error));
+          wrappedError.failureContext = {
+            type: 'js_validation_error',
+            reason: wrappedError.message,
+            codePreview: normalizedJsBody ? normalizedJsBody.slice(0, 800) : null,
+            sampleRows: normalizedSampleData.slice(0, 3),
+          };
+          lastError = wrappedError;
+          console.warn(`AI-generated transformation failed validation (attempt ${attempt + 1}).`, wrappedError);
           continue;
         }
       }

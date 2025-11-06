@@ -56,6 +56,16 @@ Then launch the dev server (`npm run dev`). The vector store will first check fo
 3. If an API key is present, the assistant asks Gemini/OpenAI for a preprocessing plan. Returned JavaScript (if any) is executed in the browser to reshape the dataset, after which metadata is refreshed.
 4. The cleaned dataset and metadata are stored in component state and made available to both the dashboard and the conversational agent.
 
+#### Multi-Step Data Cleaning Strategy
+
+To keep the workflow可追蹤 and resilient, the agent treats data preparation as a chain of small verifiable steps instead of a single opaque transform:
+
+1. **Title/Metadata pass.** AI first identifies leading report titles、日期、貨幣等資訊，並移除純 metadata 列，只保留本次任務需要的欄位。
+2. **Header resolution.** 接著偵測多列 header，建立 `HEADER_MAPPING` 並記錄 canonical 欄名，避免在後續程式中硬編 `data[2]` 這類列索引。
+3. **Row-level cleanup.** 最後才針對資料列做動作：在 crosstab 場景會明列 melt/unpivot 步驟；一般表格則逐步去除 summary rows、解析數值、維護層級關係。每一步都在 chat log / workflow timeline 中留下 log，便於稽核。
+
+此 multi-pass 設計同時也反映在 prompt 中：AI 需先寫出 `stagePlan`（title → header → data）再產出 JavaScript，如此我們能在發生錯誤時要求它根據上一輪失敗原因逐步修正，而不是一次「大爆炸」式的清理。
+
 ### AI and Chat Workflow
 
 - `generateAnalysisPlans` proposes chart-ready plans that `executePlan` runs locally, yielding datasets for Chart.js visualizations.
