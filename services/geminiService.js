@@ -952,6 +952,12 @@ Your task:
           )}). Detect headers and identifier columns dynamically instead of using fixed indexes.`;
           lastError = new Error(message);
           console.warn('[DataPrep] Rejected transform due to brittle structure assumptions:', message);
+          if (typeof iterationContext === 'object' && iterationContext && typeof iterationContext.onViolation === 'function') {
+            iterationContext.onViolation({
+              type: 'hard_coded_structure',
+              message,
+            });
+          }
           continue;
         }
         const mockUtil = {

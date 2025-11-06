@@ -1356,7 +1356,17 @@ class CsvDataAnalysisApp extends HTMLElement {
                   status: entry.status,
                   summary: entry.summary,
                   explanation: entry.explanation,
+                  lastError: entry.lastError || null,
                 })),
+                onViolation: violation => {
+                  if (!violation || typeof violation !== 'object') return;
+                  if (violation.type === 'hard_coded_structure') {
+                    this.addProgress(
+                      `${iterationLabel} attempt ${attemptLabel} 被拒絕：${violation.message}`,
+                      'error'
+                    );
+                  }
+                },
               }
             );
 
