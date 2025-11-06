@@ -119,6 +119,7 @@ this.state = {
       lastAuditReport: null,
       lastRepairSummary: null,
       lastRepairTimestamp: null,
+      generatedReport: null,
       reportsList: [],
       isHistoryPanelOpen: false,
       isAsideVisible: true,
@@ -1767,6 +1768,7 @@ this.state = {
           : null,
         csvMetadata: dataForAnalysis.metadata || metadata || null,
         currentDatasetId: datasetId,
+        generatedReport: null,
         dataPreparationPlan: prepPlan
           ? { ...prepPlan, iterations: prepIterationsLog }
           : prepIterationsLog.length
@@ -2030,7 +2032,8 @@ this.state = {
       }
 
       const finalSummary = await generateFinalSummary(createdCards, this.settings, metadata);
-      this.setState({ finalSummary });
+      const generatedReport = this.buildGeneratedReport(createdCards, finalSummary);
+      this.setState({ finalSummary, generatedReport });
       this.addProgress('Overall summary created.');
       this.completeWorkflowStep({
         label: '總結報告',
@@ -2300,6 +2303,35 @@ this.state = {
       }
     }
     return outputs;
+  }
+
+  buildGeneratedReport(cards = [], overviewText = null) {
+    if (!Array.isArray(cards) || !cards.length) {
+      return overviewText ? { overview: overviewText, keyInsights: [], visuals: [], recommendations: [] } : null;
+    }
+    const keyInsights = cards.slice(0, 3).map(card => ({
+      title: card.plan?.title || 'Insight',
+      detail:
+        (typeof card.summary === 'string' && card.summary.trim()
+          ? card.summary.split('---')[0]
+          : card.plan?.description || 'See chart for details.'),
+    }));
+    const visuals = cards.map(card => ({
+      title: card.plan?.title || 'Visual',
+      description: card.plan?.description || '',
+    }));
+    const recommendations =
+      keyInsights.length > 0
+        ? keyInsights.map(insight => `深入檢視 ${insight.title}，確認其對營運的具體影響。`)
+        : overviewText
+        ? [overviewText.slice(0, 200)]
+        : [];
+    return {
+      overview: overviewText,
+      keyInsights,
+      visuals,
+      recommendations,
+    };
   }
 
   handleWorkflowProgress(entry) {
@@ -5630,7 +5662,7 @@ this.state = {
     const dataPrepDebugHtml = dataPrepDebugPanel ? `<div class="mt-6">${dataPrepDebugPanel}</div>` : '';
     const rawDataPanel = this.renderRawDataPanel();
 
-    const summaryBlock = renderFinalSummary(finalSummary);
+    const summaryBlock = renderFinalSummary(finalSummary, this.state.generatedReport || null);
     const workflowTimelineHtml = renderWorkflowTimeline(this.state.workflowTimeline);
 
     let mainContent;

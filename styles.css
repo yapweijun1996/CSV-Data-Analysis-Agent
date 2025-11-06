@@ -111,6 +111,11 @@ table { border-collapse: collapse; }
   overflow: hidden;
 }
 
+.assistant-panel ol,
+.assistant-panel ul {
+  margin: 0;
+}
+
 .assistant-panel__footer {
   border-top-width: 1px;
   display: flex;

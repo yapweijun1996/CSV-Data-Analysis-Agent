@@ -1390,6 +1390,13 @@ ${dataPreparationDetails}
 - Numerical Columns: ${numericalCols.join(', ') || 'None'}
 ${metadataSection}`;
 
+  const responseTemplate = `**Response Template (use for text_response):**
+1. Opening summary (1-2 sentences) stating the main takeaway.
+2. Key insights list (each bullet = insight + supporting metric / card reference).
+3. Risks or limitations (state "None" if not applicable).
+4. Recommended actions / next step for the user.
+Always follow this structure unless the user requests something extremely specific that conflicts with it.`;
+
   const actionsInstructions = `**Available Actions & Tools**
 1. \`text_response\`: Conversational reply. If the text references a specific card, include its \`cardId\`.
 2. \`plan_creation\`: Propose a NEW chart. Provide a full plan object. For wide categorical charts, set \`defaultTopN\` (e.g., 8) and \`defaultHideOthers\` to \`true\` to keep charts readable.
@@ -1435,10 +1442,12 @@ ${rawDataPreview}
 ${skillSection}${memorySection}${systemSection}${conversationSection}
 **Latest User Message:** "${userPrompt}"
 
+${responseTemplate}
+
 ${actionsInstructions}
 `;
 
-  const systemPrompt = `You are an expert data analyst and business strategist operating with a Reason+Act (ReAct) mindset. Respond in ${settings.language}. Your entire reply MUST be a single JSON object containing an "actions" array, and each action MUST include a "thought" that clearly explains your reasoning before the action.`;
+  const systemPrompt = `You are an expert data analyst and business strategist operating with a Reason+Act (ReAct) mindset. Respond in ${settings.language}. Your entire reply MUST be a single JSON object containing an "actions" array, and each action MUST include a "thought" that clearly explains your reasoning before the action. When producing a text_response, follow the Response Template exactly (opening summary, key insights, risks, recommendations).`;
 
   let result;
   const geminiSchema = provider === 'google' ? getMultiActionChatResponseSchema() : null;
