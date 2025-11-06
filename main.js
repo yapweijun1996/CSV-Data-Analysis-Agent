@@ -2121,6 +2121,29 @@ this.state = {
     }
   }
 
+  sanitiseActionForError(action) {
+    if (!action || typeof action !== 'object') {
+      return null;
+    }
+    const cloned = JSON.parse(JSON.stringify(action));
+    const truncateString = value => {
+      if (typeof value !== 'string') return value;
+      return value.length > 160 ? `${value.slice(0, 157)}...` : value;
+    };
+    const sanitise = obj => {
+      if (!obj || typeof obj !== 'object') return obj;
+      Object.entries(obj).forEach(([key, value]) => {
+        if (value && typeof value === 'object') {
+          sanitise(value);
+        } else if (typeof value === 'string') {
+          obj[key] = truncateString(value);
+        }
+      });
+      return obj;
+    };
+    return sanitise(cloned);
+  }
+
   finalizeWorkflow(summary = null) {
     if (!this.orchestrator) return;
     try {
@@ -2583,32 +2606,20 @@ this.state = {
       case 'setCardTitle':
       case 'updateCardTitle':
       case 'renameCard': {
-        const updateCandidates = [
+        const titleCandidates = [
           domAction.newTitle,
           domAction.title,
-          domAction.value,
           domAction.label,
           domAction.text,
+          domAction.value,
         ];
-        const newTitleRaw = updateCandidates.find(
+        const titleCandidate = titleCandidates.find(
           candidate => typeof candidate === 'string' && candidate.trim().length
         );
-        if (!newTitleRaw) {
+        if (!titleCandidate) {
           return { success: false, error: 'New title is required.' };
         }
-        const newTitle = newTitleRaw.trim();
-        const titles = [
-          domAction.newTitle,
-          domAction.title,
-          domAction.label,
-          domAction.text,
-          domAction.value,
-        ];
-        const newTitleRaw = titles.find(item => typeof item === 'string' && item.trim().length);
-        if (!newTitleRaw) {
-          return { success: false, error: 'New title is required.' };
-        }
-        const newTitle = newTitleRaw.trim();
+        const newTitle = titleCandidate.trim();
 
         const ids = Array.isArray(domAction.cardId)
           ? domAction.cardId.filter(id => typeof id === 'string' && id.trim().length)
@@ -2845,24 +2856,33 @@ this.state = {
       if (!domAction.toolName && props.toolName && typeof props.toolName === 'string') {
         domAction.toolName = props.toolName;
       }
-      let candidateTool =
-        domAction.toolName ||
-        props.toolName ||
-        domAction.action ||
-        props.action ||
-        props.tool ||
-        props.command ||
-        action.toolName ||
-        action.action ||
-        null;
-      let canonicalTool = this.normaliseDomToolName(candidateTool);
+      const domActionToolCandidates = [
+        domAction.toolName,
+        props.toolName,
+        domAction.action,
+        props.action,
+        props.tool,
+        props.command,
+        action.toolName,
+        action.action,
+      ];
+      let canonicalTool = null;
+      for (const candidate of domActionToolCandidates) {
+        canonicalTool = this.normaliseDomToolName(candidate);
+        if (canonicalTool && DOM_ACTION_TOOL_NAMES.has(canonicalTool)) {
+          break;
+        }
+      }
       if (!canonicalTool) {
-        if (domAction.remove === true || domAction.delete === true) {
+        if (domAction.remove === true || domAction.delete === true || props.remove === true || props.delete === true) {
           canonicalTool = 'removeCard';
         } else if (
           typeof domAction.newTitle === 'string' ||
           typeof domAction.title === 'string' ||
-          typeof domAction.label === 'string'
+          typeof domAction.label === 'string' ||
+          typeof props.newTitle === 'string' ||
+          typeof props.title === 'string' ||
+          typeof props.label === 'string'
         ) {
           canonicalTool = 'setCardTitle';
         }
@@ -2877,8 +2897,7 @@ this.state = {
       return { responseType: 'dom_action', domAction, thought };
     }
 
-    let canonicalToolName =
-      typeof toolName === 'string' ? this.normaliseDomToolName(toolName) : null;
+    let canonicalToolName = typeof toolName === 'string' ? this.normaliseDomToolName(toolName) : null;
     if (!canonicalToolName) {
       if (props && (props.remove === true || props.delete === true)) {
         canonicalToolName = 'removeCard';
@@ -2909,16 +2928,22 @@ this.state = {
       return;
     }
     const datasetId = this.getCurrentDatasetId();
-    const normalisedActions = actions
-      .map(rawAction => {
-        const normalised = this.normaliseAiAction(rawAction);
-        if (!normalised) {
-          console.error('Unsupported AI action type received:', rawAction);
-          this.addProgress('AI returned an unsupported action type.', 'error');
-        }
-        return normalised;
-      })
-      .filter(Boolean);
+    const normalisedActions = [];
+    actions.forEach(rawAction => {
+      const normalised = this.normaliseAiAction(rawAction);
+      if (normalised) {
+        normalisedActions.push(normalised);
+      } else {
+        console.error('Unsupported AI action type received:', rawAction);
+        this.addProgress('AI returned an unsupported action type.', 'error');
+        normalisedActions.push({
+          responseType: 'error_report',
+          errorType: 'unsupported_action',
+          message: 'The requested action could not be interpreted.',
+          raw: this.sanitiseActionForError(rawAction),
+        });
+      }
+    });
 
     if (!normalisedActions.length) {
       const fallbackText = (() => {
@@ -3066,6 +3091,33 @@ this.state = {
 
     for (let index = 0; index < normalisedActions.length; index++) {
       const action = normalisedActions[index];
+
+      if (action.responseType === 'error_report') {
+        const summary =
+          typeof action.message === 'string' && action.message.trim()
+            ? action.message.trim()
+            : 'An action could not be completed.';
+        this.failWorkflowStep({
+          label: 'AI action error',
+          error: summary,
+        });
+        const shouldStick = this.isConversationNearBottom();
+        this.setState(prev => ({
+          chatHistory: [
+            ...prev.chatHistory,
+            {
+              sender: 'system',
+              text: summary,
+              timestamp: new Date(),
+              type: 'ai_error_report',
+            },
+          ],
+        }));
+        if (shouldStick) {
+          this.shouldAutoScrollConversation = true;
+        }
+        continue;
+      }
 
       if (action.thought && (totalActions === 1 || index > 0)) {
         this.addProgress(`AI Thought: ${action.thought}`);
