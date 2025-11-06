@@ -476,7 +476,7 @@ export const executeStagePlanPipeline = ({
         : 0;
   const safeHeaderCount =
     headerRowCountHint > 0 ? Math.min(headerRowCountHint, workingData.length) : 0;
-  const headerRows = safeHeaderCount ? workingData.slice(0, safeHeaderCount) : [];
+  let headerRows = safeHeaderCount ? workingData.slice(0, safeHeaderCount) : [];
   workingData = safeHeaderCount ? workingData.slice(safeHeaderCount) : workingData;
   updatedMetadata.headerRows = headerRows;
 
@@ -486,6 +486,15 @@ export const executeStagePlanPipeline = ({
     sampleRows: workingData.slice(0, 6),
     strategies: ['stage_plan_executor'],
   });
+  const detectedHeaderIndex =
+    typeof headerDetection.headerIndex === 'number' && headerDetection.headerIndex >= 0
+      ? headerDetection.headerIndex
+      : null;
+  if (!headerRows.length && detectedHeaderIndex !== null) {
+    const headerSliceCount = Math.min(detectedHeaderIndex + 1, workingData.length);
+    headerRows = workingData.slice(0, headerSliceCount);
+    workingData = workingData.slice(headerSliceCount);
+  }
   const inferredHeaders =
     (Array.isArray(headerDetection.headers) && headerDetection.headers.length
       ? headerDetection.headers
