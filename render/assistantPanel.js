@@ -47,16 +47,18 @@ const renderThinkingEntry = entry => {
 const renderPlanEntry = entry => {
   const content = formatMessageMarkdown(entry.text || '');
   return `
-    <div class="my-2 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+    <div class="my-2 bg-blue-50 border border-blue-200 rounded-lg shadow-sm plan-card">
       <details class="group" open>
-        <summary class="flex items-center justify-between p-3 text-blue-800 cursor-pointer select-none hover:bg-blue-50/40 transition-colors">
+        <summary class="plan-card__summary" aria-label="Toggle execution plan">
           <div class="flex items-center">
             <span class="text-lg mr-2">⚙️</span>
-            <h4 class="font-semibold">Plan Execution</h4>
+            <h4 class="font-semibold whitespace-nowrap">Plan Execution</h4>
           </div>
-          <span class="text-slate-500 text-xs">Toggle</span>
+          <svg class="plan-card__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.4a.75.75 0 01-1.08 0l-4.24-4.4a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+          </svg>
         </summary>
-        <div class="text-sm text-slate-700 whitespace-pre-wrap px-3 pb-3">
+        <div class="plan-card__content text-sm text-slate-700 whitespace-pre-wrap">
           ${content}
         </div>
       </details>

@@ -1,13 +1,9 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@latest';
 import { embedText, cosineSimilarity as bowCosineSimilarity } from './ragService.js';
 
-const XENOVA_JSDELIVR_BASE =
-  'https://cdn.jsdelivr.net/gh/xenova/transformers.js@v2.17.1/packages/transformers/models';
-const TRANSFORMER_MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
-const TRANSFORMER_RESOLVE_BASE = `${XENOVA_JSDELIVR_BASE}/${TRANSFORMER_MODEL_ID}`;
-const TRANSFORMER_CONFIG_URL = `${TRANSFORMER_RESOLVE_BASE}/config.json`;
-
-const appendDownloadQuery = url => url;
+const MODEL_REPO_ID = 'Xenova/all-MiniLM-L6-v2';
+const LOCAL_MODEL_PATH = '/models';
+const LOCAL_CONFIG_URL = `${LOCAL_MODEL_PATH}/${MODEL_REPO_ID}/config.json`;
 
 class VectorStore {
   constructor() {
@@ -16,7 +12,6 @@ class VectorStore {
     this.documents = [];
     this.isInitializing = false;
     this.isInitialized = false;
-    this.remoteFetchConfigured = false;
   }
 
   static getInstance() {
@@ -177,51 +172,17 @@ class VectorStore {
     return bowCosineSimilarity(bowA, bowB);
   }
 
-  configureRemoteFetch() {
-    if (this.remoteFetchConfigured) {
-      return;
-    }
-    const baseFetch =
-      typeof env.fetch === 'function'
-        ? env.fetch.bind(globalThis)
-        : typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function'
-        ? globalThis.fetch.bind(globalThis)
-        : null;
-    if (!baseFetch) {
-      console.warn('Global fetch is unavailable; cannot configure remote model fetch override.');
-      return;
-    }
-    env.fetch = async (url, options) => {
-      const normalizedUrl = typeof url === 'string' ? url : String(url);
-      const target = normalizedUrl.includes(TRANSFORMER_MODEL_ID)
-        ? normalizedUrl
-        : normalizedUrl.replace(/\/models\/([^/]+)\/?$/, `/models/${TRANSFORMER_MODEL_ID}`);
-      const response = await baseFetch(target, options);
-      if (!response || !response.ok) {
-        throw new Error(
-          `Failed to download AI memory model asset (${response?.status ?? 'no status'}).`
-        );
-      }
-      const contentType = response.headers?.get?.('content-type') || '';
-      if (contentType.includes('text/html')) {
-        throw new Error('AI memory model CDN returned HTML instead of the expected asset.');
-      }
-      return response;
-    };
-    this.remoteFetchConfigured = true;
-  }
-
-  async verifyRemoteModelAvailability(progressCallback) {
+  async verifyLocalModelAvailability(progressCallback) {
     try {
-      progressCallback?.('Verifying AI memory model availability...');
-      const remoteFetch =
+      progressCallback?.('Verifying local AI memory model assets...');
+      const localFetch =
         typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function'
           ? globalThis.fetch.bind(globalThis)
           : null;
-      if (!remoteFetch) {
+      if (!localFetch) {
         throw new Error('Fetch API is not available in this environment.');
       }
-      const response = await remoteFetch(TRANSFORMER_CONFIG_URL, {
+      const response = await localFetch(LOCAL_CONFIG_URL, {
         cache: 'no-cache',
         mode: 'cors',
       });
@@ -236,9 +197,9 @@ class VectorStore {
       JSON.parse(bodyText);
       return true;
     } catch (error) {
-      console.warn('Remote model availability check failed.', error);
+      console.warn('Local model availability check failed.', error);
       progressCallback?.(
-        'Unable to reach the Hugging Face model files. Continuing with lightweight embeddings.'
+        'Unable to locate the local AI memory model. Continuing with lightweight embeddings.'
       );
       throw error;
     }
@@ -246,31 +207,49 @@ class VectorStore {
 
   async tryLoadTransformer(progressCallback) {
     try {
-      env.allowLocalModels = false;
-      env.allowRemoteModels = true;
-      env.remoteModelPath = XENOVA_JSDELIVR_BASE;
-      this.configureRemoteFetch();
-      await this.verifyRemoteModelAvailability(progressCallback);
-      progressCallback?.('Downloading AI memory model from Hugging Face (~34MB)...');
-      return await pipeline('feature-extraction', TRANSFORMER_MODEL_ID, {
+      env.allowRemoteModels = false;
+      env.allowLocalModels = true;
+      env.localModelPath = LOCAL_MODEL_PATH;
+      const baseFetch =
+        typeof env.fetch === 'function'
+          ? env.fetch.bind(globalThis)
+          : typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function'
+          ? globalThis.fetch.bind(globalThis)
+          : null;
+      if (baseFetch) {
+        env.fetch = async (url, options) => {
+          const response = await baseFetch(url, options);
+          if (response.status === 304) {
+            return baseFetch(url, { ...(options ?? {}), cache: 'reload' });
+          }
+          const contentType = response.headers?.get?.('content-type') || '';
+          if (contentType.includes('text/html')) {
+            const snippet = (await response.clone().text()).slice(0, 160);
+            console.warn(
+              'AI memory model asset returned HTML instead of expected JSON/binary:',
+              url,
+              snippet
+            );
+          }
+          return response;
+        };
+      }
+      await this.verifyLocalModelAvailability(progressCallback);
+      progressCallback?.('Loading AI memory model from local assets (~34MB)...');
+      return await pipeline('feature-extraction', MODEL_REPO_ID, {
         progress_callback: progress => {
           if (progress?.status === 'progress' && progress.total > 0) {
             const loaded = (progress.loaded / 1024 / 1024).toFixed(2);
             const total = (progress.total / 1024 / 1024).toFixed(2);
-            progressCallback?.(`Downloading AI memory model: ${loaded}MB / ${total}MB`);
+            progressCallback?.(`Loading AI memory model: ${loaded}MB / ${total}MB`);
           }
         },
       });
     } catch (error) {
-      const message =
-        error instanceof Error && /json\.parse/i.test(error.message)
-          ? 'Hugging Face returned a non-JSON response. Please confirm the model URL is accessible.'
-          : error instanceof Error
-          ? error.message
-          : String(error);
-      console.warn('Remote model load failed, switching to lightweight embeddings.', error);
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn('Local model load failed, switching to lightweight embeddings.', error);
       progressCallback?.(
-        `Remote model load failed (${message}). Switching to lightweight embeddings.`
+        `Local model load failed (${message}). Switching to lightweight embeddings.`
       );
     }
     return null;

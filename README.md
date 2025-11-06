@@ -21,6 +21,16 @@ npm run dev
 
 The app also works as static files (e.g., serving `index.html` directly) provided the browser can reach the target AI endpoints from the current origin.
 
+#### Optional: Enable Transformer Memory Locally
+
+The assistant can maintain richer long-term memories by running the Xenova `all-MiniLM-L6-v2` embedding model in the browser. Because Hugging Face blocks cross-origin downloads, bundle the model with the app:
+
+```bash
+npm run download:model   # ~330MB download; stores files under public/models/Xenova/all-MiniLM-L6-v2
+```
+
+Then launch the dev server (`npm run dev`). The vector store will first check for these local assets; if they are missing, it falls back to the lightweight bag-of-words embedder. When deploying, copy the entire `public/models` directory to your static host so the model can be served from `/models/...`.
+
 ### Configuring API Keys
 
 1. Launch the app and open the **Settings** button in the top-right corner.
@@ -37,6 +47,7 @@ The app also works as static files (e.g., serving `index.html` directly) provide
 - `utils/dataProcessor.js` – CSV parsing, profiling, aggregations, and AI transformation executor
 - `services/geminiService.js` – shared wrapper for Gemini/OpenAI requests (plans, summaries, chat)
 - `storageService.js` – manages settings persistence (and can be extended for report history)
+- `scripts/download-model.sh` – helper script to fetch the Xenova embedding model into `public/models/...`
 
 ### Data Pipeline Overview
 
@@ -100,6 +111,7 @@ This build aims to automate the CSV-insight workflow inside the browser, but it 
 - Exposing API keys in the browser inherently reveals them to end users; treat this build as internal tooling only.
 - If you deploy with a strict Content Security Policy, allow `unsafe-eval` or rework the transformation executor so AI-authored JavaScript can run.
 - For production use, consider adding a backend façade to secure credentials, enforce quotas, and audit requests.
+- If the transformer model fails to load (for example, missing `public/models` assets), the app automatically falls back to lightweight embeddings and logs the reason in the DevTools console.
 - Exporting charts/reports and activity history is not yet ported from the React build. Although `html-to-image` and the IndexedDB helper ship with the app, the current UI does not expose them, so add your own bindings if you need that workflow.
 
 ### Usage Tips

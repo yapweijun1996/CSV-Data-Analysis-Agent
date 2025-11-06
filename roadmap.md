@@ -66,8 +66,14 @@
      _測試：刻意製造破圖後確認自動修復。_
    - ☐ 預處理流程檢查：
      - ✅ prompt 約束、`_util` 注入、自我修正 loop、sampleData 對齊、日志顯示。
-     - ☐ Worker 模式 `DataCloneError` 追蹤/解法。  
-       _測試：大型 CSV 仍可在 worker 模式解析。_
+   - ☐ Worker 模式 `DataCloneError` 追蹤/解法。  
+      _測試：大型 CSV 仍可在 worker 模式解析。_
+   - ☐ 本地 Transformer 模型載入體驗：
+     - ✅ `scripts/download-model.sh` 與 README 指南。  
+     - ☐ Dev server / 部署靜態資源設定（避免 304 與 HTML fallback）。  
+       _測試：`http(s)://<host>/models/Xenova/all-MiniLM-L6-v2/onnx/model.onnx` 200。_
+     - ☐ `env.fetch` 304 fallback/unit test。  
+       _測試：重新整理後仍能載入 transformer，不回退至 lightweight。_
    - ☐ `generateAnalysisPlans` 取樣窗口與 React 對齊（前 5 行）。  
      _測試：比對 plan 樣式與 React 是否一致。_
    - ☐ `runAnalysisPipeline` 日誌與記憶格式對齊（`View #XXXX indexed` 等）。  

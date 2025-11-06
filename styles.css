@@ -2014,3 +2014,58 @@ button.w-full.flex.items-center.justify-between.p-1\.5.rounded-md.opacity-50 {
     transition: none;
   }
 }
+
+/* === Plan Card (Plan Execution) =========================================== */
+.plan-card {
+  /* container already has rounded + shadow via utilities; keep custom minimal */
+  overflow: hidden;
+}
+
+.plan-card details {
+  border-radius: 0.5rem; /* match rounded-lg */
+}
+
+.plan-card__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem; /* p-3 */
+  color: #1d4ed8; /* blue-700/800 tone */
+  cursor: pointer;
+  user-select: none;
+  border-radius: 0.5rem;
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.plan-card__summary:hover {
+  background-color: rgba(239, 246, 255, 0.4); /* bg-blue-50/40 */
+}
+
+.plan-card__summary:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.35), /* blue ring */
+    0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.plan-card__summary::-webkit-details-marker {
+  display: none; /* hide default marker to use custom chevron */
+}
+
+.plan-card__chevron {
+  width: 18px;
+  height: 18px;
+  color: #64748b; /* slate-500 */
+  transition: transform 0.2s ease;
+  flex: 0 0 auto;
+}
+
+.plan-card details[open] .plan-card__chevron {
+  transform: rotate(180deg);
+}
+
+.plan-card__content {
+  padding: 0 0.75rem 0.75rem 0.75rem; /* px-3 pb-3 */
+  border-top: 1px solid #bfdbfe; /* blue-200 */
+  background: transparent;
+}
