@@ -1536,6 +1536,7 @@ Your task:
 - You MUST provide the \`analysisSteps\` array capturing your chain-of-thought (observations ➜ decisions ➜ actions). Each item should be a full sentence.
 - You MUST provide the \`outputColumns\` array. If no transformation is needed, it should match the input schema (but update types if you discovered more specific ones).
 - If you provide JavaScript, it MUST include a \`return\` statement that returns the transformed data array.
+- Never access \`data\` using numeric literals (e.g., \`data[0]\`, \`data[3]\`, \`data[data.length - 1]\`). Determine headers/rows dynamically via the provided helper utilities.
 - Whenever you convert numbers, you MUST use \`_util.parseNumber\`. Whenever you split comma-separated numeric strings, you MUST use \`_util.splitNumericString\`.
 - When the dataset exhibits the Crosstab alert, your \`stagePlan.dataNormalization\` must detail the unpivot algorithm (identifier detection, per-column iteration, parsing). Include code only if absolutely necessary.
 `;
