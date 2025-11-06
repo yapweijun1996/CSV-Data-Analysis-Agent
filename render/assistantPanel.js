@@ -46,9 +46,12 @@ const renderThinkingEntry = entry => {
 
 const renderPlanEntry = entry => {
   const content = formatMessageMarkdown(entry.text || '');
+  const shouldExpand =
+    typeof entry.isExpanded === 'boolean' ? entry.isExpanded : false;
+  const openAttr = shouldExpand ? ' open' : '';
   return `
     <div class="assistant-card assistant-card--plan plan-card">
-      <details class="assistant-card__details" open>
+      <details class="assistant-card__details"${openAttr}>
         <summary class="assistant-card__summary" aria-label="Toggle execution plan">
           <div class="assistant-card__header">
             <span class="assistant-card__icon" aria-hidden="true">⚙️</span>

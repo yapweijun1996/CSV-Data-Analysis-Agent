@@ -91,44 +91,4 @@ const renderPhase = phase => {
   `;
 };
 
-export const renderWorkflowTimeline = timeline => {
-  if (!timeline) {
-    return `
-      <section class="workflow-timeline is-empty">
-        <header class="wt-header">
-          <h2>Workflow Timeline</h2>
-        </header>
-        <p class="wt-empty-text">尚未啟動任何流程。</p>
-      </section>
-    `;
-  }
-
-  const { goal, constraints, phases } = timeline;
-  const headerMeta = [
-    goal ? `<p class="wt-goal"><strong>Goal:</strong> ${escapeHtml(goal)}</p>` : '',
-    Array.isArray(constraints) && constraints.length
-      ? `<p class="wt-constraints"><strong>Constraints:</strong> ${constraints
-          .map(item => escapeHtml(item))
-          .join(' / ')}</p>`
-      : '',
-  ]
-    .filter(Boolean)
-    .join('');
-
-  const body =
-    Array.isArray(phases) && phases.length
-      ? phases.map(renderPhase).join('')
-      : '<p class="wt-empty-text">No phases recorded yet.</p>';
-
-  return `
-    <section class="workflow-timeline">
-      <header class="wt-header">
-        <h2>Workflow Timeline</h2>
-        ${headerMeta}
-      </header>
-      <div class="wt-body">
-        ${body}
-      </div>
-    </section>
-  `;
-};
+export const renderWorkflowTimeline = () => '';

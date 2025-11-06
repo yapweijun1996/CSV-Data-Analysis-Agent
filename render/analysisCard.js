@@ -201,36 +201,37 @@ export const renderAnalysisCard = ({ app, card, colors }) => {
     .join('');
 
   return `
-    <article class="bg-white rounded-xl shadow border border-slate-200 p-4 flex flex-col gap-4 transition-shadow ${
-      isHighlighted ? 'ring-2 ring-blue-400 shadow-lg' : ''
-    }" data-card-id="${card.id}">
-      <div class="flex justify-between items-start gap-4">
-        <div class="flex-1">
-          <h3 class="text-lg font-semibold text-slate-900">${escapeHtml(plan.title)}</h3>
-          <p class="text-sm text-slate-500">${escapeHtml(plan.description || '')}</p>
+    <article class="chart-card ${isHighlighted ? 'chart-card--highlighted' : ''}" data-card-id="${card.id}">
+      <div class="chart-card__header">
+        <div class="chart-card__title-block">
+          <h3 class="chart-card__title">${escapeHtml(plan.title)}</h3>
+          <p class="chart-card__subtitle">${escapeHtml(plan.description || '')}</p>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <div class="chart-switcher" role="group" aria-label="Chart type">
+        <div class="chart-card__actions">
+          <div class="chart-card__switcher" role="tablist" aria-label="Chart display type">
             ${CHART_TYPES.map(type => `
               <button
                 type="button"
                 class="chart-switcher__btn ${displayType === type ? 'is-active' : ''}"
                 data-chart-type="${type}"
                 data-card="${card.id}"
-                aria-pressed="${displayType === type ? 'true' : 'false'}"
+                role="tab"
+                aria-selected="${displayType === type ? 'true' : 'false'}"
+                aria-controls="${card.id}-chart"
                 title="Switch to ${type} chart"
               >
                 ${renderChartTypeIcon(type)}
               </button>`).join('')}
           </div>
-          <div class="relative" data-export-menu-container data-export-ignore>
+          <div class="chart-card__export" data-export-menu-container data-export-ignore>
             <button
               type="button"
-              class="chart-switcher__export ${isExporting ? 'cursor-wait' : ''}"
+              class="chart-card__export-btn ${isExporting ? 'is-busy' : ''}"
               data-export-menu-toggle
               data-card="${card.id}"
               aria-haspopup="true"
               aria-expanded="false"
+              aria-controls="${card.id}-export-menu"
               ${isExporting ? 'disabled' : ''}
               title="Export card"
               data-export-ignore
@@ -238,19 +239,20 @@ export const renderAnalysisCard = ({ app, card, colors }) => {
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
+              <span class="chart-card__export-label">Export</span>
             </button>
-            <div class="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-md shadow-lg hidden z-20" data-export-menu data-export-ignore>
-              <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" data-export-card="png" data-card="${card.id}" data-export-ignore>
+            <div class="chart-card__export-menu hidden" id="${card.id}-export-menu" data-export-menu data-export-ignore>
+              <button type="button" class="chart-card__export-item" data-export-card="png" data-card="${card.id}" data-export-ignore>
                 <span>Export as PNG</span>
-                <span class="text-xs text-slate-400">.png</span>
+                <span class="chart-card__export-ext">.png</span>
               </button>
-              <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" data-export-card="csv" data-card="${card.id}" data-export-ignore>
+              <button type="button" class="chart-card__export-item" data-export-card="csv" data-card="${card.id}" data-export-ignore>
                 <span>Export data (CSV)</span>
-                <span class="text-xs text-slate-400">.csv</span>
+                <span class="chart-card__export-ext">.csv</span>
               </button>
-              <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-b-md" data-export-card="html" data-card="${card.id}" data-export-ignore>
+              <button type="button" class="chart-card__export-item chart-card__export-item--last" data-export-card="html" data-card="${card.id}" data-export-ignore>
                 <span>Export report (HTML)</span>
-                <span class="text-xs text-slate-400">.html</span>
+                <span class="chart-card__export-ext">.html</span>
               </button>
             </div>
           </div>
