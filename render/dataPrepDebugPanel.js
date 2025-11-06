@@ -68,9 +68,10 @@ export const renderDataPrepDebugPanel = ({
     <div class="bg-white rounded-lg shadow border border-slate-200" data-data-prep-panel>
       <button
         type="button"
-        class="flex justify-between items-center w-full text-left p-4 rounded-t-lg hover:bg-slate-50 transition-colors"
+        class="flex justify-between items-center w-full text-left p-4 ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'} hover:bg-slate-50 transition-colors"
         data-toggle-data-prep
         aria-expanded="${isExpanded}"
+        aria-controls="data-prep-body"
       >
         <div>
           <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -83,13 +84,13 @@ export const renderDataPrepDebugPanel = ({
           </h3>
           <p class="text-sm text-slate-500">See how the AI cleaned and reshaped your data.</p>
         </div>
-        <span class="transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
         </span>
       </button>
-      <div class="${bodyClasses.join(' ')}" data-data-prep-body>
+      <div id="data-prep-body" class="${bodyClasses.join(' ')}" data-data-prep-body>
         <div>
           <h4 class="font-semibold text-slate-800 mb-2">AI's Plan</h4>
           <p class="text-sm bg-slate-50 p-3 rounded-md border border-slate-200 text-slate-700 italic">"${explanation}"</p>
