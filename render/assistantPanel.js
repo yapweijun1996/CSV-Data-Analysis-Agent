@@ -27,7 +27,7 @@ const renderProgressEntry = (entry, timeLabel) => {
   const colorClass = entry.type === 'error' ? 'text-rose-600' : 'text-slate-500';
   return `
     <div class="flex text-xs ${colorClass}">
-      <span class="mr-2 text-slate-400" style="min-width: 55px;">${escapeHtml(timeLabel)}</span>
+      <span class="mr-2 text-slate-400 assistant-log-time">${escapeHtml(timeLabel)}</span>
       <span>${escapeHtml(entry.text || '')}</span>
     </div>`;
 };

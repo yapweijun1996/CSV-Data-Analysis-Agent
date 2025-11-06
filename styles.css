@@ -8,6 +8,7 @@ table { border-collapse: collapse; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: break-spaces; width: 100%; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 1s linear infinite; }
+.assistant-log-time { min-width: 55px; display: inline-block; }
 
 .bg-amber-50 {
   background-color: #fffbeb;

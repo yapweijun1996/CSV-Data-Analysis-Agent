@@ -1338,6 +1338,9 @@ class CsvDataAnalysisApp extends HTMLElement {
 
           for (let attempt = 0; attempt < maxRetriesPerIteration; attempt += 1) {
             const attemptLabel = attempt + 1;
+            this.addProgress(
+              `${iterationLabel} attempt ${attemptLabel}: requesting updated preprocessing plan...`
+            );
             iterationPlan = await generateDataPreparationPlan(
               profiles,
               sampleRowsForPlan,
@@ -1503,6 +1506,11 @@ class CsvDataAnalysisApp extends HTMLElement {
                   );
                 }
               }
+            } else if (prepMessage && prepMessage.toLowerCase().includes('empty dataset')) {
+              this.addProgress(
+                'Agent 警告：轉換後資料為空，AI 正在檢查過濾條件是否過於嚴格或 header 偵測是否錯誤。',
+                'error'
+              );
             } else if (prepMessage && prepMessage.toLowerCase().includes('zero rows')) {
               this.addProgress(
                 'Agent 正在調整：轉換結果為零筆資料，可能 header 偵測錯誤，已要求模型重新定位欄位。',

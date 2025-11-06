@@ -503,30 +503,30 @@ const sanitizeJsFunctionBody = jsBody => {
 
   const core = stripLeadingComments(cleaned);
 
-  if (/^function\b/i.test(core)) {
+  if (/^(?:async\s+)?function\b/i.test(core)) {
     return wrapInvocation(core);
   }
 
   let match = core.match(
-    /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*(function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i
+    /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i
   );
   if (match && match[1]) {
     return wrapInvocation(match[1]);
   }
 
   match = core.match(
-    /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*(\([^)]*\)\s*=>\s*(?:{[\s\S]*}|[^\n;]+))\s*;?\s*$/i
+    /^(?:const|let|var)\s+[a-zA-Z_$][\w$]*\s*=\s*((?:async\s*)?\([^)]*\)\s*=>\s*(?:{[\s\S]*}|[^\n;]+))\s*;?\s*$/i
   );
   if (match && match[1]) {
     return wrapInvocation(match[1]);
   }
 
-  match = core.match(/^export\s+default\s+(function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i);
+  match = core.match(/^export\s+default\s+((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*$/i);
   if (match && match[1]) {
     return wrapInvocation(match[1]);
   }
 
-  match = core.match(/^module\.exports\s*=\s*(function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*/i);
+  match = core.match(/^module\.exports\s*=\s*((?:async\s+)?function\s*\([^)]*\)\s*{[\s\S]*})\s*;?\s*/i);
   if (match && match[1]) {
     return wrapInvocation(match[1]);
   }
@@ -559,6 +559,18 @@ const detectHardCodedPatternsInJs = source => {
   const columnLabelLiterals = stripped.match(/['"]Column\s+\d+['"]/g);
   if (columnLabelLiterals) {
     issueSet.add('hard-coded "Column N" labels');
+  }
+
+  if (/`column_\s*\$\{/i.test(stripped)) {
+    issueSet.add('hard-coded generic headers via template literal');
+  }
+
+  if (/`Column\s*\$\{/i.test(stripped)) {
+    issueSet.add('hard-coded "Column" template literal');
+  }
+
+  if (/\basync\s+function\b/.test(stripped) || /=\s*async\s*\(/i.test(stripped)) {
+    issueSet.add('async functions are not supported in this environment');
   }
 
   return Array.from(issueSet);
@@ -778,7 +790,11 @@ const buildUserPrompt = (lastError, iterationContext = null) => {
         ...recent.map(entry => {
           const statusLabel = entry.status ? String(entry.status).toUpperCase() : 'UNKNOWN';
           const explanation = entry.summary || entry.explanation || '(no explanation provided)';
-          return `- Iteration ${entry.iteration}: status=${statusLabel}. ${explanation}`;
+          const hint =
+            entry.lastError && typeof entry.lastError === 'string'
+              ? ` Last error: ${entry.lastError}`
+              : '';
+          return `- Iteration ${entry.iteration}: status=${statusLabel}. ${explanation}${hint}`;
         })
       );
     }
@@ -808,8 +824,8 @@ const buildUserPrompt = (lastError, iterationContext = null) => {
   }`;
 
   const mandatorySummaryBullet = offendingSummaryText
-    ? `- **MANDATORY SUMMARY REMOVAL**: The following rows were identified as summaries and must be excluded from the transformed dataset: ${offendingSummaryText}. If any should remain, set status="abort" and explain why.`
-    : '- **MANDATORY SUMMARY REMOVAL**: Any row matching the summary keywords must be excluded from the transformed dataset. When uncertain, remove the row and justify in your status message.';
+    ? `- **MANDATORY SUMMARY REMOVAL**: These rows were flagged as summaries and must be excluded from the transformed dataset: ${offendingSummaryText}. If any should remain, set status="abort" and justify.`
+    : '- **MANDATORY SUMMARY REMOVAL**: Any row matching the summary keywords must be excluded from the transformed dataset. When uncertain, remove the row and mention it in your status message.';
 
   return `${contextSection}${iterationSummary}${multiPassRules}
 
