@@ -2,16 +2,16 @@ import { escapeHtml } from './helpers.js';
 
 const renderSampleTable = data => {
   if (!Array.isArray(data) || data.length === 0) {
-    return '<p class="text-xs text-slate-500 p-3">No sample rows available.</p>';
+    return '<p class="data-sample-table-empty-message">No sample rows available.</p>';
   }
   const headers = Object.keys(data[0]);
   return `
-    <div class="max-h-64 overflow-auto border border-slate-200 rounded-md">
-      <table class="min-w-full text-xs text-left">
-        <thead class="bg-slate-100 text-slate-600">
+    <div class="data-sample-table-wrapper">
+      <table class="data-sample-table">
+        <thead>
           <tr>
             ${headers
-              .map(header => `<th class="px-3 py-2 font-semibold">${escapeHtml(header)}</th>`)
+              .map(header => `<th>${escapeHtml(header)}</th>`)
               .join('')}
           </tr>
         </thead>
@@ -19,12 +19,12 @@ const renderSampleTable = data => {
           ${data
             .map(
               row => `
-                <tr class="border-t border-slate-200">
+                <tr>
                   ${headers
                     .map(header => {
                       const value =
                         row && Object.prototype.hasOwnProperty.call(row, header) ? row[header] : '';
-                      return `<td class="px-3 py-2 text-slate-700 whitespace-nowrap">${
+                      return `<td>${
                         value === null || value === undefined ? '' : escapeHtml(String(value))
                       }</td>`;
                     })
