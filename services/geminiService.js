@@ -1636,6 +1636,10 @@ Your task:
         console.log('Returned jsFunctionBody:', Boolean(plan.jsFunctionBody));
         console.log('Analysis steps:', plan.analysisSteps);
         console.log('Output columns:', plan.outputColumns);
+        console.log('Stage plan:', plan.stagePlan);
+        if (plan.agentLog && plan.agentLog.length) {
+          console.log('Agent log:', plan.agentLog);
+        }
         console.log('Sample rows sent to model (first 3):', sampleRowsForPrompt.slice(0, 3));
         if (!plan.jsFunctionBody && hasCrosstabShape) {
           console.warn(
