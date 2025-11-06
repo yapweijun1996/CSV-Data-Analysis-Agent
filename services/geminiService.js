@@ -877,8 +877,22 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
   const violationGuidanceBlock = violationGuidance
     ? `\n**Immediate Fix Guidance:**\n${violationGuidance}\n`
     : '\n';
+  const toolHistoryBlock =
+    iterationContext &&
+    Array.isArray(iterationContext.toolHistory) &&
+    iterationContext.toolHistory.length
+      ? `\nRecent Tool Results:\n${iterationContext.toolHistory
+          .slice(-5)
+          .map(entry => {
+            const label = entry.tool || 'tool';
+            const payload = entry.result || entry.identifiers || entry;
+            return `- ${label}: ${JSON.stringify(payload)}`;
+          })
+          .join('\n')}\n`
+      : '\n';
+  const helpersDescription = `\nAvailable Helpers (invoke via _util.<name>):\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\nIf you need to run a dedicated tool instead of writing code, respond with "toolCalls": [{"tool":"detect_headers","args":{...}}] and omit jsFunctionBody.`;
 
-  return `${contextSection}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}
+  return `${contextSection}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}
 
 Common problems to fix:
 - **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.

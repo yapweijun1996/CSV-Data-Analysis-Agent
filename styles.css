@@ -21,7 +21,7 @@ table { border-collapse: collapse; }
   --bubble-radius: 14px;
   --bubble-padding-y: 0.75rem;
   --bubble-padding-x: 1rem;
-  --bubble-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --bubble-shadow: 1px 2px 5px rgba(15, 23, 42, 0.12);
   --color-user-bg: #2563eb;
   --color-user-text: #ffffff;
   --color-ai-bg: #e2e8f0;
@@ -381,6 +381,7 @@ table { border-collapse: collapse; }
 .assistant-bubble--ai {
   background-color: var(--color-ai-bg, #e2e8f0);
   color: var(--color-ai-text, #1f2937);
+  word-wrap: break-word;
 }
 
 .assistant-bubble--error {
@@ -510,6 +511,12 @@ table { border-collapse: collapse; }
   color: #854d0e;
 }
 
+.assistant-card__meta {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
 .assistant-card__icon {
   font-size: 1.1rem;
 }
@@ -523,6 +530,20 @@ table { border-collapse: collapse; }
 .assistant-card__body {
   font-size: 0.875rem;
   color: #334155;
+  line-height: 1.6;
+}
+
+.assistant-card__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.4rem;
+  counter-reset: plan-step;
+}
+
+.assistant-card__list li {
+  list-style: decimal;
+  color: inherit;
 }
 
 .assistant-card__details {
@@ -563,6 +584,35 @@ table { border-collapse: collapse; }
   box-shadow:
     0 0 0 2px rgba(37, 99, 235, 0.2),
     0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.assistant-card__summary-hint {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.assistant-card__summary-hint-text {
+  display: none;
+}
+
+details[open] .assistant-card__summary-hint-text--open {
+  display: inline;
+}
+
+details[open] .assistant-card__summary-hint-text--closed {
+  display: none;
+}
+
+details:not([open]) .assistant-card__summary-hint-text--open {
+  display: none;
+}
+
+details:not([open]) .assistant-card__summary-hint-text--closed {
+  display: inline;
 }
 
 @media (max-width: 640px) {
@@ -725,6 +775,64 @@ table { border-collapse: collapse; }
   box-shadow:
     0 0 0 2px rgba(37, 99, 235, 0.2),
     0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.plan-card__summary-header {
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plan-card__title-block {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.plan-card__status {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.plan-card__badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.12);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+}
+
+.plan-card__steps {
+  margin-top: 0.5rem;
+}
+
+.plan-card__steps li {
+  padding-left: 0.25rem;
+}
+
+.plan-card__content-copy {
+  color: inherit;
+}
+
+.plan-card__next-action {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--assistant-border, #e2e8f0);
+}
+
+.plan-card__next-action-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.plan-card__next-action-body {
+  color: #1f2937;
 }
 
 .chart-card {
@@ -2948,7 +3056,6 @@ button.w-full.flex.items-center.justify-between.p-1\.5.rounded-md.opacity-50 {
 
 /* === Plan Card (Plan Execution) =========================================== */
 .plan-card {
-  overflow: hidden;
 }
 
 .plan-card details {

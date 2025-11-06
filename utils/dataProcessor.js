@@ -1,4 +1,12 @@
 import { applyHeaderMapping as applyHeaderMappingHelper } from './headerMapping.js';
+import {
+  detectHeadersTool,
+  removeSummaryRowsTool,
+  detectIdentifierColumnsTool,
+  normalizeCurrencyValue,
+  isLikelyIdentifierValue,
+  describeColumns as describeColumnsHelper,
+} from './dataPrepTools.js';
 
 const PapaLib = typeof window !== 'undefined' ? window.Papa : null;
 
@@ -621,6 +629,13 @@ export const executeJavaScriptDataTransform = (data, jsFunctionBody) => {
       parseNumber: value => parseNumericValue(value),
       splitNumericString,
       applyHeaderMapping: (row, mapping) => applyHeaderMappingHelper(row, mapping),
+      detectHeaders: metadata => detectHeadersTool({ metadata }),
+      removeSummaryRows: (rows, keywords) => removeSummaryRowsTool({ data: rows, keywords }).cleanedData,
+      detectIdentifierColumns: (rows, metadata) =>
+        detectIdentifierColumnsTool({ data: rows, metadata }).identifiers,
+      isValidIdentifierValue: value => isLikelyIdentifierValue(value),
+      normalizeNumber: (value, options) => normalizeCurrencyValue(value, options),
+      describeColumns: metadata => describeColumnsHelper(metadata),
     };
     const transformFunction = new Function('data', '_util', jsFunctionBody);
     const result = transformFunction(data, utils);

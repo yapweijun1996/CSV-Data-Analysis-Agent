@@ -46,23 +46,52 @@ const renderThinkingEntry = entry => {
 
 const renderPlanEntry = entry => {
   const content = formatMessageMarkdown(entry.text || '');
-  const shouldExpand =
-    typeof entry.isExpanded === 'boolean' ? entry.isExpanded : false;
-  const openAttr = shouldExpand ? ' open' : '';
+  const shouldExpand = entry.isExpanded !== false;
+  const steps = Array.isArray(entry.planSteps) && entry.planSteps.length ? entry.planSteps : null;
+  const stepCount = steps ? steps.length : null;
+  const statusText = typeof entry.planStatus === 'string' ? escapeHtml(entry.planStatus) : 'In progress';
+  const nextAction = typeof entry.nextAction === 'string' ? formatMessageMarkdown(entry.nextAction) : '';
+  const bodyContent = steps
+    ? `<ol class="assistant-card__list plan-card__steps">${steps
+        .map(step => `<li>${formatMessageMarkdown(step || '')}</li>`)
+        .join('')}</ol>`
+    : `<div class="plan-card__content-copy">${content}</div>`;
+  const nextActionBlock = nextAction
+    ? `<div class="plan-card__next-action">
+         <span class="plan-card__next-action-label">Next action</span>
+         <div class="plan-card__next-action-body">${nextAction}</div>
+       </div>`
+    : '';
+
   return `
     <div class="assistant-card assistant-card--plan plan-card">
-      <details class="assistant-card__details"${openAttr}>
-        <summary class="assistant-card__summary" aria-label="Toggle execution plan">
-          <div class="assistant-card__header">
-            <span class="assistant-card__icon" aria-hidden="true">⚙️</span>
-            <h4 class="assistant-card__title">Plan Execution</h4>
+      <details class="assistant-card__details"${shouldExpand ? ' open' : ''} aria-live="polite" data-plan-details>
+        <summary class="assistant-card__summary" aria-label="Toggle execution plan" data-plan-summary>
+          <div class="assistant-card__header plan-card__summary-header">
+            <div class="plan-card__title-block">
+              <span class="assistant-card__icon" aria-hidden="true">⚙️</span>
+              <div>
+                <h4 class="assistant-card__title">Plan Execution</h4>
+                <p class="plan-card__status">${statusText}</p>
+              </div>
+            </div>
+            ${
+              stepCount
+                ? `<span class="plan-card__badge" aria-label="${stepCount} planned steps">${stepCount} steps</span>`
+                : ''
+            }
           </div>
+          <span class="assistant-card__summary-hint">
+            <span class="assistant-card__summary-hint-text assistant-card__summary-hint-text--open">Hide details</span>
+            <span class="assistant-card__summary-hint-text assistant-card__summary-hint-text--closed">Show details</span>
+          </span>
           <svg class="plan-card__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.085l3.71-3.855a.75.75 0 111.08 1.04l-4.24 4.4a.75.75 0 01-1.08 0l-4.24-4.4a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
           </svg>
         </summary>
         <div class="assistant-card__body plan-card__content">
-          ${content}
+          ${bodyContent}
+          ${nextActionBlock}
         </div>
       </details>
     </div>`;

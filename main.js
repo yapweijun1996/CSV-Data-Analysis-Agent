@@ -45,6 +45,11 @@ import { renderDataPrepDebugPanel as renderDataPrepDebugPanelView } from './rend
 import { renderMemoryPanel as renderMemoryPanelView } from './render/memoryPanel.js';
 import { createTaskOrchestrator } from './services/taskOrchestrator.js';
 import { createHeaderMapping } from './utils/headerMapping.js';
+import {
+  detectHeadersTool as detectHeadersHelper,
+  removeSummaryRowsTool as removeSummaryRowsHelper,
+  detectIdentifierColumnsTool as detectIdentifierColumnsHelper,
+} from './utils/dataPrepTools.js';
 import { ENABLE_MEMORY_FEATURES } from './services/memoryConfig.js';
 import { ensureMemoryVectorReady as ensureMemoryVectorReadyHelper } from './services/memoryServiceHelpers.js';
 import { bindMemoryPanelEvents as bindMemoryPanelEventsHelper } from './handlers/memoryPanelEvents.js';
@@ -1395,6 +1400,7 @@ this.state = {
       const isApiKeySet = this.hasConfiguredApiKey();
       let prepPlan = null;
       let prepIterationsLog = [];
+      let toolHistory = [];
       let activeMetadata = dataForAnalysis.metadata || metadata || null;
       let headerMappingContext = this.ensureHeaderMappingContext(activeMetadata, {
         reason: 'preflight',
@@ -1451,6 +1457,7 @@ this.state = {
                 lastError: entry.lastError || null,
               })),
               headerMapping: headerMappingContext,
+              toolHistory: toolHistory.slice(-5),
             };
             iterationContextPayload.onViolation = violation => {
               if (!violation || typeof violation !== 'object') return;
@@ -1529,6 +1536,22 @@ this.state = {
               this.addProgress('上一輪檢查：資料仍含 Total/Subtotal 等摘要列，AI 正在嘗試移除這些摘要行。');
             } else if (failureHint && failureHint.includes('zero rows')) {
               this.addProgress('上一輪檢查：轉換結果為零筆資料，AI 正在重新定位 header/欄位以避免資料被全部濾掉。');
+            }
+
+            if (Array.isArray(iterationPlan.toolCalls) && iterationPlan.toolCalls.length) {
+              const toolOutputs = await this.executeDataPrepToolCalls(
+                iterationPlan.toolCalls,
+                dataForAnalysis,
+                activeMetadata
+              );
+              if (toolOutputs && toolOutputs.length) {
+                toolHistory = toolHistory.concat(toolOutputs).slice(-10);
+              }
+              this.addProgress(
+                `${iterationLabel} 使用 ${iterationPlan.toolCalls.length} 個工具後將重新規劃下一步。`,
+                'system'
+              );
+              continue;
             }
 
             if (!iterationPlan.jsFunctionBody) {
@@ -2204,6 +2227,79 @@ this.state = {
       return;
     }
     this.orchestrator.setContextValue('additionalPrepIterations', 0);
+  }
+
+  async executeDataPrepToolCalls(toolCalls, dataForAnalysis, metadata) {
+    const outputs = [];
+    for (const call of toolCalls) {
+      if (!call || typeof call !== 'object') {
+        continue;
+      }
+      const tool = call.tool || call.name;
+      const args = call.args || {};
+      switch (tool) {
+        case 'detect_headers': {
+          const result = detectHeadersHelper({
+            metadata,
+            sampleRows: args.sampleRows || dataForAnalysis.data?.slice(0, 5) || [],
+            strategies: args.strategies || [],
+          });
+          outputs.push({ tool, result });
+          this.addProgress(
+            `工具：detect_headers → 偵測欄位 ${result.headers.join(', ') || '(unknown)'}`,
+            'info'
+          );
+          break;
+        }
+        case 'remove_summary_rows': {
+          const currentRows = Array.isArray(dataForAnalysis.data) ? dataForAnalysis.data : [];
+          const result = removeSummaryRowsHelper({
+            data: currentRows,
+            keywords: args.keywords,
+          });
+          dataForAnalysis.data = result.cleanedData;
+          if (dataForAnalysis.metadata) {
+            dataForAnalysis.metadata = {
+              ...dataForAnalysis.metadata,
+              cleanedRowCount: dataForAnalysis.data.length,
+            };
+            dataForAnalysis.metadata = this.updateMetadataContext(
+              dataForAnalysis.metadata,
+              dataForAnalysis.data
+            );
+          }
+          outputs.push({
+            tool,
+            removedRows: result.removedRows.length,
+            remaining: dataForAnalysis.data.length,
+          });
+          this.addProgress(
+            `工具：remove_summary_rows → 移除 ${result.removedRows.length} 筆摘要列`,
+            'info'
+          );
+          break;
+        }
+        case 'detect_identifier_columns': {
+          const currentRows = Array.isArray(dataForAnalysis.data) ? dataForAnalysis.data : [];
+          const result = detectIdentifierColumnsHelper({
+            data: currentRows,
+            metadata,
+          });
+          outputs.push({ tool, identifiers: result.identifiers });
+          this.addProgress(
+            `工具：detect_identifier_columns → 候選欄位 ${result.identifiers.join(', ') || '無'}`,
+            'info'
+          );
+          break;
+        }
+        default: {
+          outputs.push({ tool, error: 'Unsupported tool' });
+          this.addProgress(`工具 ${tool || '(unknown)'} 不受支援，已略過。`, 'error');
+          break;
+        }
+      }
+    }
+    return outputs;
   }
 
   handleWorkflowProgress(entry) {
