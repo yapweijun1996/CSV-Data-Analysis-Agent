@@ -9,6 +9,10 @@ let singlePlanSchema = null;
 let dataPreparationSchemaCache = null;
 let multiActionChatResponseSchemaCache = null;
 let proactiveInsightSchemaCache = null;
+const MAX_CHAT_HISTORY_MESSAGES = 8;
+const MAX_SYSTEM_MESSAGES = 5;
+const MAX_SKILL_PROMPT_ENTRIES = 8;
+const MAX_MEMORY_PROMPT_ENTRIES = 5;
 
 const loadGoogleModule = async () => {
   if (!googleModulePromise) {
@@ -98,6 +102,101 @@ const rowContainsSummaryKeyword = row => {
     }
   }
   return false;
+};
+
+const trimChatHistory = (history = [], limit = MAX_CHAT_HISTORY_MESSAGES, systemLimit = MAX_SYSTEM_MESSAGES) => {
+  if (!Array.isArray(history) || history.length === 0) {
+    return [];
+  }
+  if (history.length <= limit + systemLimit) {
+    return history;
+  }
+  const systemIndices = [];
+  const otherIndices = [];
+  history.forEach((msg, index) => {
+    if (msg?.sender === 'system') {
+      systemIndices.push(index);
+    } else {
+      otherIndices.push(index);
+    }
+  });
+  const keep = new Set();
+  systemIndices.slice(-systemLimit).forEach(idx => keep.add(idx));
+  otherIndices.slice(-limit).forEach(idx => keep.add(idx));
+  return history.filter((_, index) => keep.has(index));
+};
+
+const isGreetingOnly = text => {
+  if (!text || typeof text !== 'string') {
+    return false;
+  }
+  const normalized = text.trim().toLowerCase();
+  if (!normalized || normalized.length > 24) {
+    return false;
+  }
+  const greetingRegex =
+    /^(hi|hello|hey|hola|bonjour|ciao|hallo|嗨+|你好|您好|早安|午安|晚安)(\s+(there|team))?([!！。\.]{0,2})$/i;
+  return greetingRegex.test(normalized);
+};
+
+const buildStructuredTextResponse = ({
+  openingSummary = '',
+  insights = [],
+  risks = '- None',
+  recommendations = [],
+}) => {
+  const formatList = (items, fallback) =>
+    Array.isArray(items) && items.length ? items.map(item => `- ${item}`).join('\n') : fallback;
+  const insightsBlock = formatList(insights, '- None，等你提出需要探索的主題。');
+  const recommendationBlock = formatList(
+    recommendations,
+    '- 告訴我你想了解的欄位、條件或假設，我會立即協助。'
+  );
+  return `Opening summary: ${openingSummary || '目前沒有新的洞察，等你發出指令。'}
+Key insights list:
+${insightsBlock}
+Risks or limitations:
+${risks || '- None'}
+Recommended actions / next step for the user:
+${recommendationBlock}`;
+};
+
+const validateActionResponse = response => {
+  if (!response || typeof response !== 'object') {
+    return 'AI response payload is empty.';
+  }
+  if (!Array.isArray(response.actions) || !response.actions.length) {
+    return 'The AI response does not contain a valid actions array.';
+  }
+  const missingThought = response.actions.find(
+    action => !action || typeof action.thought !== 'string' || !action.thought.trim()
+  );
+  if (missingThought) {
+    return 'The AI response is missing a required "thought" field on one or more actions.';
+  }
+  return null;
+};
+
+const buildFallbackActionResponse = (rawText, datasetTitle) => {
+  const sanitizedSummary =
+    typeof rawText === 'string' && rawText.trim()
+      ? rawText.trim().split('\n').slice(0, 2).join(' ')
+      : `👋 抱歉，剛才的模型回覆沒有提供可執行的步驟，但我已準備好分析「${datasetTitle}」。`;
+  const fallbackText = buildStructuredTextResponse({
+    openingSummary: sanitizedSummary,
+    insights: ['目前尚未收到可分析的具體請求，等你指定想看的圖表或指標。'],
+    risks: '- None，剛才僅是模型格式異常。',
+    recommendations: ['請重新描述你的需求，或告訴我要比較的欄位與條件，我會立即跟進。'],
+  });
+  return {
+    actions: [
+      {
+        responseType: 'text_response',
+        thought: 'LLM 回覆缺少有效的 actions 結構，改以安全模板回應使用者並請求新的輸入。',
+        text: fallbackText,
+      },
+    ],
+  };
 };
 
 const getSinglePlanSchema = () => {
@@ -605,7 +704,7 @@ const detectHardCodedPatternsInJs = source => {
   return Array.from(issueSet);
 };
 
-const callOpenAIJson = async (settings, systemPrompt, userPrompt) => {
+const callOpenAIJson = async (settings, systemPrompt, userPrompt, options = {}) => {
   const response = await withRetry(async () => {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -628,7 +727,12 @@ const callOpenAIJson = async (settings, systemPrompt, userPrompt) => {
     }
     return res.json();
   });
-  return cleanJson(response.choices[0].message.content);
+  const rawContent = response?.choices?.[0]?.message?.content || '';
+  const parsed = cleanJson(rawContent);
+  if (options.includeRaw) {
+    return { parsed, rawText: rawContent };
+  }
+  return parsed;
 };
 
 const callOpenAIText = async (settings, systemPrompt, userPrompt) => {
@@ -1353,34 +1457,58 @@ export const generateChatResponse = async (
     return { actions: [{ responseType: 'text_response', text: 'Cloud AI is disabled. API Key not provided.' }] };
   }
 
+  const trimmedHistory = trimChatHistory(Array.isArray(chatHistory) ? chatHistory : []);
   const categoricalCols = columns.filter(c => c.type === 'categorical').map(c => c.name);
   const numericalCols = columns.filter(c => c.type === 'numerical').map(c => c.name);
-  const history = chatHistory.map(m => `${m.sender}: ${m.text}`).join('\n');
-  const recentSystemMessages = chatHistory
+  const history = trimmedHistory.map(m => `${m.sender}: ${m.text}`).join('\n');
+  const recentSystemMessages = trimmedHistory
     .filter(msg => msg.sender === 'system')
-    .slice(-10)
+    .slice(-MAX_SYSTEM_MESSAGES)
     .map(msg => `- [${msg.type || 'system'}] ${msg.text}`)
     .join('\n');
   const systemSection = recentSystemMessages ? `**Recent System Messages:**\n${recentSystemMessages}\n` : '';
+
+  const datasetTitle = metadata?.reportTitle || 'Not detected';
+  const normalizedUserPrompt = typeof userPrompt === 'string' ? userPrompt.trim() : '';
+  const isGeneralIntent = !intent || intent === 'general';
+  if (isGeneralIntent && isGreetingOnly(normalizedUserPrompt)) {
+    const greetingText = buildStructuredTextResponse({
+      openingSummary: `👋 嗨！我已在關注資料集「${datasetTitle}」，隨時可依照你的需求啟動分析。`,
+      insights: ['目前尚無新的分析指令，等你指定要探索的指標或範圍。'],
+      risks: '- None，因為還沒有進行任何圖表或運算。',
+      recommendations: ['告訴我你想了解的欄位、條件或假設，我就會開始動手分析。'],
+    });
+    return {
+      actions: [
+        {
+          responseType: 'text_response',
+          thought: '使用者只有打招呼，先以輕量問候並提示可提供協助，避免浪費額外的 LLM token。',
+          text: greetingText,
+        },
+      ],
+    };
+  }
 
   const metadataContext = formatMetadataContext(metadata, {
     leadingRowLimit: 10,
     contextRowLimit: 15,
   });
   const metadataSection = metadataContext ? `**Dataset Context:**\n${metadataContext}\n` : '';
-  const datasetTitle = metadata?.reportTitle || 'Not detected';
 
-  const skillSection = Array.isArray(skillCatalog) && skillCatalog.length
-    ? `**Skill Library (${skillCatalog.length} available):**
-${skillCatalog
+  const limitedSkillCatalog = Array.isArray(skillCatalog) ? skillCatalog.slice(0, MAX_SKILL_PROMPT_ENTRIES) : [];
+  const limitedMemoryContext = Array.isArray(memoryContext) ? memoryContext.slice(0, MAX_MEMORY_PROMPT_ENTRIES) : [];
+
+  const skillSection = limitedSkillCatalog.length
+    ? `**Skill Library (${limitedSkillCatalog.length} available):**
+${limitedSkillCatalog
   .map(skill => `- [${skill.id}] ${skill.label}: ${skill.description}`)
   .join('\n')}
 `
     : '';
 
-  const memorySection = Array.isArray(memoryContext) && memoryContext.length
+  const memorySection = limitedMemoryContext.length
     ? `**LONG-TERM MEMORY (Top Matches):**
-${memoryContext
+${limitedMemoryContext
   .map(item => {
     const score = typeof item.score === 'number' ? item.score.toFixed(2) : 'n/a';
     const summary = item.summary || item.text || '';
@@ -1496,13 +1624,17 @@ ${actionsInstructions}
   const systemPrompt = `You are an expert data analyst and business strategist operating with a Reason+Act (ReAct) mindset. Respond in ${settings.language}. Your entire reply MUST be a single JSON object containing an "actions" array, and each action MUST include a "thought" that clearly explains your reasoning before the action. When producing a text_response, follow the Response Template exactly (opening summary, key insights, risks, recommendations).`;
 
   let result;
+  let openAIRawText = '';
   const geminiSchema = provider === 'google' ? getMultiActionChatResponseSchema() : null;
   if (provider === 'openai') {
-    result = await callOpenAIJson(
+    const { parsed, rawText } = await callOpenAIJson(
       settings,
       systemPrompt,
-      userPromptWithContext
+      userPromptWithContext,
+      { includeRaw: true }
     );
+    result = parsed;
+    openAIRawText = rawText;
   } else {
     result = await callGeminiJson(
       settings,
@@ -1511,15 +1643,13 @@ ${actionsInstructions}
     );
   }
 
-  if (!result || !Array.isArray(result.actions)) {
-    throw new Error('The AI response does not contain a valid actions array.');
-  }
-
-  const missingThought = result.actions.find(
-    action => !action || typeof action.thought !== 'string' || !action.thought.trim()
-  );
-  if (missingThought) {
-    throw new Error('The AI response is missing a required "thought" field on one or more actions.');
+  const validationError = validateActionResponse(result);
+  if (validationError) {
+    if (provider === 'openai') {
+      console.warn('OpenAI chat payload invalid, using fallback text response.', validationError);
+      return buildFallbackActionResponse(openAIRawText, datasetTitle);
+    }
+    throw new Error(validationError);
   }
 
   return result;

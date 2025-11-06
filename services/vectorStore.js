@@ -2,8 +2,37 @@ import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers
 import { embedText, cosineSimilarity as bowCosineSimilarity } from './ragService.js';
 
 const MODEL_REPO_ID = 'Xenova/all-MiniLM-L6-v2';
-const LOCAL_MODEL_PATH = '/models';
+
+const resolveStaticPath = relativePath => {
+  const sanitizedRelative = typeof relativePath === 'string' ? relativePath.replace(/^\/+/, '') : '';
+  const importMetaBase =
+    typeof import.meta !== 'undefined' && import.meta && import.meta.env ? import.meta.env.BASE_URL : null;
+  const windowBase =
+    typeof window !== 'undefined' && typeof window.__APP_BASE_PATH__ === 'string'
+      ? window.__APP_BASE_PATH__
+      : null;
+  const documentBase =
+    typeof document !== 'undefined'
+      ? document.querySelector?.('base')?.getAttribute?.('href') || null
+      : null;
+  const base = importMetaBase || windowBase || documentBase || '/';
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+  return `${normalizedBase}${sanitizedRelative}`;
+};
+
+const LOCAL_MODEL_PATH = resolveStaticPath('models');
 const LOCAL_CONFIG_URL = `${LOCAL_MODEL_PATH}/${MODEL_REPO_ID}/config.json`;
+
+const safeParseJson = (text, contextLabel = 'JSON parse error') => {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    const snippet = typeof text === 'string' ? text.slice(0, 160) : '';
+    const enriched = new Error(`${contextLabel}: ${error instanceof Error ? error.message : String(error)}`);
+    enriched.details = snippet;
+    throw enriched;
+  }
+};
 
 class VectorStore {
   constructor() {
@@ -184,7 +213,7 @@ class VectorStore {
       }
       const response = await localFetch(LOCAL_CONFIG_URL, {
         cache: 'no-cache',
-        mode: 'cors',
+        mode: 'same-origin',
       });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} ${response.statusText}`);
@@ -194,7 +223,7 @@ class VectorStore {
       if (contentType.includes('text/html')) {
         throw new Error('Received HTML content instead of JSON configuration.');
       }
-      JSON.parse(bodyText);
+      safeParseJson(bodyText, 'Local AI model config is invalid');
       return true;
     } catch (error) {
       console.warn('Local model availability check failed.', error);
