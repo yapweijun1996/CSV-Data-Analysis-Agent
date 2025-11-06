@@ -170,6 +170,7 @@ this.state = {
       onChatLog: payload => this.handleWorkflowChat(payload),
     });
     this.workflowActivePhase = null;
+    this.hasSavedHistoryEntry = false;
   }
 
   captureSerializableAppState() {
@@ -1350,6 +1351,7 @@ this.state = {
 
     this.startWorkflowSession(`分析資料集 ${file.name}`, ['Vanilla frontend', 'No backend server']);
     this.startWorkflowPhase('diagnose', '先快速檢查 CSV 檔案格式與欄位資訊。');
+    this.hasSavedHistoryEntry = false;
 
     try {
       if (this.orchestrator) {
@@ -2070,6 +2072,7 @@ this.state = {
       const finalSummary = await generateFinalSummary(createdCards, this.settings, metadata);
       const generatedReport = this.buildGeneratedReport(createdCards, finalSummary);
       this.setState({ finalSummary, generatedReport });
+      await this.saveCompletedAnalysisToHistory();
       this.addProgress('Overall summary created.');
       this.completeWorkflowStep({
         label: '總結報告',
@@ -2270,18 +2273,38 @@ this.state = {
 
   async executeDataPrepToolCalls(toolCalls, dataForAnalysis, metadata) {
     const outputs = [];
+    const parseArgs = rawArgs => {
+      if (!rawArgs) return {};
+      if (typeof rawArgs === 'string') {
+        try {
+          return JSON.parse(rawArgs);
+        } catch (error) {
+          console.warn('Failed to parse tool args JSON:', rawArgs, error);
+          this.addProgress('工具參數 JSON 解析失敗，已忽略該工具 call。', 'error');
+          return null;
+        }
+      }
+      if (typeof rawArgs === 'object') {
+        return rawArgs;
+      }
+      return {};
+    };
     for (const call of toolCalls) {
       if (!call || typeof call !== 'object') {
         continue;
       }
       const tool = call.tool || call.name;
-      const args = call.args || {};
+      const argsObject = parseArgs(call.args);
+      if (argsObject === null) {
+        outputs.push({ tool, error: 'invalid_args' });
+        continue;
+      }
       switch (tool) {
         case 'detect_headers': {
           const result = detectHeadersHelper({
             metadata,
-            sampleRows: args.sampleRows || dataForAnalysis.data?.slice(0, 5) || [],
-            strategies: args.strategies || [],
+            sampleRows: argsObject.sampleRows || dataForAnalysis.data?.slice(0, 5) || [],
+            strategies: argsObject.strategies || [],
           });
           outputs.push({ tool, result });
           this.addProgress(
@@ -2294,7 +2317,7 @@ this.state = {
           const currentRows = Array.isArray(dataForAnalysis.data) ? dataForAnalysis.data : [];
           const result = removeSummaryRowsHelper({
             data: currentRows,
-            keywords: args.keywords,
+            keywords: argsObject.keywords,
           });
           dataForAnalysis.data = result.cleanedData;
           if (dataForAnalysis.metadata) {
@@ -2368,6 +2391,28 @@ this.state = {
       visuals,
       recommendations,
     };
+  }
+
+  async saveCompletedAnalysisToHistory() {
+    if (this.hasSavedHistoryEntry || !this.state.csvData) {
+      return;
+    }
+    try {
+      const snapshot = this.captureSerializableAppState();
+      const entry = {
+        id: `report-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
+        filename: this.state.csvData.fileName || 'Analysis Report',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        appState: snapshot,
+      };
+      await saveReport(entry);
+      this.hasSavedHistoryEntry = true;
+      const reports = await getReportsList();
+      this.setState({ reportsList: reports });
+    } catch (error) {
+      console.error('Failed to archive completed report:', error);
+    }
   }
 
   handleWorkflowProgress(entry) {

@@ -218,9 +218,8 @@ const getDataPreparationSchema = () => {
                 description: 'Tool identifier to execute.',
               },
               args: {
-                type: GeminiType.OBJECT,
-                description: 'Arguments for the tool call.',
-                additionalProperties: true,
+                type: GeminiType.STRING,
+                description: 'JSON string containing arguments for the tool call.',
               },
             },
             required: ['tool'],
@@ -678,8 +677,9 @@ const callGeminiJson = async (settings, prompt, options = {}) => {
       },
     },
   };
-  if (options?.schema) {
-    config.responseSchema = options.schema;
+  const { schema, includeRaw } = options || {};
+  if (schema) {
+    config.responseSchema = schema;
   }
   const response = await withRetry(() =>
     ai.models.generateContent({
@@ -690,7 +690,10 @@ const callGeminiJson = async (settings, prompt, options = {}) => {
   );
   const rawText = typeof response.text === 'function' ? await response.text() : response.text;
   const parsed = cleanJson(rawText);
-  return { parsed, rawText };
+  if (includeRaw) {
+    return { parsed, rawText };
+  }
+  return parsed;
 };
 
 const callGeminiText = async (settings, prompt) => {
@@ -918,7 +921,7 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
           })
           .join('\n')}\n`
       : '\n';
-  const helpersDescription = `\nAvailable Helpers (invoke via _util.<name>):\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\nIf you need to run a dedicated tool instead of writing code, respond with "toolCalls": [{"tool":"detect_headers","args":{...}}] and omit jsFunctionBody.`;
+  const helpersDescription = `\nAvailable Helpers (invoke via _util.<name>):\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\nIf you need to run a dedicated tool instead of writing code, respond with "toolCalls": [{"tool":"detect_headers","args":"{\"strategies\":[\"metadata\",\"sample\"]}"}] and omit jsFunctionBody. The "args" field MUST be a JSON string.`;
 
   return `${contextSection}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}
 
@@ -995,7 +998,10 @@ Your task:
         plan = await callOpenAIJson(settings, systemPrompt, userPrompt);
       } else {
         const combinedPrompt = `${systemPrompt}\n${userPrompt}`;
-        const { parsed, rawText } = await callGeminiJson(settings, combinedPrompt, { schema });
+        const { parsed, rawText } = await callGeminiJson(settings, combinedPrompt, {
+          schema,
+          includeRaw: true,
+        });
         plan = parsed;
         if (!plan) {
           const parseError = new Error('AI response is empty.');
