@@ -112,6 +112,9 @@ const getUsagePercentage = (memoryUsage, capacityKb) => {
  * @param {number} params.memoryUsage
  * @param {number} params.capacityKb
  * @param {string} params.modelStatus
+ * @param {boolean} params.isLoading
+ * @param {string|null} params.loadError
+ * @param {boolean} params.isModelReady
  * @returns {string}
  */
 export const renderMemoryPanel = ({
@@ -123,6 +126,9 @@ export const renderMemoryPanel = ({
   memoryUsage,
   capacityKb,
   modelStatus,
+  isLoading,
+  loadError,
+  isModelReady,
 }) => {
   const safeDocuments = Array.isArray(documents) ? documents : [];
   const usage = Number.isFinite(memoryUsage) ? Math.max(memoryUsage, 0) : 0;
@@ -134,6 +140,40 @@ export const renderMemoryPanel = ({
 
   const documentsHtml = renderDocumentsList({ documents: safeDocuments, highlightedId });
   const resultsHtml = renderResultsList({ results, query, isSearching });
+  const statusBadge = modelStatus
+    ? `<span class="px-2 py-0.5 rounded-md border ${
+        isModelReady
+          ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+          : 'bg-amber-50 text-amber-700 border-amber-200'
+      }">${escapeHtml(modelStatus)}</span>`
+    : '';
+  const loadingBanner = loadError
+    ? `<div class="mt-4 px-3 py-2 bg-rose-50 border border-rose-200 text-sm text-rose-700 rounded-md">${escapeHtml(loadError)}</div>`
+    : isLoading
+    ? `<div class="mt-4 px-3 py-2 bg-slate-100 border border-slate-200 text-sm text-slate-600 rounded-md" data-memory-loading-banner>
+         <span class="inline-flex items-center gap-2">
+           <span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+           Loading memories…
+         </span>
+       </div>`
+    : '';
+  const refreshButtonDisabled = isLoading ? 'disabled aria-disabled="true"' : '';
+  const refreshButtonClass = `px-3 py-2 text-sm border border-slate-300 rounded-md ${
+    isLoading ? 'bg-slate-100 text-slate-400 cursor-wait' : 'hover:bg-slate-100'
+  }`;
+  const clearButtonClass = isLoading
+    ? 'px-3 py-2 text-sm border border-rose-200 text-rose-300 rounded-md cursor-not-allowed'
+    : 'px-3 py-2 text-sm border border-rose-300 text-rose-600 rounded-md hover:bg-rose-50';
+  const clearButtonDisabled = isLoading ? 'disabled aria-disabled="true"' : '';
+  const searchDisabled = isSearching || isLoading;
+  const searchButtonState = searchDisabled ? 'disabled aria-disabled="true"' : '';
+  const searchButtonClass = `px-3 py-2 text-sm bg-blue-600 text-white rounded-md ${
+    searchDisabled ? 'opacity-70 cursor-wait' : 'hover:bg-blue-700'
+  }`;
+  const searchButtonLabel = isSearching ? 'Searching…' : isLoading ? 'Please wait…' : 'Search';
+  const documentsSection = isLoading
+    ? '<div class="flex items-center justify-center h-full text-sm text-slate-500" data-memory-loading>Preparing memories…</div>'
+    : `<ul class="space-y-3">${documentsHtml}</ul>`;
 
   return `
     <div class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" data-memory-overlay style="background-color: rgba(15, 23, 42, 0.45);">
@@ -147,7 +187,7 @@ export const renderMemoryPanel = ({
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span>${escapeHtml(docsLabel)}</span>
                   <span>Usage ~${usage.toFixed(2)} KB</span>
-                  ${modelStatus ? `<span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-md">${escapeHtml(modelStatus)}</span>` : ''}
+                  ${statusBadge}
                 </div>
               </div>
             </div>
@@ -157,10 +197,11 @@ export const renderMemoryPanel = ({
               </div>
               <p class="mt-2 text-xs text-slate-500">${usagePercentLabel}% of soft capacity (${capacityLabelText} MB)</p>
             </div>
+            ${loadingBanner}
           </div>
           <div class="flex items-center gap-2">
-            <button class="px-3 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-100" type="button" data-memory-refresh>Refresh</button>
-            <button class="px-3 py-2 text-sm border border-rose-300 text-rose-600 rounded-md hover:bg-rose-50" type="button" data-memory-clear-all>Clear All</button>
+            <button class="${refreshButtonClass}" type="button" data-memory-refresh ${refreshButtonDisabled}>Refresh</button>
+            <button class="${clearButtonClass}" type="button" data-memory-clear-all ${clearButtonDisabled}>Clear All</button>
             <button class="p-2 text-slate-500 rounded-full hover:bg-slate-200 hover:text-slate-800 transition-colors" type="button" aria-label="Close memory panel" data-memory-close>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -173,7 +214,7 @@ export const renderMemoryPanel = ({
             <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <div class="flex flex-col gap-3">
                 <div class="relative">
-                  <input type="text" class="w-full border border-slate-300 rounded-md py-2 pl-5 pr-3 text-sm bg-white" placeholder="Search saved memories..." value="${escapeHtml(query || '')}" data-memory-search-input />
+                  <input type="text" class="w-full border border-slate-300 rounded-md py-2 pl-5 pr-3 text-sm bg-white ${isLoading ? 'opacity-60 cursor-wait' : ''}" placeholder="Search saved memories..." value="${escapeHtml(query || '')}" data-memory-search-input ${isLoading ? 'disabled aria-disabled="true"' : ''} />
                   <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
@@ -181,8 +222,8 @@ export const renderMemoryPanel = ({
                   </span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <button type="button" class="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 ${isSearching ? 'opacity-70 cursor-wait' : ''}" data-memory-search ${isSearching ? 'disabled' : ''}>
-                    ${isSearching ? 'Searching…' : 'Search'}
+                  <button type="button" class="${searchButtonClass}" data-memory-search ${searchButtonState}>
+                    ${escapeHtml(searchButtonLabel)}
                   </button>
                   <span class="text-xs text-slate-500">Press Enter to search quickly.</span>
                 </div>
@@ -190,7 +231,7 @@ export const renderMemoryPanel = ({
               <p class="mt-3 text-xs text-slate-500">Tip: refine results by combining a keyword with a timeframe or topic.</p>
             </div>
             <div class="flex-1 overflow-y-auto px-6 py-4 bg-white">
-              <ul class="space-y-3">${documentsHtml}</ul>
+              ${documentsSection}
             </div>
           </div>
           <aside class="flex flex-col bg-slate-50">

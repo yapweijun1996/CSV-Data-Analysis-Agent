@@ -42,7 +42,9 @@ export const bindMemoryPanelEvents = app => {
 
   const refreshBtn = app.querySelector('[data-memory-refresh]');
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => app.refreshMemoryDocuments());
+    refreshBtn.addEventListener('click', () => {
+      app.refreshMemoryDocuments({ showSpinner: true });
+    });
   }
 
   const searchInput = app.querySelector('[data-memory-search-input]');
@@ -59,8 +61,10 @@ export const bindMemoryPanelEvents = app => {
       }
     });
     if (typeof HTMLElement !== 'undefined' && searchInput instanceof HTMLElement) {
-      searchInput.focus();
-      searchInput.setSelectionRange?.(searchInput.value.length, searchInput.value.length);
+      if (!searchInput.disabled) {
+        searchInput.focus();
+        searchInput.setSelectionRange?.(searchInput.value.length, searchInput.value.length);
+      }
     }
   }
 

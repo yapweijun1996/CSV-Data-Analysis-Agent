@@ -121,6 +121,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       memoryPanelResults: [],
       memoryPanelHighlightedId: null,
       memoryPanelIsSearching: false,
+      memoryPanelIsLoading: false,
+      memoryPanelLoadError: null,
     };
     this.settings = getSettings();
     this.chartInstances = new Map();
@@ -147,6 +149,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.cardIdAlias = new Map();
     this.memoryVectorReady = false;
     this.lastReferencedCard = null;
+    this.highlightClearTimer = null;
   }
 
   captureSerializableAppState() {
@@ -745,6 +748,10 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (this.isResizingAside) {
       this.handleAsideMouseUp();
     }
+    if (this.highlightClearTimer) {
+      clearTimeout(this.highlightClearTimer);
+      this.highlightClearTimer = null;
+    }
     if (typeof document !== 'undefined') {
       document.removeEventListener('click', this.boundDocumentClick, true);
     }
@@ -852,9 +859,33 @@ class CsvDataAnalysisApp extends HTMLElement {
       memoryPanelResults: [],
       memoryPanelHighlightedId: null,
       memoryPanelIsSearching: false,
+      memoryPanelIsLoading: true,
+      memoryPanelLoadError: null,
     });
-    await this.ensureMemoryVectorReady(message => this.addProgress(message));
-    this.refreshMemoryDocuments();
+    try {
+      const ready = this.memoryVectorReady
+        ? true
+        : await this.ensureMemoryVectorReady(message => this.addProgress(message));
+      if (!ready) {
+        this.setState({
+          memoryPanelIsLoading: false,
+          memoryPanelLoadError: 'Unable to load the AI memory model. Please try again later.',
+        });
+        return;
+      }
+      await this.refreshMemoryDocuments({ showSpinner: false, skipEnsure: true, silent: true });
+      this.setState({
+        memoryPanelIsLoading: false,
+        memoryPanelLoadError: null,
+      });
+    } catch (error) {
+      console.warn('Failed to initialise memory panel.', error);
+      this.setState({
+        memoryPanelIsLoading: false,
+        memoryPanelLoadError: 'Failed to load memories. Check your connection and retry.',
+      });
+      this.addProgress('Unable to load memories right now.', 'error');
+    }
   }
 
   closeMemoryPanel() {
@@ -864,11 +895,59 @@ class CsvDataAnalysisApp extends HTMLElement {
       memoryPanelResults: [],
       memoryPanelHighlightedId: null,
       memoryPanelIsSearching: false,
+      memoryPanelIsLoading: false,
+      memoryPanelLoadError: null,
     });
   }
 
-  refreshMemoryDocuments() {
-    refreshMemoryDocumentsHelper({ app: this, enableMemory: ENABLE_MEMORY_FEATURES });
+  async refreshMemoryDocuments(options = {}) {
+    if (!ENABLE_MEMORY_FEATURES) {
+      return;
+    }
+    const config = options && typeof options === 'object' ? options : {};
+    const showSpinner = Boolean(config.showSpinner);
+    const skipEnsure = Boolean(config.skipEnsure);
+    const silent = Boolean(config.silent);
+    if (showSpinner) {
+      this.setState({
+        memoryPanelIsLoading: true,
+        memoryPanelLoadError: null,
+      });
+    }
+    try {
+      if (!skipEnsure && !this.memoryVectorReady) {
+        const ready = await this.ensureMemoryVectorReady(message => this.addProgress(message));
+        if (!ready) {
+          if (showSpinner) {
+            this.setState({
+              memoryPanelIsLoading: false,
+              memoryPanelLoadError: 'Unable to load the AI memory model. Please try again later.',
+            });
+          }
+          return;
+        }
+      }
+      refreshMemoryDocumentsHelper({ app: this, enableMemory: ENABLE_MEMORY_FEATURES });
+      if (showSpinner) {
+        this.setState({
+          memoryPanelIsLoading: false,
+          memoryPanelLoadError: null,
+        });
+      } else if (this.state.memoryPanelLoadError) {
+        this.setState({ memoryPanelLoadError: null });
+      }
+    } catch (error) {
+      console.warn('Failed to refresh memory documents.', error);
+      if (showSpinner) {
+        this.setState({
+          memoryPanelIsLoading: false,
+          memoryPanelLoadError: 'Failed to refresh memories. Try again shortly.',
+        });
+      }
+      if (!silent) {
+        this.addProgress('Unable to refresh memory panel right now.', 'error');
+      }
+    }
   }
 
   async searchMemoryPanel(query) {
@@ -1714,6 +1793,8 @@ class CsvDataAnalysisApp extends HTMLElement {
     switch (toolName) {
       case 'highlightCard': {
         const { scrollIntoView } = domAction;
+        const autoClearDelay =
+          typeof domAction.autoClearDelay === 'number' ? domAction.autoClearDelay : undefined;
         const { card, cardId, fallbackTitle } = resolveCardContext(domAction);
         if (!cardId || !card) {
           return {
@@ -1721,7 +1802,10 @@ class CsvDataAnalysisApp extends HTMLElement {
             error: `Card ${describeCardTarget(null, fallbackTitle, domAction.cardId)} not found.`,
           };
         }
-        const success = this.highlightCard(cardId, { scrollIntoView: scrollIntoView !== false });
+        const success = this.highlightCard(cardId, {
+          scrollIntoView: scrollIntoView !== false,
+          autoClearDelay,
+        });
         return success
           ? { success: true, message: `Highlighted ${describeCardTarget(card)}.` }
           : {
@@ -1730,11 +1814,16 @@ class CsvDataAnalysisApp extends HTMLElement {
             };
       }
       case 'clearHighlight': {
-        this.setState({ highlightedCardId: null });
+        this.clearHighlightState();
         return { success: true, message: 'Cleared highlighted card.' };
       }
       case 'changeCardChartType': {
-        const { chartType } = domAction;
+        const chartType =
+          typeof domAction.chartType === 'string'
+            ? domAction.chartType
+            : typeof domAction.newType === 'string'
+            ? domAction.newType
+            : null;
         if (!chartType) {
           return { success: false, error: 'Card ID and chart type are required.' };
         }
@@ -2188,12 +2277,18 @@ class CsvDataAnalysisApp extends HTMLElement {
           break;
         case 'dom_action':
           {
-            const result = await this.handleDomAction(action.domAction);
+            const domAction = action.domAction || {};
+            const label =
+              typeof domAction.toolName === 'string' && domAction.toolName.trim()
+                ? domAction.toolName.trim()
+                : 'dom_action';
+            this.addProgress(`AI is performing action: ${label}...`);
+            const result = await this.handleDomAction(domAction);
             if (result.success) {
-              if (action.domAction && typeof action.domAction === 'object') {
+              if (domAction && typeof domAction === 'object') {
                 const context = this.resolveCardReference(
-                  action.domAction.cardId ?? null,
-                  action.domAction.cardTitle ?? action.domAction.title ?? null
+                  domAction.cardId ?? null,
+                  domAction.cardTitle ?? domAction.title ?? null
                 );
                 if (context.card) {
                   this.lastReferencedCard = {
@@ -2610,12 +2705,26 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.updateCard(cardId, () => ({ isZoomed: false }));
   }
 
+  clearHighlightState() {
+    if (this.highlightClearTimer) {
+      clearTimeout(this.highlightClearTimer);
+      this.highlightClearTimer = null;
+    }
+    if (this.state.highlightedCardId !== null) {
+      this.setState({ highlightedCardId: null });
+    }
+  }
+
   highlightCard(cardId, options = {}) {
     if (!cardId) return false;
     const cardExists = this.state.analysisCards.some(card => card.id === cardId);
     if (!cardExists) return false;
+    if (this.highlightClearTimer) {
+      clearTimeout(this.highlightClearTimer);
+      this.highlightClearTimer = null;
+    }
     this.setState({ highlightedCardId: cardId });
-    const { scrollIntoView = true } = options;
+    const { scrollIntoView = true, autoClearDelay } = options;
     if (scrollIntoView) {
       this.waitForNextFrame().then(() => {
         const cardElement = this.querySelector(`[data-card-id="${cardId}"]`);
@@ -2634,6 +2743,18 @@ class CsvDataAnalysisApp extends HTMLElement {
           cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       });
+    }
+    const delay =
+      typeof autoClearDelay === 'number' && Number.isFinite(autoClearDelay)
+        ? Math.max(0, autoClearDelay)
+        : 2500;
+    if (delay > 0) {
+      this.highlightClearTimer = setTimeout(() => {
+        this.highlightClearTimer = null;
+        if (this.state.highlightedCardId === cardId) {
+          this.setState({ highlightedCardId: null });
+        }
+      }, delay);
     }
     return true;
   }
@@ -3876,6 +3997,9 @@ class CsvDataAnalysisApp extends HTMLElement {
       memoryUsage,
       capacityKb: MEMORY_CAPACITY_KB,
       modelStatus,
+      isLoading: Boolean(this.state.memoryPanelIsLoading),
+      loadError: this.state.memoryPanelLoadError,
+      isModelReady: Boolean(this.memoryVectorReady),
     });
   }
 
