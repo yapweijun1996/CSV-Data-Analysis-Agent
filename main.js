@@ -150,6 +150,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.memoryVectorReady = false;
     this.lastReferencedCard = null;
     this.highlightClearTimer = null;
+    this.rawPanelHighlightTimer = null;
   }
 
   captureSerializableAppState() {
@@ -791,6 +792,10 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (this.highlightClearTimer) {
       clearTimeout(this.highlightClearTimer);
       this.highlightClearTimer = null;
+    }
+    if (this.rawPanelHighlightTimer) {
+      clearTimeout(this.rawPanelHighlightTimer);
+      this.rawPanelHighlightTimer = null;
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('click', this.boundDocumentClick, true);
@@ -2260,6 +2265,14 @@ class CsvDataAnalysisApp extends HTMLElement {
         this.setRawDataSortState(column, direction);
         return { success: true, message: column ? `Sorted raw data by ${column}.` : 'Cleared raw data sorting.' };
       }
+      case 'focusRawDataPanel': {
+        const focusSearch = domAction.focusSearch === true;
+        const highlight = domAction.highlight !== false;
+        const success = this.focusRawDataPanel({ focusSearch, highlight });
+        return success
+          ? { success: true, message: 'Focused raw data explorer.' }
+          : { success: false, error: 'Raw data explorer is not available yet.' };
+      }
       case 'removeRawDataRows': {
         return this.removeRawDataRows(domAction);
       }
@@ -2508,6 +2521,68 @@ class CsvDataAnalysisApp extends HTMLElement {
       return;
     }
 
+    const sanitiseQuickActions = quickActionsList => {
+      if (!Array.isArray(quickActionsList) || !quickActionsList.length) {
+        return [];
+      }
+      const seen = new Set();
+      const sanitized = [];
+      quickActionsList.forEach(item => {
+        if (!item || typeof item !== 'object') {
+          return;
+        }
+        const rawLabel =
+          typeof item.label === 'string'
+            ? item.label
+            : typeof item.title === 'string'
+            ? item.title
+            : '';
+        const label = rawLabel.trim();
+        const domAction =
+          item.domAction && typeof item.domAction === 'object'
+            ? { ...item.domAction }
+            : typeof item.toolName === 'string'
+            ? { toolName: item.toolName }
+            : null;
+        if (!label || !domAction || typeof domAction.toolName !== 'string') {
+          return;
+        }
+        const toolName = domAction.toolName;
+        if (!DOM_ACTION_TOOL_NAMES.has(toolName)) {
+          return;
+        }
+        const signature = `${label}::${toolName}`;
+        if (seen.has(signature)) {
+          return;
+        }
+        seen.add(signature);
+        sanitized.push({ label, domAction });
+      });
+      return sanitized;
+    };
+
+    const pendingQuickActions = [];
+    const appendPendingQuickAction = quickAction => {
+      const [sanitized] = sanitiseQuickActions([quickAction]);
+      if (!sanitized) {
+        return;
+      }
+      const exists = pendingQuickActions.some(
+        existing =>
+          existing.label === sanitized.label &&
+          existing.domAction?.toolName === sanitized.domAction?.toolName
+      );
+      if (!exists) {
+        pendingQuickActions.push(sanitized);
+      }
+    };
+
+    const RAW_DATA_CTA_LABEL = '→ 查看篩選後資料';
+    const createRawDataQuickAction = () => ({
+      label: RAW_DATA_CTA_LABEL,
+      domAction: { toolName: 'focusRawDataPanel', highlight: true },
+    });
+
     const totalActions = normalisedActions.length;
     const firstThought = normalisedActions[0].thought;
     if (totalActions > 1) {
@@ -2558,17 +2633,33 @@ class CsvDataAnalysisApp extends HTMLElement {
               };
             }
             const shouldStick = this.isConversationNearBottom();
+            const actionQuickActions = Array.isArray(action.quickActions)
+              ? action.quickActions
+              : Array.isArray(action.quick_actions)
+              ? action.quick_actions
+              : Array.isArray(action.buttons)
+              ? action.buttons
+              : [];
+            const quickActions = sanitiseQuickActions([
+              ...actionQuickActions,
+              ...pendingQuickActions,
+            ]);
+            pendingQuickActions.length = 0;
+            const chatEntry = {
+              sender: 'ai',
+              text: action.text || '',
+              timestamp: new Date(),
+              type: 'ai_message',
+              cardId: context.cardId,
+              cardTitle: context.fallbackTitle,
+            };
+            if (quickActions.length) {
+              chatEntry.quickActions = quickActions;
+            }
             this.setState(prev => ({
               chatHistory: [
                 ...prev.chatHistory,
-                {
-                  sender: 'ai',
-                  text: action.text || '',
-                  timestamp: new Date(),
-                  type: 'ai_message',
-                  cardId: context.cardId,
-                  cardTitle: context.fallbackTitle,
-                },
+                chatEntry,
               ],
             }));
             if (shouldStick) {
@@ -2595,7 +2686,19 @@ class CsvDataAnalysisApp extends HTMLElement {
           break;
         case 'plan_creation':
           if (action.plan && this.state.csvData) {
-            await this.runAnalysisPipeline([action.plan], this.state.csvData, true);
+            const aliasId =
+              typeof action.cardId === 'string' && action.cardId.trim()
+                ? action.cardId.trim()
+                : typeof action.plan.cardId === 'string' && action.plan.cardId.trim()
+                ? action.plan.cardId.trim()
+                : typeof action.plan.id === 'string' && action.plan.id.trim()
+                ? action.plan.id.trim()
+                : null;
+            const newCards = await this.runAnalysisPipeline([action.plan], this.state.csvData, true);
+            if (aliasId && newCards.length) {
+              const latestCard = newCards[newCards.length - 1];
+              this.linkAliasToCard(latestCard, aliasId);
+            }
           }
           break;
         case 'proceed_to_analysis': {
@@ -2696,6 +2799,16 @@ class CsvDataAnalysisApp extends HTMLElement {
                     id: context.card.id,
                     title: context.fallbackTitle || context.card.plan?.title || null,
                   };
+                }
+                const tool = typeof domAction.toolName === 'string' ? domAction.toolName : '';
+                if (tool === 'setRawDataFilter') {
+                  appendPendingQuickAction(createRawDataQuickAction());
+                }
+                if (tool === 'setRawDataVisibility' && domAction.visible !== false) {
+                  appendPendingQuickAction(createRawDataQuickAction());
+                }
+                if (tool === 'focusRawDataPanel') {
+                  pendingQuickActions.length = 0;
                 }
               }
               if (result.message) {
@@ -3451,6 +3564,43 @@ class CsvDataAnalysisApp extends HTMLElement {
     return true;
   }
 
+  focusRawDataPanel(options = {}) {
+    if (!this.state.csvData) {
+      return false;
+    }
+    this.setRawDataVisibility(true);
+    const focusSearch = options && options.focusSearch === true;
+    const highlight = options && options.highlight !== false;
+
+    this.waitForNextFrame().then(() => {
+      const panel = this.querySelector('[data-raw-panel]');
+      if (!panel) {
+        return;
+      }
+      if (typeof panel.scrollIntoView === 'function') {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      if (highlight) {
+        panel.classList.add('raw-panel--focused');
+        if (this.rawPanelHighlightTimer) {
+          clearTimeout(this.rawPanelHighlightTimer);
+        }
+        this.rawPanelHighlightTimer = setTimeout(() => {
+          panel.classList.remove('raw-panel--focused');
+          this.rawPanelHighlightTimer = null;
+        }, 1800);
+      }
+      if (focusSearch) {
+        const searchInput = panel.querySelector('[data-raw-search]');
+        if (searchInput && typeof searchInput.focus === 'function') {
+          searchInput.focus();
+        }
+      }
+    });
+
+    return true;
+  }
+
   async handleRawDataSave(trigger) {
     if (!this.hasPendingRawEdits()) {
       return;
@@ -3887,6 +4037,46 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
     });
 
+    this.querySelectorAll('[data-chat-quick-action]').forEach(btn => {
+      const payloadText = btn.dataset.chatQuickAction || '';
+      btn.addEventListener('click', async () => {
+        if (!payloadText || btn.disabled) {
+          return;
+        }
+        let parsed;
+        try {
+          parsed = JSON.parse(payloadText);
+        } catch (error) {
+          this.addProgress('Quick action payload invalid.', 'error');
+          return;
+        }
+        const domAction =
+          parsed && typeof parsed === 'object' && typeof parsed.domAction === 'object'
+            ? parsed.domAction
+            : null;
+        if (!domAction) {
+          this.addProgress('Quick action is missing a DOM command.', 'error');
+          return;
+        }
+        btn.disabled = true;
+        try {
+          const result = await this.handleDomAction(domAction);
+          if (result?.message) {
+            this.addProgress(result.message);
+          } else if (!result?.success && result?.error) {
+            this.addProgress(result.error, 'error');
+          }
+        } catch (error) {
+          this.addProgress(
+            `Quick action failed: ${error instanceof Error ? error.message : String(error)}`,
+            'error'
+          );
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+
     const chatForm = this.querySelector('#chat-form');
     const chatInput = this.querySelector('#chat-input');
     if (chatInput) {
@@ -4063,6 +4253,9 @@ class CsvDataAnalysisApp extends HTMLElement {
       target = this.querySelector(`#${focusKey}`);
     }
     if (target) {
+      if ('disabled' in target && target.disabled) {
+        return;
+      }
       const canSelect =
         target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
       if (typeof target.focus === 'function') {

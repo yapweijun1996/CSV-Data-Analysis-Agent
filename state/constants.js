@@ -44,6 +44,7 @@ export const DOM_ACTION_TOOL_NAMES = new Set([
   'setRawDataWholeWord',
   'setRawDataSort',
   'removeRawDataRows',
+  'focusRawDataPanel',
 ]);
 
 export const MIN_ASIDE_WIDTH = 320;

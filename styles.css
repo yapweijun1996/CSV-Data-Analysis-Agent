@@ -9,6 +9,41 @@ table { border-collapse: collapse; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 1s linear infinite; }
 .assistant-log-time { min-width: 55px; display: inline-block; }
+
+.assistant-quick-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.assistant-quick-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: 1px solid #2563eb;
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.assistant-quick-action-btn:hover,
+.assistant-quick-action-btn:focus-visible {
+  background: rgba(59, 130, 246, 0.18);
+  color: #1e3a8a;
+  border-color: #1d4ed8;
+  outline: none;
+}
+
+.assistant-quick-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .data-sample-table-wrapper { max-height: 16rem; overflow: auto; border: 1px solid #e2e8f0; border-radius: 0.5rem; background-color: #ffffff; width: 100%; }
 .data-sample-table { width: 100%; font-size: 0.75rem; text-align: left; border-collapse: collapse; }
 .data-sample-table thead { background-color: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 1; }
@@ -1024,6 +1059,11 @@ button.w-full.flex.items-center.justify-between.p-1\.5.rounded-md.opacity-50 {
   border-radius: 20px;
   box-shadow: 0 18px 46px rgba(15, 23, 42, 0.12);
   overflow: hidden;
+}
+
+.raw-panel--focused .raw-panel__card {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35), 0 18px 46px rgba(15, 23, 42, 0.18);
+  transition: box-shadow 0.3s ease;
 }
 .raw-panel__toggle,
 .raw-panel-toggle {

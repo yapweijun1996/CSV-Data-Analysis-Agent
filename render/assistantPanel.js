@@ -120,12 +120,38 @@ const renderStandardEntry = (entry, timeLabel, resolvedCardId, resolvedCardTitle
             → Show Related Card
          </button>`
       : '';
+  const quickActions =
+    Array.isArray(entry.quickActions) && entry.quickActions.length
+      ? entry.quickActions
+          .map(action => {
+            if (!action || typeof action !== 'object') {
+              return '';
+            }
+            const label =
+              typeof action.label === 'string' && action.label.trim().length
+                ? escapeHtml(action.label.trim())
+                : '';
+            const domAction =
+              action.domAction && typeof action.domAction === 'object' ? action.domAction : null;
+            if (!label || !domAction) {
+              return '';
+            }
+            const payload = escapeHtml(JSON.stringify({ domAction }));
+            return `<button type="button" class="assistant-quick-action-btn" data-chat-quick-action="${payload}">${label}</button>`;
+          })
+          .filter(Boolean)
+          .join('')
+      : '';
+  const quickActionsBlock = quickActions
+    ? `<div class="assistant-quick-actions">${quickActions}</div>`
+    : '';
 
   return `
     <div class="flex">
       <div class="rounded-lg px-3 py-2 max-w-xs lg:max-w-md ${bubbleClass}">
         <div class="text-sm ${textClass} whitespace-pre-wrap">${content}</div>
         ${cardButton}
+        ${quickActionsBlock}
       </div>
     </div>`;
 };
@@ -178,7 +204,7 @@ export const renderAssistantPanel = ({
   const placeholder = !isApiKeySet
     ? 'Set API Key in settings to chat'
     : currentView === 'analysis_dashboard'
-    ? 'Ask for a new analysis or data transformation...'
+    ? 'Ask for a new analysis or data transformation... (Shift+Enter for newline)'
     : 'Upload a file to begin chatting';
 
   const conversationHtml = entries
@@ -216,7 +242,7 @@ export const renderAssistantPanel = ({
       </div>
       <div class="p-4 border-t border-slate-200 bg-white">
         <form id="chat-form">
-          <input type="text" id="chat-input" data-focus-key="chat-input" class="w-full bg-white border border-slate-300 rounded-md py-2 px-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500${inputDisabledClass}" placeholder="${escapeHtml(placeholder)}" ${isChatDisabled ? 'disabled' : ''} />
+          <textarea id="chat-input" data-focus-key="chat-input" class="w-full bg-white border border-slate-300 rounded-md py-2 px-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500${inputDisabledClass}" rows="3" placeholder="${escapeHtml(placeholder)}" ${isChatDisabled ? 'disabled' : ''} style="resize:none;"></textarea>
         </form>
         <p class="text-xs text-slate-400 mt-2">${
           currentView === 'analysis_dashboard'

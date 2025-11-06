@@ -279,7 +279,7 @@ export const renderRawDataPanel = ({ app, rowsPerPage }) => {
         </div>`;
 
   return `
-      <section class="raw-panel">
+      <section class="raw-panel" data-raw-panel>
         <div class="raw-panel__card">
           <button type="button" class="raw-panel-toggle raw-panel__toggle" data-raw-toggle aria-expanded="${
             isRawDataVisible ? 'true' : 'false'
