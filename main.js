@@ -3706,9 +3706,27 @@ this.state = {
     }
 
     if (toolName === 'execute_js_code' || toolName === 'code_execution') {
+      const explanation =
+        typeof props.explanation === 'string'
+          ? props.explanation
+          : typeof action.explanation === 'string'
+          ? action.explanation
+          : '';
       const codePayload = action.code || props.code;
-      if (codePayload && typeof codePayload === 'object') {
-        return { responseType: 'execute_js_code', code: codePayload, thought };
+      if (codePayload) {
+        if (typeof codePayload === 'object') {
+          return { responseType: 'execute_js_code', code: codePayload, thought };
+        }
+        if (typeof codePayload === 'string') {
+          return {
+            responseType: 'execute_js_code',
+            code: {
+              explanation,
+              jsFunctionBody: codePayload,
+            },
+            thought,
+          };
+        }
       }
       const jsBody =
         typeof props.jsFunctionBody === 'string'
@@ -3720,12 +3738,7 @@ this.state = {
         return {
           responseType: 'execute_js_code',
           code: {
-            explanation:
-              typeof props.explanation === 'string'
-                ? props.explanation
-                : typeof action.explanation === 'string'
-                ? action.explanation
-                : '',
+            explanation,
             jsFunctionBody: jsBody,
           },
           thought,
