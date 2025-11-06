@@ -59,7 +59,7 @@ const renderPlanEntry = entry => {
 const renderProactiveInsightEntry = (entry, resolvedCardId, resolvedCardTitle) => {
   const content = formatMessageMarkdown(entry.text || '');
   const cardButton = resolvedCardId
-    ? `<button type="button" class="mt-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-md hover:bg-yellow-200 transition-colors font-medium" data-show-card="${escapeHtml(resolvedCardId)}"${
+    ? `<button type="button" class="btn btn-secondary text-xs mt-2" data-show-card="${escapeHtml(resolvedCardId)}"${
         resolvedCardTitle ? ` data-show-card-title="${escapeHtml(resolvedCardTitle)}"` : ''
       }>
            → Show Related Card
@@ -105,7 +105,7 @@ const renderStandardEntry = (entry, timeLabel, resolvedCardId, resolvedCardTitle
 
   const cardButton =
     resolvedCardId && !entry.isError
-      ? `<button type="button" class="mt-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md hover:bg-blue-200 transition-colors w-full text-left font-medium" data-show-card="${escapeHtml(resolvedCardId)}"${
+      ? `<button type="button" class="btn btn-secondary text-xs mt-2 w-full text-left" data-show-card="${escapeHtml(resolvedCardId)}"${
           resolvedCardTitle ? ` data-show-card-title="${escapeHtml(resolvedCardTitle)}"` : ''
         }>
             → Show Related Card

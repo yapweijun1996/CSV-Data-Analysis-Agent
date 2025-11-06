@@ -1,4 +1,4 @@
-import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@latest';
 import { embedText, cosineSimilarity as bowCosineSimilarity } from './ragService.js';
 
 const TRANSFORMER_CDN_BASE = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@latest';
