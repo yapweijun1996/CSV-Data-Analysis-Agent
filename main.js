@@ -10,6 +10,7 @@ import {
   generateSummary,
   generateFinalSummary,
   generateChatResponse,
+  generateChatStepPlan,
   generateDataPreparationPlan,
   generateCoreAnalysisSummary,
   generateProactiveInsights,
