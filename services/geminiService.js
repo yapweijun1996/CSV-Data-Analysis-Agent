@@ -19,6 +19,7 @@ let singlePlanSchema = null;
 let dataPreparationSchemaCache = null;
 let multiActionChatResponseSchemaCache = null;
 let proactiveInsightSchemaCache = null;
+let chatPlanSchemaCache = null;
 const MAX_CHAT_HISTORY_MESSAGES = 8;
 const MAX_SYSTEM_MESSAGES = 5;
 const MAX_SKILL_PROMPT_ENTRIES = 8;
@@ -636,6 +637,37 @@ const getProactiveInsightSchema = () => {
   return proactiveInsightSchemaCache;
 };
 
+const getChatPlanSchema = () => {
+  if (!GeminiType) return null;
+  if (!chatPlanSchemaCache) {
+    chatPlanSchemaCache = {
+      type: GeminiType.OBJECT,
+      properties: {
+        steps: {
+          type: GeminiType.ARRAY,
+          description: 'Small, sequential steps for diagnose/plan/execute phases.',
+          items: {
+            type: GeminiType.OBJECT,
+            properties: {
+              id: { type: GeminiType.STRING },
+              phase: { type: GeminiType.STRING },
+              goal: { type: GeminiType.STRING },
+              notes: { type: GeminiType.STRING },
+              toolHints: {
+                type: GeminiType.ARRAY,
+                items: { type: GeminiType.STRING },
+              },
+            },
+            required: ['phase', 'goal'],
+          },
+        },
+      },
+      required: ['steps'],
+    };
+  }
+  return chatPlanSchemaCache;
+};
+
 
 const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
   if (!Array.isArray(sampleData)) {
@@ -895,6 +927,72 @@ const callGeminiText = async (settings, prompt) => {
   );
   const rawText = typeof response.text === 'function' ? await response.text() : response.text;
   return rawText;
+};
+
+const CHAT_PHASES = ['diagnose', 'plan', 'execute', 'adjust', 'verify'];
+
+const createFallbackChatPlan = (intent = 'general') => [
+  {
+    id: 'step-1',
+    phase: 'diagnose',
+    goal: `快速確認意圖（${intent}）並找出需要的資料列或圖卡。`,
+    toolHints: ['thought_log'],
+  },
+  {
+    id: 'step-2',
+    phase: 'plan',
+    goal: '決定要使用的卡片/工具（例如 highlightCard 或 plan_creation）。',
+    toolHints: ['plan_creation', 'dom_action'],
+  },
+  {
+    id: 'step-3',
+    phase: 'execute',
+    goal: '執行動作並給出 text_response，包含下一步建議。',
+    toolHints: ['text_response'],
+  },
+];
+
+const normaliseChatPlanSteps = rawPlan => {
+  const rawSteps = Array.isArray(rawPlan?.steps) ? rawPlan.steps : [];
+  const normalized = rawSteps
+    .map((step, index) => {
+      if (!step || typeof step !== 'object') {
+        return null;
+      }
+      const phase = typeof step.phase === 'string' ? step.phase.toLowerCase().trim() : 'execute';
+      return {
+        id: step.id || step.stepId || `step-${index + 1}`,
+        phase: CHAT_PHASES.includes(phase) ? phase : 'execute',
+        goal: typeof step.goal === 'string' && step.goal.trim()
+          ? step.goal.trim()
+          : typeof step.task === 'string'
+            ? step.task.trim()
+            : '回應使用者需求',
+        notes: typeof step.notes === 'string' ? step.notes.trim() : step.reasoning || null,
+        toolHints: Array.isArray(step.toolHints)
+          ? step.toolHints
+              .map(hint => (typeof hint === 'string' ? hint.trim() : ''))
+              .filter(Boolean)
+              .slice(0, 4)
+          : [],
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 5);
+  return normalized.length ? normalized : null;
+};
+
+const summariseCardsForPlanPrompt = cardContext => {
+  if (!Array.isArray(cardContext) || !cardContext.length) {
+    return 'No analysis cards yet.';
+  }
+  return cardContext
+    .slice(0, 5)
+    .map(card => {
+      const title = card?.title || card?.id || 'Untitled card';
+      return `- ${title}`;
+    })
+    .join('\n');
 };
 
 const SUPPORTED_CHART_TYPES = new Set(['bar', 'line', 'pie', 'doughnut', 'scatter']);
@@ -1348,6 +1446,52 @@ Your task:
   throw finalError;
 };
 
+export const generateChatStepPlan = async (planInput = {}, settings = {}) => {
+  const fallbackPlan = createFallbackChatPlan(planInput.intent);
+  const provider = settings.provider || 'google';
+  const isApiKeySet = provider === 'google' ? !!settings.geminiApiKey : !!settings.openAIApiKey;
+  if (!isApiKeySet) {
+    return { steps: fallbackPlan, source: 'fallback', reason: 'missing_api_key' };
+  }
+
+  const fragments = buildPromptFragments({
+    columns: Array.isArray(planInput.columns) ? planInput.columns : [],
+    metadata: planInput.metadata || null,
+    currentView: planInput.currentView,
+    intent: planInput.intent,
+    language: settings.language,
+    dataPreparationPlan: planInput.dataPreparationPlan || null,
+    skillCatalog: Array.isArray(planInput.skillCatalog) ? planInput.skillCatalog : [],
+    memoryContext: Array.isArray(planInput.memoryContext) ? planInput.memoryContext : [],
+  });
+
+  const cardsSummary = summariseCardsForPlanPrompt(planInput.cardContext);
+  const planSystemPrompt =
+    'You are a workflow planner for a CSV analysis agent. Return JSON with 2-4 concise steps (diagnose/plan/execute/verify). Each step should describe a tiny action and optional tool hints.';
+  const planUserPrompt = `Dataset overview:\n${fragments.datasetOverview}\n\nAvailable skills:\n${fragments.skillLibrary}\n\nRelevant memories:\n${fragments.memoryPreview}\n\nExisting cards:\n${cardsSummary}\n\nCore analysis summary:\n${planInput.aiCoreAnalysisSummary || 'None'}\n\nLatest user message: "${planInput.userPrompt || ''}"\nDetected intent: ${planInput.intent || 'general'}\n`;
+
+  try {
+    let rawPlan;
+    if (provider === 'openai') {
+      rawPlan = await callOpenAIJson(settings, planSystemPrompt, planUserPrompt);
+    } else {
+      rawPlan = await callGeminiJson(settings, `${planSystemPrompt}\n${planUserPrompt}`, {
+        schema: getChatPlanSchema(),
+      });
+    }
+    const normalized = normaliseChatPlanSteps(rawPlan) || fallbackPlan;
+    const usedFallback = normalized === fallbackPlan;
+    return { steps: normalized, source: usedFallback ? 'fallback' : 'llm' };
+  } catch (error) {
+    console.warn('Chat step planning failed. Falling back to default plan.', error);
+    return {
+      steps: fallbackPlan,
+      source: 'fallback',
+      reason: error instanceof Error ? error.message : String(error),
+    };
+  }
+};
+
 const buildAnalysisPlanPrompt = (columns, sampleData, numPlans, metadata) => {
   const categorical = columns.filter(c => c.type === 'categorical').map(c => c.name);
   const numerical = columns.filter(c => c.type === 'numerical').map(c => c.name);
@@ -1552,7 +1696,8 @@ export const generateChatResponse = async (
   intent = 'general',
   skillCatalog = [],
   memoryContext = [],
-  dataPreparationPlan = null
+  dataPreparationPlan = null,
+  chatStepPlan = null
 ) => {
   const provider = settings.provider || 'google';
   const isApiKeySet =
@@ -1636,6 +1781,21 @@ ${coreBriefing}
 `;
 
   const datasetOverview = fragments.datasetOverview;
+  const plannedStepsSection = (() => {
+    if (!chatStepPlan || !Array.isArray(chatStepPlan.steps) || !chatStepPlan.steps.length) {
+      return '';
+    }
+    const summary = chatStepPlan.steps
+      .map((step, index) => {
+        const phaseLabel = (step.phase || 'step').toUpperCase();
+        const hints = Array.isArray(step.toolHints) && step.toolHints.length
+          ? ` (tools: ${step.toolHints.join(', ')})`
+          : '';
+        return `${index + 1}. [${phaseLabel}] ${step.goal}${hints}`;
+      })
+      .join('\n');
+    return `**Planned Steps (follow sequentially):**\n${summary}\n`;
+  })();
 
   const responseTemplate = `**Response Template (use for text_response):**
 1. Opening summary (1-2 sentences) stating the main takeaway.
@@ -1662,6 +1822,7 @@ ${history || 'No previous messages.'}
 ${coreBriefingSection}
 ${guidingPrinciples}
 ${datasetOverview}
+${plannedStepsSection}
 ${dataPreparationSection}
 **Analysis Cards on Screen:**
 ${cardsPreview}
