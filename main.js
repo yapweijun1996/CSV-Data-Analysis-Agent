@@ -42,6 +42,7 @@ import { renderAnalysisSection } from './render/analysisPanel.js';
 import { renderAssistantPanel as renderAssistantPanelView } from './render/assistantPanel.js';
 import { renderDataPrepDebugPanel as renderDataPrepDebugPanelView } from './render/dataPrepDebugPanel.js';
 import { renderMemoryPanel as renderMemoryPanelView } from './render/memoryPanel.js';
+import { createTaskOrchestrator } from './services/taskOrchestrator.js';
 import { ENABLE_MEMORY_FEATURES } from './services/memoryConfig.js';
 import { ensureMemoryVectorReady as ensureMemoryVectorReadyHelper } from './services/memoryServiceHelpers.js';
 import { bindMemoryPanelEvents as bindMemoryPanelEventsHelper } from './handlers/memoryPanelEvents.js';
@@ -80,7 +81,7 @@ class CsvDataAnalysisApp extends HTMLElement {
       return Math.max(MIN_ASIDE_WIDTH, Math.min(MAX_ASIDE_WIDTH, ideal));
     })();
 
-    this.state = {
+this.state = {
       currentView: 'file_upload',
       isBusy: false,
       isThinking: false,
@@ -123,6 +124,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       memoryPanelIsSearching: false,
       memoryPanelIsLoading: false,
       memoryPanelLoadError: null,
+      workflowTimeline: null,
+      workflowPlan: [],
     };
     this.settings = getSettings();
     this.chartInstances = new Map();
@@ -151,6 +154,14 @@ class CsvDataAnalysisApp extends HTMLElement {
     this.lastReferencedCard = null;
     this.highlightClearTimer = null;
     this.rawPanelHighlightTimer = null;
+
+    this.workflowSessionId = null;
+    this.orchestrator = createTaskOrchestrator({
+      onPlanUpdate: planItems => this.handleWorkflowPlanUpdate(planItems),
+      onProgress: entry => this.handleWorkflowProgress(entry),
+      onChatLog: payload => this.handleWorkflowChat(payload),
+    });
+    this.workflowActivePhase = null;
   }
 
   captureSerializableAppState() {
@@ -195,6 +206,8 @@ class CsvDataAnalysisApp extends HTMLElement {
       lastAuditReport: this.state.lastAuditReport,
       lastRepairSummary: this.state.lastRepairSummary,
       lastRepairTimestamp: this.state.lastRepairTimestamp,
+      workflowTimeline: this.state.workflowTimeline,
+      workflowPlan: this.state.workflowPlan,
     };
   }
 
@@ -1325,10 +1338,18 @@ class CsvDataAnalysisApp extends HTMLElement {
       rawDataColumnWidths: {},
     });
 
+    this.startWorkflowSession(`分析資料集 ${file.name}`, ['Vanilla frontend', 'No backend server']);
+    this.startWorkflowPhase('diagnose', '先快速檢查 CSV 檔案格式與欄位資訊。');
+
     try {
       this.addProgress('Parsing CSV file...');
+      this.appendWorkflowThought('開始解析 CSV，確認原始列數。');
       const parsedData = await processCsv(file);
       this.addProgress(`Parsed ${parsedData.data.length} rows.`);
+      this.completeWorkflowStep({
+        label: '解析 CSV',
+        outcome: `${parsedData.data.length} rows`,
+      });
       const initialSample = parsedData.data.slice(0, 20);
 
       const metadata = parsedData.metadata || null;
@@ -1354,12 +1375,18 @@ class CsvDataAnalysisApp extends HTMLElement {
 
       let dataForAnalysis = parsedData;
       let profiles = profileData(parsedData.data);
+      this.completeWorkflowStep({
+        label: '欄位型態分析',
+        outcome: `${profiles.length} columns`,
+      });
+      this.endWorkflowPhase();
 
       const isApiKeySet = this.hasConfiguredApiKey();
       let prepPlan = null;
       let prepIterationsLog = [];
 
       if (isApiKeySet) {
+        this.startWorkflowPhase('plan', '規劃資料清理與前處理步驟。');
         const maxPrepIterations = 3;
         const maxRetriesPerIteration = 3;
         let iteration = 0;
@@ -1415,14 +1442,18 @@ class CsvDataAnalysisApp extends HTMLElement {
               }
             );
 
-            if (!iterationPlan) {
-              this.addProgress(
-                `${iterationLabel} did not return a plan. Skipping remaining preprocessing.`,
-                'error'
-              );
-              continueIterating = false;
-              break;
-            }
+          if (!iterationPlan) {
+            this.addProgress(
+              `${iterationLabel} did not return a plan. Skipping remaining preprocessing.`,
+              'error'
+            );
+            this.failWorkflowStep({
+              label: iterationLabel,
+              error: 'AI 未提供可執行的 preprocessing plan。',
+            });
+            continueIterating = false;
+            break;
+          }
 
             const rawExplanation =
               (typeof iterationPlan.explanation === 'string' && iterationPlan.explanation.trim()) ||
@@ -1452,6 +1483,10 @@ class CsvDataAnalysisApp extends HTMLElement {
                 );
               }
               this.addProgress(summaryMessage);
+              this.completeWorkflowStep({
+                label: iterationLabel,
+                outcome: iterationStatus ? iterationStatus.toUpperCase() : 'DONE',
+              });
               prepIterationsLog.push({
                 iteration,
                 status: iterationStatus || 'done',
@@ -1486,6 +1521,10 @@ class CsvDataAnalysisApp extends HTMLElement {
 
               dataForAnalysis.data = transformed;
               const newCount = dataForAnalysis.data.length;
+              this.completeWorkflowStep({
+                label: `${iterationLabel} transformation`,
+                outcome: `${originalCount} → ${newCount}`,
+              });
               if (dataForAnalysis.metadata) {
                 dataForAnalysis.metadata = {
                   ...dataForAnalysis.metadata,
@@ -1572,21 +1611,25 @@ class CsvDataAnalysisApp extends HTMLElement {
                 'info'
               );
             }
-            if (attempt === maxRetriesPerIteration - 1) {
-                this.addProgress(
-                  `${iterationLabel} reached maximum retries. Stopping AI preprocessing.`,
-                  'error'
-                );
-                continueIterating = false;
-                lastIterationError = prepError instanceof Error ? prepError : new Error(prepMessage);
-              } else {
-                this.addProgress('Requesting AI to adjust preprocessing plan and retry...');
-                attemptErrorForPrompt =
-                  prepError instanceof Error ? prepError : new Error(prepMessage);
-                lastIterationError = attemptErrorForPrompt;
+              if (attempt === maxRetriesPerIteration - 1) {
+                  this.addProgress(
+                    `${iterationLabel} reached maximum retries. Stopping AI preprocessing.`,
+                    'error'
+                  );
+                  continueIterating = false;
+                  lastIterationError = prepError instanceof Error ? prepError : new Error(prepMessage);
+                } else {
+                  this.addProgress('Requesting AI to adjust preprocessing plan and retry...');
+                  attemptErrorForPrompt =
+                    prepError instanceof Error ? prepError : new Error(prepMessage);
+                  lastIterationError = attemptErrorForPrompt;
+                }
+                this.failWorkflowStep({
+                  label: `${iterationLabel} attempt ${attemptLabel}`,
+                  error: prepMessage,
+                });
               }
             }
-          }
 
           if (!continueIterating || iterationCompleted) {
             continue;
@@ -1594,6 +1637,7 @@ class CsvDataAnalysisApp extends HTMLElement {
         }
 
         prepPlan = lastSuccessfulPlan;
+        this.endWorkflowPhase(prepPlan ? 'completed' : 'completed');
       } else {
         this.ensureApiCredentials({
           reason:
@@ -1645,7 +1689,11 @@ class CsvDataAnalysisApp extends HTMLElement {
       });
 
       if (isApiKeySet) {
+        this.startWorkflowPhase('execute', '執行初始分析計畫並生成圖表。');
         await this.handleInitialAnalysis(dataForAnalysis, profiles);
+        if (this.workflowActivePhase === 'execute') {
+          this.endWorkflowPhase();
+        }
       } else {
         this.setState({ isBusy: false });
       }
@@ -1655,6 +1703,11 @@ class CsvDataAnalysisApp extends HTMLElement {
         `File processing failed: ${error instanceof Error ? error.message : String(error)}`,
         'error'
       );
+      this.failWorkflowStep({
+        label: '處理檔案',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      this.endWorkflowPhase('failed');
       this.setState({
         isBusy: false,
         currentView: prevCsv ? 'analysis_dashboard' : 'file_upload',
@@ -1666,6 +1719,7 @@ class CsvDataAnalysisApp extends HTMLElement {
     if (!csvData || !csvData.data.length) return;
     this.setState({ isBusy: true });
     this.addProgress('AI is generating analysis plans...');
+    this.appendWorkflowThought('AI 正在建立初始分析計畫。');
     try {
       const metadata = csvData?.metadata || null;
       const plans = await generateAnalysisPlans(
@@ -1676,9 +1730,17 @@ class CsvDataAnalysisApp extends HTMLElement {
       );
       this.addProgress(`AI proposed ${plans.length} plan(s).`);
       if (plans.length) {
+        this.completeWorkflowStep({
+          label: '產生分析計畫',
+          outcome: `${plans.length} plans`,
+        });
         await this.runAnalysisPipeline(plans, csvData, false);
       } else {
         this.addProgress('AI could not produce any analysis plans.', 'error');
+        this.failWorkflowStep({
+          label: '產生分析計畫',
+          error: 'No plans returned',
+        });
       }
     } catch (error) {
       console.error(error);
@@ -1686,6 +1748,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         `Analysis pipeline error: ${error instanceof Error ? error.message : String(error)}`,
         'error'
       );
+      this.failWorkflowStep({
+        label: '初始分析流程',
+        error: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       this.setState({ isBusy: false });
       this.addProgress('Analysis complete. You can now chat with the assistant.');
@@ -1708,12 +1774,20 @@ class CsvDataAnalysisApp extends HTMLElement {
 
       if (preparation.error) {
         this.addProgress(`"${planTitle}" skipped: ${preparation.error}`, 'error');
+        this.failWorkflowStep({
+          label: planTitle,
+          error: preparation.error,
+        });
         continue;
       }
 
       const planValidationIssue = this.validatePlanForExecution(normalizedPlan);
       if (planValidationIssue) {
         this.addProgress(`"${planTitle}" skipped: ${planValidationIssue}`, 'error');
+        this.failWorkflowStep({
+          label: planTitle,
+          error: planValidationIssue,
+        });
         continue;
       }
       try {
@@ -1721,6 +1795,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         const aggregatedData = executePlan(csvData, normalizedPlan);
         if (!aggregatedData.length) {
           this.addProgress(`"${planTitle}" produced no results and was skipped.`, 'error');
+          this.failWorkflowStep({
+            label: planTitle,
+            error: 'No data returned',
+          });
           continue;
         }
         this.addProgress(`AI is drafting a summary for: ${planTitle}...`);
@@ -1777,6 +1855,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         }));
         isFirstCard = false;
         this.addProgress(`Analysis card created: ${planTitle}`);
+        this.completeWorkflowStep({
+          label: planTitle,
+          outcome: `${aggregatedData.length} rows`,
+        });
       } catch (error) {
         console.error('Plan execution error:', error, {
           plan: normalizedPlan,
@@ -1787,10 +1869,15 @@ class CsvDataAnalysisApp extends HTMLElement {
           `Analysis "${planTitle}" failed: ${error instanceof Error ? error.message : String(error)}`,
           'error'
         );
+        this.failWorkflowStep({
+          label: planTitle,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
     if (!isChatRequest && createdCards.length) {
+      this.ensureWorkflowPhase('verify', '整理核心摘要與洞察。');
       this.addProgress('AI is synthesizing its overall understanding...');
       const cardContext = createdCards.map(card => ({
         id: card.id,
@@ -1803,6 +1890,10 @@ class CsvDataAnalysisApp extends HTMLElement {
         this.settings,
         metadata
       );
+      this.completeWorkflowStep({
+        label: '核心摘要',
+        outcome: '已生成',
+      });
       const shouldStick = this.isConversationNearBottom();
       this.setState(prev => ({
         aiCoreAnalysisSummary: coreSummary,
@@ -1842,11 +1933,19 @@ class CsvDataAnalysisApp extends HTMLElement {
         }
         const insightLabel = targetCard?.plan?.title ? `"${targetCard.plan.title}"` : proactiveInsight.cardId;
         this.addProgress(`Proactive insight surfaced for ${insightLabel}.`);
+        this.completeWorkflowStep({
+          label: '主動洞察',
+          outcome: targetCard?.plan?.title || proactiveInsight.cardId,
+        });
       }
 
       const finalSummary = await generateFinalSummary(createdCards, this.settings, metadata);
       this.setState({ finalSummary });
       this.addProgress('Overall summary created.');
+      this.completeWorkflowStep({
+        label: '總結報告',
+        outcome: '完成',
+      });
       if (ENABLE_MEMORY_FEATURES) {
         try {
           await this.ensureMemoryVectorReady();
@@ -1879,6 +1978,159 @@ class CsvDataAnalysisApp extends HTMLElement {
     }
 
     return createdCards;
+  }
+
+  handleWorkflowPlanUpdate(planItems) {
+    const mapped = Array.isArray(planItems)
+      ? planItems.map(item => ({
+          step: item.step,
+          status: item.status
+        }))
+      : [];
+    let timeline = null;
+    if (this.orchestrator && typeof this.orchestrator.getTimeline === 'function') {
+      timeline = this.orchestrator.getTimeline();
+    }
+    this.setState({ workflowPlan: mapped, workflowTimeline: timeline });
+  }
+
+  handleWorkflowProgress(entry) {
+    if (!entry || typeof entry !== 'object' || !entry.message) {
+      return;
+    }
+    const level = entry.level === 'error' ? 'error' : entry.level === 'success' ? 'success' : 'system';
+    this.addProgress(entry.message, level);
+    this.syncWorkflowTimeline();
+  }
+
+  handleWorkflowChat(payload) {
+    if (!payload || typeof payload !== 'object' || !payload.text) {
+      return;
+    }
+    const shouldStick = this.isConversationNearBottom();
+    this.setState(prev => ({
+      chatHistory: [
+        ...prev.chatHistory,
+        {
+          sender: 'ai',
+          text: payload.text,
+          timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),
+          type: payload.type || 'ai_plan_thought',
+          workflowPhase: payload.phase || null,
+        },
+      ],
+    }));
+    if (shouldStick) {
+      this.shouldAutoScrollConversation = true;
+    }
+    this.syncWorkflowTimeline();
+  }
+
+  syncWorkflowTimeline() {
+    if (!this.orchestrator || typeof this.orchestrator.getTimeline !== 'function') {
+      return;
+    }
+    const timeline = this.orchestrator.getTimeline();
+    if (timeline) {
+      this.setState({ workflowTimeline: timeline });
+    }
+  }
+
+  startWorkflowSession(goal, constraints = []) {
+    if (!this.orchestrator) return;
+    try {
+      this.workflowSessionId = this.orchestrator.startSession({ goal, constraints });
+      this.workflowActivePhase = null;
+      this.syncWorkflowTimeline();
+    } catch (error) {
+      console.warn('Failed to start workflow session:', error);
+    }
+  }
+
+  startWorkflowPhase(phaseId, thought = null) {
+    if (!this.orchestrator) return;
+    try {
+      const alreadyActive = this.workflowActivePhase === phaseId;
+      if (!alreadyActive) {
+        if (this.workflowActivePhase) {
+          this.endWorkflowPhase('completed');
+        }
+        this.orchestrator.startPhase(phaseId);
+        this.workflowActivePhase = phaseId;
+        this.syncWorkflowTimeline();
+      }
+      if (thought) {
+        this.appendWorkflowThought(thought);
+      }
+    } catch (error) {
+      console.warn(`Failed to start workflow phase ${phaseId}:`, error);
+    }
+  }
+
+  ensureWorkflowPhase(phaseId, thought = null) {
+    if (this.workflowActivePhase === phaseId) {
+      if (thought) {
+        this.appendWorkflowThought(thought);
+      }
+      return;
+    }
+    this.startWorkflowPhase(phaseId, thought);
+  }
+
+  endWorkflowPhase(status = 'completed') {
+    if (!this.orchestrator || !this.workflowActivePhase) {
+      return;
+    }
+    try {
+      this.orchestrator.endPhase(status);
+      this.workflowActivePhase = null;
+      this.syncWorkflowTimeline();
+    } catch (error) {
+      console.warn('Failed to end workflow phase:', error);
+    }
+  }
+
+  appendWorkflowThought(message) {
+    if (!this.orchestrator) return;
+    try {
+      this.orchestrator.appendThought(message);
+      this.syncWorkflowTimeline();
+    } catch (error) {
+      console.warn('Failed to append workflow thought:', error);
+    }
+  }
+
+  completeWorkflowStep(payload) {
+    if (!this.orchestrator) return;
+    try {
+      this.orchestrator.completeStep(payload);
+      this.syncWorkflowTimeline();
+    } catch (error) {
+      console.warn('Failed to complete workflow step:', error);
+    }
+  }
+
+  failWorkflowStep(payload) {
+    if (!this.orchestrator) return;
+    try {
+      this.orchestrator.failStep(payload);
+      this.syncWorkflowTimeline();
+    } catch (error) {
+      console.warn('Failed to record workflow failure:', error);
+    }
+  }
+
+  finalizeWorkflow(summary = null) {
+    if (!this.orchestrator) return;
+    try {
+      const timeline = this.orchestrator.endSession({ summary });
+      this.workflowActivePhase = null;
+      if (timeline) {
+        this.setState({ workflowTimeline: timeline });
+      }
+    } catch (error) {
+      console.warn('Failed to finalise workflow session:', error);
+    }
   }
 
   async handleChatSubmit(message) {
@@ -2686,6 +2938,7 @@ class CsvDataAnalysisApp extends HTMLElement {
           break;
         case 'plan_creation':
           if (action.plan && this.state.csvData) {
+            this.ensureWorkflowPhase('execute', '使用者請求新的分析，執行追加計畫。');
             const aliasId =
               typeof action.cardId === 'string' && action.cardId.trim()
                 ? action.cardId.trim()
@@ -2741,6 +2994,7 @@ class CsvDataAnalysisApp extends HTMLElement {
         }
         case 'execute_js_code':
           if (action.code && action.code.jsFunctionBody && this.state.csvData) {
+            this.ensureWorkflowPhase('adjust', 'AI 正在調整資料集。');
             this.addProgress('AI is applying a data transformation...');
             try {
               const transformed = executeJavaScriptDataTransform(
@@ -2751,6 +3005,17 @@ class CsvDataAnalysisApp extends HTMLElement {
                 transformed,
                 'Data updated after applying AI transformation.'
               );
+              if (result.success) {
+                this.completeWorkflowStep({
+                  label: '資料轉換',
+                  outcome: '成功更新資料集',
+                });
+              } else if (result.error) {
+                this.failWorkflowStep({
+                  label: '資料轉換',
+                  error: result.error,
+                });
+              }
               if (result.success && ENABLE_MEMORY_FEATURES) {
                 try {
                   await this.ensureMemoryVectorReady();
@@ -2776,6 +3041,10 @@ class CsvDataAnalysisApp extends HTMLElement {
                 `AI transformation failed: ${error instanceof Error ? error.message : String(error)}`,
                 'error'
               );
+              this.failWorkflowStep({
+                label: '資料轉換',
+                error: error instanceof Error ? error.message : String(error),
+              });
             }
           }
           break;
