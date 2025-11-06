@@ -563,6 +563,39 @@ class CsvDataAnalysisApp extends HTMLElement {
     return { plan, adjustments, error: null };
   }
 
+  createStableHash(input) {
+    const source = typeof input === 'string' ? input : String(input ?? '');
+    if (!source.length) {
+      return '00000000';
+    }
+    let hash = 0x811c9dc5;
+    for (let index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193);
+      hash >>>= 0;
+    }
+    return (`0000000${(hash >>> 0).toString(16)}`).slice(-8);
+  }
+
+  computeDatasetFingerprint(rows) {
+    if (!Array.isArray(rows) || !rows.length) {
+      return 'no-data';
+    }
+    const sample = rows.slice(0, 25);
+    const sampleSignature = sample
+      .map(row => {
+        if (!row || typeof row !== 'object') {
+          return '';
+        }
+        const keys = Object.keys(row).sort();
+        return keys
+          .map(key => `${key}:${row[key] === null || row[key] === undefined ? '' : String(row[key])}`)
+          .join('|');
+      })
+      .join('||');
+    return this.createStableHash(sampleSignature);
+  }
+
   async runPipelineAudit(options = {}) {
     const { log = false } = options;
     const report = auditAnalysisState({
@@ -678,17 +711,24 @@ class CsvDataAnalysisApp extends HTMLElement {
     return { ...repairPlan, postAudit };
   }
 
-  generateDatasetId(fileName, metadata = null) {
+  generateDatasetId(fileName, metadata = null, dataRows = null) {
     const baseName = (fileName || 'dataset').toLowerCase().replace(/\s+/g, '-');
     const totalRows =
       metadata?.originalRowCount ??
       metadata?.totalRowsBeforeFilter ??
-      this.state.csvData?.data?.length ??
-      0;
-    const headerHash = metadata?.headerRow
-      ? metadata.headerRow.join('|').toLowerCase().slice(0, 32)
+      (Array.isArray(dataRows) ? dataRows.length : this.state.csvData?.data?.length ?? 0);
+    const headerSignature = metadata?.headerRow
+      ? this.createStableHash(metadata.headerRow.join('|').toLowerCase())
       : 'noheader';
-    return `${baseName}-${totalRows}-${headerHash}`;
+    const fingerprint =
+      typeof metadata?.datasetFingerprint === 'string' && metadata.datasetFingerprint
+        ? metadata.datasetFingerprint
+        : typeof metadata?.sourceFingerprint === 'string' && metadata.sourceFingerprint
+        ? metadata.sourceFingerprint
+        : this.computeDatasetFingerprint(
+            Array.isArray(dataRows) && dataRows.length ? dataRows : this.state.csvData?.data || []
+          );
+    return `${baseName}-${totalRows}-${headerSignature}-${fingerprint}`;
   }
 
   getCurrentDatasetId() {
@@ -1560,15 +1600,23 @@ class CsvDataAnalysisApp extends HTMLElement {
         throw new Error('Dataset is empty; analysis cannot continue.');
       }
 
-      const datasetId = this.generateDatasetId(file.name, dataForAnalysis.metadata || metadata || null);
+      const datasetId = this.generateDatasetId(
+        file.name,
+        dataForAnalysis.metadata || metadata || null,
+        dataForAnalysis.data
+      );
+      const datasetFingerprint =
+        dataForAnalysis.metadata?.datasetFingerprint ?? this.computeDatasetFingerprint(dataForAnalysis.data);
       if (dataForAnalysis.metadata) {
         dataForAnalysis.metadata = {
           ...dataForAnalysis.metadata,
           datasetId,
+          datasetFingerprint,
         };
       } else {
         dataForAnalysis.metadata = {
           datasetId,
+          datasetFingerprint,
         };
       }
 
@@ -2550,6 +2598,44 @@ class CsvDataAnalysisApp extends HTMLElement {
             await this.runAnalysisPipeline([action.plan], this.state.csvData, true);
           }
           break;
+        case 'proceed_to_analysis': {
+          const text =
+            action.text ||
+            'Initial analysis is ready. Ask me for new charts, deeper exploration, or data refinements any time.';
+          const shouldStick = this.isConversationNearBottom();
+          this.setState(prev => ({
+            chatHistory: [
+              ...prev.chatHistory,
+              {
+                sender: 'ai',
+                text,
+                timestamp: new Date(),
+                type: 'ai_message',
+              },
+            ],
+          }));
+          if (shouldStick) {
+            this.shouldAutoScrollConversation = true;
+          }
+          this.addProgress('AI requested proceed_to_analysis (deprecated). Responded with guidance.');
+          if (ENABLE_MEMORY_FEATURES) {
+            try {
+              await this.ensureMemoryVectorReady();
+              await storeMemory(datasetId, {
+                kind: 'chat_response',
+                intent: 'narrative',
+                text,
+                summary: text.slice(0, 220),
+              });
+              if (this.state.isMemoryPanelOpen) {
+                this.refreshMemoryDocuments();
+              }
+            } catch (memoryError) {
+              console.warn('Failed to store AI chat memory entry.', memoryError);
+            }
+          }
+          break;
+        }
         case 'execute_js_code':
           if (action.code && action.code.jsFunctionBody && this.state.csvData) {
             this.addProgress('AI is applying a data transformation...');

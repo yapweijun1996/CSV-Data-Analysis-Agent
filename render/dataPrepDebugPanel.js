@@ -116,12 +116,12 @@ ${codeBlock}
 }</code>
           </pre>
         </div>
-        <div class="grid md:grid-cols-2 gap-6">
-          <div>
+        <div class="data-sample-grid">
+          <div class="data-sample-section">
             <h4 class="font-semibold text-slate-800 mb-2">Data Before (Raw Sample)</h4>
             ${renderSampleTable(originalSample)}
           </div>
-          <div>
+          <div class="data-sample-section">
             <h4 class="font-semibold text-slate-800 mb-2">Data After (Transformed Sample)</h4>
             ${renderSampleTable(transformed)}
           </div>
