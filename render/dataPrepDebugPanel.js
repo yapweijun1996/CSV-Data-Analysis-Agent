@@ -68,15 +68,15 @@ export const renderDataPrepDebugPanel = ({
     <div class="bg-white rounded-lg shadow border border-slate-200" data-data-prep-panel>
       <button
         type="button"
-        class="flex justify-between items-center w-full text-left p-4 ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'} hover:bg-slate-50 transition-colors"
+        class="flex justify-between items-center w-full text-left p-4 ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'} hover:bg-slate-50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         data-toggle-data-prep
         aria-expanded="${isExpanded}"
         aria-controls="data-prep-body"
       >
         <div>
-          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-700 rounded-full shadow-inner">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-3">
+            <span class="inline-flex items-center justify-center text-slate-600" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
               </svg>
             </span>
