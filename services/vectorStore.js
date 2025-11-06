@@ -1,7 +1,7 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
 import { embedText, cosineSimilarity as bowCosineSimilarity } from './ragService.js';
 
-const HUGGING_FACE_MODEL_BASE = 'https://huggingface.co/';
+const TRANSFORMER_CDN_BASE = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@latest';
 const TRANSFORMER_MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 
 class VectorStore {
@@ -175,8 +175,8 @@ class VectorStore {
     try {
       env.allowLocalModels = false;
       env.allowRemoteModels = true;
-      env.remoteModelPath = HUGGING_FACE_MODEL_BASE;
-      progressCallback?.('Downloading AI memory model from Hugging Face (~34MB)...');
+      env.remoteModelPath = TRANSFORMER_CDN_BASE;
+      progressCallback?.('Downloading AI memory model from jsDelivr (~34MB)...');
       return await pipeline('feature-extraction', TRANSFORMER_MODEL_ID, {
         progress_callback: progress => {
           if (progress?.status === 'progress' && progress.total > 0) {
@@ -189,7 +189,7 @@ class VectorStore {
     } catch (error) {
       const hint =
         error instanceof Error && /json\.parse/i.test(error.message)
-          ? 'Hugging Face returned a non-JSON response. Check that the model is publicly accessible or provide the correct CDN URL.'
+          ? 'Remote CDN returned a non-JSON response. Confirm the model CDN URL is accessible.'
           : null;
       console.warn('Remote model load failed, switching to lightweight embeddings.', error);
       if (hint) {
