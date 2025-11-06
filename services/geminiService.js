@@ -1015,6 +1015,25 @@ Your task:
             if (value === null || value === undefined) return [];
             return String(value).split(',');
           },
+          applyHeaderMapping: (row, mapping) => {
+            if (!row || typeof row !== 'object') {
+              return {};
+            }
+            if (!mapping || typeof mapping !== 'object') {
+              return { ...row };
+            }
+            const result = {};
+            Object.keys(row).forEach(key => {
+              const trimmed = typeof key === 'string' ? key.trim() : key;
+              const targetKey =
+                (typeof trimmed === 'string' && mapping[trimmed]) ||
+                mapping[key] ||
+                trimmed ||
+                key;
+              result[targetKey] = row[key];
+            });
+            return result;
+          },
         };
 
         try {
