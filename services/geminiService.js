@@ -139,26 +139,215 @@ const isGreetingOnly = text => {
   return greetingRegex.test(normalized);
 };
 
-const buildStructuredTextResponse = ({
-  openingSummary = '',
-  insights = [],
-  risks = '- None',
-  recommendations = [],
-}) => {
-  const formatList = (items, fallback) =>
-    Array.isArray(items) && items.length ? items.map(item => `- ${item}`).join('\n') : fallback;
-  const insightsBlock = formatList(insights, '- None，等你提出需要探索的主題。');
-  const recommendationBlock = formatList(
-    recommendations,
-    '- 告訴我你想了解的欄位、條件或假設，我會立即協助。'
-  );
-  return `Opening summary: ${openingSummary || '目前沒有新的洞察，等你發出指令。'}
+const formatNumber = value => {
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) {
+    return null;
+  }
+  try {
+    return num.toLocaleString();
+  } catch (error) {
+    return String(num);
+  }
+};
+
+const summariseColumns = columns => {
+  const list = Array.isArray(columns) ? columns : [];
+  const names = list.map(col => (col?.name ? String(col.name).trim() : '')).filter(Boolean);
+  const categoricalCount = list.filter(col => col?.type === 'categorical').length;
+  const numericalCount = list.filter(col => col?.type === 'numerical').length;
+  return {
+    total: list.length,
+    categoricalCount,
+    numericalCount,
+    sampleNames: names.slice(0, 3),
+  };
+};
+
+const summariseRowStats = (metadata, rawDataSample) => {
+  const toNum = value => {
+    const num = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+  const original = metadata ? toNum(metadata.originalRowCount) : null;
+  const cleaned = metadata ? toNum(metadata.cleanedRowCount) : null;
+  const contextCount = metadata ? toNum(metadata.contextRowCount) : null;
+  const removed = metadata ? toNum(metadata.removedRowCount) : null;
+  const rawSampleCount = Array.isArray(rawDataSample) ? rawDataSample.length : null;
+  const cleanedCount = cleaned ?? original ?? rawSampleCount ?? contextCount;
+  const removedRows =
+    removed ?? (original !== null && cleaned !== null ? Math.max(original - cleaned, 0) : null);
+  return {
+    cleanedCount,
+    removedRows,
+  };
+};
+
+const summariseCardContext = cardContext => {
+  const list = Array.isArray(cardContext) ? cardContext : [];
+  const titles = list
+    .map(card => (card?.title ? String(card.title).trim() : ''))
+    .filter(Boolean);
+  return {
+    count: list.length,
+    latestTitles: titles.slice(-3).reverse(),
+  };
+};
+
+const takeSentences = (text, limit = 2) => {
+  if (!text || typeof text !== 'string') return [];
+  const cleaned = text.replace(/\s+/g, ' ').trim();
+  if (!cleaned) return [];
+  const matches = cleaned.match(/[^。.!?]+[。.!?]?/g) || [cleaned];
+  return matches.map(sentence => sentence.trim()).filter(Boolean).slice(0, limit);
+};
+
+const ensureList = value => {
+  if (Array.isArray(value)) {
+    return value.map(item => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return [value.trim()];
+  }
+  return [];
+};
+
+const deriveOpeningSummary = context => {
+  const datasetLabel = context?.datasetTitle || '資料集';
+  const columnStats = summariseColumns(context?.columns);
+  const rowStats = summariseRowStats(context?.metadata, context?.rawDataSample);
+  const cardStats = summariseCardContext(context?.cardContext);
+  const columnText = columnStats.total
+    ? `${columnStats.total} 欄（${columnStats.numericalCount} 數值 / ${columnStats.categoricalCount} 類別）`
+    : '欄位資訊待確認';
+  const rowText = rowStats.cleanedCount ? `${formatNumber(rowStats.cleanedCount)} 筆 ready` : '筆數尚待解析';
+  const progressText = cardStats.count
+    ? `目前已生成 ${cardStats.count} 張分析卡`
+    : '尚未建立任何分析卡';
+
+  if (context?.mode === 'fallback') {
+    const reason = context?.fallbackReason || '上一輪模型回應缺少可執行結構';
+    return `⚠️ ${reason}。資料集「${datasetLabel}」仍保持載入狀態（${columnText}、${rowText}），等你重新下達指令。`;
+  }
+
+  return `👋 Dataset「${datasetLabel}」ready — ${columnText}，${rowText}，${progressText}。`;
+};
+
+const deriveInsightLines = context => {
+  if (context?.mode === 'fallback' && context?.fallbackReason) {
+    return [
+      `Safe mode: ${context.fallbackReason}，資料已保留，請重新描述你的需求。`,
+    ];
+  }
+  const aiSummarySentences = takeSentences(context?.aiCoreAnalysisSummary, 3);
+  if (aiSummarySentences.length) {
+    return aiSummarySentences;
+  }
+  const cardStats = summariseCardContext(context?.cardContext);
+  if (cardStats.count) {
+    return cardStats.latestTitles.map(title => `分析卡已就緒：${title}`);
+  }
+  const columnStats = summariseColumns(context?.columns);
+  if (columnStats.sampleNames.length) {
+    const columnLine = `可用欄位 sample：${columnStats.sampleNames.join(', ')}`;
+    const totalLine = columnStats.total
+      ? `總計 ${columnStats.total} 欄，可針對其中任意欄位建立統計/圖表。`
+      : null;
+    return [columnLine, totalLine].filter(Boolean);
+  }
+  return ['等你指定想要分析的欄位或假設。'];
+};
+
+const deriveRiskLines = context => {
+  if (context?.mode === 'fallback') {
+    return [
+      context?.fallbackReason
+        ? `上一輪輸出未通過驗證：${context.fallbackReason}`
+        : '上一輪輸出未通過驗證，已切換安全模式。',
+    ];
+  }
+  const rowStats = summariseRowStats(context?.metadata, context?.rawDataSample);
+  if (rowStats.removedRows) {
+    return [
+      `資料清理階段移除了 ${formatNumber(rowStats.removedRows)} 列（subtotal/空值等），必要時可切到 Raw 資料檢查。`,
+    ];
+  }
+  const cardStats = summariseCardContext(context?.cardContext);
+  if (!cardStats.count) {
+    return ['尚未執行圖表或演算，目前沒有額外風險。'];
+  }
+  return ['請留意欄位定義與單位是否一致，需要我復核時直接告訴我。'];
+};
+
+const deriveRecommendationLines = context => {
+  if (context?.mode === 'fallback') {
+    return [
+      '請再描述一次需求（越具體的欄位/篩選條件越好），我會立即重跑分析。',
+      '若問題持續，可直接指定想比較的欄位名稱，我會改用替代方案執行。',
+    ];
+  }
+  const columnStats = summariseColumns(context?.columns);
+  const cardStats = summariseCardContext(context?.cardContext);
+  if (!cardStats.count) {
+    if (columnStats.sampleNames.length >= 2) {
+      const [first, second, third] = columnStats.sampleNames;
+      const compareTarget = second || third || columnStats.sampleNames[0];
+      return [
+        `可以請我分析 ${first} by ${compareTarget}，或指定你關心的 KPI/條件。`,
+        '也能先幫你做資料品質檢查、清理摘要列或建立新的指標。',
+      ];
+    }
+    if (columnStats.sampleNames.length === 1) {
+      return [
+        `若想了解 ${columnStats.sampleNames[0]} 的趨勢或分佈，直接告訴我想看的切角即可。`,
+      ];
+    }
+    return ['告訴我想看的欄位、條件或假設，我就會立即開始分析。'];
+  }
+  const latestTitle = cardStats.latestTitles[0];
+  const secondTitle = cardStats.latestTitles[1];
+  const columnFallback = columnStats.sampleNames[0];
+  return [
+    latestTitle ? `可以深入 ${latestTitle}，例如加入篩選或比較不同區段。` : '可以要求我深入最新的分析卡。',
+    secondTitle
+      ? `也能延伸 ${secondTitle}，把不同維度放在同一張圖表比較。`
+      : columnFallback
+      ? `或請我針對 ${columnFallback} 建立新的拆解圖表。`
+      : '需要其他指標、預測或報告時直接告訴我。',
+  ].filter(Boolean);
+};
+
+const formatListSection = lines => {
+  if (!lines || !lines.length) {
+    return '- 尚無更新';
+  }
+  return lines.map(line => `- ${line}`).join('\n');
+};
+
+const buildStructuredTextResponse = (sections = {}, context = {}) => {
+  const summary =
+    (typeof sections.openingSummary === 'string' && sections.openingSummary.trim()) ||
+    deriveOpeningSummary(context);
+  const insightsLines = (() => {
+    const provided = ensureList(sections.insights);
+    return provided.length ? provided : deriveInsightLines(context);
+  })();
+  const riskLines = (() => {
+    const provided = ensureList(sections.risks);
+    return provided.length ? provided : deriveRiskLines(context);
+  })();
+  const recommendationLines = (() => {
+    const provided = ensureList(sections.recommendations);
+    return provided.length ? provided : deriveRecommendationLines(context);
+  })();
+
+  return `Opening summary: ${summary || '目前沒有新的洞察，等你發出指令。'}
 Key insights list:
-${insightsBlock}
+${formatListSection(insightsLines)}
 Risks or limitations:
-${risks || '- None'}
+${formatListSection(riskLines)}
 Recommended actions / next step for the user:
-${recommendationBlock}`;
+${formatListSection(recommendationLines)}`;
 };
 
 const validateActionResponse = response => {
@@ -177,17 +366,18 @@ const validateActionResponse = response => {
   return null;
 };
 
-const buildFallbackActionResponse = (rawText, datasetTitle) => {
+const buildFallbackActionResponse = (rawText, context = {}) => {
+  const fallbackReason = 'LLM 回覆缺少有效 actions 結構';
   const sanitizedSummary =
     typeof rawText === 'string' && rawText.trim()
       ? rawText.trim().split('\n').slice(0, 2).join(' ')
-      : `👋 抱歉，剛才的模型回覆沒有提供可執行的步驟，但我已準備好分析「${datasetTitle}」。`;
-  const fallbackText = buildStructuredTextResponse({
-    openingSummary: sanitizedSummary,
-    insights: ['目前尚未收到可分析的具體請求，等你指定想看的圖表或指標。'],
-    risks: '- None，剛才僅是模型格式異常。',
-    recommendations: ['請重新描述你的需求，或告訴我要比較的欄位與條件，我會立即跟進。'],
-  });
+      : `⚠️ ${fallbackReason}，但資料仍保持載入狀態，可重新下達指令。`;
+  const fallbackText = buildStructuredTextResponse(
+    {
+      openingSummary: sanitizedSummary,
+    },
+    { ...context, mode: 'fallback', fallbackReason }
+  );
   return {
     actions: [
       {
@@ -1472,12 +1662,19 @@ export const generateChatResponse = async (
   const normalizedUserPrompt = typeof userPrompt === 'string' ? userPrompt.trim() : '';
   const isGeneralIntent = !intent || intent === 'general';
   if (isGeneralIntent && isGreetingOnly(normalizedUserPrompt)) {
-    const greetingText = buildStructuredTextResponse({
-      openingSummary: `👋 嗨！我已在關注資料集「${datasetTitle}」，隨時可依照你的需求啟動分析。`,
-      insights: ['目前尚無新的分析指令，等你指定要探索的指標或範圍。'],
-      risks: '- None，因為還沒有進行任何圖表或運算。',
-      recommendations: ['告訴我你想了解的欄位、條件或假設，我就會開始動手分析。'],
-    });
+    const greetingText = buildStructuredTextResponse(
+      {},
+      {
+        mode: 'greeting',
+        datasetTitle,
+        columns,
+        cardContext,
+        aiCoreAnalysisSummary,
+        metadata,
+        rawDataSample,
+        intent,
+      }
+    );
     return {
       actions: [
         {
@@ -1647,7 +1844,15 @@ ${actionsInstructions}
   if (validationError) {
     if (provider === 'openai') {
       console.warn('OpenAI chat payload invalid, using fallback text response.', validationError);
-      return buildFallbackActionResponse(openAIRawText, datasetTitle);
+      return buildFallbackActionResponse(openAIRawText, {
+        datasetTitle,
+        columns,
+        cardContext,
+        aiCoreAnalysisSummary,
+        metadata,
+        rawDataSample,
+        intent,
+      });
     }
     throw new Error(validationError);
   }

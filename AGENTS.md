@@ -6,6 +6,9 @@
 * Dont use React JS and Tailwind CSS.
 * Do not amend folder "Original"
 * Keep the Vanilla Project Agent logic is multi-step, like iterative worker method style, able to solve complex issues or problem by tools.
+* Do no hardcode logic to Agent, if not Agent cannot perform Task Intelligently.
+* Update Info in README.md, about the logic and structure and Agent logic and so on, allow Engineer to easy to understand and cheap to maintain.
+* Write comment for code allow us to know what the code is trying to do and wont get lost.
 
 ## CSV Agent Ability Design
 * 像員工一樣 small step、小步驟連續執行multi-step task
