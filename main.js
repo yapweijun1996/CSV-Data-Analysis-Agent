@@ -51,6 +51,7 @@ import {
   detectHeadersTool as detectHeadersHelper,
   removeSummaryRowsTool as removeSummaryRowsHelper,
   detectIdentifierColumnsTool as detectIdentifierColumnsHelper,
+  removeLeadingRowsTool as removeLeadingRowsHelper,
 } from './utils/dataPrepTools.js';
 import { ENABLE_MEMORY_FEATURES } from './services/memoryConfig.js';
 import { ensureMemoryVectorReady as ensureMemoryVectorReadyHelper } from './services/memoryServiceHelpers.js';
@@ -1679,22 +1680,23 @@ this.state = {
       dataForAnalysis = deterministicResult.dataset;
       metadata = dataForAnalysis.metadata || metadata || null;
       deterministicResult.logs.forEach(message => this.addProgress(message, 'system'));
-      if (deterministicResult.removedContextRows) {
-        this.completeWorkflowStep({
-          label: '移除報表抬頭 / Header 列',
-          outcome: `${deterministicResult.removedContextRows} rows`,
-        });
-        this.appendWorkflowThought(
-          `已先移除 ${deterministicResult.removedContextRows} 筆報表抬頭或內嵌 header，避免混入資料列。`
-        );
-      }
-      if (deterministicResult.removedRows) {
-        this.appendWorkflowThought(
-          `Deterministic tools removed ${deterministicResult.removedRows} summary rows before AI planning.`
-        );
-        this.completeWorkflowStep({
-          label: 'Deterministic 摘要列清理',
-          outcome: `${deterministicResult.removedRows} rows`,
+      if (Array.isArray(deterministicResult.stageLogs) && deterministicResult.stageLogs.length) {
+        deterministicResult.stageLogs.forEach(entry => {
+          if (!entry) {
+            return;
+          }
+          if (entry.message) {
+            this.addProgress(entry.message, entry.level || 'system');
+            if (entry.removed) {
+              this.appendWorkflowThought(entry.message);
+            }
+          }
+          if (entry.label) {
+            this.completeWorkflowStep({
+              label: `Deterministic · ${entry.label}`,
+              outcome: entry.outcome || (typeof entry.removed === 'number' ? `${entry.removed} rows` : 'done'),
+            });
+          }
         });
       }
       let profiles = profileData(dataForAnalysis.data);
@@ -2785,6 +2787,44 @@ this.state = {
           );
           break;
         }
+        case 'remove_leading_rows': {
+          const currentRows = Array.isArray(dataForAnalysis.data) ? dataForAnalysis.data : [];
+          const result = removeLeadingRowsHelper({
+            data: currentRows,
+            metadata,
+            maxRows: typeof argsObject.maxRows === 'number' ? argsObject.maxRows : 8,
+            keywords: Array.isArray(argsObject.keywords) ? argsObject.keywords : [],
+          });
+          dataForAnalysis.data = result.cleanedData;
+          if (dataForAnalysis.metadata) {
+            dataForAnalysis.metadata = {
+              ...dataForAnalysis.metadata,
+              cleanedRowCount: dataForAnalysis.data.length,
+            };
+            dataForAnalysis.metadata = this.updateMetadataContext(
+              dataForAnalysis.metadata,
+              dataForAnalysis.data
+            );
+          }
+          outputs.push({
+            tool,
+            stats: result.stats,
+            removedRows: result.removedRows.length,
+            remaining: dataForAnalysis.data.length,
+          });
+          const stats = result.stats || {};
+          const detailParts = [];
+          if (stats.titleRows) detailParts.push(`title x${stats.titleRows}`);
+          if (stats.leadingRows) detailParts.push(`leading x${stats.leadingRows}`);
+          if (stats.headerRows) detailParts.push(`header x${stats.headerRows}`);
+          this.addProgress(
+            `工具：remove_leading_rows → 移除 ${result.removedRows.length} 筆抬頭/leading 列${
+              detailParts.length ? ` (${detailParts.join(', ')})` : ''
+            }`,
+            'info'
+          );
+          break;
+        }
         default: {
           outputs.push({ tool, error: 'Unsupported tool' });
           this.addProgress(`工具 ${tool || '(unknown)'} 不受支援，已略過。`, 'error');
@@ -3244,10 +3284,11 @@ this.state = {
 
   applyDeterministicPreprocessing(dataset) {
     if (!dataset || !Array.isArray(dataset.data)) {
-      return { dataset, logs: [], removedRows: 0, removedContextRows: 0 };
+      return { dataset, logs: [], removedRows: 0, removedContextRows: 0, stageLogs: [] };
     }
     let workingData = dataset.data.map(row => ({ ...(row || {}) }));
     const logs = [];
+    const stageLogs = [];
     let trimmedCells = 0;
     workingData = workingData.map(row => {
       const cleanedRow = {};
@@ -3269,21 +3310,26 @@ this.state = {
     }
     const updatedMetadata = dataset.metadata ? { ...dataset.metadata } : {};
 
-    const contextRemoval = this.removeContextualRows(workingData, updatedMetadata);
+    const contextRemoval = removeLeadingRowsHelper({
+      data: workingData,
+      metadata: updatedMetadata,
+      maxRows: 8,
+    });
     if (contextRemoval && Array.isArray(contextRemoval.removedRows) && contextRemoval.removedRows.length) {
       workingData = contextRemoval.cleanedData;
+      const stats = contextRemoval.stats || {};
       const reasonLabels = [];
-      if (contextRemoval.stats?.reportTitle) {
-        reasonLabels.push(`title x${contextRemoval.stats.reportTitle}`);
+      if (stats.titleRows) {
+        reasonLabels.push(`title x${stats.titleRows}`);
       }
-      if (contextRemoval.stats?.headerRow) {
-        reasonLabels.push(`header x${contextRemoval.stats.headerRow}`);
+      if (stats.leadingRows) {
+        reasonLabels.push(`leading rows x${stats.leadingRows}`);
       }
-      if (contextRemoval.stats?.leadingRow) {
-        reasonLabels.push(`leading row x${contextRemoval.stats.leadingRow}`);
+      if (stats.headerRows) {
+        reasonLabels.push(`header rows x${stats.headerRows}`);
       }
       logs.push(
-        `Removed ${contextRemoval.removedRows.length} leading/header rows${
+        `Removed ${contextRemoval.removedRows.length} context rows${
           reasonLabels.length ? ` (${reasonLabels.join(', ')})` : ''
         }.`
       );
@@ -3294,6 +3340,58 @@ this.state = {
         leadingRowsRemoved: true,
         updatedAt: new Date().toISOString(),
       };
+      const titleCount = (stats.titleRows || 0) + (stats.leadingRows || 0);
+      if (titleCount) {
+        stageLogs.push({
+          stage: 'titleExtraction',
+          label: 'Title & Metadata',
+          removed: titleCount,
+          outcome: `${titleCount} rows`,
+          message: `Title stage：移除 ${titleCount} 筆報表抬頭/leading rows，避免進入資料區。`,
+        });
+      } else if (stats.titleRows === 0 && stats.leadingRows === 0) {
+        stageLogs.push({
+          stage: 'titleExtraction',
+          label: 'Title & Metadata',
+          removed: 0,
+          outcome: '0 rows',
+          message: 'Title stage：未檢測到可移除的抬頭列，保留原始內容。',
+        });
+      }
+      if (stats.headerRows) {
+        updatedMetadata.headerRowsRemoved =
+          (updatedMetadata.headerRowsRemoved || 0) + stats.headerRows;
+        updatedMetadata.structureEvidence = {
+          ...(updatedMetadata.structureEvidence || {}),
+          headerRowsRemoved: true,
+          updatedAt: new Date().toISOString(),
+        };
+        stageLogs.push({
+          stage: 'headerResolution',
+          label: 'Header Resolution',
+          removed: stats.headerRows,
+          outcome: `${stats.headerRows} rows`,
+          message: `Header stage：移除 ${stats.headerRows} 筆重複 header 列，鎖定實際資料起點。`,
+        });
+      }
+    }
+    if (!stageLogs.some(entry => entry.stage === 'headerResolution')) {
+      stageLogs.push({
+        stage: 'headerResolution',
+        label: 'Header Resolution',
+        removed: 0,
+        outcome: '0 rows',
+        message: 'Header stage：未偵測到需額外處理的 header 列。',
+      });
+    }
+    if (!stageLogs.some(entry => entry.stage === 'titleExtraction')) {
+      stageLogs.push({
+        stage: 'titleExtraction',
+        label: 'Title & Metadata',
+        removed: 0,
+        outcome: '0 rows',
+        message: 'Title stage：未發現需要剔除的抬頭/leading rows。',
+      });
     }
 
     const summaryResult = removeSummaryRowsHelper({ data: workingData });
@@ -3304,6 +3402,21 @@ this.state = {
     if (removedRows > 0) {
       workingData = summaryResult.cleanedData;
       logs.push(`Deterministic summary removal removed ${removedRows} rows (total/subtotal).`);
+      stageLogs.push({
+        stage: 'dataNormalization',
+        label: 'Data Rows',
+        removed: removedRows,
+        outcome: `${removedRows} rows`,
+        message: `Data stage：移除 ${removedRows} 筆含 Total/Subtotal 的摘要列。`,
+      });
+    } else {
+      stageLogs.push({
+        stage: 'dataNormalization',
+        label: 'Data Rows',
+        removed: 0,
+        outcome: '0 rows',
+        message: 'Data stage：未發現摘要列，資料列維持不變。',
+      });
     }
     if (removedRows > 0) {
       updatedMetadata.removedSummaryRowCount =
@@ -3325,95 +3438,10 @@ this.state = {
       logs,
       removedRows,
       removedContextRows: contextRemoval?.removedRows?.length || 0,
+      stageLogs,
     };
   }
 
-  removeContextualRows(rows, metadata) {
-    if (!Array.isArray(rows) || !rows.length) {
-      return { cleanedData: Array.isArray(rows) ? [...rows] : [], removedRows: [], stats: null };
-    }
-    const normalise = value => {
-      if (value === null || value === undefined) {
-        return '';
-      }
-      return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
-    };
-    const scanLimit = 8;
-    const reportTitle = normalise(metadata?.reportTitle);
-    const headerOrder = Array.isArray(metadata?.headerRow) && metadata.headerRow.length
-      ? metadata.headerRow
-      : Array.isArray(metadata?.inferredHeaders) && metadata.inferredHeaders.length
-      ? metadata.inferredHeaders
-      : null;
-    const headerTokens = new Set(
-      (headerOrder || []).map(name => normalise(name)).filter(Boolean)
-    );
-    const headerFingerprint =
-      headerOrder && headerOrder.length ? headerOrder.map(name => normalise(name)).join('|') : null;
-    const leadingFingerprints = new Set(
-      (Array.isArray(metadata?.leadingRows) ? metadata.leadingRows : [])
-        .map(row => (Array.isArray(row) ? row.map(cell => normalise(cell)).join('|') : ''))
-        .filter(Boolean)
-    );
-
-    const stats = { reportTitle: 0, headerRow: 0, leadingRow: 0 };
-    const cleanedData = [];
-    const removedRows = [];
-
-    const normaliseRowValues = row => {
-      if (!row) return [];
-      if (headerOrder && headerOrder.length) {
-        return headerOrder.map(name => normalise(row[name]));
-      }
-      return Object.keys(row)
-        .sort()
-        .map(key => normalise(row[key]));
-    };
-
-    const isHeaderLikeRow = values => {
-      if (!headerTokens.size || !values.length) {
-        return false;
-      }
-      const matches = values.filter(value => headerTokens.has(value)).length;
-      if (matches === 0) {
-        return false;
-      }
-      const coverage = matches / Math.max(values.length, headerTokens.size);
-      return coverage >= 0.6 && matches >= Math.min(headerTokens.size, 2);
-    };
-
-    rows.forEach((row, index) => {
-      if (!row) {
-        return;
-      }
-      const normalisedValues = normaliseRowValues(row);
-      const fingerprint = normalisedValues.join('|');
-      const nonEmpty = normalisedValues.filter(Boolean);
-      let removalReason = null;
-      if (index < scanLimit && reportTitle && nonEmpty.length === 1 && nonEmpty[0] === reportTitle) {
-        removalReason = 'reportTitle';
-      } else if (index < scanLimit && leadingFingerprints.has(fingerprint)) {
-        removalReason = 'leadingRow';
-      } else if (index < scanLimit && headerFingerprint && fingerprint === headerFingerprint) {
-        removalReason = 'headerRow';
-      } else if (index < scanLimit && isHeaderLikeRow(nonEmpty)) {
-        removalReason = 'headerRow';
-      }
-
-      if (removalReason) {
-        removedRows.push(row);
-        stats[removalReason] = (stats[removalReason] || 0) + 1;
-      } else {
-        cleanedData.push(row);
-      }
-    });
-
-    if (!removedRows.length) {
-      return { cleanedData: rows, removedRows, stats };
-    }
-
-    return { cleanedData, removedRows, stats };
-  }
 
   evaluateDiagnoseGate(metadata, profiles) {
     const evidence = metadata?.structureEvidence || {};

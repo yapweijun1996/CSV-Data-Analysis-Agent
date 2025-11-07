@@ -443,6 +443,17 @@ const DATA_PREP_TOOL_SCHEMAS = [
       '{ headerIndex: number|null, headers: string[], confidence: number, strategy: string }',
   },
   {
+    name: 'remove_leading_rows',
+    description:
+      'Removes report titles, duplicated header rows, and metadata-leading rows (first ~8 rows) so the dataset starts at true data.',
+    args: {
+      maxRows: 'number (optional, default 8) — how many top rows to inspect for metadata/header removal.',
+      keywords: 'string[] (optional) — dataset-specific header keywords (e.g., 多語欄名) supplied by your stage plan.',
+    },
+    returns:
+      '{ cleanedData: object[], removedRows: object[], stats: { titleRows: number, headerRows: number, leadingRows: number } }',
+  },
+  {
     name: 'remove_summary_rows',
     description:
       'Removes rows that look like totals/subtotals based on keyword search. Use custom keywords for other languages.',
@@ -908,7 +919,7 @@ const getDataPreparationSchema = () => {
             properties: {
               tool: {
                 type: GeminiType.STRING,
-                enum: ['detect_headers', 'remove_summary_rows', 'detect_identifier_columns'],
+                enum: ['detect_headers', 'remove_leading_rows', 'remove_summary_rows', 'detect_identifier_columns'],
                 description: 'Tool identifier to execute.',
               },
               args: {
@@ -1655,7 +1666,7 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
           })
           .join('\n')}\n`
       : '\n';
-  const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (recommended)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n→ 只有在上述工具無法處理的情境才使用 \`jsFunctionBody\`，否則一律以 tool calls orchestrate。`;
+  const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeLeadingRows(rows, options?)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (recommended)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n→ 只有在上述工具無法處理的情境才使用 \`jsFunctionBody\`，否則一律以 tool calls orchestrate。`;
   const failureContextBlock = (() => {
     const context = lastError?.failureContext;
     if (!context) {

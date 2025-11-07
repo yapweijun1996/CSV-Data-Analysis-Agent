@@ -6,6 +6,7 @@ import {
   normalizeCurrencyValue,
   isLikelyIdentifierValue,
   describeColumns as describeColumnsHelper,
+  removeLeadingRowsTool,
 } from './dataPrepTools.js';
 
 const PapaLib = typeof window !== 'undefined' ? window.Papa : null;
@@ -1179,6 +1180,13 @@ export const executeJavaScriptDataTransform = (data, jsFunctionBody, options = {
       applyHeaderMapping: (row, mapping) => applyHeaderMappingHelper(row, mapping),
       detectHeaders: metadata => detectHeadersTool({ metadata }),
       removeSummaryRows: (rows, keywords) => removeSummaryRowsTool({ data: rows, keywords }).cleanedData,
+      removeLeadingRows: (rows, optionsArg = {}) =>
+        removeLeadingRowsTool({
+          data: rows,
+          metadata: options?.metadata,
+          maxRows: typeof optionsArg.maxRows === 'number' ? optionsArg.maxRows : 8,
+          keywords: Array.isArray(optionsArg.keywords) ? optionsArg.keywords : [],
+        }).cleanedData,
       detectIdentifierColumns: (rows, metadata) =>
         detectIdentifierColumnsTool({ data: rows, metadata }).identifiers,
       isValidIdentifierValue: value => isLikelyIdentifierValue(value),
