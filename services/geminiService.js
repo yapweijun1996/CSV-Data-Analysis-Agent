@@ -1135,6 +1135,25 @@ const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
   });
 };
 
+const enforceTopLevelReturn = source => {
+  if (typeof source !== 'string') {
+    return source;
+  }
+  const trimmed = source.trim();
+  if (/^\s*return\b/i.test(trimmed)) {
+    return trimmed;
+  }
+  const matches = Array.from(trimmed.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\(/g));
+  if (matches.length === 1) {
+    const fnName = matches[0][1];
+    const hasReturnCall = new RegExp(`return\\s+${fnName}\\s*\\(`).test(trimmed);
+    if (!hasReturnCall) {
+      return `${trimmed}\n\nreturn ${fnName}(data, _util);`;
+    }
+  }
+  return trimmed;
+};
+
 const sanitizeJsFunctionBody = jsBody => {
   if (typeof jsBody !== 'string') {
     return jsBody;
@@ -1161,7 +1180,7 @@ const sanitizeJsFunctionBody = jsBody => {
   const core = stripLeadingComments(cleaned);
 
   if (/^(?:async\s+)?function\b/i.test(core)) {
-    return wrapInvocation(core);
+    return enforceTopLevelReturn(wrapInvocation(core));
   }
 
   const tryMatchAndWrap = patterns => {
@@ -1185,10 +1204,50 @@ const sanitizeJsFunctionBody = jsBody => {
     ]) || null;
 
   if (wrapped) {
-    return wrapped;
+    return enforceTopLevelReturn(wrapped);
   }
 
-  return core;
+  return enforceTopLevelReturn(core);
+};
+
+const normalizeToolCalls = toolCalls => {
+  if (!Array.isArray(toolCalls)) {
+    return [];
+  }
+  return toolCalls
+    .map(call => {
+      if (!call || typeof call !== 'object') {
+        return null;
+      }
+      const tool = typeof call.tool === 'string' ? call.tool.trim() : '';
+      if (!tool) {
+        return null;
+      }
+      let args = call.args;
+      if (args && typeof args === 'object') {
+        try {
+          args = JSON.stringify(args);
+        } catch (error) {
+          args = '{}';
+        }
+      } else if (typeof args === 'string') {
+        const trimmed = args.trim();
+        if (!trimmed) {
+          args = '{}';
+        } else {
+          try {
+            JSON.parse(trimmed);
+            args = trimmed;
+          } catch (error) {
+            args = '{}';
+          }
+        }
+      } else {
+        args = '{}';
+      }
+      return { tool, args };
+    })
+    .filter(Boolean);
 };
 
 const callOpenAIJson = async (settings, systemPrompt, userPrompt, options = {}) => {
@@ -1547,10 +1606,11 @@ const buildUserPrompt = (lastError, iterationContext = null) => {
     return extracted || null;
   })();
 
-  const multiPassRules = `Multi-pass requirements:
+const multiPassRules = `Multi-pass requirements:
 - You MUST set the "status" field: use "continue" if more passes will be needed after this step, "done" when the dataset is tidy, or "abort" if cleanup cannot proceed safely.
 - When status is "continue", provide code that performs ONLY the next logical step and describe what will remain afterwards.
 - When status is "done", omit the JavaScript body (or return null) and explain why no further steps are required.
+- If you emit jsFunctionBody, the top-level snippet MUST return the final dataset (e.g., \`return cleanAndReshape(data, _util);\`). Defining helper functions without returning is invalid.
 - Do not repeat work already finished in prior iterations; build on the current cleaned dataset.${
     offendingSummaryText
       ? `\n- Previously flagged summary rows that MUST be removed this iteration: ${offendingSummaryText}`
@@ -1667,7 +1727,7 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
           })
           .join('\n')}\n`
       : '\n';
-  const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeLeadingRows(rows, options?)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (preferred)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n→ 只有當工具沒有辦法完成當前微目標時才輸出 \`jsFunctionBody\`。預設需透過工具+stage plan 完成清理。`;
+const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeLeadingRows(rows, options?)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (preferred)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n- 若本輪不輸出 jsFunctionBody，toolCalls 陣列必須至少包含一個可執行的工具呼叫。\n- toolCalls.args 需為有效 JSON 字串；若模型輸出物件請自行序列化後再回傳。\n→ 只有當工具沒有辦法完成當前微目標時才輸出 \`jsFunctionBody\`。預設需透過工具+stage plan 完成清理。`;
   const failureContextBlock = (() => {
     const context = lastError?.failureContext;
     if (!context) {
@@ -1816,7 +1876,33 @@ Your task:
         console.groupEnd();
       }
 
-      if (plan.jsFunctionBody) {
+      plan.toolCalls = normalizeToolCalls(plan.toolCalls);
+      const rawJsBody =
+        typeof plan.jsFunctionBody === 'string' && plan.jsFunctionBody.trim()
+          ? plan.jsFunctionBody.trim()
+          : '';
+      const hasToolCalls = Array.isArray(plan.toolCalls) && plan.toolCalls.length > 0;
+      const planStatus =
+        typeof plan.status === 'string' ? plan.status.trim().toLowerCase() : null;
+      const isDone = planStatus === 'done';
+      if (!isDone && !hasToolCalls && !rawJsBody) {
+        const missingActionError = new Error(
+          'Data prep plan omitted toolCalls and jsFunctionBody. Each iteration must schedule at least one deterministic action.'
+        );
+        missingActionError.failureContext = {
+          type: 'missing_actions',
+          reason: missingActionError.message,
+          stagePlan: plan.stagePlan || null,
+        };
+        lastError = missingActionError;
+        console.warn(
+          '[DataPrep] Rejected plan because it lacks both toolCalls and jsFunctionBody.',
+          missingActionError
+        );
+        continue;
+      }
+
+      if (rawJsBody) {
         const normalizedJsBody = sanitizeJsFunctionBody(plan.jsFunctionBody);
         plan.jsFunctionBody = normalizedJsBody;
         console.log('Sanitized jsFunctionBody preview:', normalizedJsBody);
@@ -1896,6 +1982,9 @@ Your task:
   );
   if (lastError && lastError.rawResponse) {
     finalError.rawResponse = lastError.rawResponse;
+  }
+  if (lastError && lastError.failureContext) {
+    finalError.failureContext = lastError.failureContext;
   }
   throw finalError;
 };

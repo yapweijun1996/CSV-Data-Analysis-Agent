@@ -1814,6 +1814,13 @@ this.state = {
             } catch (planError) {
               const rawResponse = planError && planError.rawResponse ? String(planError.rawResponse) : null;
               const message = planError instanceof Error ? planError.message : String(planError);
+              const failureContext =
+                planError && planError.failureContext ? planError.failureContext : null;
+              const failureReason = failureContext && failureContext.reason ? failureContext.reason : null;
+              const failureType =
+                failureContext && typeof failureContext.type === 'string'
+                  ? failureContext.type
+                  : null;
               if (rawResponse) {
                 this.addProgress(
                   `${iterationLabel} 無法解析模型 JSON，請求重新輸出有效格式。`,
@@ -1833,6 +1840,31 @@ this.state = {
                 `${iterationLabel} attempt ${attemptLabel} planner failed: ${message}`,
                 'error'
               );
+              if (failureReason) {
+                const failureLabel =
+                  failureType === 'missing_actions'
+                    ? '計畫結構錯誤'
+                    : failureType === 'js_validation_error'
+                    ? 'AI JS 驗證失敗'
+                    : 'AI preprocessing 錯誤';
+                this.addProgress(
+                  `${iterationLabel} attempt ${attemptLabel}：${failureLabel}：${failureReason}，模型已重新規劃。`,
+                  'error'
+                );
+              }
+              if (failureType === 'js_validation_error') {
+                const violationCount = this.incrementViolationCounter('js_validation_error');
+                if (violationCount >= 2) {
+                  this.enterAdjustPhase('偵測到多次 JS 驗證失敗，強制回到工具優先策略。');
+                  this.extendPrepIterationBudget(1);
+                }
+              } else if (failureType === 'missing_actions') {
+                const violationCount = this.incrementViolationCounter('missing_actions');
+                if (violationCount >= 2) {
+                  this.enterAdjustPhase('模型多次輸出沒有工具/程式的計畫，正在重新引導 LLM 填寫 toolCalls。');
+                  this.extendPrepIterationBudget(1);
+                }
+              }
               attemptErrorForPrompt = planError instanceof Error ? planError : new Error(message);
               lastIterationError = attemptErrorForPrompt;
               continue;
