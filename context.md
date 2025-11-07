@@ -70,3 +70,9 @@
 
 - **Schema/Prompt Enforcement**: `services/geminiService.js` now normalizes toolCalls, requires at least one deterministic tool invocation whenever `jsFunctionBody` is absent and status≠done, and the prompt explicitly states “no JS ⇒ toolCalls must be populated.” Plans missing both actions are rejected with `failureContext.type = 'missing_actions'`.
 - **UI Feedback + Safeguard**: `main.js` now inspects `failureContext.type` to log either “AI JS 驗證失敗” or “計畫結構錯誤” and increments violation counters (`js_validation_error`, `missing_actions`). Two consecutive hits auto-trigger `enterAdjustPhase` + iteration budget extension, preventing infinite retries with empty plans.
+
+## 2025-11-07 Header Refresh & Sample Normalisation
+
+- **Prompt Input Fix**: `generateDataPreparationPlan` now pre-processes metadata via `ensurePlanMetadataHeaders`, scanning context/leading rows plus sample data to pick the highest-scoring header row (no硬編字詞). The resulting headers overwrite `inferredHeaders` before constructing the `HEADER_MAPPING`, so `column_1` finally maps to `Code/Description/...`.
+- **Sample Slimming**: `normaliseSampleDataForPlan` only emits canonical keys (alias names take precedence; falls back to generic key when no alias exists). Duplicate `column_N` + canonical pairs are removed, reducing token noise and keeping the LLM focused on the tidy schema.
+- **Net Effect**: Iteration 1 now receives both accurate header mapping and leaner sample rows, which should unblock deterministic tool calls (remove_leading_rows/detect_headers/remove_summary_rows) without relying on JS heuristics.

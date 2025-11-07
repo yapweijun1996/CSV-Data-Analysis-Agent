@@ -1075,6 +1075,105 @@ const getChatPlanSchema = () => {
 };
 
 
+const deriveRowValues = (row, genericHeaders) => {
+  if (Array.isArray(row)) {
+    return row;
+  }
+  if (row && typeof row === 'object' && Array.isArray(genericHeaders) && genericHeaders.length) {
+    return genericHeaders.map(header =>
+      Object.prototype.hasOwnProperty.call(row, header) ? row[header] : ''
+    );
+  }
+  if (row && typeof row === 'object') {
+    return Object.values(row);
+  }
+  return [];
+};
+
+const scoreHeaderCandidate = row => {
+  if (!Array.isArray(row)) {
+    return 0;
+  }
+  const values = row.map(cleanHeaderValue).filter(Boolean);
+  if (values.length < 2) {
+    return 0;
+  }
+  let score = 0;
+  let textCells = 0;
+  const seen = new Set();
+  values.forEach(value => {
+    const hasLetters = /[A-Za-z]/.test(value);
+    const looksNumeric = /^\s*[-+]?\d[\d,\s.]*\s*$/.test(value);
+    if (hasLetters) {
+      score += 2;
+      textCells += 1;
+    }
+    if (!looksNumeric) {
+      score += 1;
+    }
+    if (value.length >= 3 && value.length <= 40) {
+      score += 1;
+    }
+    if (!seen.has(value.toLowerCase())) {
+      score += 0.5;
+      seen.add(value.toLowerCase());
+    }
+  });
+  if (textCells >= Math.min(3, values.length)) {
+    score += 2;
+  }
+  if (seen.size >= Math.min(4, values.length)) {
+    score += 1;
+  }
+  return score;
+};
+
+const ensurePlanMetadataHeaders = (metadata, sampleRows = []) => {
+  if (!metadata || typeof metadata !== 'object') {
+    return metadata;
+  }
+  const hasCanonical =
+    Array.isArray(metadata.inferredHeaders) &&
+    metadata.inferredHeaders.some(header => /[A-Za-z]/.test(String(header || '')));
+  if (hasCanonical) {
+    return metadata;
+  }
+
+  const candidates = [];
+  if (Array.isArray(metadata.contextRows) && metadata.contextRows.length) {
+    candidates.push(...metadata.contextRows);
+  } else if (Array.isArray(metadata.leadingRows) && metadata.leadingRows.length) {
+    candidates.push(...metadata.leadingRows);
+  }
+  if (!candidates.length && Array.isArray(sampleRows)) {
+    sampleRows.slice(0, 5).forEach(row => candidates.push(deriveRowValues(row, metadata.genericHeaders)));
+  }
+
+  let bestRow = null;
+  let bestScore = 0;
+  candidates.forEach(row => {
+    if (!row) return;
+    const values = Array.isArray(row) ? row : deriveRowValues(row, metadata.genericHeaders);
+    const score = scoreHeaderCandidate(values);
+    if (score > bestScore) {
+      bestScore = score;
+      bestRow = values;
+    }
+  });
+
+  if (bestRow && bestScore >= 6) {
+    const aligned = Array.isArray(metadata.genericHeaders) && metadata.genericHeaders.length
+      ? metadata.genericHeaders.map((_, index) => cleanHeaderValue(bestRow[index] || ''))
+      : bestRow.map(cleanHeaderValue);
+    return {
+      ...metadata,
+      headerRow: aligned,
+      inferredHeaders: aligned,
+    };
+  }
+  return metadata;
+};
+
 const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
   if (!Array.isArray(sampleData)) {
     return [];
@@ -1106,28 +1205,27 @@ const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
       return { ...row };
     }
 
-    const normalizedRow = { ...row };
+    const normalizedRow = {};
 
     columnNames.forEach(name => {
       const aliasKey = aliasMap[name];
-      const baseValue = Object.prototype.hasOwnProperty.call(row, name)
-        ? row[name]
-        : aliasKey && Object.prototype.hasOwnProperty.call(row, aliasKey)
-          ? row[aliasKey]
-          : '';
+      const targetKey = aliasKey && aliasKey.trim() ? aliasKey : name;
+      let baseValue = '';
 
-      if (!Object.prototype.hasOwnProperty.call(normalizedRow, name)) {
-        normalizedRow[name] = baseValue;
-      } else if (normalizedRow[name] === '' && baseValue !== '') {
-        normalizedRow[name] = baseValue;
+      if (Object.prototype.hasOwnProperty.call(row, targetKey)) {
+        baseValue = row[targetKey];
+      } else if (Object.prototype.hasOwnProperty.call(row, name)) {
+        baseValue = row[name];
+      } else if (aliasKey && Object.prototype.hasOwnProperty.call(row, aliasKey)) {
+        baseValue = row[aliasKey];
       }
 
-      if (aliasKey) {
-        if (!Object.prototype.hasOwnProperty.call(normalizedRow, aliasKey)) {
-          normalizedRow[aliasKey] = baseValue;
-        } else if (normalizedRow[aliasKey] === '' && baseValue !== '') {
-          normalizedRow[aliasKey] = baseValue;
-        }
+      if (
+        typeof normalizedRow[targetKey] === 'undefined' ||
+        normalizedRow[targetKey] === '' ||
+        normalizedRow[targetKey] === null
+      ) {
+        normalizedRow[targetKey] = baseValue;
       }
     });
 
@@ -1526,10 +1624,12 @@ export const generateDataPreparationPlan = async (
     return { explanation: 'No transformation needed as API key is not set.', jsFunctionBody: null, outputColumns: columns };
   }
 
-  const normalizedSampleData = normaliseSampleDataForPlan(columns, Array.isArray(sampleData) ? sampleData : [], metadata);
+  const rawSampleRows = Array.isArray(sampleData) ? sampleData : [];
+  const metadataForPlan = ensurePlanMetadataHeaders(metadata, rawSampleRows) || metadata || null;
+  const normalizedSampleData = normaliseSampleDataForPlan(columns, rawSampleRows, metadataForPlan);
   const sampleRowsForPrompt = normalizedSampleData.slice(0, 20);
-  const genericHeaders = Array.isArray(metadata?.genericHeaders) ? metadata.genericHeaders : [];
-  const inferredHeaders = Array.isArray(metadata?.inferredHeaders) ? metadata.inferredHeaders : [];
+  const genericHeaders = Array.isArray(metadataForPlan?.genericHeaders) ? metadataForPlan.genericHeaders : [];
+  const inferredHeaders = Array.isArray(metadataForPlan?.inferredHeaders) ? metadataForPlan.inferredHeaders : [];
   const headerMappingPreview = (() => {
     if (!genericHeaders.length || !inferredHeaders.length) {
       return '';
@@ -1545,8 +1645,8 @@ export const generateDataPreparationPlan = async (
     return pairs.length ? pairs.join('\n') : '';
   })();
   const metadataHasCrosstab =
-    Boolean(metadata?.hasCrosstabShape) ||
-    Boolean(metadata?.shapeTaxonomy?.flags?.hasCrosstabShape);
+    Boolean(metadataForPlan?.hasCrosstabShape) ||
+    Boolean(metadataForPlan?.shapeTaxonomy?.flags?.hasCrosstabShape);
   const hasCrosstabShape =
     metadataHasCrosstab ||
     (genericHeaders.length >= 6 &&
@@ -1554,7 +1654,7 @@ export const generateDataPreparationPlan = async (
       typeof normalizedSampleData[0] === 'object' &&
       Object.keys(normalizedSampleData[0]).some(key => /^column_\d+$/i.test(key)));
 
-  const metadataContext = formatMetadataContext(metadata, {
+  const metadataContext = formatMetadataContext(metadataForPlan, {
     leadingRowLimit: 10,
     contextRowLimit: 20,
   });
