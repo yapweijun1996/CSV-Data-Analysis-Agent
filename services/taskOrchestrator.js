@@ -43,6 +43,29 @@ const summariseColumnContext = (columnProfiles = [], metadata = null) => {
     .filter(Boolean)
     .slice(0, 15);
 
+  const semanticSummary = columns.reduce((acc, profile) => {
+    const key =
+      (typeof profile?.semanticType === 'string' && profile.semanticType.trim()) ||
+      profile?.type ||
+      'unknown';
+    const normalisedKey = key.toLowerCase();
+    acc[normalisedKey] = (acc[normalisedKey] || 0) + 1;
+    return acc;
+  }, {});
+
+  const collectColumnNames = (predicate, limit = 10) =>
+    columns
+      .filter(predicate)
+      .map(profile => normaliseColumnName(profile?.name))
+      .filter(Boolean)
+      .slice(0, limit);
+
+  const identifierColumns = collectColumnNames(profile => profile?.isLikelyIdentifier);
+  const dateColumns = collectColumnNames(profile => profile?.semanticType === 'date');
+  const currencyColumns = collectColumnNames(profile => profile?.semanticType === 'currency');
+  const percentageColumns = collectColumnNames(profile => profile?.semanticType === 'percentage');
+  const trickyColumns = collectColumnNames(profile => profile?.isTrickyMixed);
+
   if (!totalColumns && !headerPairs.length) {
     return null;
   }
@@ -53,6 +76,12 @@ const summariseColumnContext = (columnProfiles = [], metadata = null) => {
     numericalColumns,
     sampleNames,
     headerPairs,
+    semanticSummary,
+    identifierColumns,
+    dateColumns,
+    currencyColumns,
+    percentageColumns,
+    trickyColumns,
     datasetFingerprint: metadata?.datasetFingerprint || metadata?.datasetId || null,
     updatedAt: isoNow(),
   };

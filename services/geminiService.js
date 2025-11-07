@@ -333,6 +333,54 @@ const summariseColumns = columns => {
   };
 };
 
+const deriveColumnBuckets = (columns = []) => {
+  const list = Array.isArray(columns) ? columns : [];
+  const normalise = value => (typeof value === 'string' ? value.trim() : '');
+  const buckets = {
+    identifiers: [],
+    dimensions: [],
+    measures: [],
+    currencies: [],
+    percentages: [],
+    time: [],
+    categorical: [],
+    numerical: [],
+  };
+  list.forEach(column => {
+    const name = normalise(column?.name);
+    if (!name) return;
+    if (column?.type === 'categorical') {
+      buckets.categorical.push(name);
+    } else if (column?.type === 'numerical') {
+      buckets.numerical.push(name);
+    }
+    const roles = Array.isArray(column?.roles) ? column.roles : [];
+    if (roles.includes('identifier')) {
+      buckets.identifiers.push(name);
+    }
+    if (roles.includes('dimension')) {
+      buckets.dimensions.push(name);
+    }
+    if (roles.includes('measure')) {
+      buckets.measures.push(name);
+    }
+    if (roles.includes('currency')) {
+      buckets.currencies.push(name);
+    }
+    if (roles.includes('percentage')) {
+      buckets.percentages.push(name);
+    }
+    if (roles.includes('time')) {
+      buckets.time.push(name);
+    }
+  });
+  const dedupe = list => Array.from(new Set(list));
+  Object.keys(buckets).forEach(key => {
+    buckets[key] = dedupe(buckets[key]);
+  });
+  return buckets;
+};
+
 const summariseRowStats = (metadata, rawDataSample) => {
   const toNum = value => {
     const num = typeof value === 'number' ? value : Number(value);
@@ -1255,6 +1303,7 @@ const normalisePlanShape = (plan, columns = []) => {
   const normalized = { ...plan };
   const title = normalized.title || 'Untitled Analysis';
   normalized.title = title;
+  const columnBuckets = deriveColumnBuckets(columns);
 
   const maybeChartType =
     typeof normalized.chartType === 'string'
@@ -1272,14 +1321,41 @@ const normalisePlanShape = (plan, columns = []) => {
     typeof normalized.aggregation === 'string'
       ? normalized.aggregation.toLowerCase()
       : '';
-  const hasNumericValueColumn = columns.some(
-    column =>
-      column.type === 'numerical' &&
-      column.name &&
-      normalized.valueColumn &&
-      column.name.toLowerCase() === String(normalized.valueColumn).toLowerCase()
-  );
+  if (!normalized.groupByColumn) {
+    normalized.groupByColumn =
+      columnBuckets.identifiers[0] ||
+      columnBuckets.time[0] ||
+      columnBuckets.dimensions[0] ||
+      columnBuckets.categorical[0] ||
+      null;
+  }
+  if (!normalized.valueColumn && normalized.chartType !== 'scatter') {
+    normalized.valueColumn =
+      columnBuckets.currencies[0] ||
+      columnBuckets.measures[0] ||
+      columnBuckets.percentages[0] ||
+      columnBuckets.numerical[0] ||
+      null;
+  }
 
+  const valueColumnMatches = columnName =>
+    columnName &&
+    normalized.valueColumn &&
+    columnName.toLowerCase() === String(normalized.valueColumn).toLowerCase();
+  const hasNumericValueColumn = columns.some(column => {
+    if (!column?.name) return false;
+    const matches = valueColumnMatches(column.name);
+    if (!matches) return false;
+    if (column.type === 'numerical') {
+      return true;
+    }
+    if (Array.isArray(column.roles)) {
+      return column.roles.some(role =>
+        ['measure', 'currency', 'percentage'].includes(role)
+      );
+    }
+    return false;
+  });
   if (SUPPORTED_AGGREGATIONS.has(maybeAggregation)) {
     normalized.aggregation = maybeAggregation;
   } else {
@@ -1287,7 +1363,13 @@ const normalisePlanShape = (plan, columns = []) => {
   }
 
   if (normalized.aggregation === 'count') {
-    normalized.valueColumn = normalized.valueColumn || null;
+    if (hasNumericValueColumn && normalized.valueColumn) {
+      normalized.aggregation = 'sum';
+    } else {
+      normalized.valueColumn = null;
+    }
+  } else if (!normalized.valueColumn) {
+    normalized.aggregation = 'count';
   }
 
   return normalized;
@@ -1459,6 +1541,26 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
         .join('\n');
       lines.push(`Generic → canonical mapping hints:\n${preview}`);
     }
+    if (
+      columnContext.semanticSummary &&
+      typeof columnContext.semanticSummary === 'object' &&
+      Object.keys(columnContext.semanticSummary).length
+    ) {
+      const breakdown = Object.entries(columnContext.semanticSummary)
+        .map(([key, count]) => `${key}: ${count}`)
+        .join(', ');
+      lines.push(`Semantic breakdown: ${breakdown}`);
+    }
+    const appendList = (items, label) => {
+      if (Array.isArray(items) && items.length) {
+        lines.push(`${label}: ${items.join(', ')}`);
+      }
+    };
+    appendList(columnContext.identifierColumns, 'Identifier candidates');
+    appendList(columnContext.dateColumns, 'Date/period columns');
+    appendList(columnContext.currencyColumns, 'Currency columns');
+    appendList(columnContext.percentageColumns, 'Percentage columns');
+    appendList(columnContext.trickyColumns, 'Mixed identifier columns');
     return lines.length ? `Column context:\n${lines.join('\n')}\n\n` : '\n';
   })();
 
@@ -1758,8 +1860,13 @@ export const generateChatStepPlan = async (planInput = {}, settings = {}) => {
 };
 
 const buildAnalysisPlanPrompt = (columns, sampleData, numPlans, metadata) => {
-  const categorical = columns.filter(c => c.type === 'categorical').map(c => c.name);
-  const numerical = columns.filter(c => c.type === 'numerical').map(c => c.name);
+  const buckets = deriveColumnBuckets(columns);
+  const categorical = buckets.categorical;
+  const numerical = buckets.numerical;
+  const identifiers = buckets.identifiers;
+  const measures = buckets.measures;
+  const currencies = buckets.currencies;
+  const timeCols = buckets.time;
   const metadataContext = formatMetadataContext(metadata, {
     leadingRowLimit: 10,
     contextRowLimit: 20,
@@ -1770,6 +1877,10 @@ ${contextSection}
 Columns:
 - Categorical: ${categorical.join(', ') || 'None'}
 - Numerical: ${numerical.join(', ') || 'None'}
+- Identifiers: ${identifiers.join(', ') || 'None'}
+- Measures: ${measures.join(', ') || 'None'}
+- Currency columns: ${currencies.join(', ') || 'None'}
+- Time columns: ${timeCols.join(', ') || 'None'}
 Sample rows:
 ${JSON.stringify(sampleData.slice(0, 5), null, 2)}
 Generate up to ${numPlans} insightful analysis plans as a JSON array. Each plan must have:
@@ -1778,7 +1889,10 @@ Generate up to ${numPlans} insightful analysis plans as a JSON array. Each plan 
 - description
 - aggregation (sum|count|avg) when applicable
 - groupByColumn and valueColumn when applicable
-Prefer high-value aggregations and avoid tiny fonts (too many categories).`;
+When choosing columns:
+- Prefer identifier/time columns for groupBy fields.
+- Prefer measures/currency columns for value columns.
+Avoid generating plans with dozens of categories (keep charts readable).`;
 };
 
 export const generateAnalysisPlans = async (columns, sampleData, settings, metadata = null) => {

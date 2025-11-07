@@ -55,6 +55,27 @@ const looksLikeDate = value => {
   return !Number.isNaN(parsed);
 };
 
+const isPercentageString = value => {
+  if (value === null || value === undefined) return false;
+  const stringValue = String(value).trim();
+  if (!stringValue) return false;
+  return /%$/.test(stringValue);
+};
+
+const isCurrencyString = value => {
+  if (value === null || value === undefined) return false;
+  const stringValue = String(value);
+  return /[$€£¥]/.test(stringValue);
+};
+
+const hasAlphaNumericMix = value => {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  const stringValue = String(value);
+  return /[a-z]/i.test(stringValue) && /\d/.test(stringValue);
+};
+
 const QUARTER_REGEX = /^q([1-4])(?:\s*\/?\s*('?[\d]{2,4}))?$/i;
 
 const MONTHS = {
@@ -671,41 +692,116 @@ export const profileData = data => {
   const profiles = [];
 
   for (const header of headers) {
-    let isNumerical = true;
     const values = data.map(row => row[header]);
     let numericCount = 0;
+    let nonEmptyCount = 0;
+    let containsNonNumeric = false;
+    let currencyHints = 0;
+    let percentageHints = 0;
+    let dateHints = 0;
+    let identifierHints = 0;
+    const numericValues = [];
+    const canonicalValues = [];
 
-    for (const value of values) {
-      const parsedNum = parseNumericValue(value);
-      if (value !== null && String(value).trim() !== '') {
-        if (parsedNum === null) {
-          isNumerical = false;
-          break;
-        }
-        numericCount++;
+    values.forEach(value => {
+      const normalised = value === null || value === undefined ? '' : String(value).trim();
+      canonicalValues.push(normalised);
+      if (!normalised) {
+        return;
       }
+      nonEmptyCount += 1;
+      if (isCurrencyString(normalised)) {
+        currencyHints += 1;
+      }
+      if (isPercentageString(normalised)) {
+        percentageHints += 1;
+      }
+      if (looksLikeDate(normalised)) {
+        dateHints += 1;
+      }
+      if (isLikelyIdentifierValue(normalised) && hasAlphaNumericMix(normalised)) {
+        identifierHints += 1;
+      }
+      const parsedNum = parseNumericValue(value);
+      if (parsedNum === null) {
+        containsNonNumeric = true;
+      } else {
+        numericCount += 1;
+        numericValues.push(parsedNum);
+      }
+    });
+
+    const hasNumericCoverage = numericCount > 0 && !containsNonNumeric;
+    const missingPercentage = data.length === 0 ? 0 : ((data.length - nonEmptyCount) / data.length) * 100;
+    const uniqueValues = new Set(
+      canonicalValues
+        .filter(Boolean)
+        .map(raw => raw.toLowerCase())
+    );
+    const uniquenessRatio = nonEmptyCount === 0 ? 0 : uniqueValues.size / nonEmptyCount;
+    const identifierRatio = nonEmptyCount === 0 ? 0 : identifierHints / nonEmptyCount;
+    const currencyRatio = nonEmptyCount === 0 ? 0 : currencyHints / nonEmptyCount;
+    const percentageRatio = nonEmptyCount === 0 ? 0 : percentageHints / nonEmptyCount;
+    const dateRatio = nonEmptyCount === 0 ? 0 : dateHints / nonEmptyCount;
+
+    const isLikelyIdentifierColumn = identifierRatio >= 0.5 && uniquenessRatio >= 0.5;
+    const isTrickyMixed = !hasNumericCoverage && identifierRatio >= 0.3 && identifierRatio < 0.5;
+
+    let semanticType = 'text';
+    if (dateRatio >= 0.6) {
+      semanticType = 'date';
+    } else if (currencyRatio >= 0.6) {
+      semanticType = 'currency';
+    } else if (percentageRatio >= 0.6) {
+      semanticType = 'percentage';
+    } else if (isLikelyIdentifierColumn) {
+      semanticType = 'identifier';
+    } else if (hasNumericCoverage) {
+      semanticType = 'numeric';
     }
 
-    if (isNumerical && numericCount > 0) {
-      const numericValues = values
-        .map(parseNumericValue)
-        .filter(v => v !== null);
-      profiles.push({
-        name: header,
-        type: 'numerical',
-        valueRange: [Math.min(...numericValues), Math.max(...numericValues)],
-        missingPercentage: (1 - numericValues.length / data.length) * 100,
-      });
+    let columnType = hasNumericCoverage && !isLikelyIdentifierColumn ? 'numerical' : 'categorical';
+
+    const roles = new Set();
+    if (columnType === 'numerical') {
+      roles.add('measure');
     } else {
-      const uniqueValues = new Set(values.map(String));
-      profiles.push({
-        name: header,
-        type: 'categorical',
-        uniqueValues: uniqueValues.size,
-        missingPercentage:
-          (values.filter(v => v === null || String(v).trim() === '').length / data.length) * 100,
-      });
+      roles.add('dimension');
     }
+    if (semanticType === 'identifier') {
+      roles.add('identifier');
+    }
+    if (semanticType === 'date') {
+      roles.add('time');
+    }
+    if (semanticType === 'currency') {
+      roles.add('currency');
+    }
+    if (semanticType === 'percentage') {
+      roles.add('percentage');
+    }
+
+    const profile = {
+      name: header,
+      type: columnType,
+      missingPercentage,
+      uniquenessRatio,
+      semanticType,
+      roles: Array.from(roles),
+      sampleValues: canonicalValues.filter(Boolean).slice(0, 5),
+      isLikelyIdentifier: isLikelyIdentifierColumn,
+      isTrickyMixed,
+    };
+
+    if (columnType === 'numerical') {
+      const min = numericValues.length ? Math.min(...numericValues) : null;
+      const max = numericValues.length ? Math.max(...numericValues) : null;
+      profile.valueRange = [min, max];
+    } else {
+      profile.uniqueValues = uniqueValues.size;
+    }
+
+    profiles.push(profile);
   }
   return profiles;
 };

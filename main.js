@@ -133,6 +133,35 @@ const formatAgentLogMessages = agentLog => {
     })
     .filter(Boolean);
 };
+
+const summariseColumnDiagnostics = profiles => {
+  if (!Array.isArray(profiles) || !profiles.length) {
+    return null;
+  }
+  const pickNames = (predicate, limit = 3) =>
+    profiles
+      .filter(predicate)
+      .map(profile => profile?.name)
+      .filter(Boolean)
+      .slice(0, limit);
+  const hasRole = (profile, role) =>
+    Array.isArray(profile?.roles) && profile.roles.includes(role);
+  const identifiers = pickNames(profile => hasRole(profile, 'identifier'));
+  const measures = pickNames(profile => hasRole(profile, 'measure'));
+  const timeCols = pickNames(profile => hasRole(profile, 'time'));
+  const currencies = pickNames(profile => hasRole(profile, 'currency'));
+  const tricky = pickNames(profile => profile?.isTrickyMixed);
+  const parts = [];
+  if (identifiers.length) parts.push(`ID: ${identifiers.join(', ')}`);
+  if (timeCols.length) parts.push(`Time: ${timeCols.join(', ')}`);
+  if (measures.length) parts.push(`Measures: ${measures.join(', ')}`);
+  if (currencies.length) parts.push(`Currency: ${currencies.join(', ')}`);
+  if (tricky.length) parts.push(`Mixed IDs: ${tricky.join(', ')}`);
+  if (!parts.length) {
+    return null;
+  }
+  return `Column diagnostics → ${parts.join(' | ')}`;
+};
 /** @typedef {import('./types/typedefs.js').AnalysisPlan} AnalysisPlan */
 /** @typedef {import('./types/typedefs.js').AnalysisCardData} AnalysisCardData */
 /** @typedef {import('./types/typedefs.js').ColumnProfile} ColumnProfile */
@@ -846,6 +875,16 @@ this.state = {
     };
   }
 
+  attachColumnProfilesToMetadata(metadata, profiles = []) {
+    if (!metadata || !Array.isArray(profiles)) {
+      return metadata;
+    }
+    return {
+      ...metadata,
+      columnProfiles: profiles.map(profile => ({ ...profile })),
+    };
+  }
+
   connectedCallback() {
     this.isMounted = true;
     this.render();
@@ -1458,6 +1497,12 @@ this.state = {
 
       let dataForAnalysis = parsedData;
       let profiles = profileData(parsedData.data);
+      if (dataForAnalysis.metadata) {
+        dataForAnalysis.metadata = this.attachColumnProfilesToMetadata(
+          dataForAnalysis.metadata,
+          profiles
+        );
+      }
       this.completeWorkflowStep({
         label: '欄位型態分析',
         outcome: `${profiles.length} columns`,
@@ -1469,7 +1514,15 @@ this.state = {
       let prepIterationsLog = [];
       let toolHistory = [];
       let activeMetadata = dataForAnalysis.metadata || metadata || null;
+      if (activeMetadata && !activeMetadata.columnProfiles && profiles.length) {
+        activeMetadata = this.attachColumnProfilesToMetadata(activeMetadata, profiles);
+        dataForAnalysis.metadata = activeMetadata;
+      }
       this.updateColumnContext(profiles, activeMetadata);
+      const initialDiagnostics = summariseColumnDiagnostics(profiles);
+      if (initialDiagnostics) {
+        this.addProgress(initialDiagnostics, 'system');
+      }
       let headerMappingContext = this.ensureHeaderMappingContext(activeMetadata, {
         reason: 'preflight',
         logStep: false,
@@ -1720,6 +1773,11 @@ this.state = {
                   dataForAnalysis.data
                 );
               }
+              const recalculatedProfiles = profileData(dataForAnalysis.data);
+              dataForAnalysis.metadata = this.attachColumnProfilesToMetadata(
+                dataForAnalysis.metadata,
+                recalculatedProfiles
+              );
               activeMetadata = dataForAnalysis.metadata || activeMetadata;
               if (activeMetadata) {
                 headerMappingContext =
@@ -1736,8 +1794,12 @@ this.state = {
               this.resetAdditionalPrepIterations();
               this.resumePlanPhase('資料清理流程已調整完成，返回規劃。');
 
-              profiles = iterationPlan.outputColumns || profileData(dataForAnalysis.data);
+              profiles = recalculatedProfiles;
               this.updateColumnContext(profiles, activeMetadata);
+              const iterationDiagnostics = summariseColumnDiagnostics(profiles);
+              if (iterationDiagnostics) {
+                this.addProgress(`Re-profiled columns · ${iterationDiagnostics}`, 'system');
+              }
               prepIterationsLog.push({
                 iteration,
                 status: iterationStatus || 'continue',
@@ -5356,6 +5418,14 @@ this.state = {
     }
     newCsvData.metadata = this.updateMetadataContext(newCsvData.metadata, newData);
     const newProfiles = profileData(newData);
+    if (newCsvData.metadata) {
+      newCsvData.metadata = this.attachColumnProfilesToMetadata(newCsvData.metadata, newProfiles);
+    }
+    this.updateColumnContext(newProfiles, newCsvData.metadata || this.state.csvMetadata || null);
+    const rebuildDiagnostics = summariseColumnDiagnostics(newProfiles);
+    if (rebuildDiagnostics) {
+      this.addProgress(`Column profile updated · ${rebuildDiagnostics}`, 'system');
+    }
     this.setState({
       csvData: newCsvData,
       columnProfiles: newProfiles,
