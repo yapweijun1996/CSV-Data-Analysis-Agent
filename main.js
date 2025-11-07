@@ -106,20 +106,15 @@ const formatStagePlanMessages = stagePlan => {
   return STAGE_PLAN_SECTIONS.map(section => {
     const detail = stagePlan[section.key];
     if (!detail) return null;
-    const parts = [];
-    if (detail.goal) {
-      parts.push(detail.goal);
-    }
-    if (detail.status) {
-      parts.push(`status=${detail.status}`);
-    }
-    if (Array.isArray(detail.checkpoints) && detail.checkpoints.length) {
-      parts.push(`checkpoints → ${detail.checkpoints.slice(0, 3).join(' → ')}`);
-    }
-    if (detail.nextAction) {
-      parts.push(`next=${detail.nextAction}`);
-    }
-    return `${section.label}: ${parts.join(' | ')}`;
+    const checkpoints = Array.isArray(detail.checkpoints) ? detail.checkpoints : [];
+    return {
+      section: section.key,
+      label: section.label,
+      goal: detail.goal || '',
+      status: detail.status || '',
+      checkpoints,
+      nextAction: detail.nextAction || '',
+    };
   }).filter(Boolean);
 };
 
@@ -1676,29 +1671,7 @@ this.state = {
           );
         }
       }
-      const deterministicResult = this.applyDeterministicPreprocessing(dataForAnalysis);
-      dataForAnalysis = deterministicResult.dataset;
       metadata = dataForAnalysis.metadata || metadata || null;
-      deterministicResult.logs.forEach(message => this.addProgress(message, 'system'));
-      if (Array.isArray(deterministicResult.stageLogs) && deterministicResult.stageLogs.length) {
-        deterministicResult.stageLogs.forEach(entry => {
-          if (!entry) {
-            return;
-          }
-          if (entry.message) {
-            this.addProgress(entry.message, entry.level || 'system');
-            if (entry.removed) {
-              this.appendWorkflowThought(entry.message);
-            }
-          }
-          if (entry.label) {
-            this.completeWorkflowStep({
-              label: `Deterministic · ${entry.label}`,
-              outcome: entry.outcome || (typeof entry.removed === 'number' ? `${entry.removed} rows` : 'done'),
-            });
-          }
-        });
-      }
       let profiles = profileData(dataForAnalysis.data);
       if (dataForAnalysis.metadata) {
         dataForAnalysis.metadata = this.attachColumnProfilesToMetadata(
@@ -1840,6 +1813,7 @@ this.state = {
               );
             } catch (planError) {
               const rawResponse = planError && planError.rawResponse ? String(planError.rawResponse) : null;
+              const message = planError instanceof Error ? planError.message : String(planError);
               if (rawResponse) {
                 this.addProgress(
                   `${iterationLabel} 無法解析模型 JSON，請求重新輸出有效格式。`,
@@ -1855,7 +1829,13 @@ this.state = {
                 }
                 continue;
               }
-              throw planError;
+              this.addProgress(
+                `${iterationLabel} attempt ${attemptLabel} planner failed: ${message}`,
+                'error'
+              );
+              attemptErrorForPrompt = planError instanceof Error ? planError : new Error(message);
+              lastIterationError = attemptErrorForPrompt;
+              continue;
             }
             if (!iterationPlan) {
               this.addProgress(
@@ -1891,9 +1871,9 @@ this.state = {
             }
 
             const stagePlanMessages = formatStagePlanMessages(iterationPlan.stagePlan);
-            stagePlanMessages.forEach(message => {
-              this.addProgress(`${iterationLabel} · ${message}`, 'plan');
-            });
+            if (stagePlanMessages.length) {
+              this.stagePlanMessages = stagePlanMessages;
+            }
             formatAgentLogMessages(iterationPlan.agentLog).forEach(message => {
               this.addProgress(`${iterationLabel} · ${message}`, 'system');
             });
@@ -1914,39 +1894,32 @@ this.state = {
               continue;
             }
 
-            if (!iterationPlan.jsFunctionBody) {
-              if (iterationStatus === 'continue') {
-                this.addProgress(
-                  `${iterationLabel} reported that more passes are required but did not supply code. Stopping preprocessing.`,
-                  'error'
-                );
-              }
-              this.addProgress(summaryMessage);
-              this.completeWorkflowStep({
-                label: iterationLabel,
-                outcome: iterationStatus ? iterationStatus.toUpperCase() : 'DONE',
-              });
-              prepIterationsLog.push({
-                iteration,
-                status: iterationStatus || 'done',
-                summary: rawExplanation,
-                explanation: rawExplanation,
-                code: null,
-                stagePlan: iterationPlan.stagePlan || null,
-                agentLog: iterationPlan.agentLog || null,
-                lastError:
-                  attemptErrorForPrompt && attemptErrorForPrompt.message
-                    ? attemptErrorForPrompt.message
-                    : null,
-                rowCountBefore: dataForAnalysis.data.length,
-                rowCountAfter: dataForAnalysis.data.length,
-              });
-              lastSuccessfulPlan = iterationPlan;
-              lastIterationError = null;
-              continueIterating = false;
-              iterationCompleted = true;
-              break;
-            }
+      const hasJs = typeof iterationPlan.jsFunctionBody === 'string' && iterationPlan.jsFunctionBody.trim();
+      if (!hasJs) {
+        this.addProgress(`${summaryMessage}（工具-only iterate）`);
+        this.completeWorkflowStep({
+          label: iterationLabel,
+          outcome: iterationStatus ? iterationStatus.toUpperCase() : 'CONTINUE',
+        });
+        prepIterationsLog.push({
+          iteration,
+          status: iterationStatus || 'continue',
+          summary: rawExplanation,
+          explanation: rawExplanation,
+          code: null,
+          stagePlan: iterationPlan.stagePlan || null,
+          agentLog: iterationPlan.agentLog || null,
+          lastError:
+            attemptErrorForPrompt && attemptErrorForPrompt.message
+              ? attemptErrorForPrompt.message
+              : null,
+          rowCountBefore: dataForAnalysis.data.length,
+          rowCountAfter: dataForAnalysis.data.length,
+        });
+        lastSuccessfulPlan = iterationPlan;
+        lastIterationError = null;
+        continue;
+      }
 
             this.addProgress(`${summaryMessage} Executing transformation...`);
 
@@ -7074,6 +7047,7 @@ this.state = {
       hasCsv: Boolean(csvData),
       cardsHtml,
       progressMessages: this.state.progressMessages || [],
+      stagePlanMessages: this.state.stagePlanMessages || [],
     });
     const dataPreviewPanel = this.renderDataPreviewPanel();
     const dataPrepDebugPanel = this.renderDataPrepDebugPanel();

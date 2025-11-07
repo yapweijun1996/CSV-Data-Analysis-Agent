@@ -4,6 +4,7 @@ import {
   detectHeadersTool,
   removeSummaryRowsTool,
   detectIdentifierColumnsTool,
+  removeLeadingRowsTool,
   normalizeCurrencyValue,
   isLikelyIdentifierValue,
   describeColumns as describeColumnsHelper,
@@ -1666,7 +1667,7 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
           })
           .join('\n')}\n`
       : '\n';
-  const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeLeadingRows(rows, options?)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (recommended)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n→ 只有在上述工具無法處理的情境才使用 \`jsFunctionBody\`，否則一律以 tool calls orchestrate。`;
+  const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeLeadingRows(rows, options?)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (preferred)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n→ 只有當工具沒有辦法完成當前微目標時才輸出 \`jsFunctionBody\`。預設需透過工具+stage plan 完成清理。`;
   const failureContextBlock = (() => {
     const context = lastError?.failureContext;
     if (!context) {
@@ -1837,6 +1838,13 @@ Your task:
           detectHeaders: metadata => detectHeadersTool({ metadata }),
           removeSummaryRows: (rows, keywords) =>
             removeSummaryRowsTool({ data: rows, keywords }).cleanedData,
+          removeLeadingRows: (rows, options = {}) =>
+            removeLeadingRowsTool({
+              data: rows,
+              metadata,
+              maxRows: typeof options.maxRows === 'number' ? options.maxRows : 8,
+              keywords: Array.isArray(options.keywords) ? options.keywords : [],
+            }).cleanedData,
           detectIdentifierColumns: (rows, metadata) =>
             detectIdentifierColumnsTool({ data: rows, metadata }).identifiers,
           isValidIdentifierValue: value => isLikelyIdentifierValue(value),

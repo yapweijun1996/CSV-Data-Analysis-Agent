@@ -53,15 +53,15 @@ Then launch the dev server (`npm run dev`). The vector store will first check fo
 
 1. CSV files are parsed in the browser via PapaParse. The parser detects header rows, strips summary/totals, preserves leading context rows, and records metadata such as original vs cleaned row counts.
 2. `profileData` inspects the parsed table to infer data types, numeric columns, categorical fields, and value ranges. These profiles feed the AI prompts and power local aggregations.
-3. If an API key is present, the assistant asks Gemini/OpenAI for a preprocessing plan. Before any JS runs, a deterministic Title → Header → Data pipeline (whitespace trim → `remove_leading_rows` → `remove_summary_rows`) replays the stage plan with auditable logs so report titles/header rows never leak into Raw Data Explorer, then any AI-authored JavaScript (if provided) executes in the browser and refreshes metadata.
+3. If an API key is present, the assistant asks Gemini/OpenAI for a preprocessing plan. The LLM orchestrates deterministic tools (e.g., `remove_leading_rows`, `remove_summary_rows`) via `toolCalls` to clean the data stage-by-stage; only when tool-based steps are insufficient will it emit JavaScript for `_util` to execute.
 4. The cleaned dataset and metadata are stored in component state and made available to both the dashboard and the conversational agent.
 
 #### Multi-Step Data Cleaning Strategy
 
 To keep the workflow可追蹤 and resilient, the agent treats data preparation as a chain of small verifiable steps instead of a single opaque transform:
 
-1. **Title/Metadata pass.** AI first identifies leading report titles、日期、貨幣等資訊，並透過 `remove_leading_rows` 工具將前幾列的 title/metadata 列移除。工具的偵測字詞並非硬編表，而是由 metadata (`headerRow`, `inferredHeaders`, `leadingRows`) 與 stage plan 提供的 `keywords` 動態生成，因此可支援多語環境。
-2. **Header resolution.** 接著偵測多列 header，建立 `HEADER_MAPPING` 並記錄 canonical 欄名。若 agent 發現特殊欄名，也會把 token 注入 `remove_leading_rows` 的 `keywords` 參數，確保 Raw Data Explorer 不會再看到重複 header。
+1. **Title/Metadata pass.** AI first identifies leading report titles、日期、貨幣等資訊，並透過 `remove_leading_rows` 工具將前幾列的 title/metadata 列移除。工具的偵測字詞由 metadata (`headerRow`, `inferredHeaders`, `leadingRows`) 與 LLM stage plan 提供的 `keywords` 動態生成，因此可支援多語環境。
+2. **Header resolution.** 接著偵測多列 header，建立 `HEADER_MAPPING` 並記錄 canonical 欄名；需要額外關鍵字時，LLM 可在 tool call 中注入 `keywords` 參數，確保 Raw Data Explorer 不會再看到重複 header。
 3. **Row-level cleanup.** 最後才針對資料列做動作：在 crosstab 場景會明列 melt/unpivot 步驟；一般表格則逐步去除 summary rows、解析數值、維護層級關係。每一步都在 chat log / workflow timeline 中留下 log，便於稽核。
 
 此 multi-pass 設計同時也反映在 prompt 中：AI 需先寫出 `stagePlan`（title → header → data）再產出 JavaScript，如此我們能在發生錯誤時要求它根據上一輪失敗原因逐步修正，而不是一次「大爆炸」式的清理。

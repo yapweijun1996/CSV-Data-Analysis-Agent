@@ -7,7 +7,34 @@ import { escapeHtml } from './helpers.js';
  * @param {{ progressMessages: Array<{ text: string; type?: string; timestamp?: Date }> }} options
  * @returns {string}
  */
-const renderCardsLoadingState = ({ progressMessages }) => {
+const StagePlanPreview = ({ stagePlanMessages }) => {
+  const entries = Array.isArray(stagePlanMessages) ? stagePlanMessages : [];
+  if (!entries.length) return '';
+  const items = entries
+    .map(entry => {
+      const checkpoints = Array.isArray(entry.checkpoints)
+        ? entry.checkpoints.slice(0, 3).map(escapeHtml).join(' → ')
+        : '';
+      const status = entry.status ? `<span class="text-xs text-slate-500">${escapeHtml(entry.status)}</span>` : '';
+      return `
+        <li class="flex flex-col gap-0.5">
+          <div class="flex items-center justify-between text-xs text-slate-600">
+            <span>${escapeHtml(entry.label)}</span>
+            ${status}
+          </div>
+          ${entry.goal ? `<p class="text-sm text-slate-700">${escapeHtml(entry.goal)}</p>` : ''}
+          ${checkpoints ? `<p class="text-xs text-slate-500">${checkpoints}</p>` : ''}
+        </li>`;
+    })
+    .join('');
+  return `
+    <div class="mt-4">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Stage plan</p>
+      <ul class="mt-1 space-y-2">${items}</ul>
+    </div>`;
+};
+
+const renderCardsLoadingState = ({ progressMessages, stagePlanMessages }) => {
   const recentProgress = Array.isArray(progressMessages) ? progressMessages.slice(-5) : [];
   const progressItems = recentProgress
     .map(message => {
@@ -21,6 +48,7 @@ const renderCardsLoadingState = ({ progressMessages }) => {
     })
     .join('');
   const progressHtml = progressItems ? `<ul class="mt-4 space-y-1">${progressItems}</ul>` : '';
+  const stagePlanHtml = StagePlanPreview({ stagePlanMessages });
 
   return `
     <div class="bg-white border border-slate-200 rounded-xl p-6 flex items-start gap-4 shadow-sm">
@@ -29,6 +57,7 @@ const renderCardsLoadingState = ({ progressMessages }) => {
         <h3 class="text-base font-semibold text-slate-900">AI is analyzing the data</h3>
         <p class="text-sm text-slate-500">The system will complete data analysis, chart generation, and summary in sequence. Please wait.</p>
         ${progressHtml}
+        ${stagePlanHtml}
       </div>
     </div>
   `;
@@ -72,12 +101,12 @@ const renderEmptyCardsState = hasCsv => {
  * @param {Array<{ text: string; type?: string; timestamp?: Date }>} params.progressMessages
  * @returns {string}
  */
-export const renderAnalysisSection = ({ isBusy, hasCsv, cardsHtml, progressMessages }) => {
+export const renderAnalysisSection = ({ isBusy, hasCsv, cardsHtml, progressMessages, stagePlanMessages }) => {
   if (cardsHtml) {
     return `<div class="grid gap-6 grid-cols-1 xl:grid-cols-2">${cardsHtml}</div>`;
   }
   if (isBusy && hasCsv) {
-    return renderCardsLoadingState({ progressMessages });
+    return renderCardsLoadingState({ progressMessages, stagePlanMessages });
   }
   return renderEmptyCardsState(hasCsv);
 };
