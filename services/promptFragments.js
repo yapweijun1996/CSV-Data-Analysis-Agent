@@ -60,6 +60,8 @@ export const formatMetadataContext = (metadata, options = {}) => {
     leadingRowLimit = 5,
     includeContextRows = true,
     contextRowLimit = 10,
+    includeSampleRows = true,
+    sampleRowLimit = 3,
   } = options;
 
   const lines = [];
@@ -136,8 +138,8 @@ export const formatMetadataContext = (metadata, options = {}) => {
     }
   }
 
-  if (Array.isArray(metadata.sampleDataRows) && metadata.sampleDataRows.length) {
-    const preview = metadata.sampleDataRows.slice(0, 3).map((row, index) => {
+  if (includeSampleRows && Array.isArray(metadata.sampleDataRows) && metadata.sampleDataRows.length) {
+    const preview = metadata.sampleDataRows.slice(0, Math.max(1, sampleRowLimit)).map((row, index) => {
       try {
         return `Row ${index + 1}: ${JSON.stringify(row)}`;
       } catch (error) {

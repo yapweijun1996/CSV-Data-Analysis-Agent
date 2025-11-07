@@ -76,3 +76,18 @@
 - **Prompt Input Fix**: `generateDataPreparationPlan` now pre-processes metadata via `ensurePlanMetadataHeaders`, scanning context/leading rows plus sample data to pick the highest-scoring header row (no硬編字詞). The resulting headers overwrite `inferredHeaders` before constructing the `HEADER_MAPPING`, so `column_1` finally maps to `Code/Description/...`.
 - **Sample Slimming**: `normaliseSampleDataForPlan` only emits canonical keys (alias names take precedence; falls back to generic key when no alias exists). Duplicate `column_N` + canonical pairs are removed, reducing token noise and keeping the LLM focused on the tidy schema.
 - **Net Effect**: Iteration 1 now receives both accurate header mapping and leaner sample rows, which should unblock deterministic tool calls (remove_leading_rows/detect_headers/remove_summary_rows) without relying on JS heuristics.
+
+## 2025-11-07 Prompt Chunking (Diagnose snapshot → Tool plan → Optional JS)
+
+- **README Alignment**: Documented the three-phase request flow (Diagnose snapshot, Tool plan, Optional JS) so future contributors understand why we chunk prompts instead of dumping whole CSVs.
+- **Implementation**:
+  - Added `formatDiagnoseSnapshot`, `selectPreviewColumns`, and `formatSamplePreview` so `generateDataPreparationPlan` now sends a tiny dataset summary plus 3-5 canonical rows instead of the full 20-row blob.
+  - Updated `buildUserPrompt` to weave in the snapshot/sample blocks ahead of the stage instructions, while `formatMetadataContext` can skip context rows/sample previews when unnecessary.
+  - Schema now requires `toolCalls`; if the LLM forgets, we auto-synthesize deterministic calls (remove leading → detect headers → remove summary) from the stage plan, ensuring each iteration actually runs a tool before retrying JS.
+
+## 2025-11-08 Prompt Slimming & Syntax Fixes
+
+- **Issue**: The plan prompt still concatenated 47-column schema + 20-row sample JSON blobs straight into a template literal and sprinkled unescaped backticks (e.g., `_util.parseNumber`), which triggered `Uncaught SyntaxError: unexpected token: identifier` in `services/geminiService.js` when the browser parsed the string.
+- **Change**: Replaced the raw blob with a `leadBlock + instructionLines` workflow. Each guideline line now lives inside plain string arrays (double quotes), then `instructionsBlock = instructionLines.join('\n')` feeds the template via `${instructionsBlock}`. No more inline JSON dumps, no accidental backticks.
+- **Snapshot Discipline**: Documented the 6-row cap for `contextRows` / `leadingRows` and the 5-row cap for `sampleDataRows` so future tweaks don’t reintroduce token bloat.
+- **Verification**: Could not run `node --check services/geminiService.js` because the file uses ESM exports; run `node --input-type=module --check` or Vite build if we need static syntax validation.

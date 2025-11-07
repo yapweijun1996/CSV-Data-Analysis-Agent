@@ -10,6 +10,7 @@ import {
   describeColumns as describeColumnsHelper,
 } from '../utils/dataPrepTools.js';
 import { buildPromptFragments, formatMetadataContext } from './promptFragments.js';
+import { buildDataPrepGuidelines } from './promptGuidelines.js';
 
 const GENAI_MODULE_URL = 'https://aistudiocdn.com/@google/genai@1.28.0';
 let googleModulePromise = null;
@@ -932,7 +933,7 @@ const getDataPreparationSchema = () => {
           },
         },
       },
-      required: ['explanation', 'analysisSteps', 'outputColumns', 'stagePlan'],
+      required: ['explanation', 'analysisSteps', 'outputColumns', 'stagePlan', 'toolCalls'],
     };
   }
   return dataPreparationSchemaCache;
@@ -1231,6 +1232,167 @@ const normaliseSampleDataForPlan = (columns, sampleData, metadata) => {
 
     return normalizedRow;
   });
+};
+
+const deriveMetadataKeywordHints = metadata => {
+  const hints = new Set();
+  const collect = value => {
+    const trimmed = cleanHeaderValue(value);
+    if (trimmed) {
+      hints.add(trimmed);
+    }
+  };
+  if (Array.isArray(metadata?.headerRow)) {
+    metadata.headerRow.forEach(collect);
+  }
+  if (Array.isArray(metadata?.inferredHeaders)) {
+    metadata.inferredHeaders.forEach(collect);
+  }
+  if (typeof metadata?.reportTitle === 'string') {
+    collect(metadata.reportTitle);
+  }
+  if (Array.isArray(metadata?.contextRows)) {
+    metadata.contextRows.slice(0, 3).forEach(row => {
+      if (Array.isArray(row)) {
+        row.forEach(collect);
+      }
+    });
+  }
+  return Array.from(hints).slice(0, 12);
+};
+
+const stringifyToolArgs = payload => {
+  try {
+    return JSON.stringify(payload || {});
+  } catch (error) {
+    return '{}';
+  }
+};
+
+const deriveToolCallsFromStagePlan = (stagePlan, metadata) => {
+  if (!stagePlan || typeof stagePlan !== 'object') {
+    return [];
+  }
+  const calls = [];
+  const metadataKeywords = deriveMetadataKeywordHints(metadata);
+
+  if (stagePlan.titleExtraction) {
+    calls.push({
+      tool: 'remove_leading_rows',
+      args: stringifyToolArgs({
+        maxRows: 8,
+        keywords: metadataKeywords.slice(0, 8),
+      }),
+    });
+  }
+
+  if (stagePlan.headerResolution) {
+    calls.push({
+      tool: 'detect_headers',
+      args: stringifyToolArgs({
+        strategies: ['metadata', 'sample_rows'],
+      }),
+    });
+  }
+
+  if (stagePlan.dataNormalization) {
+    const summaryKeywords = Array.from(
+      new Set([...SUMMARY_KEYWORDS.slice(0, 6), ...metadataKeywords.slice(0, 6)])
+    ).slice(0, 10);
+    calls.push({
+      tool: 'remove_summary_rows',
+      args: stringifyToolArgs({
+        keywords: summaryKeywords,
+      }),
+    });
+  }
+
+  return calls;
+};
+
+const selectPreviewColumns = (metadata, columns, limit = 12) => {
+  if (Array.isArray(metadata?.inferredHeaders) && metadata.inferredHeaders.length) {
+    const canonical = metadata.inferredHeaders.filter(Boolean);
+    if (canonical.length) {
+      return canonical.slice(0, limit);
+    }
+  }
+  const columnNames = Array.isArray(columns)
+    ? columns
+        .map(column => (column && typeof column === 'object' ? column.name : null))
+        .filter(Boolean)
+    : [];
+  if (columnNames.length) {
+    return columnNames.slice(0, limit);
+  }
+  if (Array.isArray(metadata?.genericHeaders) && metadata.genericHeaders.length) {
+    return metadata.genericHeaders.filter(Boolean).slice(0, limit);
+  }
+  return [];
+};
+
+const formatSamplePreview = (rows, columns = [], rowLimit = 5) => {
+  if (!Array.isArray(rows) || !rows.length || !Array.isArray(columns) || !columns.length) {
+    return '';
+  }
+  const limit = Math.min(rowLimit, rows.length);
+  const lines = [];
+  for (let index = 0; index < limit; index += 1) {
+    const row = rows[index] || {};
+    const compact = {};
+    columns.forEach(column => {
+      if (typeof row[column] !== 'undefined') {
+        compact[column] = row[column];
+      }
+    });
+    lines.push(`Row ${index + 1}: ${JSON.stringify(compact)}`);
+  }
+  return lines.join('\n');
+};
+
+const formatDiagnoseSnapshot = metadata => {
+  if (!metadata || typeof metadata !== 'object') {
+    return '';
+  }
+  const lines = [];
+  if (metadata.reportTitle) {
+    lines.push(`Report title: ${metadata.reportTitle}`);
+  }
+  const shape =
+    metadata?.shapeTaxonomy?.primaryShape || (metadata?.hasCrosstabShape ? 'crosstab' : null);
+  if (shape) {
+    lines.push(`Detected shape: ${shape}`);
+  }
+  if (typeof metadata.totalRowsBeforeFilter === 'number') {
+    lines.push(`Rows before cleaning: ${metadata.totalRowsBeforeFilter}`);
+  }
+  if (typeof metadata.cleanedRowCount === 'number') {
+    lines.push(`Rows after cleaning: ${metadata.cleanedRowCount}`);
+  }
+  if (typeof metadata.contextRowCount === 'number') {
+    lines.push(`Context rows detected: ${metadata.contextRowCount}`);
+  }
+  const contextRows = Array.isArray(metadata.contextRows) && metadata.contextRows.length
+    ? metadata.contextRows
+    : Array.isArray(metadata.leadingRows) && metadata.leadingRows.length
+    ? metadata.leadingRows
+    : null;
+  if (contextRows) {
+    const excerpt = contextRows
+      .slice(0, 2)
+      .map((row, index) => {
+        if (!Array.isArray(row)) {
+          return '';
+        }
+        const text = row.filter(cell => cell).join(' | ').trim();
+        return text ? `Row ${index + 1}: ${text}` : '';
+      })
+      .filter(Boolean);
+    if (excerpt.length) {
+      lines.push(`Context rows:\n${excerpt.join('\n')}`);
+    }
+  }
+  return lines.join('\n');
 };
 
 const enforceTopLevelReturn = source => {
@@ -1627,7 +1789,7 @@ export const generateDataPreparationPlan = async (
   const rawSampleRows = Array.isArray(sampleData) ? sampleData : [];
   const metadataForPlan = ensurePlanMetadataHeaders(metadata, rawSampleRows) || metadata || null;
   const normalizedSampleData = normaliseSampleDataForPlan(columns, rawSampleRows, metadataForPlan);
-  const sampleRowsForPrompt = normalizedSampleData.slice(0, 20);
+  const sampleRowsForPrompt = normalizedSampleData.slice(0, 5);
   const genericHeaders = Array.isArray(metadataForPlan?.genericHeaders) ? metadataForPlan.genericHeaders : [];
   const inferredHeaders = Array.isArray(metadataForPlan?.inferredHeaders) ? metadataForPlan.inferredHeaders : [];
   const headerMappingPreview = (() => {
@@ -1659,12 +1821,20 @@ export const generateDataPreparationPlan = async (
     contextRowLimit: 20,
   });
   const contextSection = metadataContext ? `Dataset context:\n${metadataContext}\n\n` : '';
+  const previewColumns = selectPreviewColumns(metadataForPlan, columns, 12);
+  const samplePreview = formatSamplePreview(normalizedSampleData, previewColumns, 5);
+  const promptExtras = {
+    diagnoseSnapshot: formatDiagnoseSnapshot(metadataForPlan),
+    samplePreview,
+    samplePreviewColumns: previewColumns,
+    samplePreviewRowCount: Math.min(5, normalizedSampleData.length || 0),
+  };
 
 const systemPrompt = `You are an expert data engineer. Your task is to analyze a raw dataset and, if necessary, provide a JavaScript function to clean and reshape it into a tidy, analysis-ready format. CRITICALLY, you must also provide the schema of the NEW, transformed data with detailed data types.
 A tidy format has: 1. Each variable as a column. 2. Each observation as a row.
 You MUST respond with a single valid JSON object, and nothing else. The JSON object must adhere to the provided schema.`;
 
-const buildUserPrompt = (lastError, iterationContext = null) => {
+const buildUserPrompt = (lastError, iterationContext = null, promptExtras = {}) => {
   const iterationSummary = (() => {
     if (!iterationContext || typeof iterationContext !== 'object') {
       return '';
@@ -1804,7 +1974,34 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
     return lines.length ? `Column context:\n${lines.join('\n')}\n\n` : '\n';
   })();
 
+  const datasetSnapshotText =
+    typeof promptExtras?.diagnoseSnapshot === 'string'
+      ? promptExtras.diagnoseSnapshot.trim()
+      : '';
+  const datasetContextBlock = datasetSnapshotText
+    ? `Dataset snapshot:\n${datasetSnapshotText}\n\n`
+    : contextSection;
+  const selectedPreviewColumns =
+    Array.isArray(promptExtras?.samplePreviewColumns) && promptExtras.samplePreviewColumns.length
+      ? promptExtras.samplePreviewColumns.join(', ')
+      : null;
+  const samplePreviewText =
+    typeof promptExtras?.samplePreview === 'string' ? promptExtras.samplePreview.trim() : '';
+  const samplePreviewBlock = samplePreviewText
+    ? `Sample preview (first ${promptExtras.samplePreviewRowCount || 5} rows; columns: ${
+        selectedPreviewColumns || 'see metadata'
+      }):\n${samplePreviewText}\n\n`
+    : '';
+  const previousErrorBlock =
+    lastError && typeof lastError.message === 'string'
+      ? `Previous attempt failed: ${lastError.message}\n\n`
+      : '';
+
   const headerMappingBlock = headerMappingSection ? `\n${headerMappingSection}\n` : '\n';
+  const mappingPreviewBlock =
+    headerMappingPreview && headerMappingPreview.length
+      ? `Generic → canonical mapping hints:\n${headerMappingPreview}\n\n`
+      : '';
   const violationGuidance =
     iterationContext &&
     typeof iterationContext === 'object' &&
@@ -1827,7 +2024,7 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
           })
           .join('\n')}\n`
       : '\n';
-const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeLeadingRows(rows, options?)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (preferred)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n- 若本輪不輸出 jsFunctionBody，toolCalls 陣列必須至少包含一個可執行的工具呼叫。\n- toolCalls.args 需為有效 JSON 字串；若模型輸出物件請自行序列化後再回傳。\n→ 只有當工具沒有辦法完成當前微目標時才輸出 \`jsFunctionBody\`。預設需透過工具+stage plan 完成清理。`;
+  const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeLeadingRows(rows, options?)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (preferred)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n- 若本輪不輸出 jsFunctionBody，toolCalls 陣列必須至少包含一個可執行的工具呼叫。\n- toolCalls.args 需為有效 JSON 字串；若模型輸出物件請自行序列化後再回傳。\n→ 只有當工具沒有辦法完成當前微目標時才輸出 \`jsFunctionBody\`。預設需透過工具+stage plan 完成清理。`;
   const failureContextBlock = (() => {
     const context = lastError?.failureContext;
     if (!context) {
@@ -1848,238 +2045,15 @@ const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- dete
   })();
   const stagePlanContract = `\nStage Planning Contract (Vanilla Agent):\n- ALWAYS populate \`stagePlan\` with three objects: \`titleExtraction\`, \`headerResolution\`, and \`dataNormalization\`.\n- Treat每個階段 as an independent micro-goal: checkpoints must be tiny, verifiable actions (e.g., “Inspect rows 0–2 for title text”, “Call detectHeaders to confirm canonical names”) rather than a single large paragraph.\n- Each stage must include: goal, ordered checkpoints, heuristics, fallbackStrategies, expectedArtifacts, nextAction, status, and a concise logMessage so the UI can narrate progress step by step.\n- Provide \`agentLog\` entries (e.g., {"stage":"title","thought":"Row 0 looks like a title","action":"store row 0 as metadata"}) so engineers can audit the thinking trail and Raw Data Explorer can explain what changed.\n- Prefer setting \`jsFunctionBody\` to null. Only emit code if the transformation is trivial or you can faithfully translate the stage plan into deterministic steps; otherwise describe the algorithm inside \`stagePlan\` so the Vanilla Agent can execute it tool-by-tool.\n- When a Crosstab/wide layout is detected, explicitly outline the unpivot logic inside \`dataNormalization\` (identifier detection, iteration ranges, helper calls) and avoid relying on hard-coded indices.`;
 
-  return `${contextSection}${columnContextBlock}${iterationSummary}${multiPassRules}${headerMappingBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}${stagePlanContract}${failureContextBlock}
+  const leadBlock = `${datasetContextBlock}${columnContextBlock}${samplePreviewBlock}${iterationSummary}${previousErrorBlock}${multiPassRules}${headerMappingBlock}${mappingPreviewBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}${stagePlanContract}${failureContextBlock}`;
+  const instructionsBlock = buildDataPrepGuidelines({
+    summaryKeywordsDisplay: SUMMARY_KEYWORDS_DISPLAY,
+    mandatorySummaryBullet,
+    hasCrosstabShape,
+  });
 
-Common problems to fix:
-- **CRITICAL RULE on NUMBER PARSING**: This is the most common source of errors. To handle numbers that might be formatted as strings (e.g., "$1,234.56", "50%"), you are provided with a safe utility function: \`_util.parseNumber(value)\`.
-    - **YOU MUST use \`_util.parseNumber(value)\` for ALL numeric conversions.**
-    - **DO NOT use \`parseInt()\`, \`parseFloat()\`, or \`Number()\` directly.** The provided utility is guaranteed to handle various formats correctly.
-- **CRITICAL RULE on SPLITTING NUMERIC STRINGS**: If you encounter a single string field that contains multiple comma-separated numbers (which themselves may contain commas as thousand separators, e.g., "1,234.50,5,678.00,-9,123.45"), you are provided a utility \`_util.splitNumericString(value)\` to correctly split the string into an array of number strings.
-    - **YOU MUST use this utility for this specific case.**
-    - **DO NOT use a simple \`string.split(',')\`**, as this will incorrectly break up numbers.
-    - **Example**: To parse a field 'MonthlyValues' containing "1,500.00,2,000.00", your code should be: \`const values = _util.splitNumericString(row.MonthlyValues);\` This will correctly return \`['1,500.00', '2,000.00']\`.
-- **Distinguishing Data from Summaries**: Your most critical task is to differentiate between valid data rows and non-data rows (like summaries or metadata).
-    - A row is likely **valid data** if it has a value in its primary identifier column(s) (e.g., 'Account Code', 'Product ID') and in its metric columns.
-    - **CRITICAL: Do not confuse hierarchical data with summary rows.** Look for patterns in identifier columns where one code is a prefix of another (e.g., '50' is a parent to '5010'). These hierarchical parent rows are **valid data** representing a higher level of aggregation and MUST be kept. Your role is to reshape the data, not to pre-summarize it by removing these levels.
-    - A row is likely **non-data** and should be removed if it's explicitly a summary (e.g., contains 'Total', 'Subtotal' in a descriptive column) OR if it's metadata (e.g., the primary identifier column is empty but other columns contain text, like a section header).
-- **Summary Keyword Radar**: Treat any row whose textual cells match or start with these keywords as metadata/non-data unless strong evidence proves otherwise: ${SUMMARY_KEYWORDS_DISPLAY}.
-${mandatorySummaryBullet}
-- **Crosstab/Wide Format**: Unpivot data where column headers are actually values (e.g., years, regions) so that each observation is one row.
-- **Multi-header Rows**: Skip any initial junk rows (titles, blank lines, headers split across rows) before the true header.
-- **HEADER MAPPING IS MANDATORY**: Always embed the provided \`HEADER_MAPPING\` snippet (or dynamically detect one) and access fields via \`const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING)\`. If no mapping is supplied, call the detection helpers first.
-- **NO HARD-CODED INDEXES**: You must dynamically detect header rows and identifier columns by examining the provided sample rows. Never assume fixed row numbers or literal labels (e.g., "Code", "Description") will exist. Use fallbacks (e.g., scanning for rows with many text cells followed by rows with numeric cells) so the transform works even when column labels change.
-
-${headerMappingPreview ? `Generic to inferred header mapping:\n${headerMappingPreview}\n` : ''}
-${hasCrosstabShape ? `CROSSTAB ALERT:
-- The dataset contains many generic columns (e.g., column_1, column_2...). Treat these as pivoted metrics that must be unpivoted/melted into tidy rows.
-- Preserve identifier columns (codes, descriptions, category labels) as-is.
-- For each pivot column, produce rows with explicit fields such as { Code, Description, PivotColumnName, PivotValue } so every numeric value becomes its own observation.
-- Document the unpivot procedure explicitly inside \`stagePlan.dataNormalization\` (list identifier detection, iteration ranges, helper calls). Only include code if the plan cannot be expressed clearly.
-- After reshaping, update \`outputColumns\` to reflect the tidy structure (e.g., 'code' categorical, 'project' categorical, 'pivot_column' categorical, 'pivot_value' numerical).
-- Include logic to drop empty or subtotal rows but keep hierarchical parent rows.\n` : ''}
-
-Dataset Columns (Initial Schema):
-${JSON.stringify(columns, null, 2)}
-Sample Data (up to 20 rows):
-${JSON.stringify(sampleRowsForPrompt, null, 2)}
-${lastError ? `On the previous attempt, your generated code failed with this error: "${lastError.message}". Please analyze the error and provide a corrected response.` : ''}
-
-Your task:
-1. **Study (Think Step-by-Step)**: Describe what you observe in the dataset. List the problems (multi-row headers, totals, blank/title rows, etc.). Output this as \`analysisSteps\` — a detailed, ordered list of your reasoning before coding.
-2. **Plan Transformation**: Based on those steps, decide on the exact cleaning/reshaping actions (unpivot, drop rows, rename columns, parse numbers, etc.) and fill the \`stagePlan\` object (title → header → data).
-3. **Define Output Schema**: Determine the exact column names and data types AFTER your transformation. Use specific types where possible: 'categorical', 'numerical', 'date', 'time', 'currency', 'percentage'.
-4. **Stage Deliverable (Optional Code)**: If a concise JavaScript snippet is necessary, write the body of a function that receives \`data\` and \`_util\` and returns the transformed array. Otherwise set \`jsFunctionBody\` to null and rely on the stage plan.
-5. **Explain**: Provide a concise, user-facing explanation of what you did.
-
-**CRITICAL REQUIREMENTS:**
-- Never assume specific header text exists. If you cannot confidently locate headers or identifier columns, throw an Error explaining what data was missing instead of returning an empty array.
-- You MUST provide the \`analysisSteps\` array capturing your chain-of-thought (observations ➜ decisions ➜ actions). Each item should be a full sentence.
-- You MUST provide the \`outputColumns\` array. If no transformation is needed, it should match the input schema (but update types if you discovered more specific ones).
-- If you provide JavaScript, it MUST include a \`return\` statement that returns the transformed data array.
-- Mirror your \`stagePlan\` checkpoints in code and comments. Each checkpoint should translate into a tiny sequential action (e.g., remove metadata rows → resolve headers → normalize rows) so the UI can narrate progress and verify Raw Data Explorer shows the same result.
-- Never access \`data\` using numeric literals (e.g., \`data[0]\`, \`data[3]\`, \`data[data.length - 1]\`). Determine headers/rows dynamically via the provided helper utilities.
-- Whenever you convert numbers, you MUST use \`_util.parseNumber\`. Whenever you split comma-separated numeric strings, you MUST use \`_util.splitNumericString\`.
-- When the dataset exhibits the Crosstab alert, your \`stagePlan.dataNormalization\` must detail the unpivot algorithm (identifier detection, per-column iteration, parsing). Include code only if absolutely necessary.
-`;
+  return `${leadBlock}\n${instructionsBlock}\n`;
 };
-
-  const schema = getDataPreparationSchema();
-  let lastError =
-    previousError instanceof Error
-      ? previousError
-      : previousError
-      ? new Error(
-          typeof previousError === 'string'
-            ? previousError
-            : previousError.message
-            ? previousError.message
-            : String(previousError)
-        )
-      : null;
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      let plan;
-      const userPrompt = buildUserPrompt(lastError, iterationContext);
-
-      if (provider === 'openai') {
-        plan = await callOpenAIJson(settings, systemPrompt, userPrompt);
-      } else {
-        const combinedPrompt = `${systemPrompt}\n${userPrompt}`;
-        const { parsed, rawText } = await callGeminiJson(settings, combinedPrompt, {
-          schema,
-          includeRaw: true,
-        });
-        plan = parsed;
-        if (!plan) {
-          const parseError = new Error('AI response is empty.');
-          parseError.rawResponse = rawText;
-          throw parseError;
-        }
-      }
-
-      if (!plan) {
-        throw new Error('AI returned an empty plan.');
-      }
-
-      if (Array.isArray(plan.analysisSteps)) {
-        plan.analysisSteps = plan.analysisSteps.map(step =>
-          typeof step === 'string' ? step.trim() : String(step)
-        ).filter(step => step);
-      } else if (typeof plan.analysisSteps === 'string') {
-        plan.analysisSteps = [plan.analysisSteps.trim()].filter(Boolean);
-      } else {
-        plan.analysisSteps = [];
-      }
-
-      plan.stagePlan = normaliseStagePlan(plan.stagePlan);
-      plan.agentLog = normaliseAgentLogEntries(plan.agentLog);
-
-      if (!plan.outputColumns || !Array.isArray(plan.outputColumns) || plan.outputColumns.length === 0) {
-        plan.outputColumns = columns;
-      }
-
-      console.groupCollapsed('[DataPrep] AI plan result');
-      try {
-        console.log('Crosstab detected:', hasCrosstabShape);
-        console.log('Plan explanation:', plan.explanation || '(none)');
-        console.log('Returned jsFunctionBody:', Boolean(plan.jsFunctionBody));
-        console.log('Analysis steps:', plan.analysisSteps);
-        console.log('Output columns:', plan.outputColumns);
-        console.log('Stage plan:', plan.stagePlan);
-        if (plan.agentLog && plan.agentLog.length) {
-          console.log('Agent log:', plan.agentLog);
-        }
-        console.log('Sample rows sent to model (first 20):', sampleRowsForPrompt.slice(0, 20));
-        console.log('Full plan payload:', plan);
-      } finally {
-        console.groupEnd();
-      }
-
-      plan.toolCalls = normalizeToolCalls(plan.toolCalls);
-      const rawJsBody =
-        typeof plan.jsFunctionBody === 'string' && plan.jsFunctionBody.trim()
-          ? plan.jsFunctionBody.trim()
-          : '';
-      const hasToolCalls = Array.isArray(plan.toolCalls) && plan.toolCalls.length > 0;
-      const planStatus =
-        typeof plan.status === 'string' ? plan.status.trim().toLowerCase() : null;
-      const isDone = planStatus === 'done';
-      if (!isDone && !hasToolCalls && !rawJsBody) {
-        const missingActionError = new Error(
-          'Data prep plan omitted toolCalls and jsFunctionBody. Each iteration must schedule at least one deterministic action.'
-        );
-        missingActionError.failureContext = {
-          type: 'missing_actions',
-          reason: missingActionError.message,
-          stagePlan: plan.stagePlan || null,
-        };
-        lastError = missingActionError;
-        console.warn(
-          '[DataPrep] Rejected plan because it lacks both toolCalls and jsFunctionBody.',
-          missingActionError
-        );
-        continue;
-      }
-
-      if (rawJsBody) {
-        const normalizedJsBody = sanitizeJsFunctionBody(plan.jsFunctionBody);
-        plan.jsFunctionBody = normalizedJsBody;
-        console.log('Sanitized jsFunctionBody preview:', normalizedJsBody);
-        // Mirror the runtime helper surface so validation executes exactly what the agent can do.
-        const mockUtil = {
-          parseNumber: value => {
-            const cleaned = String(value ?? '')
-              .replace(/[$\s,%]/g, '')
-              .replace(/,/g, '')
-              .trim();
-            const parsed = Number.parseFloat(cleaned);
-            return Number.isNaN(parsed) ? 0 : parsed;
-          },
-          splitNumericString: value => {
-            if (value === null || value === undefined) return [];
-            return String(value).split(',');
-          },
-          applyHeaderMapping: (row, mapping) => applyHeaderMappingHelper(row, mapping),
-          detectHeaders: metadata => detectHeadersTool({ metadata }),
-          removeSummaryRows: (rows, keywords) =>
-            removeSummaryRowsTool({ data: rows, keywords }).cleanedData,
-          removeLeadingRows: (rows, options = {}) =>
-            removeLeadingRowsTool({
-              data: rows,
-              metadata,
-              maxRows: typeof options.maxRows === 'number' ? options.maxRows : 8,
-              keywords: Array.isArray(options.keywords) ? options.keywords : [],
-            }).cleanedData,
-          detectIdentifierColumns: (rows, metadata) =>
-            detectIdentifierColumnsTool({ data: rows, metadata }).identifiers,
-          isValidIdentifierValue: value => isLikelyIdentifierValue(value),
-          normalizeNumber: (value, options) => normalizeCurrencyValue(value, options),
-          describeColumns: metadata => describeColumnsHelper(metadata),
-        };
-
-        try {
-          const transformFunction = new Function('data', '_util', normalizedJsBody);
-          const testInput = normalizedSampleData.slice(0, 10);
-          const testResult = transformFunction(testInput, mockUtil);
-          if (!Array.isArray(testResult)) {
-            console.warn('[DataPrep] Transform function returned non-array during validation:', testResult);
-            throw new Error('Generated function did not return an array.');
-          }
-          if (!testResult.length) {
-            throw new Error('Generated function produced an empty dataset. Ensure valid rows remain after cleaning.');
-          }
-          if (typeof testResult[0] !== 'object' || testResult[0] === null) {
-            throw new Error('Generated function did not return an array of objects.');
-          }
-          const summaryRowsDetected = testResult.some(rowContainsSummaryKeyword);
-          if (summaryRowsDetected) {
-            throw new Error('Transformed data still contains summary/metadata rows (e.g., total, subtotal, notes). Remove them and retry.');
-          }
-        } catch (error) {
-          const wrappedError = error instanceof Error ? error : new Error(String(error));
-          wrappedError.failureContext = {
-            type: 'js_validation_error',
-            reason: wrappedError.message,
-            codePreview: normalizedJsBody ? normalizedJsBody.slice(0, 800) : null,
-            sampleRows: normalizedSampleData.slice(0, 3),
-          };
-          lastError = wrappedError;
-          console.warn(`AI-generated transformation failed validation (attempt ${attempt + 1}).`, wrappedError);
-          continue;
-        }
-      }
-
-      return plan;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`Error in data preparation plan generation (attempt ${attempt + 1}):`, lastError);
-    }
-  }
-
-  const finalError = new Error(
-    `AI failed to generate a valid data preparation plan after multiple attempts. Last error: ${lastError?.message}`
-  );
   if (lastError && lastError.rawResponse) {
     finalError.rawResponse = lastError.rawResponse;
   }
@@ -2143,9 +2117,10 @@ const buildAnalysisPlanPrompt = (columns, sampleData, numPlans, metadata) => {
   const measures = buckets.measures;
   const currencies = buckets.currencies;
   const timeCols = buckets.time;
-  const metadataContext = formatMetadataContext(metadata, {
-    leadingRowLimit: 10,
-    contextRowLimit: 20,
+  const metadataContext = formatMetadataContext(metadataForPlan, {
+    includeLeadingRows: false,
+    includeContextRows: false,
+    includeSampleRows: false,
   });
   const contextSection = metadataContext ? `Report context:\n${metadataContext}\n` : '';
   return `You are a senior business intelligence analyst.
@@ -2427,6 +2402,17 @@ ${coreBriefing}
 `;
 
   const dataPreparationSection = fragments.dataPreparationLog;
+  const chatHasCrosstabShape =
+    Boolean(metadata?.hasCrosstabShape) ||
+    Boolean(metadata?.shapeTaxonomy?.flags?.hasCrosstabShape);
+
+  const dataGuidelinesBlock = `**Data Cleaning Ground Rules:**\n${buildDataPrepGuidelines({
+    summaryKeywordsDisplay: SUMMARY_KEYWORDS_DISPLAY,
+    hasCrosstabShape: chatHasCrosstabShape,
+    includeTaskSection: false,
+    includeCriticalRequirements: false,
+  })}`;
+
 
   const guidingPrinciples = `**Guiding Principles & Common Sense:**
 1. Synthesize and interpret: connect insights and explain the business implications—the "so what?".
@@ -2479,6 +2465,7 @@ ${guidingPrinciples}
 ${datasetOverview}
 ${plannedStepsSection}
 ${dataPreparationSection}
+${dataGuidelinesBlock}
 **Analysis Cards on Screen:**
 ${cardsPreview}
 

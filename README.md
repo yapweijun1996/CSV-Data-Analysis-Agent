@@ -58,13 +58,20 @@ Then launch the dev server (`npm run dev`). The vector store will first check fo
 
 #### Multi-Step Data Cleaning Strategy
 
-To keep the workflow可追蹤 and resilient, the agent treats data preparation as a chain of small verifiable steps instead of a single opaque transform:
+為了避免一次丟出整份 CSV 造成 token 爆炸，Vanilla Agent 將資料清理分成三個極小的 prompt payload，真正做到逐步計畫、逐步執行：
 
-1. **Title/Metadata pass.** AI first identifies leading report titles、日期、貨幣等資訊，並透過 `remove_leading_rows` 工具將前幾列的 title/metadata 列移除。工具的偵測字詞由 metadata (`headerRow`, `inferredHeaders`, `leadingRows`) 與 LLM stage plan 提供的 `keywords` 動態生成，因此可支援多語環境。
-2. **Header resolution.** 接著偵測多列 header，建立 `HEADER_MAPPING` 並記錄 canonical 欄名；需要額外關鍵字時，LLM 可在 tool call 中注入 `keywords` 參數，確保 Raw Data Explorer 不會再看到重複 header。
-3. **Row-level cleanup.** 最後才針對資料列做動作：在 crosstab 場景會明列 melt/unpivot 步驟；一般表格則逐步去除 summary rows、解析數值、維護層級關係。每一步都在 chat log / workflow timeline 中留下 log，便於稽核。
+1. **Diagnose Snapshot（小摘要）** – 只送報表標題、leading/context rows 節錄、row/column 計數、shape taxonomy 與健康分數。讓 LLM 先回答「這輪要處理什麼？」（例如：需要先移除 title rows 還是先偵測 header？）而不是直接求 code。
+2. **Tool Plan（Deterministic pass）** – 提供 stagePlan scaffold、最新 header mapping、`toolHistory`、failureContext，以及 3~5 筆 canonical sample。模型必須回傳 `toolCalls` JSON；若為空，runtime 就根據 stagePlan auto-synth `remove_leading_rows → detect_headers → remove_summary_rows`。這一步只允許 deterministic 工具行動，並把結果寫進 workflow log。
+3. **Optional JS Pass** – 只有當工具無法完成剩餘工作（例如複雜 unpivot、欄位合併）才請模型產生 `_util` JavaScript。這個 payload 會加註上一輪失敗原因（`failureContext`）與剩餘 TODO，並再次附上 canonical sample，確保 JS 也是在小範圍內驗證。
 
-此 multi-pass 設計同時也反映在 prompt 中：AI 需先寫出 `stagePlan`（title → header → data）再產出 JavaScript，如此我們能在發生錯誤時要求它根據上一輪失敗原因逐步修正，而不是一次「大爆炸」式的清理。
+如此拆分後，每輪 token 控制在數百等級，LLM 也能聚焦在當前 micro-step，搭配 `toolHistory` / violation counter，就能形成真正的 Diagnose → Plan/Tool → Adjust → Verify 迴圈，而不是一次把整個 raw dataset + schema 都塞進同一個 request。
+
+##### Prompt Slimming & Safety Notes
+
+- **Snapshot 節流**：`utils/dataProcessor.js` 只會儲存最多 6 筆 leading/context rows 與 5 筆 sample rows，`formatDiagnoseSnapshot` 與 `formatSamplePreview` 亦只會輸出同樣上限，確保初始 prompt 永遠是「小抄」而不是整張報表。
+- **Lead Block + Instruction Lines**：`services/geminiService.js` 將提示拆成 `leadBlock`（dataset stats + tool history + stage contract）與 `instructionLines` 陣列。所有規則（例如 `_util.parseNumber` 必須使用、禁止 hard-code 欄位等）都以普通字串組合，最後才 `join('\n')`，避免再度出現未轉義的反引號導致 SyntaxError。
+- **No Raw JSON Dumps**：Plan prompt 不再附上 `JSON.stringify(columns)` 或 20-row sample blob，改為欄位角色摘要 + 3~5 筆 canonical preview。這樣 Gemini/OpenAI 只看到「需要的上下文」，也不會因長度被截斷。
+- **ESM Syntax Check**：若要靜態檢查 `services/geminiService.js`，請使用 `node --input-type=module --check` 或直接跑 `npm run build`，避免預設 CommonJS 模式誤報 `Unexpected token export`。
 
 #### Diagnose → Plan → Iterate → Recover → Done
 

@@ -17,7 +17,9 @@ if (!PapaLib) {
 
 const MAX_HEADER_SCAN_ROWS = 15;
 const MIN_TEXT_RATIO_FOR_HEADER = 0.6;
-const CONTEXT_ROWS_LIMIT = 20;
+const CONTEXT_ROWS_LIMIT = 6;
+const LEADING_ROWS_LIMIT = 6;
+const SAMPLE_ROWS_LIMIT = 5;
 
 // Prevent CSV formula injection
 const sanitizeValue = value => {
@@ -921,10 +923,10 @@ const parseCsvWithWorkerOption = (file, useWorker) =>
             originalRowCount: originalRows.length,
             cleanedRowCount: structuredRows.length,
             removedSummaryRowCount: summaryRowCount,
-            leadingRows: leadingRowsNormalised.slice(0, 10),
+            leadingRows: leadingRowsNormalised.slice(0, LEADING_ROWS_LIMIT),
             totalLeadingRows: leadingRowsNormalised.length,
             reportTitle: reportTitle || null,
-            sampleDataRows: structuredRows.slice(0, 10),
+            sampleDataRows: structuredRows.slice(0, SAMPLE_ROWS_LIMIT),
             contextRows,
             contextRowCount: contextRows.length,
             genericHeaders,
