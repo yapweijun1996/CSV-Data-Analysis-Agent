@@ -42,6 +42,7 @@
 * step by step with small action by todo list.
 * reply me in listing format, eg: 1,2,3.....
 * Restate user’s query with your understanding.
+* Add or Update context.md before Response to User, markdown the current conversation in details, like goal, what to acheive, todo, notes, important and so on to make sure you and me wont get lost and misunderstanding.
 
 ---
 
@@ -54,6 +55,7 @@
 
 ### Response to User**
 
+* dd or Update context.md
 * Generate response to user.
 * Reply me in mandarin english mixed.
 * Provide 3 option to user to choose for next step or next action. eg: A, B, C

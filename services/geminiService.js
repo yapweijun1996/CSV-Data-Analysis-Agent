@@ -429,6 +429,70 @@ const ensureList = value => {
   return [];
 };
 
+const DATA_PREP_TOOL_SCHEMAS = [
+  {
+    name: 'detect_headers',
+    description:
+      'Detect canonical headers by scanning a target row or the provided sample rows. Use this when you need to confirm multi-row headers or override defaults.',
+    args: {
+      targetRowIndex: 'number (optional) — zero-based index you suspect contains headers.',
+      strategies: 'string[] (optional) — e.g., ["metadata", "sample_rows"].',
+      sampleRows: 'object[] (optional) — explicit sample rows to inspect.',
+    },
+    returns:
+      '{ headerIndex: number|null, headers: string[], confidence: number, strategy: string }',
+  },
+  {
+    name: 'remove_summary_rows',
+    description:
+      'Removes rows that look like totals/subtotals based on keyword search. Use custom keywords for other languages.',
+    args: {
+      keywords:
+        'string[] (optional) — case-insensitive keywords (defaults to total/subtotal/summary/balance...).',
+    },
+    returns:
+      '{ cleanedData: object[], removedRows: object[] } — dataset after summary removal plus the dropped rows.',
+  },
+  {
+    name: 'detect_identifier_columns',
+    description:
+      'Estimates identifier columns by calculating uniqueness ratios. Useful when you need canonical keys before unpivoting.',
+    args: {
+      minimumUniqueness:
+        'number (optional, 0-1) — override default 0.8 uniqueness threshold for identifiers.',
+    },
+    returns:
+      '{ identifiers: string[], confidence: number, evaluatedColumns: {header, uniqueness}[] }',
+  },
+  {
+    name: 'trim_and_normalize',
+    description:
+      'Trims whitespace across the working dataset. Runs automatically before Plan, but exposed if you need to re-run mid workflow.',
+    args: {},
+    returns: '{ cleanedData: object[], trimmedCells: number }',
+  },
+  {
+    name: 'unpivot_multi_metric',
+    description:
+      'Deterministically melts a wide multi-metric crosstab into tidy rows. Requires metadata flag hasMultiMetricCrosstab=true.',
+    args: {
+      identifierColumns: 'string[] (optional) — explicit identifiers to keep in output rows.',
+      metricColumns:
+        'string[] (optional) — explicit metrics to melt. Falls back to heuristic detection if omitted.',
+    },
+    returns:
+      '{ rows: object[], meta: { dimensionColumns: string[], metricColumns: string[], addedColumns: string[] } }',
+  },
+];
+
+const formatDataPrepToolSchemas = () =>
+  DATA_PREP_TOOL_SCHEMAS.map(tool => {
+    const args = Object.entries(tool.args)
+      .map(([name, desc]) => `    - ${name}: ${desc}`)
+      .join('\n');
+    return `- **${tool.name}**: ${tool.description}\n${args}\n    Returns: ${tool.returns}`;
+  }).join('\n');
+
 const deriveOpeningSummary = context => {
   const datasetLabel = context?.datasetTitle || '資料集';
   const columnStats = summariseColumns(context?.columns);
@@ -1409,11 +1473,15 @@ export const generateDataPreparationPlan = async (
       .slice(0, 30);
     return pairs.length ? pairs.join('\n') : '';
   })();
+  const metadataHasCrosstab =
+    Boolean(metadata?.hasCrosstabShape) ||
+    Boolean(metadata?.shapeTaxonomy?.flags?.hasCrosstabShape);
   const hasCrosstabShape =
-    genericHeaders.length >= 6 &&
-    normalizedSampleData.length > 0 &&
-    typeof normalizedSampleData[0] === 'object' &&
-    Object.keys(normalizedSampleData[0]).some(key => /^column_\d+$/i.test(key));
+    metadataHasCrosstab ||
+    (genericHeaders.length >= 6 &&
+      normalizedSampleData.length > 0 &&
+      typeof normalizedSampleData[0] === 'object' &&
+      Object.keys(normalizedSampleData[0]).some(key => /^column_\d+$/i.test(key)));
 
   const metadataContext = formatMetadataContext(metadata, {
     leadingRowLimit: 10,
@@ -1587,7 +1655,7 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
           })
           .join('\n')}\n`
       : '\n';
-  const helpersDescription = `\nAvailable Helpers (invoke via _util.<name>):\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\nIf you need to run a dedicated tool instead of writing code, respond with "toolCalls": [{"tool":"detect_headers","args":"{\"strategies\":[\"metadata\",\"sample\"]}"}] and omit jsFunctionBody. The "args" field MUST be a JSON string.`;
+  const helpersDescription = `\n**Deterministic Helpers ( _util.<name> )**\n- detectHeaders(metadata)\n- removeSummaryRows(rows, keywords?)\n- detectIdentifierColumns(rows, metadata)\n- normalizeNumber(value, options?)\n- isValidIdentifierValue(value)\n- describeColumns(metadata)\n\n**Tool Calls (recommended)**\n使用 \`{"tool":"<name>","args":"{...json...}"}\` 的 JSON 物件呼叫工具。可用工具：\n${formatDataPrepToolSchemas()}\n\n→ 只有在上述工具無法處理的情境才使用 \`jsFunctionBody\`，否則一律以 tool calls orchestrate。`;
   const failureContextBlock = (() => {
     const context = lastError?.failureContext;
     if (!context) {

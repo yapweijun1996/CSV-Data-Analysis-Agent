@@ -4,6 +4,7 @@ import {
   executePlan,
   executeJavaScriptDataTransform,
   applyTopNWithOthers,
+  unpivotMultiMetricCrosstab,
 } from './utils/dataProcessor.js';
 import {
   generateAnalysisPlans,
@@ -134,6 +135,27 @@ const formatAgentLogMessages = agentLog => {
     .filter(Boolean);
 };
 
+const describeShapeFromMetadata = metadata => {
+  if (!metadata || typeof metadata !== 'object') {
+    return null;
+  }
+  const taxonomy = metadata.shapeTaxonomy;
+  if (!taxonomy || typeof taxonomy !== 'object') {
+    return null;
+  }
+  const parts = [];
+  if (taxonomy.primaryShape) {
+    parts.push(`Shape=${taxonomy.primaryShape}`);
+  }
+  if (Array.isArray(taxonomy.traits) && taxonomy.traits.length) {
+    parts.push(`traits=${taxonomy.traits.join(', ')}`);
+  }
+  if (taxonomy.flags?.hasCrosstabShape) {
+    parts.push('requires unpivot');
+  }
+  return parts.length ? `Shape taxonomy · ${parts.join(' | ')}` : null;
+};
+
 const summariseColumnDiagnostics = profiles => {
   if (!Array.isArray(profiles) || !profiles.length) {
     return null;
@@ -161,6 +183,88 @@ const summariseColumnDiagnostics = profiles => {
     return null;
   }
   return `Column diagnostics → ${parts.join(' | ')}`;
+};
+
+const computeRoleCoverage = profiles => {
+  if (!Array.isArray(profiles) || !profiles.length) {
+    return 0;
+  }
+  const importantRoles = new Set(['measure', 'dimension', 'identifier', 'time', 'currency', 'percentage']);
+  const covered = profiles.filter(profile => {
+    if (!Array.isArray(profile?.roles)) {
+      return false;
+    }
+    return profile.roles.some(role => importantRoles.has(role));
+  }).length;
+  return covered / profiles.length;
+};
+
+const evaluateHealthScores = (metadata, profiles, previousSignature = null) => {
+  const headerSignature = Array.isArray(metadata?.headerRow)
+    ? metadata.headerRow.join('|').toLowerCase()
+    : null;
+  const structureStability = previousSignature
+    ? previousSignature === headerSignature
+      ? 1
+      : 0.75
+    : 0.85;
+  const trickyCount = Array.isArray(profiles)
+    ? profiles.filter(profile => profile?.isTrickyMixed).length
+    : 0;
+  const totalProfiles = Array.isArray(profiles) ? profiles.length : 0;
+  const typeConsistency =
+    totalProfiles > 0 ? 1 - trickyCount / totalProfiles : 1;
+  const avgMissing =
+    totalProfiles > 0
+      ? profiles.reduce(
+          (sum, profile) => sum + (profile?.missingPercentage || 0),
+          0
+        ) /
+        (totalProfiles * 100)
+      : 0;
+  const completeness = 1 - avgMissing;
+  const reasonableness =
+    metadata?.shapeTaxonomy?.flags?.hasCrosstabShape &&
+    metadata?.hasMultiMetricCrosstab
+      ? 0.85
+      : 1;
+  const overall = Math.min(
+    structureStability,
+    typeConsistency,
+    completeness,
+    reasonableness
+  );
+  let status = 'good';
+  if (overall < 0.6) {
+    status = 'attention';
+  } else if (overall < 0.8) {
+    status = 'watch';
+  }
+  return {
+    structureStability,
+    typeConsistency,
+    completeness,
+    reasonableness,
+    overall,
+    status,
+    headerSignature: headerSignature || previousSignature || null,
+    evaluatedAt: new Date().toISOString(),
+  };
+};
+
+const formatHealthScoreSummary = scores => {
+  if (!scores || typeof scores !== 'object') {
+    return null;
+  }
+  const percent = value =>
+    `${Math.round(Math.max(0, Math.min(1, value || 0)) * 100)}%`;
+  return `Health scores → structure ${percent(
+    scores.structureStability
+  )}, types ${percent(scores.typeConsistency)}, completeness ${percent(
+    scores.completeness
+  )}, reasonableness ${percent(scores.reasonableness)} (overall ${
+    scores.status
+  }).`;
 };
 /** @typedef {import('./types/typedefs.js').AnalysisPlan} AnalysisPlan */
 /** @typedef {import('./types/typedefs.js').AnalysisCardData} AnalysisCardData */
@@ -249,6 +353,9 @@ this.state = {
     this.lastReferencedCard = null;
     this.highlightClearTimer = null;
     this.rawPanelHighlightTimer = null;
+    this.phaseGateStatus = {};
+    this.lastDatasetSnapshot = null;
+    this.lastHealthScores = null;
 
     this.workflowSessionId = null;
     this.orchestrator = createTaskOrchestrator({
@@ -1449,6 +1556,8 @@ this.state = {
       rawDataPage: 0,
       rawDataColumnWidths: {},
     });
+    this.clearDatasetSnapshot();
+    this.lastHealthScores = null;
 
     this.startWorkflowSession(`分析資料集 ${file.name}`, DEFAULT_WORKFLOW_CONSTRAINTS);
     this.startWorkflowPhase('diagnose', '先快速檢查 CSV 檔案格式與欄位資訊。');
@@ -1474,7 +1583,7 @@ this.state = {
       });
       const initialSample = parsedData.data.slice(0, 20);
 
-      const metadata = parsedData.metadata || null;
+      let metadata = parsedData.metadata || null;
       if (metadata?.reportTitle) {
         this.addProgress(`Detected report title: "${metadata.reportTitle}".`);
       }
@@ -1494,9 +1603,101 @@ this.state = {
           `The original data has ${metadata.originalRowCount.toLocaleString()} rows, and after cleaning, ${metadata.cleanedRowCount.toLocaleString()} rows are retained${removed > 0 ? `, of which ${removed.toLocaleString()} rows are non-data rows such as titles or totals.` : '.'}`
         );
       }
+      const shapeSummary = describeShapeFromMetadata(metadata);
+      if (shapeSummary) {
+        this.addProgress(shapeSummary, 'system');
+      }
 
       let dataForAnalysis = parsedData;
-      let profiles = profileData(parsedData.data);
+      if (metadata?.hasMultiMetricCrosstab) {
+        const unpivotResult = unpivotMultiMetricCrosstab(parsedData.data, metadata);
+        if (unpivotResult && Array.isArray(unpivotResult.rows) && unpivotResult.rows.length) {
+          const transformInfo = {
+            type: 'multi_metric_unpivot',
+            appliedAt: new Date().toISOString(),
+            metricColumns: unpivotResult.meta.metricColumns,
+            dimensionColumns: unpivotResult.meta.dimensionColumns,
+            addedColumns: unpivotResult.meta.addedColumns,
+            originalRowCount: parsedData.data.length,
+            transformedRowCount: unpivotResult.rows.length,
+          };
+          const newHeaderRow = [
+            ...unpivotResult.meta.dimensionColumns,
+            ...unpivotResult.meta.addedColumns,
+          ];
+          const updatedShapeTaxonomy = metadata?.shapeTaxonomy
+            ? {
+                ...metadata.shapeTaxonomy,
+                primaryShape: 'crosstab_unpivoted',
+                flags: {
+                  ...(metadata.shapeTaxonomy.flags || {}),
+                  hasCrosstabShape: false,
+                  hasMultiMetricCrosstab: false,
+                  resolvedBy: 'deterministic_unpivot',
+                },
+              }
+            : null;
+          metadata = {
+            ...metadata,
+            originalHeaderRow: Array.isArray(metadata.headerRow) ? [...metadata.headerRow] : null,
+            originalGenericHeaders: Array.isArray(metadata.genericHeaders) ? [...metadata.genericHeaders] : null,
+            headerRow: newHeaderRow,
+            inferredHeaders: newHeaderRow,
+            genericHeaders: newHeaderRow.map((_, index) => `column_${index + 1}`),
+            detectedHeaderIndex: 0,
+            shapeTaxonomy: updatedShapeTaxonomy || metadata?.shapeTaxonomy || null,
+            hasCrosstabShape: false,
+            hasMultiMetricCrosstab: false,
+            deterministicTransforms: Array.isArray(metadata?.deterministicTransforms)
+              ? [...metadata.deterministicTransforms, transformInfo]
+              : [transformInfo],
+            structureEvidence: {
+              ...(metadata.structureEvidence || {}),
+              headerConfidence: 0.95,
+              raggedRatio: 0,
+              resolvedBy: 'multi_metric_unpivot',
+              updatedAt: new Date().toISOString(),
+            },
+          };
+          dataForAnalysis = {
+            ...parsedData,
+            data: unpivotResult.rows,
+            metadata,
+          };
+          this.addProgress(
+            `Deterministic multi-metric unpivot applied (${unpivotResult.meta.metricColumns.length} metric columns → 2 long-form columns).`,
+            'system'
+          );
+        } else {
+          this.addProgress(
+            'Multi-metric heuristics did not find a safe deterministic unpivot; falling back to AI planning.',
+            'plan'
+          );
+        }
+      }
+      const deterministicResult = this.applyDeterministicPreprocessing(dataForAnalysis);
+      dataForAnalysis = deterministicResult.dataset;
+      metadata = dataForAnalysis.metadata || metadata || null;
+      deterministicResult.logs.forEach(message => this.addProgress(message, 'system'));
+      if (deterministicResult.removedContextRows) {
+        this.completeWorkflowStep({
+          label: '移除報表抬頭 / Header 列',
+          outcome: `${deterministicResult.removedContextRows} rows`,
+        });
+        this.appendWorkflowThought(
+          `已先移除 ${deterministicResult.removedContextRows} 筆報表抬頭或內嵌 header，避免混入資料列。`
+        );
+      }
+      if (deterministicResult.removedRows) {
+        this.appendWorkflowThought(
+          `Deterministic tools removed ${deterministicResult.removedRows} summary rows before AI planning.`
+        );
+        this.completeWorkflowStep({
+          label: 'Deterministic 摘要列清理',
+          outcome: `${deterministicResult.removedRows} rows`,
+        });
+      }
+      let profiles = profileData(dataForAnalysis.data);
       if (dataForAnalysis.metadata) {
         dataForAnalysis.metadata = this.attachColumnProfilesToMetadata(
           dataForAnalysis.metadata,
@@ -1523,51 +1724,56 @@ this.state = {
       if (initialDiagnostics) {
         this.addProgress(initialDiagnostics, 'system');
       }
+      this.updateHealthScores(activeMetadata, profiles);
+      this.captureDatasetSnapshot(dataForAnalysis, profiles);
+      const diagnoseGate = this.evaluateDiagnoseGate(activeMetadata, profiles);
+      const planPhaseAllowed = diagnoseGate ? Boolean(diagnoseGate.passed) : true;
       let headerMappingContext = this.ensureHeaderMappingContext(activeMetadata, {
         reason: 'preflight',
         logStep: false,
       });
 
-      if (isApiKeySet) {
-        this.startWorkflowPhase('plan', '規劃資料清理與前處理步驟。');
-        this.resetAdditionalPrepIterations();
-        this.clearViolationCounter();
-        const basePrepIterations = 3;
-        const maxRetriesPerIteration = 3;
-        let iteration = 0;
-        let continueIterating = true;
-        let lastIterationError = null;
-        let lastSuccessfulPlan = null;
+      if (isApiKeySet && planPhaseAllowed) {
+        try {
+          this.startWorkflowPhase('plan', '規劃資料清理與前處理步驟。');
+          this.resetAdditionalPrepIterations();
+          this.clearViolationCounter();
+          const basePrepIterations = 3;
+          const maxRetriesPerIteration = 3;
+          let iteration = 0;
+          let continueIterating = true;
+          let lastIterationError = null;
+          let lastSuccessfulPlan = null;
 
-        while (continueIterating) {
-          const maxPrepIterations = basePrepIterations + this.getAdditionalPrepIterations();
-          if (iteration >= maxPrepIterations) {
-            this.addProgress(
-              `AI preprocessing reached the maximum of ${maxPrepIterations} iterations. Stopping further retries.`,
-              'error'
-            );
-            break;
-          }
-          iteration += 1;
-          const iterationLabel = `AI prep iteration ${iteration}`;
-          const sampleRowsForPlan = dataForAnalysis.data.slice(0, 20);
-          let iterationPlan = null;
-          let attemptErrorForPrompt = lastIterationError;
-          let iterationCompleted = false;
-          this.updateColumnContext(profiles, activeMetadata);
+          while (continueIterating) {
+            const maxPrepIterations = basePrepIterations + this.getAdditionalPrepIterations();
+            if (iteration >= maxPrepIterations) {
+              this.addProgress(
+                `AI preprocessing reached the maximum of ${maxPrepIterations} iterations. Stopping further retries.`,
+                'error'
+              );
+              break;
+            }
+            iteration += 1;
+            const iterationLabel = `AI prep iteration ${iteration}`;
+            const sampleRowsForPlan = dataForAnalysis.data.slice(0, 20);
+            let iterationPlan = null;
+            let attemptErrorForPrompt = lastIterationError;
+            let iterationCompleted = false;
+            this.updateColumnContext(profiles, activeMetadata);
 
-          if (iteration === 1 && !lastIterationError) {
-            this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
-          } else {
-            this.addProgress(`${iterationLabel} in progress...`);
-          }
+            if (iteration === 1 && !lastIterationError) {
+              this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
+            } else {
+              this.addProgress(`${iterationLabel} in progress...`);
+            }
 
-          for (let attempt = 0; attempt < maxRetriesPerIteration; attempt += 1) {
-            const attemptLabel = attempt + 1;
-            this.addProgress(
-              `${iterationLabel} attempt ${attemptLabel}: requesting updated preprocessing plan...`
-            );
-            const columnContextSummary = this.getColumnContextSummary();
+            for (let attempt = 0; attempt < maxRetriesPerIteration; attempt += 1) {
+              const attemptLabel = attempt + 1;
+              this.addProgress(
+                `${iterationLabel} attempt ${attemptLabel}: requesting updated preprocessing plan...`
+              );
+              const columnContextSummary = this.getColumnContextSummary();
             const iterationContextPayload = {
               iteration,
               maxIterations: maxPrepIterations,
@@ -1744,9 +1950,23 @@ this.state = {
 
             try {
               const originalCount = dataForAnalysis.data.length;
+              this.captureDatasetSnapshot(dataForAnalysis, profiles);
+              let metadataFromTransform = null;
               const transformed = executeJavaScriptDataTransform(
                 dataForAnalysis.data,
-                iterationPlan.jsFunctionBody
+                iterationPlan.jsFunctionBody,
+                {
+                  metadata: dataForAnalysis.metadata,
+                  onMetadataChange: updated => {
+                    metadataFromTransform = updated;
+                  },
+                  onLog: entry => {
+                    if (!entry) return;
+                    const stage = entry.stage ? `[${entry.stage}] ` : '';
+                    const thought = entry.thought || entry.message || JSON.stringify(entry);
+                    this.addProgress(`JS helper ${stage}${thought}`, 'plan');
+                  },
+                }
               );
               if (!Array.isArray(transformed) || !transformed.length) {
                 throw new Error('Transformation returned zero rows. Headers or filters may be incorrect.');
@@ -1758,7 +1978,15 @@ this.state = {
                 label: `${iterationLabel} transformation`,
                 outcome: `${originalCount} → ${newCount}`,
               });
-              if (dataForAnalysis.metadata) {
+              if (metadataFromTransform) {
+                dataForAnalysis.metadata = this.updateMetadataContext(
+                  {
+                    ...metadataFromTransform,
+                    cleanedRowCount: newCount,
+                  },
+                  dataForAnalysis.data
+                );
+              } else if (dataForAnalysis.metadata) {
                 dataForAnalysis.metadata = {
                   ...dataForAnalysis.metadata,
                   cleanedRowCount: newCount,
@@ -1800,6 +2028,8 @@ this.state = {
               if (iterationDiagnostics) {
                 this.addProgress(`Re-profiled columns · ${iterationDiagnostics}`, 'system');
               }
+              this.updateHealthScores(activeMetadata, profiles);
+              this.captureDatasetSnapshot(dataForAnalysis, profiles);
               prepIterationsLog.push({
                 iteration,
                 status: iterationStatus || 'continue',
@@ -1841,9 +2071,24 @@ this.state = {
                   ? `${iterationLabel} retry ${attemptLabel} failed: ${prepMessage}`
                   : `${iterationLabel} failed: ${prepMessage}`
               );
-            if (prepMessage && prepMessage.toLowerCase().includes('summary')) {
-              this.addProgress(
-                'Agent 正在調整：目前資料仍含 Total/Subtotal 等摘要列，正在請求模型移除這些摘要行後再試。',
+              this.recordViolation('transform_failure', prepMessage, {
+                iteration,
+                attempt: attemptLabel,
+              });
+              const restoredSnapshot = this.restoreDatasetSnapshot();
+              if (restoredSnapshot) {
+                dataForAnalysis.data = restoredSnapshot.data;
+                dataForAnalysis.metadata = restoredSnapshot.metadata || dataForAnalysis.metadata;
+                activeMetadata = dataForAnalysis.metadata || activeMetadata;
+                profiles = Array.isArray(restoredSnapshot.profiles) && restoredSnapshot.profiles.length
+                  ? restoredSnapshot.profiles
+                  : profiles;
+                this.updateColumnContext(profiles, activeMetadata);
+                this.addProgress('Reverted to last good dataset snapshot after failure.', 'system');
+              }
+              if (prepMessage && prepMessage.toLowerCase().includes('summary')) {
+                this.addProgress(
+                  'Agent 正在調整：目前資料仍含 Total/Subtotal 等摘要列，正在請求模型移除這些摘要行後再試。',
                 'info'
               );
               const offendingIndex = prepMessage.indexOf('Offending rows include:');
@@ -1901,13 +2146,35 @@ this.state = {
               }
             }
 
-          if (!continueIterating || iterationCompleted) {
-            continue;
+            if (!continueIterating || iterationCompleted) {
+              continue;
+            }
+          }
+
+          prepPlan = lastSuccessfulPlan;
+          this.endWorkflowPhase(prepPlan ? 'completed' : 'completed');
+        } catch (planError) {
+          console.error('AI preprocessing plan failed:', planError);
+          const message =
+            planError instanceof Error ? planError.message : String(planError);
+          this.addProgress(
+            `AI preprocessing failed and will be skipped: ${message}. Falling back to deterministic dataset.`,
+            'error'
+          );
+          this.failWorkflowStep({
+            label: 'AI preprocessing',
+            error: message,
+          });
+          if (this.workflowActivePhase === 'plan') {
+            this.endWorkflowPhase('failed');
           }
         }
-
-        prepPlan = lastSuccessfulPlan;
-        this.endWorkflowPhase(prepPlan ? 'completed' : 'completed');
+      } else if (isApiKeySet && !planPhaseAllowed) {
+        this.addProgress(
+          `AI preprocessing skipped because Diagnose gate failed${diagnoseGate?.reason ? `: ${diagnoseGate.reason}` : ''}.`,
+          'error'
+        );
+        this.enterAdjustPhase('Diagnose gate blocked AI plan；請先修正 header/欄位資訊再重試。');
       } else {
         this.ensureApiCredentials({
           reason:
@@ -2888,6 +3155,322 @@ this.state = {
     if (typeof this.orchestrator.setAutoTaskFlag === 'function') {
       this.orchestrator.setAutoTaskFlag('header_mapping_logged', true);
     }
+  }
+
+  captureDatasetSnapshot(dataset, profiles = []) {
+    if (!dataset || !Array.isArray(dataset.data)) {
+      this.lastDatasetSnapshot = null;
+      return null;
+    }
+    const snapshot = {
+      data: dataset.data.map(row => ({ ...(row || {}) })),
+      metadata: dataset.metadata ? JSON.parse(JSON.stringify(dataset.metadata)) : null,
+      profiles: Array.isArray(profiles) ? profiles.map(profile => ({ ...(profile || {}) })) : [],
+      capturedAt: new Date().toISOString(),
+      headerSignature: Array.isArray(dataset.metadata?.headerRow)
+        ? dataset.metadata.headerRow.join('|').toLowerCase()
+        : null,
+    };
+    this.lastDatasetSnapshot = snapshot;
+    return snapshot;
+  }
+
+  restoreDatasetSnapshot() {
+    if (!this.lastDatasetSnapshot) {
+      return null;
+    }
+    return {
+      data: this.lastDatasetSnapshot.data.map(row => ({ ...(row || {}) })),
+      metadata: this.lastDatasetSnapshot.metadata
+        ? JSON.parse(JSON.stringify(this.lastDatasetSnapshot.metadata))
+        : null,
+      profiles: this.lastDatasetSnapshot.profiles.map(profile => ({ ...(profile || {}) })),
+    };
+  }
+
+  clearDatasetSnapshot() {
+    this.lastDatasetSnapshot = null;
+  }
+
+  updateHealthScores(metadata, profiles) {
+    const previousSignature = this.lastHealthScores?.headerSignature || null;
+    const scores = evaluateHealthScores(metadata, profiles, previousSignature);
+    this.lastHealthScores = scores;
+    if (this.orchestrator && typeof this.orchestrator.setContextValue === 'function') {
+      try {
+        this.orchestrator.setContextValue('healthScores', scores);
+      } catch (error) {
+        console.warn('Failed to store health scores in orchestrator context:', error);
+      }
+    }
+    const summary = formatHealthScoreSummary(scores);
+    if (summary) {
+      const level = scores.status === 'good' ? 'system' : scores.status === 'watch' ? 'plan' : 'error';
+      this.addProgress(summary, level);
+    }
+    return scores;
+  }
+
+  recordViolation(type, message = '', details = {}) {
+    if (!type) {
+      return null;
+    }
+    const entry = {
+      type,
+      message,
+      details,
+      timestamp: new Date().toISOString(),
+    };
+    try {
+      if (this.orchestrator && typeof this.orchestrator.getContextValue === 'function') {
+        const log = this.orchestrator.getContextValue('violationLog') || [];
+        const nextLog = [...log, entry].slice(-20);
+        if (typeof this.orchestrator.setContextValue === 'function') {
+          this.orchestrator.setContextValue('violationLog', nextLog);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to store violation log entry:', error);
+    }
+    const count = this.incrementViolationCounter(type);
+    if (message) {
+      this.addProgress(
+        `Violation detected (${type})${count > 1 ? ` x${count}` : ''}: ${message}`,
+        'error'
+      );
+    }
+    return entry;
+  }
+
+  applyDeterministicPreprocessing(dataset) {
+    if (!dataset || !Array.isArray(dataset.data)) {
+      return { dataset, logs: [], removedRows: 0, removedContextRows: 0 };
+    }
+    let workingData = dataset.data.map(row => ({ ...(row || {}) }));
+    const logs = [];
+    let trimmedCells = 0;
+    workingData = workingData.map(row => {
+      const cleanedRow = {};
+      Object.entries(row).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          const trimmed = value.trim();
+          if (trimmed !== value) {
+            trimmedCells += 1;
+          }
+          cleanedRow[key] = trimmed;
+        } else {
+          cleanedRow[key] = value;
+        }
+      });
+      return cleanedRow;
+    });
+    if (trimmedCells > 0) {
+      logs.push(`Normalized whitespace for ${trimmedCells} cells.`);
+    }
+    const updatedMetadata = dataset.metadata ? { ...dataset.metadata } : {};
+
+    const contextRemoval = this.removeContextualRows(workingData, updatedMetadata);
+    if (contextRemoval && Array.isArray(contextRemoval.removedRows) && contextRemoval.removedRows.length) {
+      workingData = contextRemoval.cleanedData;
+      const reasonLabels = [];
+      if (contextRemoval.stats?.reportTitle) {
+        reasonLabels.push(`title x${contextRemoval.stats.reportTitle}`);
+      }
+      if (contextRemoval.stats?.headerRow) {
+        reasonLabels.push(`header x${contextRemoval.stats.headerRow}`);
+      }
+      if (contextRemoval.stats?.leadingRow) {
+        reasonLabels.push(`leading row x${contextRemoval.stats.leadingRow}`);
+      }
+      logs.push(
+        `Removed ${contextRemoval.removedRows.length} leading/header rows${
+          reasonLabels.length ? ` (${reasonLabels.join(', ')})` : ''
+        }.`
+      );
+      updatedMetadata.removedContextRowCount =
+        (updatedMetadata.removedContextRowCount || 0) + contextRemoval.removedRows.length;
+      updatedMetadata.structureEvidence = {
+        ...(updatedMetadata.structureEvidence || {}),
+        leadingRowsRemoved: true,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    const summaryResult = removeSummaryRowsHelper({ data: workingData });
+    let removedRows = 0;
+    if (summaryResult && Array.isArray(summaryResult.removedRows)) {
+      removedRows = summaryResult.removedRows.length;
+    }
+    if (removedRows > 0) {
+      workingData = summaryResult.cleanedData;
+      logs.push(`Deterministic summary removal removed ${removedRows} rows (total/subtotal).`);
+    }
+    if (removedRows > 0) {
+      updatedMetadata.removedSummaryRowCount =
+        (updatedMetadata.removedSummaryRowCount || 0) + removedRows;
+    }
+    updatedMetadata.cleanedRowCount = workingData.length;
+    updatedMetadata.structureEvidence = {
+      ...(updatedMetadata.structureEvidence || {}),
+      deterministicSummaryRemoval: removedRows > 0,
+      updatedAt: new Date().toISOString(),
+    };
+    const updatedDataset = {
+      ...dataset,
+      data: workingData,
+      metadata: this.updateMetadataContext(updatedMetadata, workingData),
+    };
+    return {
+      dataset: updatedDataset,
+      logs,
+      removedRows,
+      removedContextRows: contextRemoval?.removedRows?.length || 0,
+    };
+  }
+
+  removeContextualRows(rows, metadata) {
+    if (!Array.isArray(rows) || !rows.length) {
+      return { cleanedData: Array.isArray(rows) ? [...rows] : [], removedRows: [], stats: null };
+    }
+    const normalise = value => {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      return String(value).replace(/\s+/g, ' ').trim().toLowerCase();
+    };
+    const scanLimit = 8;
+    const reportTitle = normalise(metadata?.reportTitle);
+    const headerOrder = Array.isArray(metadata?.headerRow) && metadata.headerRow.length
+      ? metadata.headerRow
+      : Array.isArray(metadata?.inferredHeaders) && metadata.inferredHeaders.length
+      ? metadata.inferredHeaders
+      : null;
+    const headerTokens = new Set(
+      (headerOrder || []).map(name => normalise(name)).filter(Boolean)
+    );
+    const headerFingerprint =
+      headerOrder && headerOrder.length ? headerOrder.map(name => normalise(name)).join('|') : null;
+    const leadingFingerprints = new Set(
+      (Array.isArray(metadata?.leadingRows) ? metadata.leadingRows : [])
+        .map(row => (Array.isArray(row) ? row.map(cell => normalise(cell)).join('|') : ''))
+        .filter(Boolean)
+    );
+
+    const stats = { reportTitle: 0, headerRow: 0, leadingRow: 0 };
+    const cleanedData = [];
+    const removedRows = [];
+
+    const normaliseRowValues = row => {
+      if (!row) return [];
+      if (headerOrder && headerOrder.length) {
+        return headerOrder.map(name => normalise(row[name]));
+      }
+      return Object.keys(row)
+        .sort()
+        .map(key => normalise(row[key]));
+    };
+
+    const isHeaderLikeRow = values => {
+      if (!headerTokens.size || !values.length) {
+        return false;
+      }
+      const matches = values.filter(value => headerTokens.has(value)).length;
+      if (matches === 0) {
+        return false;
+      }
+      const coverage = matches / Math.max(values.length, headerTokens.size);
+      return coverage >= 0.6 && matches >= Math.min(headerTokens.size, 2);
+    };
+
+    rows.forEach((row, index) => {
+      if (!row) {
+        return;
+      }
+      const normalisedValues = normaliseRowValues(row);
+      const fingerprint = normalisedValues.join('|');
+      const nonEmpty = normalisedValues.filter(Boolean);
+      let removalReason = null;
+      if (index < scanLimit && reportTitle && nonEmpty.length === 1 && nonEmpty[0] === reportTitle) {
+        removalReason = 'reportTitle';
+      } else if (index < scanLimit && leadingFingerprints.has(fingerprint)) {
+        removalReason = 'leadingRow';
+      } else if (index < scanLimit && headerFingerprint && fingerprint === headerFingerprint) {
+        removalReason = 'headerRow';
+      } else if (index < scanLimit && isHeaderLikeRow(nonEmpty)) {
+        removalReason = 'headerRow';
+      }
+
+      if (removalReason) {
+        removedRows.push(row);
+        stats[removalReason] = (stats[removalReason] || 0) + 1;
+      } else {
+        cleanedData.push(row);
+      }
+    });
+
+    if (!removedRows.length) {
+      return { cleanedData: rows, removedRows, stats };
+    }
+
+    return { cleanedData, removedRows, stats };
+  }
+
+  evaluateDiagnoseGate(metadata, profiles) {
+    const evidence = metadata?.structureEvidence || {};
+    const shapeFlags = metadata?.shapeTaxonomy?.flags || {};
+    const headerConfidence =
+      typeof evidence.headerConfidence === 'number' ? evidence.headerConfidence : 0.5;
+    let raggedRisk =
+      typeof evidence.raggedRatio === 'number' ? evidence.raggedRatio : shapeFlags.isRagged ? 0.6 : 0.2;
+    if (metadata?.headerLayersMerged) {
+      raggedRisk *= 0.5;
+    }
+    const roleCoverage = computeRoleCoverage(profiles);
+    const updatedEvidence = {
+      ...evidence,
+      roleCoverage,
+      updatedAt: new Date().toISOString(),
+    };
+    if (metadata) {
+      metadata.structureEvidence = updatedEvidence;
+    }
+    const passed =
+      headerConfidence >= 0.6 && roleCoverage >= 0.7 && raggedRisk <= 0.45;
+    const reasons = [];
+    if (headerConfidence < 0.6) {
+      reasons.push('header confidence too low');
+    }
+    if (roleCoverage < 0.7) {
+      reasons.push('insufficient column role coverage');
+    }
+    if (raggedRisk > 0.45) {
+      reasons.push('ragged layout risk high');
+    }
+    const summary =
+      reasons.length > 0
+        ? reasons.join('; ')
+        : 'ready for plan phase';
+    const result = {
+      passed,
+      reason: passed ? null : summary,
+      metrics: {
+        headerConfidence,
+        roleCoverage,
+        raggedRisk,
+      },
+    };
+    this.phaseGateStatus = {
+      ...(this.phaseGateStatus || {}),
+      diagnose: result,
+    };
+    const percent = value => `${Math.round(Math.max(0, Math.min(1, value || 0)) * 100)}%`;
+    const logMessage = passed
+      ? `Phase gate ✓ Diagnose ready (header ${percent(
+          headerConfidence
+        )}, role coverage ${percent(roleCoverage)}).`
+      : `Phase gate ✗ Diagnose blocked: ${summary}.`;
+    this.addProgress(logMessage, passed ? 'system' : 'error');
+    return result;
   }
 
   sanitiseActionForError(action) {
@@ -4405,9 +4988,22 @@ this.state = {
             this.ensureWorkflowPhase('adjust', 'AI 正在調整資料集。');
             this.addProgress('AI is applying a data transformation...');
             try {
+              const metadataFromTransform = { value: null };
               const transformed = executeJavaScriptDataTransform(
                 this.state.csvData.data,
-                action.code.jsFunctionBody
+                action.code.jsFunctionBody,
+                {
+                  metadata: this.state.csvData.metadata || null,
+                  onMetadataChange: updated => {
+                    metadataFromTransform.value = updated;
+                  },
+                  onLog: entry => {
+                    if (!entry) return;
+                    const stage = entry.stage ? `[${entry.stage}] ` : '';
+                    const thought = entry.thought || entry.message || JSON.stringify(entry);
+                    this.addProgress(`JS helper ${stage}${thought}`, 'plan');
+                  },
+                }
               );
               const result = await this.rebuildAfterDataChange(
                 transformed,
@@ -5426,6 +6022,8 @@ this.state = {
     if (rebuildDiagnostics) {
       this.addProgress(`Column profile updated · ${rebuildDiagnostics}`, 'system');
     }
+    this.updateHealthScores(newCsvData.metadata, newProfiles);
+    this.captureDatasetSnapshot(newCsvData, newProfiles);
     this.setState({
       csvData: newCsvData,
       columnProfiles: newProfiles,

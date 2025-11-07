@@ -76,6 +76,39 @@ const hasAlphaNumericMix = value => {
   return /[a-z]/i.test(stringValue) && /\d/.test(stringValue);
 };
 
+export const parseNumericValue = value => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  let stringValue = String(value).trim();
+  if (!stringValue) {
+    return null;
+  }
+
+  let isNegative = false;
+  if (stringValue.startsWith('(') && stringValue.endsWith(')')) {
+    stringValue = stringValue.slice(1, -1);
+    isNegative = true;
+  }
+
+  stringValue = stringValue.replace(/[$\s€£¥%]/g, '');
+
+  const lastComma = stringValue.lastIndexOf(',');
+  const lastDot = stringValue.lastIndexOf('.');
+  if (lastComma > lastDot) {
+    stringValue = stringValue.replace(/\./g, '').replace(',', '.');
+  } else {
+    stringValue = stringValue.replace(/,/g, '');
+  }
+
+  const parsed = Number.parseFloat(stringValue);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  return isNegative ? -parsed : parsed;
+};
+
 const QUARTER_REGEX = /^q([1-4])(?:\s*\/?\s*('?[\d]{2,4}))?$/i;
 
 const MONTHS = {
@@ -120,6 +153,22 @@ const DAYS = {
   sunday: 7,
   sun: 7,
 };
+
+const METRIC_KEYWORDS = [
+  'amount',
+  'revenue',
+  'sales',
+  'qty',
+  'quantity',
+  'units',
+  'cost',
+  'expense',
+  'profit',
+  'loss',
+  'margin',
+  'price',
+  'value',
+];
 
 const parseYearToken = token => {
   if (!token) {
@@ -402,6 +451,263 @@ const buildHeaderNames = (rawHeaderValues, expectedLength) => {
   return headers;
 };
 
+const detectShapeTaxonomy = ({ rawRows = [], structuredRows = [], metadata = {}, expectedColumns = 0 }) => {
+  const headerRow = Array.isArray(metadata.headerRow) ? metadata.headerRow : [];
+  const leadingRows = Array.isArray(metadata.leadingRows) ? metadata.leadingRows : [];
+  const traits = [];
+  const flags = {};
+  const confidence = {};
+
+  const monthMatches = headerRow.filter(value => extractMonthToken(value)).length;
+  const quarterMatches = headerRow.filter(value => {
+    if (!value) return false;
+    return /q[1-4]/i.test(String(value));
+  }).length;
+  const metricMatches = headerRow.filter(value => {
+    if (!value) return false;
+    const lower = String(value).toLowerCase();
+    return METRIC_KEYWORDS.some(keyword => lower.includes(keyword));
+  }).length;
+  const headerCount = headerRow.length || expectedColumns || 0;
+
+  const raggedThreshold = 0.25;
+  const irregularRowCount = rawRows.filter(row => {
+    const cells = countNonEmptyCells(row);
+    if (!cells || !expectedColumns) {
+      return false;
+    }
+    return Math.abs(cells - expectedColumns) >= 1;
+  }).length;
+  const raggedRatio = rawRows.length ? irregularRowCount / rawRows.length : 0;
+  if (raggedRatio >= raggedThreshold) {
+    traits.push('ragged');
+    flags.isRagged = true;
+    confidence.ragged = Number(raggedRatio.toFixed(2));
+  }
+
+  const hasMultiHeader =
+    typeof metadata.detectedHeaderIndex === 'number' && metadata.detectedHeaderIndex > 0;
+  if (hasMultiHeader) {
+    traits.push('header_multirow');
+    flags.hasMultiHeader = true;
+  }
+
+  const hasMixedReport = (metadata.totalLeadingRows || 0) > 0 && leadingRows.some(row => row.some(cell => cell));
+  if (hasMixedReport) {
+    traits.push('mixed_report');
+    flags.hasMixedReport = true;
+  }
+
+  const crosstabIndicator =
+    headerCount >= 6 &&
+    (monthMatches >= 3 || quarterMatches >= 1 || (metricMatches >= 2 && metricMatches >= Math.min(3, Math.floor(headerCount / 3))));
+  if (crosstabIndicator) {
+    traits.push('crosstab');
+    flags.hasCrosstabShape = true;
+    confidence.crosstab = 0.8;
+  }
+
+  const multiMetricIndicator = flags.hasCrosstabShape && metricMatches >= 2;
+  if (multiMetricIndicator) {
+    traits.push('multi_metric');
+    flags.hasMultiMetricCrosstab = true;
+  }
+
+  let primaryShape = 'flat';
+  if (flags.hasCrosstabShape) {
+    primaryShape = flags.hasMultiMetricCrosstab ? 'crosstab_multi_metric' : 'crosstab';
+  } else if (flags.isRagged) {
+    primaryShape = 'ragged';
+  } else if (flags.hasMixedReport) {
+    primaryShape = 'mixed_report';
+  }
+
+  return {
+    primaryShape,
+    traits: Array.from(new Set(traits)),
+    flags,
+    confidence,
+    detectedAt: new Date().toISOString(),
+  };
+};
+
+const mergeMultiRowHeaderLayers = (rows, headerIndex, baseHeaders) => {
+  if (
+    !Array.isArray(rows) ||
+    !Array.isArray(baseHeaders) ||
+    baseHeaders.length === 0 ||
+    headerIndex === null ||
+    headerIndex <= 0
+  ) {
+    return null;
+  }
+  const start = Math.max(0, headerIndex - 2);
+  const layers = [];
+  for (let index = start; index < headerIndex; index += 1) {
+    const candidate = rows[index];
+    if (!candidate) continue;
+    const normalised = candidate.map(normaliseCell);
+    if (normalised.some(Boolean)) {
+      layers.push(normalised);
+    }
+  }
+  if (!layers.length) {
+    return null;
+  }
+  const merged = baseHeaders.map((header, columnIndex) => {
+    const segments = [];
+    layers.forEach(layer => {
+      const value = normaliseCell(layer[columnIndex]);
+      if (value) {
+        segments.push(value);
+      }
+    });
+    if (header) {
+      segments.push(header);
+    }
+    const composed = segments
+      .map(segment => segment.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return composed || `Column ${columnIndex + 1}`;
+  });
+  return merged;
+};
+
+const metricKeywordScore = name => {
+  if (!name) return 0;
+  const lower = String(name).toLowerCase();
+  let score = 0;
+  METRIC_KEYWORDS.forEach(keyword => {
+    if (lower.includes(keyword)) {
+      score += 1;
+    }
+  });
+  return score;
+};
+
+const buildCanonicalRow = (row, metadata) => {
+  const canonicalHeaders =
+    (Array.isArray(metadata?.headerRow) && metadata.headerRow.length
+      ? metadata.headerRow
+      : Array.isArray(metadata?.inferredHeaders) && metadata.inferredHeaders.length
+      ? metadata.inferredHeaders
+      : Array.isArray(metadata?.genericHeaders)
+      ? metadata.genericHeaders
+      : Object.keys(row || {})) || [];
+  const genericHeaders =
+    Array.isArray(metadata?.genericHeaders) && metadata.genericHeaders.length
+      ? metadata.genericHeaders
+      : canonicalHeaders;
+  const canonicalRow = {};
+  canonicalHeaders.forEach((header, index) => {
+    const genericKey = genericHeaders[index];
+    if (genericKey && Object.prototype.hasOwnProperty.call(row || {}, genericKey)) {
+      canonicalRow[header] = row[genericKey];
+    } else if (Object.prototype.hasOwnProperty.call(row || {}, header)) {
+      canonicalRow[header] = row[header];
+    } else {
+      canonicalRow[header] = '';
+    }
+  });
+  return { canonicalHeaders, canonicalRow };
+};
+
+export const unpivotMultiMetricCrosstab = (rows = [], metadata = {}) => {
+  if (!metadata || !Array.isArray(rows) || !rows.length) {
+    return null;
+  }
+  const sampleLimit = Math.min(rows.length, 80);
+  const headerRow =
+    (Array.isArray(metadata.headerRow) && metadata.headerRow.length
+      ? metadata.headerRow
+      : Array.isArray(metadata.inferredHeaders) && metadata.inferredHeaders.length
+      ? metadata.inferredHeaders
+      : Array.isArray(metadata.genericHeaders)
+      ? metadata.genericHeaders
+      : Object.keys(rows[0] || {})) || [];
+  if (!headerRow.length) {
+    return null;
+  }
+  const headerScores = headerRow.map(name => ({
+    name,
+    score: metricKeywordScore(name),
+    numericRatio: 0,
+  }));
+  for (let rowIndex = 0; rowIndex < sampleLimit; rowIndex += 1) {
+    const row = rows[rowIndex];
+    const { canonicalRow } = buildCanonicalRow(row, metadata);
+    headerScores.forEach((entry, index) => {
+      const value = canonicalRow[headerRow[index]];
+      const parsed = parseNumericValue(value);
+      if (parsed !== null) {
+        entry.numericRatio = ((entry.numericRatio * rowIndex) + 1) / (rowIndex + 1);
+      } else {
+        entry.numericRatio = ((entry.numericRatio * rowIndex) + 0) / (rowIndex + 1);
+      }
+    });
+  }
+  const metricColumns = headerScores
+    .filter(entry => {
+      if (!entry.name) return false;
+      if (entry.score >= 1) return true;
+      if (entry.numericRatio >= 0.75) return true;
+      const genericMatch = /^column_\d+$/i.test(entry.name);
+      return genericMatch && entry.numericRatio >= 0.5;
+    })
+    .map(entry => entry.name);
+  if (metricColumns.length < 2) {
+    return null;
+  }
+  const metricSet = new Set(metricColumns);
+  const dimensionColumns = headerRow.filter(name => !metricSet.has(name));
+  if (!dimensionColumns.length) {
+    return null;
+  }
+  const tidyRows = [];
+  rows.forEach(row => {
+    const { canonicalRow } = buildCanonicalRow(row, metadata);
+    const dimensionPayload = {};
+    dimensionColumns.forEach(column => {
+      dimensionPayload[column] =
+        canonicalRow[column] === undefined || canonicalRow[column] === null
+          ? ''
+          : canonicalRow[column];
+    });
+    let emitted = false;
+    metricColumns.forEach(metricName => {
+      const rawValue = canonicalRow[metricName];
+      const hasData = rawValue !== undefined && rawValue !== null && String(rawValue).trim() !== '';
+      if (!hasData) {
+        return;
+      }
+      tidyRows.push({
+        ...dimensionPayload,
+        metric_name: metricName,
+        metric_value: rawValue,
+      });
+      emitted = true;
+    });
+    if (!emitted) {
+      tidyRows.push({
+        ...dimensionPayload,
+        metric_name: metricColumns[0],
+        metric_value: '',
+      });
+    }
+  });
+  return {
+    rows: tidyRows,
+    meta: {
+      dimensionColumns,
+      metricColumns,
+      addedColumns: ['metric_name', 'metric_value'],
+    },
+  };
+};
+
 const rowLooksLikeSummary = values => {
   const trimmedValues = values.map(normaliseCell);
   if (trimmedValues.every(value => !value)) {
@@ -435,39 +741,6 @@ const rowLooksLikeSummary = values => {
   }
 
   return false;
-};
-
-export const parseNumericValue = value => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  let stringValue = String(value).trim();
-  if (!stringValue) {
-    return null;
-  }
-
-  let isNegative = false;
-  if (stringValue.startsWith('(') && stringValue.endsWith(')')) {
-    stringValue = stringValue.slice(1, -1);
-    isNegative = true;
-  }
-
-  stringValue = stringValue.replace(/[$\s€£¥%]/g, '');
-
-  const lastComma = stringValue.lastIndexOf(',');
-  const lastDot = stringValue.lastIndexOf('.');
-  if (lastComma > lastDot) {
-    stringValue = stringValue.replace(/\./g, '').replace(',', '.');
-  } else {
-    stringValue = stringValue.replace(/,/g, '');
-  }
-
-  const parsed = Number.parseFloat(stringValue);
-  if (Number.isNaN(parsed)) {
-    return null;
-  }
-
-  return isNegative ? -parsed : parsed;
 };
 
 export const applyTopNWithOthers = (data, groupByKey, valueKey, topN) => {
@@ -586,6 +859,8 @@ const parseCsvWithWorkerOption = (file, useWorker) =>
             fallbackHeaderSource,
             expectedColumns || fallbackHeaderSource.length
           );
+          const mergedHeaderLayers = mergeMultiRowHeaderLayers(rawRows, headerIndex, inferredHeaders);
+          const effectiveHeaders = mergedHeaderLayers || inferredHeaders;
 
           const dataRows = headerIndex === null ? rawRows : rawRows.slice(headerIndex + 1);
           const structuredRows = [];
@@ -593,7 +868,7 @@ const parseCsvWithWorkerOption = (file, useWorker) =>
           let summaryRowCount = 0;
 
           dataRows.forEach(row => {
-            const normalisedCells = inferredHeaders.map((header, idx) => {
+            const normalisedCells = effectiveHeaders.map((header, idx) => {
               const cellValue = row[idx] !== undefined ? row[idx] : '';
               return normaliseCell(cellValue);
             });
@@ -603,7 +878,7 @@ const parseCsvWithWorkerOption = (file, useWorker) =>
             }
 
             const record = {};
-            inferredHeaders.forEach((header, idx) => {
+            effectiveHeaders.forEach((header, idx) => {
               record[header] = sanitizeValue(normalisedCells[idx]);
             });
 
@@ -634,9 +909,12 @@ const parseCsvWithWorkerOption = (file, useWorker) =>
                 .trim()
             : null;
 
+          const totalRows = dataRows.length;
           const metadata = {
-            headerRow: inferredHeaders,
-            rawHeaderValues: (headerValues || []).map(normaliseCell),
+            headerRow: effectiveHeaders,
+            rawHeaderValues: effectiveHeaders.map(normaliseCell),
+            originalHeaderRow: (headerValues || []).map(normaliseCell),
+            mergedHeaderRow: mergedHeaderLayers || null,
             detectedHeaderIndex: headerIndex,
             totalRowsBeforeFilter: dataRows.length,
             originalRowCount: originalRows.length,
@@ -649,9 +927,50 @@ const parseCsvWithWorkerOption = (file, useWorker) =>
             contextRows,
             contextRowCount: contextRows.length,
             genericHeaders,
-            inferredHeaders,
+            inferredHeaders: effectiveHeaders,
             genericRowCount: genericRows.length,
+            headerLayersMerged: Boolean(mergedHeaderLayers),
           };
+
+          const shapeTaxonomy = detectShapeTaxonomy({
+            rawRows,
+            structuredRows,
+            metadata,
+            expectedColumns,
+          });
+          metadata.shapeTaxonomy = shapeTaxonomy;
+          metadata.hasCrosstabShape = Boolean(shapeTaxonomy?.flags?.hasCrosstabShape);
+          metadata.hasMultiMetricCrosstab = Boolean(shapeTaxonomy?.flags?.hasMultiMetricCrosstab);
+          metadata.hasMixedReport = Boolean(shapeTaxonomy?.flags?.hasMixedReport);
+          metadata.hasMultiHeader = Boolean(shapeTaxonomy?.flags?.hasMultiHeader);
+          metadata.isRagged = Boolean(shapeTaxonomy?.flags?.isRagged);
+          const headerConfidence =
+            typeof metadata.detectedHeaderIndex === 'number' ? 0.85 : 0.5;
+          const summaryDensity =
+            totalRows > 0 ? Math.min(summaryRowCount / Math.max(totalRows, 1), 1) : 0;
+          const raggedRatio =
+            typeof shapeTaxonomy?.confidence?.ragged === 'number'
+              ? shapeTaxonomy.confidence.ragged
+              : shapeTaxonomy?.flags?.isRagged
+            ? 0.6
+            : 0.1;
+          metadata.structureEvidence = {
+            headerConfidence,
+            summaryDensity,
+            raggedRatio,
+            updatedAt: new Date().toISOString(),
+          };
+          if (metadata.headerLayersMerged) {
+            metadata.structureEvidence = {
+              ...metadata.structureEvidence,
+              headerConfidence: Math.min(
+                0.95,
+                (metadata.structureEvidence.headerConfidence || 0.7) + 0.15
+              ),
+              updatedAt: new Date().toISOString(),
+              mergedLayersApplied: true,
+            };
+          }
 
           resolve({
             fileName: file.name,
@@ -689,13 +1008,15 @@ export const processCsv = file => {
 export const profileData = data => {
   if (!data || data.length === 0) return [];
   const headers = Object.keys(data[0]);
-  const profiles = [];
+    const profiles = [];
 
-  for (const header of headers) {
-    const values = data.map(row => row[header]);
-    let numericCount = 0;
-    let nonEmptyCount = 0;
-    let containsNonNumeric = false;
+    for (const header of headers) {
+    const headerName = typeof header === 'string' ? header : '';
+    const headerLower = headerName.toLowerCase();
+      const values = data.map(row => row[header]);
+      let numericCount = 0;
+      let nonEmptyCount = 0;
+      let containsNonNumeric = false;
     let currencyHints = 0;
     let percentageHints = 0;
     let dateHints = 0;
@@ -780,6 +1101,42 @@ export const profileData = data => {
     if (semanticType === 'percentage') {
       roles.add('percentage');
     }
+    const addRoleFromHeader = (regex, role) => {
+      if (headerLower && regex.test(headerLower)) {
+        roles.add(role);
+      }
+    };
+    addRoleFromHeader(/\b(id|code|account|acct|number|ref|no\.)\b/, 'identifier');
+    addRoleFromHeader(/\b(date|period|month|quarter|year|fy|week)\b/, 'time');
+    addRoleFromHeader(/\b(customer|vendor|project|product|department|region)\b/, 'dimension');
+    if (/\b(amount|revenue|sales|turnover|cost|expense|profit|loss|margin|price|value)\b/.test(headerLower)) {
+      roles.add('measure');
+      roles.add('currency');
+      if (semanticType === 'text') {
+        semanticType = 'currency';
+      }
+    }
+    if (/\bqty|quantity|units|count\b/.test(headerLower)) {
+      roles.add('measure');
+    }
+    if (/\bpercent|percentage|pct|ratio\b/.test(headerLower)) {
+      roles.add('percentage');
+      if (semanticType === 'text') {
+        semanticType = 'percentage';
+      }
+    }
+    if (
+      /\b(date|period|month|quarter|year|fy|week)\b/.test(headerLower) &&
+      semanticType === 'text'
+    ) {
+      semanticType = 'date';
+    }
+    if (columnType === 'categorical' && !roles.has('dimension')) {
+      roles.add('dimension');
+    }
+    if (columnType === 'numerical' && !roles.has('measure')) {
+      roles.add('measure');
+    }
 
     const profile = {
       name: header,
@@ -812,8 +1169,10 @@ const splitNumericString = input => {
   return parsableString.split('|');
 };
 
-export const executeJavaScriptDataTransform = (data, jsFunctionBody) => {
+export const executeJavaScriptDataTransform = (data, jsFunctionBody, options = {}) => {
   try {
+    let metadataStore = options && options.metadata ? JSON.parse(JSON.stringify(options.metadata)) : null;
+    const logCallback = typeof options?.onLog === 'function' ? options.onLog : null;
     const utils = {
       parseNumber: value => parseNumericValue(value),
       splitNumericString,
@@ -823,8 +1182,21 @@ export const executeJavaScriptDataTransform = (data, jsFunctionBody) => {
       detectIdentifierColumns: (rows, metadata) =>
         detectIdentifierColumnsTool({ data: rows, metadata }).identifiers,
       isValidIdentifierValue: value => isLikelyIdentifierValue(value),
-      normalizeNumber: (value, options) => normalizeCurrencyValue(value, options),
+      normalizeNumber: (value, optionsArg) => normalizeCurrencyValue(value, optionsArg),
       describeColumns: metadata => describeColumnsHelper(metadata),
+      getMetadata: () => (metadataStore ? JSON.parse(JSON.stringify(metadataStore)) : null),
+      setMetadata: next => {
+        metadataStore = next ? JSON.parse(JSON.stringify(next)) : null;
+      },
+      log: entry => {
+        if (logCallback && entry) {
+          try {
+            logCallback(entry);
+          } catch (error) {
+            console.warn('executeJavaScriptDataTransform: log callback failed', error);
+          }
+        }
+      },
     };
     const transformFunction = new Function('data', '_util', jsFunctionBody);
     const result = transformFunction(data, utils);
@@ -841,6 +1213,13 @@ export const executeJavaScriptDataTransform = (data, jsFunctionBody) => {
       throw new Error('The AI-generated transform function did not return an array of objects.');
     }
 
+    if (typeof options?.onMetadataChange === 'function') {
+      try {
+        options.onMetadataChange(metadataStore ? JSON.parse(JSON.stringify(metadataStore)) : null);
+      } catch (error) {
+        console.warn('executeJavaScriptDataTransform: metadata callback failed', error);
+      }
+    }
     return result;
   } catch (error) {
     console.error('Executing AI-generated JavaScript failed:', error);
