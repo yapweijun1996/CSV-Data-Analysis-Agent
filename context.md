@@ -91,3 +91,66 @@
 - **Change**: Replaced the raw blob with a `leadBlock + instructionLines` workflow. Each guideline line now lives inside plain string arrays (double quotes), then `instructionsBlock = instructionLines.join('\n')` feeds the template via `${instructionsBlock}`. No more inline JSON dumps, no accidental backticks.
 - **Snapshot Discipline**: Documented the 6-row cap for `contextRows` / `leadingRows` and the 5-row cap for `sampleDataRows` so future tweaks don’t reintroduce token bloat.
 - **Verification**: Could not run `node --check services/geminiService.js` because the file uses ESM exports; run `node --input-type=module --check` or Vite build if we need static syntax validation.
+
+## 2025-11-07 Context & README Review Request
+
+- **Goal**: Audit `context.md` + `README.md` so upcoming Vanilla conversion work mirrors the documented agent behavior (multi-step plan, deterministic tool-first cleaning, bilingual comms).
+- **What to achieve**: Summarize current instructions, highlight any gaps/risks worth addressing before extending the vanilla agent, and prep feedback for the user’s review ask.
+- **Current TODO**:
+  1. Re-read `context.md` to ensure latest goals/next steps remain accurate.
+  2. Re-read `README.md` for alignment with agent expectations (no React/Tailwind, multi-step workflow, tool orchestration).
+  3. Report findings + next-step options back to the user in Mandarin-English mixed, numbered list style.
+- **Notes**: Vanilla build already documents Diagnose → Plan → Execute flow, tool schema, and safety constraints; need to double-check if README mentions “Original” folder preservation or other migration caveats.
+- **Risks / Questions**: README still references dev server workflow and optional model download (npm commands) even though final deliverable should avoid Node requirements—confirm whether static build instructions need further simplification.
+
+## 2025-11-08 Bugfix: metadataForPlan ReferenceError
+
+- **Issue**: Upload flow crashed with `ReferenceError: metadataForPlan is not defined` (stack: `buildAnalysisPlanPrompt → generateAnalysisPlans → handleInitialAnalysis`). Root cause: `buildAnalysisPlanPrompt` referenced `metadataForPlan` without defining it; only other prompt builders perform `ensurePlanMetadataHeaders`.
+- **Fix**: Inside `buildAnalysisPlanPrompt`, derive `metadataForPlan` via `ensurePlanMetadataHeaders(metadata, rawSampleRows)` before calling `formatMetadataContext`, so all analysis plans get consistent metadata context without runtime errors.
+- **Follow-up**: Should add regression coverage (unit or smoke) ensuring every prompt helper either receives `metadataForPlan` as an argument or computes it locally before formatting context.
+
+## 2025-11-08 Bugfix: Plan generator `lastError` ReferenceError
+
+- **Issue**: `generateDataPreparationPlan` crashed every iteration with `ReferenceError: lastError is not defined`, so Diagnose → Plan loop stalled after tool planning attempts. Function lacked a working body after the prompt builder, so it never called Gemini/OpenAI nor normalized outputs.
+- **Fix**:
+  - Added normalization helpers (`normaliseDataPreparationPlan`, `normaliseAnalysisSteps`, etc.) plus a deterministic fallback tool sequence (`remove_leading_rows → detect_headers → remove_summary_rows`) when the LLM omits tool calls and JS.
+  - Rebuilt `generateDataPreparationPlan` to build the user prompt, call OpenAI/Gemini with schema + raw capture, sanitize the response, and return a structured plan (explanation, analysisSteps, stagePlan, agentLog, toolCalls, jsFunctionBody, outputColumns, status).
+  - Error handler now attaches raw responses for debugging, so upstream violations log meaningful failureContext instead of hard `ReferenceError`.
+- **Impact**: Vanilla agent can progress past Plan phase again; empty toolCalls now auto-synth to deterministic helpers so Execute step always has work even when the LLM only narrates.
+
+## 2025-11-08 Prep Debug Logging
+
+- **Goal**: Give QA clearer console breadcrumbs when Plan iterations stall or JS transforms fail so logs can be copy/pasted for remote debugging.
+- **Implementation** (`main.js`):
+  - Added helper `logDataPrepDebug(event, details)` that prints `[CSV Agent][PrepDebug]` with session ID, iteration, attempt, tool counts, JS preview, etc., truncating raw responses to <=400 chars.
+  - Emitted logs for plan requests/responses, malformed JSON, planner failures, tool execution summaries, tool-only iterations, JS start/success/failure.
+- **Usage**: When testing locally, open DevTools console and search for `PrepDebug`. Share the snippets (they already redact large payloads) so we can reconstruct the planner state without full network traces.
+
+## 2025-11-08 Guardrail: HEADER_MAPPING misuse
+
+- **Issue**: LLM 會生成 `data[0][HEADER_MAPPING.column_1]` 這類寫法，導致 runtime `undefined.trim`（raw rows只有 `column_N` key，無 canonical key）。
+- **Fix**: `services/geminiService.js` 的 `normaliseDataPreparationPlan` 會在 `sanitizeJsFunctionBody` 後呼叫 `enforceSafeHeaderMappingUsage`。凡匹配 pattern `data[..][HEADER_MAPPING.column_N]` 會主動丟出錯誤，並塞 `failureContext.type = 'hard_coded_structure'` / `reason` 提醒模型必須改用 raw column key + `_util.applyHeaderMapping`。
+- **Effect**: Runtime 不再等 JS 執行才爆錯；Plan 階段立即回報違規，內建 violation handler 會重啟迭代並帶入錯誤訊息，節省來回嘗試。
+
+## 2025-11-08 Diagnose Metrics Upgrade (Plan A Step 1)
+
+- **Goal**: 讓 Diagnose 指標可計算、可追蹤，後續好套 headerConfidence/shapeScore gate。
+- **Implementation**:
+  - `utils/dataProcessor.js:1011+` 的 `profileData` 現在對每欄輸出 `fillRate`, `typeShares {numeric/text/date}`, `nonEmptyCount/totalCount`，作為後續 header confidence 基礎。
+  - `main.js:180-230` 新增 `computeHeaderQualityMetrics`、`computeShapeScoreFromMetadata` 等 helper，依照公式 `0.35*fill + 0.25*uniq + 0.2*structureMatch + 0.2*typeParse` 計算 `headerConfidence`，並把 breakdown 寫回 `metadata.structureEvidence`.
+  - `evaluateHealthScores` 重構：`structureStability` 結合 headerConfidence、`reasonableness` 改用 `shapeScore`，`formatHealthScoreSummary` 會顯示 header%。
+- **Impact**: Diagnose gate、Plan prompt 現在可取得真實 headerConfidence/shapeScore，後續步驟才能根據 minHeaderConfidence=0.7 這類條件做自動決策。
+
+## 2025-11-08 Diagnose Metrics Upgrade (Plan A Step 2)
+
+- **Profiler parity**: `profileData` 追加 `uniqRate = unique/nonEmpty`、`numericParseRate/dateParseRate/textParseRate`，metadata.columnProfiles 直接攜帶這些比例，Plan/Diagnose 無需二次計算。
+- **Header evidence** (`main.js:198-374`):
+  - `computeHeaderQualityMetrics` 現在輸出 `headerRegexHits`, `groupPatternHits`, `positionHint`, 以及 top-3 `weakColumns`（最低 fill/uniq）。
+  - `metadata.structureEvidence.breakdown` 保存上述指標，UI/Plan prompt 可明確看到 headerConfidence 的計分來源。
+- **Shape scores** (`utils/dataProcessor.js:457-530`):
+  - `detectShapeTaxonomy` 回傳 `scores`（narrow/wide/crosstab/mixed）與 `shapeAmbiguous` flag。若前兩名差 < 0.08，標記 ambiguous，Plan 端可先重跑 detect_headers。
+  - shapeScore 門檻：crosstab≥0.75、wide≥0.65、narrow≥0.55，否則 fallback 成 safer shape。
+- **Plan context** (`main.js`, `services/geminiService.js`):
+  - `buildPlanContextPayload` 統一傳遞 `headerConfidence/roleCoverage/shape/shapeScores` 至 Plan prompt（`Diagnose metrics` 區塊）。
+  - `normaliseDataPreparationPlan` 強制 `shape∈{narrow,wide,crosstab,mixed}`、`expectedSchema.columns.length>0`、`toolCalls` 為陣列，違反直接拋 `invalid_plan`。
+- **Structure evidence寫回**：`metadata.structureEvidence` 現在含 `headerConfidenceBreakdown`, `roleCoverage`, `shapeScore`, `weakColumns`，未來 UI 可直接渲染「診斷報告」。

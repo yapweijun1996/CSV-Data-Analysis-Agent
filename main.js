@@ -195,15 +195,206 @@ const computeRoleCoverage = profiles => {
   return covered / profiles.length;
 };
 
+const computeRoleShare = (profiles, targetRole) => {
+  if (!Array.isArray(profiles) || !profiles.length || !targetRole) {
+    return 0;
+  }
+  const matching = profiles.filter(
+    profile => Array.isArray(profile?.roles) && profile.roles.includes(targetRole)
+  ).length;
+  return matching / profiles.length;
+};
+
+const mean = values => {
+  if (!Array.isArray(values) || !values.length) {
+    return 0;
+  }
+  const sum = values.reduce((acc, value) => acc + (Number.isFinite(value) ? value : 0), 0);
+  return sum / values.length;
+};
+
+const computeHeaderStructureMatchScore = metadata => {
+  const headers =
+    (Array.isArray(metadata?.headerRow) && metadata.headerRow.length
+      ? metadata.headerRow
+      : Array.isArray(metadata?.inferredHeaders)
+      ? metadata.inferredHeaders
+      : []) || [];
+  if (!headers.length) {
+    return 0.5;
+  }
+  let alphaCount = 0;
+  let tokenCount = 0;
+  const uniqueTokens = new Set();
+  headers.forEach(value => {
+    if (!value) return;
+    const token = String(value).trim();
+    if (!token) return;
+    tokenCount += 1;
+    uniqueTokens.add(token.toLowerCase());
+    if (/[a-zA-Z]/.test(token)) {
+      alphaCount += 1;
+    } else if (/[a-zA-Z]/.test(token.replace(/[^a-zA-Z]/g, ''))) {
+      alphaCount += 0.5;
+    }
+  });
+  if (!tokenCount) {
+    return 0.5;
+  }
+  const alphaShare = alphaCount / tokenCount;
+  const varietyShare = uniqueTokens.size / tokenCount;
+  return Math.max(0, Math.min(1, 0.7 * alphaShare + 0.3 * varietyShare));
+};
+
+const computeHeaderQualityMetrics = (profiles, metadata) => {
+  const total = Array.isArray(profiles) ? profiles.length : 0;
+  const topCount = Math.min(total || 0, 8);
+  const prioritized = Array.isArray(profiles) ? profiles.slice(0, topCount || 0) : [];
+  const fallbackFill = profile =>
+    typeof profile?.fillRate === 'number'
+      ? profile.fillRate
+      : 1 - Math.min(1, (profile?.missingPercentage || 0) / 100);
+  const fillScore = mean(prioritized.map(profile => fallbackFill(profile)));
+  const uniqScore = mean(prioritized.map(profile => profile?.uniquenessRatio || 0));
+  const structureMatchScore = computeHeaderStructureMatchScore(metadata);
+  const typedShare = total
+    ? profiles.filter(profile => profile?.semanticType && profile.semanticType !== 'text').length /
+      total
+    : 0;
+  const roleCoverage = computeRoleCoverage(profiles);
+  const typeParseScore = Math.min(1, 0.5 * typedShare + 0.5 * roleCoverage);
+  const headerRegexHits = (() => {
+    const headers =
+      (Array.isArray(metadata?.headerRow) && metadata.headerRow.length
+        ? metadata.headerRow
+        : Array.isArray(metadata?.inferredHeaders)
+        ? metadata.inferredHeaders
+        : []) || [];
+    const pattern = /\b(code|id|identifier|desc|name|project|account|amount|total)\b/i;
+    return headers.filter(value => pattern.test(String(value || ''))).length;
+  })();
+  const groupPatternHits = (() => {
+    const headers =
+      (Array.isArray(metadata?.headerRow) && metadata.headerRow.length
+        ? metadata.headerRow
+        : Array.isArray(metadata?.inferredHeaders)
+        ? metadata.inferredHeaders
+        : []) || [];
+    const prefixCounts = headers.reduce((map, value) => {
+      if (!value) return map;
+      const token = String(value).split(/[\s_-]/)[0];
+      if (!token || token.length < 3) return map;
+      const key = token.toLowerCase();
+      map[key] = (map[key] || 0) + 1;
+      return map;
+    }, {});
+    return Object.values(prefixCounts).filter(count => count >= 3).length;
+  })();
+  const positionHint =
+    typeof metadata?.detectedHeaderIndex === 'number'
+      ? metadata.detectedHeaderIndex <= 2
+        ? 1
+        : 0.6
+      : 0.5;
+  const headerConfidence = Number(
+    (
+      0.35 * fillScore +
+      0.25 * uniqScore +
+      0.2 * structureMatchScore +
+      0.2 * typeParseScore
+    ).toFixed(3)
+  );
+  const weakColumns = Array.isArray(profiles)
+    ? [...profiles]
+        .map(profile => {
+          const fill =
+            typeof profile?.fillRate === 'number'
+              ? profile.fillRate
+              : 1 - Math.min(1, (profile?.missingPercentage || 0) / 100);
+          const uniq = typeof profile?.uniquenessRatio === 'number' ? profile.uniquenessRatio : 0;
+          return {
+            name: profile?.name || '(unknown)',
+            fillRate: Number(fill.toFixed(3)),
+            uniqRate: Number(uniq.toFixed(3)),
+            score: 0.5 * (1 - fill) + 0.5 * (1 - uniq),
+          };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+    : [];
+  return {
+    headerConfidence,
+    breakdown: {
+      fillScore: Number(fillScore.toFixed(3)),
+      uniqScore: Number(uniqScore.toFixed(3)),
+      structureMatchScore: Number(structureMatchScore.toFixed(3)),
+      typeParseScore: Number(typeParseScore.toFixed(3)),
+      headerRegexHits,
+      groupPatternHits,
+      positionHint: Number(positionHint.toFixed(2)),
+      weakColumns,
+    },
+    roleCoverage,
+  };
+};
+
+const computeShapeScoreFromMetadata = (metadata, profiles) => {
+  const flags = metadata?.shapeTaxonomy?.flags || {};
+  const confidence = metadata?.shapeTaxonomy?.confidence || {};
+  let baseScore = 0.7;
+  if (flags.hasCrosstabShape) {
+    baseScore = flags.hasMultiMetricCrosstab ? 0.9 : 0.85;
+  } else if (flags.hasMixedReport) {
+    baseScore = 0.6;
+  } else if (flags.isRagged) {
+    baseScore = 0.45;
+  }
+  if (typeof confidence.crosstab === 'number') {
+    baseScore = (baseScore + Math.max(0, Math.min(1, confidence.crosstab))) / 2;
+  }
+  if (typeof confidence.ragged === 'number' && confidence.ragged > 0) {
+    baseScore = Math.min(baseScore, 1 - Math.min(1, confidence.ragged) * 0.6);
+  }
+  const measureShare = computeRoleShare(profiles, 'measure');
+  const identifierShare = computeRoleShare(profiles, 'identifier');
+  const balanceScore = Math.min(1, measureShare + identifierShare);
+  const shapeScore = Math.max(0, Math.min(1, 0.7 * baseScore + 0.3 * balanceScore));
+  return Number(shapeScore.toFixed(3));
+};
+
+const buildPlanContextPayload = (metadata, profiles) => {
+  if (!metadata || typeof metadata !== 'object') {
+    return null;
+  }
+  const structureEvidence = metadata.structureEvidence || {};
+  const taxonomy = metadata.shapeTaxonomy || {};
+  return {
+    headerConfidence:
+      typeof structureEvidence.headerConfidence === 'number'
+        ? structureEvidence.headerConfidence
+        : null,
+    roleCoverage:
+      typeof structureEvidence.roleCoverage === 'number'
+        ? structureEvidence.roleCoverage
+        : computeRoleCoverage(profiles),
+    shape: taxonomy.primaryShape || null,
+    shapeScores: taxonomy.scores || null,
+    shapeAmbiguous: Boolean(taxonomy.flags?.shapeAmbiguous),
+  };
+};
 const evaluateHealthScores = (metadata, profiles, previousSignature = null) => {
   const headerSignature = Array.isArray(metadata?.headerRow)
     ? metadata.headerRow.join('|').toLowerCase()
     : null;
-  const structureStability = previousSignature
+  const headerQuality = computeHeaderQualityMetrics(profiles, metadata);
+  const baseStability = previousSignature
     ? previousSignature === headerSignature
       ? 1
       : 0.75
-    : 0.85;
+    : 0.8;
+  const structureStability = Number(
+    (0.6 * baseStability + 0.4 * (headerQuality.headerConfidence || 0)).toFixed(3)
+  );
   const trickyCount = Array.isArray(profiles)
     ? profiles.filter(profile => profile?.isTrickyMixed).length
     : 0;
@@ -219,11 +410,8 @@ const evaluateHealthScores = (metadata, profiles, previousSignature = null) => {
         (totalProfiles * 100)
       : 0;
   const completeness = 1 - avgMissing;
-  const reasonableness =
-    metadata?.shapeTaxonomy?.flags?.hasCrosstabShape &&
-    metadata?.hasMultiMetricCrosstab
-      ? 0.85
-      : 1;
+  const shapeScore = computeShapeScoreFromMetadata(metadata, profiles);
+  const reasonableness = shapeScore || 0.75;
   const overall = Math.min(
     structureStability,
     typeConsistency,
@@ -236,6 +424,17 @@ const evaluateHealthScores = (metadata, profiles, previousSignature = null) => {
   } else if (overall < 0.8) {
     status = 'watch';
   }
+  if (metadata && typeof metadata === 'object') {
+    const structureEvidence = {
+      ...(metadata.structureEvidence || {}),
+      headerConfidence: headerQuality.headerConfidence,
+      headerConfidenceBreakdown: headerQuality.breakdown,
+      roleCoverage: headerQuality.roleCoverage,
+      shapeScore,
+      updatedAt: new Date().toISOString(),
+    };
+    metadata.structureEvidence = structureEvidence;
+  }
   return {
     structureStability,
     typeConsistency,
@@ -245,6 +444,9 @@ const evaluateHealthScores = (metadata, profiles, previousSignature = null) => {
     status,
     headerSignature: headerSignature || previousSignature || null,
     evaluatedAt: new Date().toISOString(),
+    headerConfidence: headerQuality.headerConfidence,
+    headerConfidenceBreakdown: headerQuality.breakdown,
+    shapeScore,
   };
 };
 
@@ -258,9 +460,11 @@ const formatHealthScoreSummary = scores => {
     scores.structureStability
   )}, types ${percent(scores.typeConsistency)}, completeness ${percent(
     scores.completeness
-  )}, reasonableness ${percent(scores.reasonableness)} (overall ${
-    scores.status
-  }).`;
+  )}, reasonableness ${percent(scores.reasonableness)}${
+    typeof scores.headerConfidence === 'number'
+      ? `, header ${percent(scores.headerConfidence)}`
+      : ''
+  } (overall ${scores.status}).`;
 };
 /** @typedef {import('./types/typedefs.js').AnalysisPlan} AnalysisPlan */
 /** @typedef {import('./types/typedefs.js').AnalysisCardData} AnalysisCardData */
@@ -361,6 +565,40 @@ this.state = {
     });
     this.workflowActivePhase = null;
     this.hasSavedHistoryEntry = false;
+  }
+
+  logDataPrepDebug(event, details = {}) {
+    try {
+      const payload = {
+        event,
+        ts: new Date().toISOString(),
+        session: this.workflowSessionId || null,
+      };
+      if (details && typeof details === 'object') {
+        Object.entries(details).forEach(([key, value]) => {
+          if (value == null) {
+            return;
+          }
+          if (key === 'rawResponse' && typeof value === 'string') {
+            payload.rawResponsePreview = value.slice(0, 400);
+          } else if (key === 'jsCode' && typeof value === 'string') {
+            payload.jsPreview = value.slice(0, 200);
+          } else if (key === 'toolOutputs' && Array.isArray(value)) {
+            payload.toolOutputs = value
+              .slice(0, 3)
+              .map(entry => ({
+                tool: entry?.tool || entry?.name || 'unknown',
+                removedRows: entry?.result?.removedRows?.length || 0,
+              }));
+          } else {
+            payload[key] = value;
+          }
+        });
+      }
+      console.info('[CSV Agent][PrepDebug]', payload);
+    } catch (error) {
+      console.warn('[CSV Agent][PrepDebug] failed to log event', event, error);
+    }
   }
 
   captureSerializableAppState() {
@@ -1736,6 +1974,7 @@ this.state = {
             let attemptErrorForPrompt = lastIterationError;
             let iterationCompleted = false;
             this.updateColumnContext(profiles, activeMetadata);
+            const planContextSnapshot = buildPlanContextPayload(activeMetadata, profiles);
 
             if (iteration === 1 && !lastIterationError) {
               this.addProgress('AI is evaluating the data and proposing preprocessing steps...');
@@ -1763,6 +2002,7 @@ this.state = {
               headerMapping: headerMappingContext,
               toolHistory: toolHistory.slice(-5),
               columnContext: columnContextSummary,
+              planContext: planContextSnapshot,
             };
             iterationContextPayload.onViolation = violation => {
               if (!violation || typeof violation !== 'object') return;
@@ -1803,6 +2043,17 @@ this.state = {
               }
             };
             try {
+              this.logDataPrepDebug('plan_request', {
+                iteration,
+                attempt: attemptLabel,
+                retriesAllowed: maxRetriesPerIteration,
+                sampleRows: sampleRowsForPlan.length,
+                columnCount: profiles.length,
+                lastErrorMessage:
+                  attemptErrorForPrompt && attemptErrorForPrompt.message
+                    ? attemptErrorForPrompt.message
+                    : null,
+              });
               iterationPlan = await generateDataPreparationPlan(
                 profiles,
                 sampleRowsForPlan,
@@ -1822,6 +2073,12 @@ this.state = {
                   ? failureContext.type
                   : null;
               if (rawResponse) {
+                this.logDataPrepDebug('plan_malformed_json', {
+                  iteration,
+                  attempt: attemptLabel,
+                  message,
+                  rawResponse,
+                });
                 this.addProgress(
                   `${iterationLabel} 無法解析模型 JSON，請求重新輸出有效格式。`,
                   'error'
@@ -1840,6 +2097,13 @@ this.state = {
                 `${iterationLabel} attempt ${attemptLabel} planner failed: ${message}`,
                 'error'
               );
+              this.logDataPrepDebug('plan_failure', {
+                iteration,
+                attempt: attemptLabel,
+                message,
+                failureType,
+                failureReason,
+              });
               if (failureReason) {
                 const failureLabel =
                   failureType === 'missing_actions'
@@ -1906,6 +2170,22 @@ this.state = {
             if (stagePlanMessages.length) {
               this.stagePlanMessages = stagePlanMessages;
             }
+            const stageStatusSummary = (() => {
+              if (!iterationPlan.stagePlan || typeof iterationPlan.stagePlan !== 'object') {
+                return null;
+              }
+              return Object.entries(iterationPlan.stagePlan)
+                .map(([key, detail]) => `${key}:${detail?.status || 'pending'}`)
+                .join(', ');
+            })();
+            this.logDataPrepDebug('plan_response', {
+              iteration,
+              attempt: attemptLabel,
+              status: iterationStatus || 'unspecified',
+              hasJs: Boolean(iterationPlan.jsFunctionBody),
+              toolCalls: Array.isArray(iterationPlan.toolCalls) ? iterationPlan.toolCalls.length : 0,
+              stageStatuses: stageStatusSummary,
+            });
             formatAgentLogMessages(iterationPlan.agentLog).forEach(message => {
               this.addProgress(`${iterationLabel} · ${message}`, 'system');
             });
@@ -1919,6 +2199,13 @@ this.state = {
               if (toolOutputs && toolOutputs.length) {
                 toolHistory = toolHistory.concat(toolOutputs).slice(-10);
               }
+              this.logDataPrepDebug('tool_calls_executed', {
+                iteration,
+                attempt: attemptLabel,
+                tools: iterationPlan.toolCalls.map(call => call.tool || 'unknown'),
+                toolCount: iterationPlan.toolCalls.length,
+                outputCount: toolOutputs ? toolOutputs.length : 0,
+              });
               this.addProgress(
                 `${iterationLabel} 使用 ${iterationPlan.toolCalls.length} 個工具後將重新規劃下一步。`,
                 'system'
@@ -1928,6 +2215,12 @@ this.state = {
 
       const hasJs = typeof iterationPlan.jsFunctionBody === 'string' && iterationPlan.jsFunctionBody.trim();
       if (!hasJs) {
+        this.logDataPrepDebug('plan_no_js', {
+          iteration,
+          attempt: attemptLabel,
+          status: iterationStatus || 'continue',
+          toolHistoryCount: toolHistory.length,
+        });
         this.addProgress(`${summaryMessage}（工具-only iterate）`);
         this.completeWorkflowStep({
           label: iterationLabel,
@@ -1959,6 +2252,12 @@ this.state = {
               const originalCount = dataForAnalysis.data.length;
               this.captureDatasetSnapshot(dataForAnalysis, profiles);
               let metadataFromTransform = null;
+              this.logDataPrepDebug('js_execute_start', {
+                iteration,
+                attempt: attemptLabel,
+                rowCountBefore: originalCount,
+                jsCode: iterationPlan.jsFunctionBody,
+              });
               const transformed = executeJavaScriptDataTransform(
                 dataForAnalysis.data,
                 iterationPlan.jsFunctionBody,
@@ -1981,6 +2280,12 @@ this.state = {
 
               dataForAnalysis.data = transformed;
               const newCount = dataForAnalysis.data.length;
+              this.logDataPrepDebug('js_execute_success', {
+                iteration,
+                attempt: attemptLabel,
+                rowCountBefore: originalCount,
+                rowCountAfter: newCount,
+              });
               this.completeWorkflowStep({
                 label: `${iterationLabel} transformation`,
                 outcome: `${originalCount} → ${newCount}`,
@@ -2073,6 +2378,11 @@ this.state = {
             } catch (prepError) {
               const prepMessage =
                 prepError instanceof Error ? prepError.message : String(prepError);
+              this.logDataPrepDebug('js_execute_failure', {
+                iteration,
+                attempt: attemptLabel,
+                message: prepMessage,
+              });
               this.addProgress(
                 attempt > 0
                   ? `${iterationLabel} retry ${attemptLabel} failed: ${prepMessage}`

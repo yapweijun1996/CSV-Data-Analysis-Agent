@@ -35,8 +35,11 @@ const normaliseCell = value => {
   return String(value).trim();
 };
 
-const countNonEmptyCells = row =>
-  row.reduce((count, cell) => (normaliseCell(cell) ? count + 1 : count), 0);
+const countNonEmptyCells = row => {
+  if (!row) return 0;
+  const cells = Array.isArray(row) ? row : Object.values(row);
+  return cells.reduce((count, cell) => (normaliseCell(cell) ? count + 1 : count), 0);
+};
 
 const looksNumeric = value => {
   if (!value) return false;
@@ -516,13 +519,52 @@ const detectShapeTaxonomy = ({ rawRows = [], structuredRows = [], metadata = {},
     flags.hasMultiMetricCrosstab = true;
   }
 
-  let primaryShape = 'flat';
-  if (flags.hasCrosstabShape) {
-    primaryShape = flags.hasMultiMetricCrosstab ? 'crosstab_multi_metric' : 'crosstab';
-  } else if (flags.isRagged) {
-    primaryShape = 'ragged';
-  } else if (flags.hasMixedReport) {
-    primaryShape = 'mixed_report';
+  const estimateShapeScores = () => {
+    const columnCount = headerRow.length || expectedColumns || 0;
+    const rowCount = structuredRows.length || rawRows.length || 0;
+    const avgDataRowWidth =
+      rowCount > 0
+        ? structuredRows.reduce((sum, row) => sum + countNonEmptyCells(row), 0) /
+          Math.max(rowCount, 1)
+        : columnCount;
+    const crosstabScore = flags.hasCrosstabShape
+      ? Math.min(1, 0.78 + (metricMatches / Math.max(columnCount || 1, 1)) * 0.4)
+      : Math.max(0.3, monthMatches ? 0.55 : 0.35);
+    const wideScore =
+      columnCount >= Math.max(expectedColumns || 0, 1) * 1.2 || metricMatches >= 4
+        ? Math.min(0.9, 0.65 + (metricMatches / Math.max(columnCount || 1, 1)) * 0.3)
+        : 0.45;
+    const narrowScore =
+      columnCount <= Math.max(expectedColumns || columnCount, 1) * 1.05 && !flags.hasCrosstabShape
+        ? 0.6
+        : 0.5;
+    const mixedScore = flags.hasMixedReport ? 0.7 : 0.45;
+    return {
+      crosstab: Number(Math.max(0, Math.min(1, crosstabScore)).toFixed(3)),
+      wide: Number(Math.max(0, Math.min(1, wideScore)).toFixed(3)),
+      narrow: Number(Math.max(0, Math.min(1, narrowScore)).toFixed(3)),
+      mixed: Number(Math.max(0, Math.min(1, mixedScore)).toFixed(3)),
+    };
+  };
+
+  const shapeScores = estimateShapeScores();
+  const thresholdMap = {
+    crosstab: 0.75,
+    wide: 0.65,
+    narrow: 0.55,
+    mixed: 0.6,
+  };
+  const orderedShapes = Object.entries(shapeScores).sort((a, b) => b[1] - a[1]);
+  const [topShape, topScore] = orderedShapes[0] || ['narrow', 0.5];
+  const secondScore = orderedShapes[1] ? orderedShapes[1][1] : 0;
+  const shapeAmbiguous = Math.abs(topScore - secondScore) < 0.08;
+  if (shapeAmbiguous) {
+    flags.shapeAmbiguous = true;
+  }
+  let primaryShape = topShape;
+  if (topScore < (thresholdMap[topShape] || 0.5)) {
+    primaryShape =
+      flags.hasCrosstabShape ? 'crosstab' : flags.hasMixedReport ? 'mixed' : 'narrow';
   }
 
   return {
@@ -530,6 +572,7 @@ const detectShapeTaxonomy = ({ rawRows = [], structuredRows = [], metadata = {},
     traits: Array.from(new Set(traits)),
     flags,
     confidence,
+    scores: shapeScores,
     detectedAt: new Date().toISOString(),
   };
 };
@@ -1011,15 +1054,15 @@ export const processCsv = file => {
 export const profileData = data => {
   if (!data || data.length === 0) return [];
   const headers = Object.keys(data[0]);
-    const profiles = [];
+  const profiles = [];
 
-    for (const header of headers) {
+  for (const header of headers) {
     const headerName = typeof header === 'string' ? header : '';
     const headerLower = headerName.toLowerCase();
-      const values = data.map(row => row[header]);
-      let numericCount = 0;
-      let nonEmptyCount = 0;
-      let containsNonNumeric = false;
+    const values = data.map(row => row[header]);
+    let numericCount = 0;
+    let nonEmptyCount = 0;
+    let containsNonNumeric = false;
     let currencyHints = 0;
     let percentageHints = 0;
     let dateHints = 0;
@@ -1056,7 +1099,8 @@ export const profileData = data => {
     });
 
     const hasNumericCoverage = numericCount > 0 && !containsNonNumeric;
-    const missingPercentage = data.length === 0 ? 0 : ((data.length - nonEmptyCount) / data.length) * 100;
+    const missingPercentage =
+      data.length === 0 ? 0 : ((data.length - nonEmptyCount) / data.length) * 100;
     const uniqueValues = new Set(
       canonicalValues
         .filter(Boolean)
@@ -1067,6 +1111,11 @@ export const profileData = data => {
     const currencyRatio = nonEmptyCount === 0 ? 0 : currencyHints / nonEmptyCount;
     const percentageRatio = nonEmptyCount === 0 ? 0 : percentageHints / nonEmptyCount;
     const dateRatio = nonEmptyCount === 0 ? 0 : dateHints / nonEmptyCount;
+    const totalCount = data.length || 0;
+    const fillRate = totalCount === 0 ? 0 : nonEmptyCount / totalCount;
+    const numericShare = nonEmptyCount === 0 ? 0 : numericCount / nonEmptyCount;
+    const dateShare = dateRatio;
+    const textShare = nonEmptyCount === 0 ? 0 : Math.max(0, 1 - Math.min(1, numericShare + dateShare));
 
     const isLikelyIdentifierColumn = identifierRatio >= 0.5 && uniquenessRatio >= 0.5;
     const isTrickyMixed = !hasNumericCoverage && identifierRatio >= 0.3 && identifierRatio < 0.5;
@@ -1146,11 +1195,23 @@ export const profileData = data => {
       type: columnType,
       missingPercentage,
       uniquenessRatio,
+      uniqRate: uniquenessRatio,
       semanticType,
       roles: Array.from(roles),
       sampleValues: canonicalValues.filter(Boolean).slice(0, 5),
       isLikelyIdentifier: isLikelyIdentifierColumn,
       isTrickyMixed,
+      fillRate,
+      typeShares: {
+        numeric: Number(Math.max(0, Math.min(1, numericShare)).toFixed(3)),
+        text: Number(Math.max(0, Math.min(1, textShare)).toFixed(3)),
+        date: Number(Math.max(0, Math.min(1, dateShare)).toFixed(3)),
+      },
+      numericParseRate: Number(Math.max(0, Math.min(1, numericShare)).toFixed(3)),
+      dateParseRate: Number(Math.max(0, Math.min(1, dateShare)).toFixed(3)),
+      textParseRate: Number(Math.max(0, Math.min(1, textShare)).toFixed(3)),
+      nonEmptyCount,
+      totalCount,
     };
 
     if (columnType === 'numerical') {

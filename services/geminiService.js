@@ -1470,6 +1470,27 @@ const sanitizeJsFunctionBody = jsBody => {
   return enforceTopLevelReturn(core);
 };
 
+const HEADER_MAPPING_DATA_ACCESS_REGEX = /data\s*\[[^\]]*?\]\s*\[\s*HEADER_MAPPING\s*\.\s*column_\d+\s*\]/i;
+
+const enforceSafeHeaderMappingUsage = jsBody => {
+  if (typeof jsBody !== 'string' || !jsBody.trim()) {
+    return;
+  }
+  if (HEADER_MAPPING_DATA_ACCESS_REGEX.test(jsBody)) {
+    const preview = jsBody.slice(0, 400);
+    const error = new Error(
+      'JS attempted to read rows via HEADER_MAPPING.column_N. Use raw column keys and _util.applyHeaderMapping instead.'
+    );
+    error.failureContext = {
+      type: 'hard_coded_structure',
+      reason:
+        '禁止 pattern：data[rowIndex][HEADER_MAPPING.column_N]。請先用原始 column_N 讀值，再透過 _util.applyHeaderMapping 取得 canonical key。',
+      codePreview: preview,
+    };
+    throw error;
+  }
+};
+
 const normalizeToolCalls = toolCalls => {
   if (!Array.isArray(toolCalls)) {
     return [];
@@ -1508,6 +1529,219 @@ const normalizeToolCalls = toolCalls => {
       return { tool, args };
     })
     .filter(Boolean);
+};
+
+const DEFAULT_TOOL_SEQUENCE = [
+  { tool: 'remove_leading_rows', args: '{}' },
+  { tool: 'detect_headers', args: '{}' },
+  { tool: 'remove_summary_rows', args: '{}' },
+];
+
+const normaliseAnalysisSteps = (steps, fallbackExplanation) => {
+  if (!Array.isArray(steps)) {
+    return fallbackExplanation ? [fallbackExplanation] : [];
+  }
+  const normalized = steps
+    .map(step => {
+      if (typeof step === 'string') {
+        return step.trim();
+      }
+      if (step == null) {
+        return '';
+      }
+      return String(step).trim();
+    })
+    .filter(Boolean);
+  if (normalized.length) {
+    return normalized.slice(0, 12);
+  }
+  return fallbackExplanation ? [fallbackExplanation] : [];
+};
+
+const normaliseOutputColumns = (outputColumns, fallbackColumns = []) => {
+  const toProfiles = source =>
+    Array.isArray(source)
+      ? source
+          .map(column => {
+            if (!column || typeof column !== 'object') {
+              return null;
+            }
+            const name =
+              typeof column.name === 'string'
+                ? column.name.trim()
+                : column.name != null
+                ? String(column.name).trim()
+                : '';
+            if (!name) {
+              return null;
+            }
+            const type =
+              typeof column.type === 'string' && column.type.trim()
+                ? column.type.trim()
+                : 'categorical';
+            return { name, type };
+          })
+          .filter(Boolean)
+      : [];
+
+  const normalized = toProfiles(outputColumns);
+  if (normalized.length) {
+    return normalized;
+  }
+  const fallback = toProfiles(fallbackColumns);
+  return fallback.length ? fallback : [];
+};
+
+const normalisePlanStatus = status => {
+  if (typeof status !== 'string') {
+    return 'continue';
+  }
+  const normalized = status.trim().toLowerCase();
+  return ['continue', 'done', 'abort'].includes(normalized) ? normalized : 'continue';
+};
+
+const throwPlanValidationError = reason => {
+  const error = new Error(reason);
+  error.failureContext = { type: 'invalid_plan', reason };
+  throw error;
+};
+
+const normaliseExpectedSchema = (schema, fallbackColumns = []) => {
+  const columns = Array.isArray(schema?.columns)
+    ? schema.columns
+        .map(column => {
+          if (!column || typeof column !== 'object') return null;
+          const name =
+            typeof column.name === 'string'
+              ? column.name.trim()
+              : column.name != null
+              ? String(column.name).trim()
+              : '';
+          if (!name) return null;
+          const type =
+            typeof column.type === 'string' && column.type.trim()
+              ? column.type.trim()
+              : 'string';
+          const role =
+            typeof column.role === 'string' && column.role.trim()
+              ? column.role.trim()
+              : null;
+          return { name, type, role };
+        })
+        .filter(Boolean)
+    : [];
+  if (!columns.length && Array.isArray(fallbackColumns) && fallbackColumns.length) {
+    fallbackColumns.forEach(column => {
+      if (!column?.name) return;
+      columns.push({
+        name: String(column.name),
+        type: column?.type === 'numerical' ? 'number' : 'string',
+        role: Array.isArray(column?.roles) ? column.roles[0] : null,
+      });
+    });
+  }
+  const primaryKey = Array.isArray(schema?.primaryKey) ? schema.primaryKey.slice(0, 3) : [];
+  return { columns, primaryKey };
+};
+
+const normaliseInvariants = invariants => {
+  if (!Array.isArray(invariants)) {
+    return [
+      '禁止 HEADER_MAPPING.column_N 下标访问',
+      '除 remove_summary_rows 外，行数不得减少',
+    ];
+  }
+  const normalized = invariants
+    .map(item => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+  if (!normalized.length) {
+    normalized.push(
+      '禁止 HEADER_MAPPING.column_N 下标访问',
+      '除 remove_summary_rows 外，行数不得减少'
+    );
+  }
+  return normalized;
+};
+
+const normaliseStopCriteria = criteria => {
+  if (!criteria || typeof criteria !== 'object') {
+    return {
+      minHeaderConfidence: 0.7,
+      maxIterations: 3,
+      maxToolFailures: 2,
+    };
+  }
+  return {
+    minHeaderConfidence:
+      typeof criteria.minHeaderConfidence === 'number' ? criteria.minHeaderConfidence : 0.7,
+    maxIterations: typeof criteria.maxIterations === 'number' ? criteria.maxIterations : 3,
+    maxToolFailures: typeof criteria.maxToolFailures === 'number' ? criteria.maxToolFailures : 2,
+  };
+};
+
+const normaliseDataPreparationPlan = (
+  plan,
+  fallbackColumns = [],
+  metadataContext = null
+) => {
+  const safePlan = plan && typeof plan === 'object' ? plan : {};
+  const explanation =
+    typeof safePlan.explanation === 'string' && safePlan.explanation.trim()
+      ? safePlan.explanation.trim()
+      : 'AI 建議優先透過工具清理資料。';
+  let jsFunctionBody =
+    typeof safePlan.jsFunctionBody === 'string' && safePlan.jsFunctionBody.trim()
+      ? sanitizeJsFunctionBody(safePlan.jsFunctionBody)
+      : null;
+  if (jsFunctionBody && !jsFunctionBody.trim()) {
+    jsFunctionBody = null;
+  }
+  let toolCalls = normalizeToolCalls(safePlan.toolCalls);
+  if (!toolCalls.length && !jsFunctionBody) {
+    toolCalls = DEFAULT_TOOL_SEQUENCE.slice(0);
+  }
+  if (jsFunctionBody) {
+    enforceSafeHeaderMappingUsage(jsFunctionBody);
+  }
+
+  const allowedShapes = new Set(['narrow', 'wide', 'crosstab', 'mixed']);
+  let shapeValue =
+    typeof safePlan.shape === 'string' ? safePlan.shape.trim().toLowerCase() : null;
+  if (!allowedShapes.has(shapeValue || '')) {
+    const fallbackShape =
+      typeof metadataContext?.shape === 'string'
+        ? metadataContext.shape.trim().toLowerCase()
+        : null;
+    if (allowedShapes.has(fallbackShape || '')) {
+      shapeValue = fallbackShape;
+    } else {
+      throwPlanValidationError(
+        'Plan must specify a valid shape (narrow|wide|crosstab|mixed).'
+      );
+    }
+  }
+  const expectedSchema = normaliseExpectedSchema(safePlan.expectedSchema, fallbackColumns);
+  if (!expectedSchema.columns.length) {
+    throwPlanValidationError('expectedSchema.columns must include at least one entry.');
+  }
+  if (!Array.isArray(toolCalls)) {
+    throwPlanValidationError('toolCalls must be an array.');
+  }
+
+  return {
+    explanation,
+    analysisSteps: normaliseAnalysisSteps(safePlan.analysisSteps, explanation),
+    jsFunctionBody,
+    outputColumns: normaliseOutputColumns(safePlan.outputColumns, fallbackColumns),
+    stagePlan: normaliseStagePlan(safePlan.stagePlan),
+    agentLog: normaliseAgentLogEntries(safePlan.agentLog),
+    toolCalls,
+    status: normalisePlanStatus(safePlan.status),
+    shape: shapeValue,
+    expectedSchema,
+    invariants: normaliseInvariants(safePlan.invariants),
+    stopCriteria: normaliseStopCriteria(safePlan.stopCriteria),
+  };
 };
 
 const callOpenAIJson = async (settings, systemPrompt, userPrompt, options = {}) => {
@@ -1573,32 +1807,63 @@ const callGeminiClient = async settings => {
   return new GoogleGenAI({ apiKey: key });
 };
 
+const buildGeminiContents = prompt => {
+  if (Array.isArray(prompt)) {
+    return prompt.map(entry => {
+      const role =
+        entry && typeof entry.role === 'string' && ['user', 'model'].includes(entry.role)
+          ? entry.role
+          : 'user';
+      return {
+        role,
+        parts: Array.isArray(entry.parts)
+          ? entry.parts
+          : [{ text: typeof entry.text === 'string' ? entry.text : '' }],
+      };
+    });
+  }
+  const text = typeof prompt === 'string' ? prompt : '';
+  return [
+    {
+      role: 'user',
+      parts: [{ text }],
+    },
+  ];
+};
+
 const callGeminiJson = async (settings, prompt, options = {}) => {
   const modelId =
     settings.model === 'gemini-2.5-flash' || settings.model === 'gemini-2.5-pro'
       ? settings.model
       : 'gemini-2.5-pro';
   const ai = await callGeminiClient(settings);
-  const config = {
-    responseMimeType: 'application/json',
-    generationConfig: {
-      thinkingConfig: {
-        thinkingBudget: 1888,
-      },
-    },
-  };
   const { schema, includeRaw } = options || {};
+  const generationConfig = {
+    temperature: typeof settings.temperature === 'number' ? settings.temperature : 0.2,
+    maxOutputTokens: 1200,
+  };
   if (schema) {
-    config.responseSchema = schema;
+    generationConfig.responseMimeType = 'application/json';
+    generationConfig.responseSchema = schema;
   }
   const response = await withRetry(() =>
     ai.models.generateContent({
       model: modelId,
-      contents: prompt,
-      config,
+      contents: buildGeminiContents(prompt),
+      generationConfig,
     })
   );
-  const rawText = typeof response.text === 'function' ? await response.text() : response.text;
+  let rawText = '';
+  if (typeof response.text === 'function') {
+    rawText = await response.text();
+  } else if (typeof response.text === 'string') {
+    rawText = response.text;
+  } else {
+    rawText =
+      response?.candidates?.[0]?.content?.parts
+        ?.map(part => (typeof part?.text === 'string' ? part.text : ''))
+        .join(' ') || '';
+  }
   const parsed = cleanJson(rawText);
   if (includeRaw) {
     return { parsed, rawText };
@@ -1615,7 +1880,7 @@ const callGeminiText = async (settings, prompt) => {
   const response = await withRetry(() =>
     ai.models.generateContent({
       model: modelId,
-      contents: prompt,
+      contents: buildGeminiContents(prompt),
     })
   );
   const rawText = typeof response.text === 'function' ? await response.text() : response.text;
@@ -1828,11 +2093,82 @@ export const generateDataPreparationPlan = async (
     samplePreview,
     samplePreviewColumns: previewColumns,
     samplePreviewRowCount: Math.min(5, normalizedSampleData.length || 0),
+    planContext: {
+      headerConfidence:
+        typeof metadataForPlan?.structureEvidence?.headerConfidence === 'number'
+          ? metadataForPlan.structureEvidence.headerConfidence
+          : null,
+      roleCoverage:
+        typeof metadataForPlan?.structureEvidence?.roleCoverage === 'number'
+          ? metadataForPlan.structureEvidence.roleCoverage
+          : null,
+      shape: metadataForPlan?.shapeTaxonomy?.primaryShape || null,
+      shapeScores: metadataForPlan?.shapeTaxonomy?.scores || null,
+      shapeAmbiguous: Boolean(metadataForPlan?.shapeTaxonomy?.flags?.shapeAmbiguous),
+    },
   };
 
 const systemPrompt = `You are an expert data engineer. Your task is to analyze a raw dataset and, if necessary, provide a JavaScript function to clean and reshape it into a tidy, analysis-ready format. CRITICALLY, you must also provide the schema of the NEW, transformed data with detailed data types.
 A tidy format has: 1. Each variable as a column. 2. Each observation as a row.
-You MUST respond with a single valid JSON object, and nothing else. The JSON object must adhere to the provided schema.`;
+You MUST respond with a single valid JSON object, and nothing else. The JSON object must adhere to the provided schema.
+
+Your response MUST strictly match this JSON structure (all fields required, even if empty):
+{
+  "shape": "narrow",
+  "stagePlan": {
+    "titleExtraction": { "goal": "...", "checkpoints": ["..."], "status": "pending|in_progress|done" },
+    "headerResolution": { ... },
+    "dataNormalization": { ... }
+  },
+  "toolCalls": [
+    { "tool": "remove_leading_rows", "args": {"maxRows": 5} }
+  ],
+  "expectedSchema": {
+    "columns": [
+      { "name": "Code", "type": "string", "role": "identifier" },
+      { "name": "Amount", "type": "number", "role": "measure" }
+    ],
+    "primaryKey": ["Code"]
+  },
+  "invariants": [
+    "禁止 HEADER_MAPPING.column_N 下标访问",
+    "除 remove_summary_rows 外，行数不得减少"
+  ],
+  "stopCriteria": { "minHeaderConfidence": 0.7, "maxIterations": 3, "maxToolFailures": 2 },
+  "analysisSteps": ["..."],
+  "agentLog": [],
+  "jsFunctionBody": "",
+  "explanation": "..."
+}
+
+- Do NOT output additional explanatory text outside of this JSON object.
+- If you omit the "shape" field or use invalid values, the plan is rejected.
+- Every field must be present; omit nothing.`;
+const PLAN_SAMPLE_JSON = `{
+  "shape": "crosstab",
+  "stagePlan": [
+    {"id": "S1", "goal": "Remove leading rows"},
+    {"id": "S2", "goal": "Merge multi-level headers"}
+  ],
+  "toolCalls": [
+    {"tool": "remove_leading_rows", "args": {"maxRows": 30}},
+    {"tool": "detect_headers", "args": {"maxLevels": 3, "joiner": "__"}}
+  ],
+  "expectedSchema": {
+    "columns": [{"name": "code", "type": "string", "role": "identifier"}],
+    "primaryKey": ["code"]
+  },
+  "invariants": [
+    "禁用 HEADER_MAPPING.column_N",
+    "除 remove_summary_rows 外不許減行"
+  ],
+  "stopCriteria": {
+    "minHeaderConfidence": 0.7,
+    "maxIterations": 3,
+    "maxToolFailures": 2
+  },
+  "jsFunctionBody": ""
+}`;
 
 const buildUserPrompt = (lastError, iterationContext = null, promptExtras = {}) => {
   const iterationSummary = (() => {
@@ -1981,6 +2317,37 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
   const datasetContextBlock = datasetSnapshotText
     ? `Dataset snapshot:\n${datasetSnapshotText}\n\n`
     : contextSection;
+  const planContextSource =
+    (iterationContext && iterationContext.planContext) || promptExtras.planContext || null;
+  const planContextBlock = (() => {
+    if (!planContextSource) {
+      return '';
+    }
+    const lines = ['Diagnose metrics:'];
+    if (typeof planContextSource.headerConfidence === 'number') {
+      lines.push(`- headerConfidence: ${(planContextSource.headerConfidence * 100).toFixed(1)}%`);
+    }
+    if (typeof planContextSource.roleCoverage === 'number') {
+      lines.push(`- roleCoverage: ${(planContextSource.roleCoverage * 100).toFixed(1)}%`);
+    }
+    if (planContextSource.shape) {
+      const shapeLabel = planContextSource.shapeAmbiguous
+        ? `${planContextSource.shape} (ambiguous)`
+        : planContextSource.shape;
+      lines.push(`- shape: ${shapeLabel}`);
+    }
+    if (
+      planContextSource.shapeScores &&
+      typeof planContextSource.shapeScores === 'object' &&
+      Object.keys(planContextSource.shapeScores).length
+    ) {
+      const summary = Object.entries(planContextSource.shapeScores)
+        .map(([name, score]) => `${name}=${(score * 100).toFixed(0)}%`)
+        .join(', ');
+      lines.push(`- shapeScores: ${summary}`);
+    }
+    return `${lines.join('\n')}\n\n`;
+  })();
   const selectedPreviewColumns =
     Array.isArray(promptExtras?.samplePreviewColumns) && promptExtras.samplePreviewColumns.length
       ? promptExtras.samplePreviewColumns.join(', ')
@@ -2045,7 +2412,12 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
   })();
   const stagePlanContract = `\nStage Planning Contract (Vanilla Agent):\n- ALWAYS populate \`stagePlan\` with three objects: \`titleExtraction\`, \`headerResolution\`, and \`dataNormalization\`.\n- Treat每個階段 as an independent micro-goal: checkpoints must be tiny, verifiable actions (e.g., “Inspect rows 0–2 for title text”, “Call detectHeaders to confirm canonical names”) rather than a single large paragraph.\n- Each stage must include: goal, ordered checkpoints, heuristics, fallbackStrategies, expectedArtifacts, nextAction, status, and a concise logMessage so the UI can narrate progress step by step.\n- Provide \`agentLog\` entries (e.g., {"stage":"title","thought":"Row 0 looks like a title","action":"store row 0 as metadata"}) so engineers can audit the thinking trail and Raw Data Explorer can explain what changed.\n- Prefer setting \`jsFunctionBody\` to null. Only emit code if the transformation is trivial or you can faithfully translate the stage plan into deterministic steps; otherwise describe the algorithm inside \`stagePlan\` so the Vanilla Agent can execute it tool-by-tool.\n- When a Crosstab/wide layout is detected, explicitly outline the unpivot logic inside \`dataNormalization\` (identifier detection, iteration ranges, helper calls) and avoid relying on hard-coded indices.`;
 
-  const leadBlock = `${datasetContextBlock}${columnContextBlock}${samplePreviewBlock}${iterationSummary}${previousErrorBlock}${multiPassRules}${headerMappingBlock}${mappingPreviewBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}${stagePlanContract}${failureContextBlock}`;
+const contractReminder = `\nSTRICT JSON CONTRACT:
+- shape must be one of: "narrow", "wide", "crosstab", "mixed".
+- expectedSchema.columns must have at least one entry with name/type/role.
+- toolCalls must be an array (use [] if no tools). Malformed JSON is invalid.\n`;
+
+  const leadBlock = `${datasetContextBlock}${planContextBlock}${columnContextBlock}${samplePreviewBlock}${iterationSummary}${previousErrorBlock}${multiPassRules}${contractReminder}${headerMappingBlock}${mappingPreviewBlock}${violationGuidanceBlock}${toolHistoryBlock}${helpersDescription}${stagePlanContract}${failureContextBlock}`;
   const instructionsBlock = buildDataPrepGuidelines({
     summaryKeywordsDisplay: SUMMARY_KEYWORDS_DISPLAY,
     mandatorySummaryBullet,
@@ -2054,13 +2426,52 @@ const canonical = _util.applyHeaderMapping(row, HEADER_MAPPING);
 
   return `${leadBlock}\n${instructionsBlock}\n`;
 };
-  if (lastError && lastError.rawResponse) {
-    finalError.rawResponse = lastError.rawResponse;
+
+  const priorError =
+    previousError && typeof previousError === 'object' && typeof previousError.message === 'string'
+      ? previousError
+      : typeof previousError === 'string'
+      ? new Error(previousError)
+      : null;
+  const userPrompt = buildUserPrompt(priorError, iterationContext, promptExtras);
+  let rawResponseText = null;
+
+  try {
+    let parsedPlan;
+    if (provider === 'openai') {
+      const { parsed, rawText } = await callOpenAIJson(settings, systemPrompt, userPrompt, {
+        includeRaw: true,
+      });
+      parsedPlan = parsed;
+      rawResponseText = rawText || null;
+    } else {
+      await getGoogleGenAI();
+      const schema = getDataPreparationSchema();
+      const combinedPrompt = `${systemPrompt}\nSample output:\n${PLAN_SAMPLE_JSON}\n\n${userPrompt}`;
+      const { parsed, rawText } = await callGeminiJson(settings, combinedPrompt, {
+        schema,
+        includeRaw: true,
+      });
+      parsedPlan = parsed;
+      rawResponseText = rawText || null;
+    }
+
+    if (!parsedPlan || typeof parsedPlan !== 'object') {
+      const error = new Error('AI did not return a valid data preparation plan.');
+      if (rawResponseText) {
+        error.rawResponse = rawResponseText;
+      }
+      throw error;
+    }
+
+    return normaliseDataPreparationPlan(parsedPlan, columns, metadataForPlan);
+  } catch (error) {
+    const finalError = error instanceof Error ? error : new Error(String(error));
+    if (rawResponseText && !finalError.rawResponse) {
+      finalError.rawResponse = rawResponseText;
+    }
+    throw finalError;
   }
-  if (lastError && lastError.failureContext) {
-    finalError.failureContext = lastError.failureContext;
-  }
-  throw finalError;
 };
 
 export const generateChatStepPlan = async (planInput = {}, settings = {}) => {
@@ -2110,6 +2521,8 @@ export const generateChatStepPlan = async (planInput = {}, settings = {}) => {
 };
 
 const buildAnalysisPlanPrompt = (columns, sampleData, numPlans, metadata) => {
+  const rawSampleRows = Array.isArray(sampleData) ? sampleData : [];
+  const metadataForPlan = ensurePlanMetadataHeaders(metadata, rawSampleRows) || metadata || null;
   const buckets = deriveColumnBuckets(columns);
   const categorical = buckets.categorical;
   const numerical = buckets.numerical;
