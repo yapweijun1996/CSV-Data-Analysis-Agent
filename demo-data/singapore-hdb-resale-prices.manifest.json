@@ -1,0 +1,135 @@
+{
+  "generatedAt": "2026-07-26T05:02:55.085Z",
+  "source": "Housing & Development Board datasets published on data.gov.sg",
+  "licence": "Singapore Open Data Licence",
+  "transformationPolicy": "No source values are cleaned, normalized, deduplicated, filtered, or sorted. The five official era files are appended in source order. The union schema adds an empty remaining_lease cell only for eras where that official column does not exist.",
+  "output": {
+    "file": "singapore-hdb-resale-prices.csv",
+    "fields": [
+      "month",
+      "town",
+      "flat_type",
+      "block",
+      "street_name",
+      "storey_range",
+      "floor_area_sqm",
+      "flat_model",
+      "lease_commence_date",
+      "remaining_lease",
+      "resale_price"
+    ],
+    "rowCount": 982589,
+    "startMonth": "1990-01",
+    "endMonth": "2026-07",
+    "sha256": "884dfb2acf052613813f69eb57334b4459396e3eeaa7adc130f63f6e1626a538"
+  },
+  "sources": [
+    {
+      "datasetId": "d_ebc5ab87086db484f88045b47411ebc5",
+      "title": "Resale Flat Prices (Based on Approval Date), 1990 - 1999",
+      "canonicalUrl": "https://data.gov.sg/datasets/d_ebc5ab87086db484f88045b47411ebc5/view",
+      "rowCount": 287196,
+      "startMonth": "1990-01",
+      "endMonth": "1999-12",
+      "fields": [
+        "month",
+        "town",
+        "flat_type",
+        "block",
+        "street_name",
+        "storey_range",
+        "floor_area_sqm",
+        "flat_model",
+        "lease_commence_date",
+        "resale_price"
+      ],
+      "downloadedCsvSha256": "2e064923f41cc96536db04c978901695aa0191022829895cf4ce177e42afad57"
+    },
+    {
+      "datasetId": "d_43f493c6c50d54243cc1eab0df142d6a",
+      "title": "Resale Flat Prices (Based on Approval Date), 2000 - Feb 2012",
+      "canonicalUrl": "https://data.gov.sg/datasets/d_43f493c6c50d54243cc1eab0df142d6a/view",
+      "rowCount": 369651,
+      "startMonth": "2000-01",
+      "endMonth": "2012-02",
+      "fields": [
+        "month",
+        "town",
+        "flat_type",
+        "block",
+        "street_name",
+        "storey_range",
+        "floor_area_sqm",
+        "flat_model",
+        "lease_commence_date",
+        "resale_price"
+      ],
+      "downloadedCsvSha256": "5f6a72bd7b9120281863beb1fc4c89aa5f4923f00b0f6c52494c4347363f2c36"
+    },
+    {
+      "datasetId": "d_2d5ff9ea31397b66239f245f57751537",
+      "title": "Resale Flat Prices (Based on Registration Date), Mar 2012 - Dec 2014",
+      "canonicalUrl": "https://data.gov.sg/datasets/d_2d5ff9ea31397b66239f245f57751537/view",
+      "rowCount": 52203,
+      "startMonth": "2012-03",
+      "endMonth": "2014-12",
+      "fields": [
+        "month",
+        "town",
+        "flat_type",
+        "block",
+        "street_name",
+        "storey_range",
+        "floor_area_sqm",
+        "flat_model",
+        "lease_commence_date",
+        "resale_price"
+      ],
+      "downloadedCsvSha256": "6a16e2dc78f70048ec1a522b59a9727581c36e45e02022641c53e755a7657c72"
+    },
+    {
+      "datasetId": "d_ea9ed51da2787afaf8e51f827c304208",
+      "title": "Resale Flat Prices (Based on Registration Date), Jan 2015 - Dec 2016",
+      "canonicalUrl": "https://data.gov.sg/datasets/d_ea9ed51da2787afaf8e51f827c304208/view",
+      "rowCount": 37153,
+      "startMonth": "2015-01",
+      "endMonth": "2016-12",
+      "fields": [
+        "month",
+        "town",
+        "flat_type",
+        "block",
+        "street_name",
+        "storey_range",
+        "floor_area_sqm",
+        "flat_model",
+        "lease_commence_date",
+        "remaining_lease",
+        "resale_price"
+      ],
+      "downloadedCsvSha256": "4ff7ce4a4f642fb384d2b75a42e75b0477e50005f4aaa9989591a7a92507d185"
+    },
+    {
+      "datasetId": "d_8b84c4ee58e3cfc0ece0d773c8ca6abc",
+      "title": "Resale flat prices based on registration date from Jan 2017 onwards",
+      "canonicalUrl": "https://data.gov.sg/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/view",
+      "rowCount": 236386,
+      "startMonth": "2017-01",
+      "endMonth": "2026-07",
+      "fields": [
+        "month",
+        "town",
+        "flat_type",
+        "block",
+        "street_name",
+        "storey_range",
+        "floor_area_sqm",
+        "flat_model",
+        "lease_commence_date",
+        "remaining_lease",
+        "resale_price"
+      ],
+      "downloadedCsvSha256": "6089f4a9e94be008eec5239e6a91918dca4fc6cce6a8576eb7ceb5f252cdace6"
+    }
+  ]
+}

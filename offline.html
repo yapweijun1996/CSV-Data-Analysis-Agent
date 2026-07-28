@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>AI Analysis — Offline</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#f8fafc; color:#0f172a; }
+    body { min-height:100vh; margin:0; display:grid; place-items:center; padding:24px; box-sizing:border-box; }
+    main { width:min(100%,480px); border:1px solid #cbd5e1; border-radius:16px; background:white; padding:28px; box-shadow:0 16px 40px rgba(15,23,42,.12); }
+    h1 { margin:0 0 12px; font-size:24px; } p { color:#475569; line-height:1.6; }
+    button { min-height:44px; border:0; border-radius:10px; padding:10px 18px; background:#2563eb; color:white; font-weight:700; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="title">You are offline</h1>
+    <p id="detail">The app shell is unavailable in this cache. Reconnect once to finish installation, then local data and saved reports can open offline.</p>
+    <button id="retry" type="button">Try again</button>
+  </main>
+  <script>
+    (function () {
+      var language = (navigator.language || 'en').toLowerCase();
+      var copy = language.indexOf('zh') === 0
+        ? ['目前处于离线状态', '此缓存中还没有完整应用。请先重新联网完成安装，之后即可离线打开本地资料和已保存报告。', '重试']
+        : language.indexOf('ja') === 0
+          ? ['オフラインです', 'このキャッシュにはアプリ全体がまだありません。一度再接続してインストールを完了すると、ローカルデータと保存済みレポートをオフラインで開けます。', '再試行']
+          : language.indexOf('ms') === 0
+            ? ['Anda di luar talian', 'Cangkerang aplikasi belum lengkap dalam cache ini. Sambung semula sekali untuk melengkapkan pemasangan, kemudian data setempat dan laporan tersimpan boleh dibuka di luar talian.', 'Cuba lagi']
+            : ['You are offline', 'The app shell is unavailable in this cache. Reconnect once to finish installation, then local data and saved reports can open offline.', 'Try again'];
+      document.getElementById('title').textContent = copy[0];
+      document.getElementById('detail').textContent = copy[1];
+      document.getElementById('retry').textContent = copy[2];
+      document.getElementById('retry').addEventListener('click', function () { location.reload(); });
+    })();
+  </script>
+</body>
+</html>

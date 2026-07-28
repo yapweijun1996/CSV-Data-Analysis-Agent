@@ -1,0 +1,3 @@
+# Cloudflare Pages applies its native SPA fallback when the build has a root
+# index.html and no top-level 404.html. Do not add a /* -> /index.html rule:
+# Wrangler rejects that rewrite as an infinite loop.

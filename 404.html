@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Analysis</title>
+</head>
+<body>
+  <p>Returning to AI Analysis…</p>
+  <script>
+    (function () {
+      var segments = location.pathname.split('/').filter(Boolean);
+      var base = segments.length > 0 ? '/' + segments[0] + '/' : '/';
+      location.replace(base);
+    })();
+  </script>
+</body>
+</html>
