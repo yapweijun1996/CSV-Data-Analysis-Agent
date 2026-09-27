@@ -221,7 +221,7 @@ export const persistSuccessfulCleaning = async ({
     await ensureDuckDbSessionSync(store, normalizedData, reportDiagnostics);
     logCleaningPersistStage('duckdb_sync', duckDbSyncStartedAt);
     // Filter profiles before precheck: exclude empty columns (100% missing),
-    // constant columns (uniqueValues ≤ 1), structural metadata columns (RowRole,
+    // known constant columns, structural metadata columns (RowRole,
     // ResolvedRowRole, HierarchyDepth, SourceRowIndex, RowClass), and
     // pipeline-specific annotation columns (SectionLabel, HeaderPath,
     // CarryForwardAppliedColumns). These confuse evaluateAiSqlPrecheck into
@@ -230,7 +230,7 @@ export const persistSuccessfulCleaning = async ({
     const PIPELINE_ANNOTATION_PATTERN = /^(sectionlabel|headerpath|carryforwardappliedcolumns)$/i;
     const precheckProfiles = normalizedProfiles.filter(p =>
         (p.missingPercentage ?? 0) < 100 &&
-        (p.uniqueValues ?? 0) > 1 &&
+        (p.uniqueValues === undefined ? !p.valueRange || p.valueRange[0] !== p.valueRange[1] : p.uniqueValues > 1) &&
         !isStructuralMetadataColumn(p.name) &&
         !PIPELINE_ANNOTATION_PATTERN.test(p.name),
     );

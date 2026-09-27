@@ -6,6 +6,7 @@ import {
     PROVIDER_GEMINI_CONTEXT_WINDOW,
     PROVIDER_GEMMA_CONTEXT_WINDOW,
     PROVIDER_GPT_CONTEXT_WINDOW,
+    PROVIDER_CONTEXT_WINDOW_CAP,
     PROVIDER_RESERVE_RATIO,
     PROVIDER_KEEP_RECENT_RATIO,
     PROVIDER_MIN_RESERVE_TOKENS,
@@ -16,7 +17,7 @@ import { getForceFallbackModel } from '../../config/runtimeConfig';
 import { DEFAULT_GATEWAY_BASE_URL, DEFAULT_GATEWAY_MODEL, resolveDefaultGatewayApiKey } from '../../config/defaultGatewayConfig';
 import { ensureCloudAiConsent } from '../privacy/cloudAiConsent';
 import { waitForCloudAiConnectivity } from '../pwa/networkAvailability';
-import { fetchWithoutForbiddenUserAgent } from './browserProviderFetch';
+import { fetchDefaultGateway, fetchWithoutForbiddenUserAgent } from './browserProviderFetch';
 import { createLlmDiagnosticMiddleware } from '../observability/llmDiagnosticMiddleware';
 
 export type ModelContextStrategy = 'model_aware' | 'fallback_static';
@@ -57,7 +58,7 @@ export const resolveModelContextProfile = (
     const modelId = resolveProviderModelId(settings, modelOverride).trim().toLowerCase();
 
     if (settings.provider === 'google' && modelId.startsWith('gemini')) {
-        const contextWindow = PROVIDER_GEMINI_CONTEXT_WINDOW;
+        const contextWindow = Math.min(PROVIDER_GEMINI_CONTEXT_WINDOW, PROVIDER_CONTEXT_WINDOW_CAP);
         return {
             contextWindow,
             reserveTokens: Math.max(PROVIDER_MIN_RESERVE_TOKENS, Math.floor(contextWindow * PROVIDER_RESERVE_RATIO)),
@@ -67,7 +68,7 @@ export const resolveModelContextProfile = (
     }
 
     if (settings.provider === 'google' && modelId.startsWith('gemma')) {
-        const contextWindow = PROVIDER_GEMMA_CONTEXT_WINDOW;
+        const contextWindow = Math.min(PROVIDER_GEMMA_CONTEXT_WINDOW, PROVIDER_CONTEXT_WINDOW_CAP);
         return {
             contextWindow,
             reserveTokens: Math.max(PROVIDER_MIN_RESERVE_TOKENS, Math.floor(contextWindow * PROVIDER_RESERVE_RATIO)),
@@ -188,7 +189,7 @@ export const createProviderModel = (
                 model: createOpenAI({
                     apiKey,
                     baseURL: DEFAULT_GATEWAY_BASE_URL,
-                    fetch: fetchWithoutForbiddenUserAgent,
+                    fetch: fetchDefaultGateway,
                 }).responses(modelId),
                 middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'openai')],
             }),

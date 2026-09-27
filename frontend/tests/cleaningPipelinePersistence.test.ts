@@ -212,5 +212,7 @@ describe('persistSuccessfulCleaning', () => {
         expect(state.columnRegistry?.columns.map(column => column.physicalName)).toEqual(['RegionCode', 'Revenue', 'Margin']);
         expect(state.columnRegistry?.columns.map(column => column.displayLabel)).toEqual(['Region', 'Net Revenue', 'Margin']);
         expect(state.columnRegistry?.columns.some(column => column.physicalName === 'BRAND')).toBe(false);
+        expect(runSqlPrecheckMock.mock.calls.at(-1)?.[1]?.map((profile: ColumnProfile) => profile.name))
+            .toEqual(['RegionCode', 'Revenue', 'Margin']);
     });
 });

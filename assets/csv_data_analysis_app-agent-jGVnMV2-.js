@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-FPYXJkel.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-C759MPMP.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-DJ56g5Op.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-RRNVQ8Hi.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-SizZENJt.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-ByTM2p1_.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -232,9 +232,12 @@ const CONTEXT_SUMMARY_REFRESH_DELTA = 6;
 const CONTEXT_MAX_SQL_PREVIEW_CHARS = 320;
 const CONTEXT_MAX_WORKSPACE_ACTION_CHARS = 220;
 const CONTEXT_MAX_OBSERVATION_CHARS = 240;
+const PROVIDER_CONTEXT_WINDOW_CAP = 2e5;
+const PI_CONTEXT_COMPACTION_TRIGGER_RATIO = 0.8;
+const PI_CONTEXT_COMPACTION_KEEP_RECENT_TOKENS = 2e4;
 const PROVIDER_GEMINI_CONTEXT_WINDOW = 25e4;
 const PROVIDER_GEMMA_CONTEXT_WINDOW = 128e3;
-const PROVIDER_GPT_CONTEXT_WINDOW = 128e3;
+const PROVIDER_GPT_CONTEXT_WINDOW = PROVIDER_CONTEXT_WINDOW_CAP;
 const PROVIDER_RESERVE_RATIO = 0.08;
 const PROVIDER_KEEP_RECENT_RATIO = 0.02;
 const PROVIDER_MIN_RESERVE_TOKENS = 2e4;
@@ -680,7 +683,7 @@ const toJsonCompatible = (value2, seen2 = /* @__PURE__ */ new WeakSet()) => {
   }
   return Object.fromEntries(entries2);
 };
-const safeJsonStringify = (value2, space) => JSON.stringify(toJsonCompatible(value2), null, space);
+const safeJsonStringify$2 = (value2, space) => JSON.stringify(toJsonCompatible(value2), null, space);
 const LEGACY_LANGUAGE_FALLBACKS = {
   Spanish: "English",
   French: "English"
@@ -33127,6 +33130,26 @@ const fetchWithoutForbiddenUserAgent = (input, init) => {
     headers
   });
 };
+const fetchDefaultGateway = async (input, init) => {
+  const request = new Request(input, init);
+  if (request.method.toUpperCase() !== "POST") {
+    return fetchWithoutForbiddenUserAgent(request);
+  }
+  let payload;
+  try {
+    payload = JSON.parse(await request.clone().text());
+  } catch {
+    throw new Error("The demo gateway requires a JSON request body.");
+  }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("The demo gateway requires a JSON object request body.");
+  }
+  const body = { ...payload };
+  delete body.max_output_tokens;
+  return fetchWithoutForbiddenUserAgent(new Request(request, {
+    body: JSON.stringify(body)
+  }));
+};
 const LOCAL_DIAGNOSTIC_RETENTION_MS = 7 * 24 * 60 * 60 * 1e3;
 const LOCAL_DIAGNOSTIC_MAX_TOTAL_BYTES = 20 * 1024 * 1024;
 const LOCAL_DIAGNOSTIC_MAX_RECORD_BYTES = 512 * 1024;
@@ -33343,7 +33366,7 @@ const resolveProviderModelId = (settings2, modelOverride) => {
 const resolveModelContextProfile = (settings2, modelOverride) => {
   const modelId = resolveProviderModelId(settings2, modelOverride).trim().toLowerCase();
   if (settings2.provider === "google" && modelId.startsWith("gemini")) {
-    const contextWindow = PROVIDER_GEMINI_CONTEXT_WINDOW;
+    const contextWindow = Math.min(PROVIDER_GEMINI_CONTEXT_WINDOW, PROVIDER_CONTEXT_WINDOW_CAP);
     return {
       contextWindow,
       reserveTokens: Math.max(PROVIDER_MIN_RESERVE_TOKENS, Math.floor(contextWindow * PROVIDER_RESERVE_RATIO)),
@@ -33352,7 +33375,7 @@ const resolveModelContextProfile = (settings2, modelOverride) => {
     };
   }
   if (settings2.provider === "google" && modelId.startsWith("gemma")) {
-    const contextWindow = PROVIDER_GEMMA_CONTEXT_WINDOW;
+    const contextWindow = Math.min(PROVIDER_GEMMA_CONTEXT_WINDOW, PROVIDER_CONTEXT_WINDOW_CAP);
     return {
       contextWindow,
       reserveTokens: Math.max(PROVIDER_MIN_RESERVE_TOKENS, Math.floor(contextWindow * PROVIDER_RESERVE_RATIO)),
@@ -33428,7 +33451,7 @@ const createProviderModel = (settings2, modelOverride, options2 = {}) => {
         model: createOpenAI({
           apiKey,
           baseURL: DEFAULT_GATEWAY_BASE_URL,
-          fetch: fetchWithoutForbiddenUserAgent
+          fetch: fetchDefaultGateway
         }).responses(modelId),
         middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings2, "openai")]
       })
@@ -59731,6 +59754,243 @@ class EmptyContext extends BaseContext {
 _name = new WeakMap();
 new EmptyContext("[Context BACKGROUND_CONTEXT]");
 new EmptyContext("[Context TODO_CONTEXT]");
+const COMPACTION_SUMMARY_PREFIX = `The conversation history before this point was compacted into the following summary:
+
+<summary>
+`;
+const COMPACTION_SUMMARY_SUFFIX = `
+</summary>`;
+const BRANCH_SUMMARY_PREFIX = `The following is a summary of a branch that this conversation came back from:
+
+<summary>
+`;
+const BRANCH_SUMMARY_SUFFIX = `</summary>`;
+function bashExecutionToText(msg) {
+  let text = `Ran \`${msg.command}\`
+`;
+  if (msg.output) {
+    text += `\`\`\`
+${msg.output}
+\`\`\``;
+  } else {
+    text += "(no output)";
+  }
+  if (msg.cancelled) {
+    text += "\n\n(command cancelled)";
+  } else if (msg.exitCode !== null && msg.exitCode !== void 0 && msg.exitCode !== 0) {
+    text += `
+
+Command exited with code ${msg.exitCode}`;
+  }
+  if (msg.truncated && msg.fullOutputPath) {
+    text += `
+
+[Output truncated. Full output: ${msg.fullOutputPath}]`;
+  }
+  return text;
+}
+function convertToLlm(messages) {
+  return messages.map((m) => {
+    switch (m.role) {
+      case "bashExecution":
+        if (m.excludeFromContext) {
+          return void 0;
+        }
+        return {
+          role: "user",
+          content: [{ type: "text", text: bashExecutionToText(m) }],
+          timestamp: m.timestamp
+        };
+      case "custom": {
+        const content = typeof m.content === "string" ? [{ type: "text", text: m.content }] : m.content;
+        return {
+          role: "user",
+          content,
+          timestamp: m.timestamp
+        };
+      }
+      case "branchSummary":
+        return {
+          role: "user",
+          content: [{ type: "text", text: BRANCH_SUMMARY_PREFIX + m.summary + BRANCH_SUMMARY_SUFFIX }],
+          timestamp: m.timestamp
+        };
+      case "compactionSummary":
+        return {
+          role: "user",
+          content: [
+            { type: "text", text: COMPACTION_SUMMARY_PREFIX + m.summary + COMPACTION_SUMMARY_SUFFIX }
+          ],
+          timestamp: m.timestamp
+        };
+      case "system":
+      case "user":
+      case "assistant":
+      case "toolResult":
+        return m;
+      default:
+        return void 0;
+    }
+  }).filter((m) => m !== void 0);
+}
+const TOOL_RESULT_MAX_CHARS = 2e3;
+function safeJsonStringify$1(value2) {
+  try {
+    return JSON.stringify(value2) ?? "undefined";
+  } catch {
+    return "[unserializable]";
+  }
+}
+function truncateForSummary(text, maxChars) {
+  if (text.length <= maxChars)
+    return text;
+  const truncatedChars = text.length - maxChars;
+  return `${text.slice(0, maxChars)}
+
+[... ${truncatedChars} more characters truncated]`;
+}
+function serializeConversation(messages) {
+  const parts = [];
+  for (const msg of messages) {
+    if (msg.role === "user") {
+      const content = contentText(msg.content, "");
+      if (content)
+        parts.push(`[User]: ${content}`);
+    } else if (msg.role === "assistant") {
+      const thinkingParts = [];
+      const toolCalls = [];
+      for (const block of msg.content) {
+        if (block.type === "thinking") {
+          thinkingParts.push(block.thinking);
+        } else if (block.type === "toolCall") {
+          const args = block.arguments;
+          const argsStr = Object.entries(args).map(([k, v]) => `${k}=${safeJsonStringify$1(v)}`).join(", ");
+          toolCalls.push(`${block.name}(${argsStr})`);
+        }
+      }
+      if (thinkingParts.length > 0) {
+        parts.push(`[Assistant thinking]: ${thinkingParts.join("\n")}`);
+      }
+      if (msg.content.some((block) => block.type === "text")) {
+        parts.push(`[Assistant]: ${contentText(msg.content)}`);
+      }
+      if (toolCalls.length > 0) {
+        parts.push(`[Assistant tool calls]: ${toolCalls.join("; ")}`);
+      }
+    } else if (msg.role === "toolResult") {
+      const content = contentText(msg.content, "");
+      if (content) {
+        parts.push(`[Tool result]: ${truncateForSummary(content, TOOL_RESULT_MAX_CHARS)}`);
+      }
+    }
+  }
+  return parts.join("\n\n");
+}
+function safeJsonStringify(value2) {
+  try {
+    return JSON.stringify(value2) ?? "undefined";
+  } catch {
+    return "[unserializable]";
+  }
+}
+function calculateContextTokens(usage) {
+  return usage.totalTokens || usage.input + usage.output + usage.cacheRead + usage.cacheWrite;
+}
+function getAssistantUsage(msg) {
+  if (msg.role === "assistant" && "usage" in msg) {
+    const assistantMsg = msg;
+    if (assistantMsg.stopReason !== "aborted" && assistantMsg.stopReason !== "error" && assistantMsg.usage && calculateContextTokens(assistantMsg.usage) > 0) {
+      return assistantMsg.usage;
+    }
+  }
+  return void 0;
+}
+function getLastAssistantUsageInfo(messages) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const usage = getAssistantUsage(messages[i]);
+    if (usage)
+      return { usage, index: i };
+  }
+  return void 0;
+}
+function estimateContextTokens(messages) {
+  const usageInfo = getLastAssistantUsageInfo(messages);
+  if (!usageInfo) {
+    let estimated = 0;
+    for (const message of messages) {
+      estimated += estimateTokens$1(message);
+    }
+    return {
+      tokens: estimated,
+      usageTokens: 0,
+      trailingTokens: estimated,
+      lastUsageIndex: null
+    };
+  }
+  const usageTokens = calculateContextTokens(usageInfo.usage);
+  let trailingTokens = 0;
+  for (let i = usageInfo.index + 1; i < messages.length; i++) {
+    trailingTokens += estimateTokens$1(messages[i]);
+  }
+  return {
+    tokens: usageTokens + trailingTokens,
+    usageTokens,
+    trailingTokens,
+    lastUsageIndex: usageInfo.index
+  };
+}
+const ESTIMATED_IMAGE_CHARS = 4800;
+function estimateTextAndImageContentChars(content) {
+  if (typeof content === "string") {
+    return content.length;
+  }
+  let chars = 0;
+  for (const block of content) {
+    if (block.type === "text" && block.text) {
+      chars += block.text.length;
+    } else if (block.type === "image") {
+      chars += ESTIMATED_IMAGE_CHARS;
+    }
+  }
+  return chars;
+}
+function estimateTokens$1(message) {
+  let chars = 0;
+  switch (message.role) {
+    case "user": {
+      chars = estimateTextAndImageContentChars(message.content);
+      return Math.ceil(chars / 4);
+    }
+    case "assistant": {
+      const assistant = message;
+      for (const block of assistant.content) {
+        if (block.type === "text") {
+          chars += block.text.length;
+        } else if (block.type === "thinking") {
+          chars += block.thinking.length;
+        } else if (block.type === "toolCall") {
+          chars += block.name.length + safeJsonStringify(block.arguments).length;
+        }
+      }
+      return Math.ceil(chars / 4);
+    }
+    case "custom":
+    case "toolResult": {
+      chars = estimateTextAndImageContentChars(message.content);
+      return Math.ceil(chars / 4);
+    }
+    case "bashExecution": {
+      chars = message.command.length + message.output.length;
+      return Math.ceil(chars / 4);
+    }
+    case "branchSummary":
+    case "compactionSummary": {
+      chars = message.summary.length;
+      return Math.ceil(chars / 4);
+    }
+  }
+  return 0;
+}
 function validateAddress(namespace, key2) {
   if (namespace.length === 0)
     throw new TypeError("Value namespace must not be empty");
@@ -62712,7 +62972,7 @@ const normalizeInsightGroupBy = (insight) => {
   }
   return [];
 };
-const formatCompactRowSample = (rows, maxRows = 3) => rows.length > 0 ? safeJsonStringify(rows.slice(0, maxRows), 2) : "[]";
+const formatCompactRowSample = (rows, maxRows = 3) => rows.length > 0 ? safeJsonStringify$2(rows.slice(0, maxRows), 2) : "[]";
 const summarizeOlderToolOutputs = (omittedCount, label) => omittedCount > 0 ? `Older ${label} summarized: ${omittedCount} earlier item(s) were omitted from detailed context.` : null;
 const trimChatHistory = (chatHistory, maxMessages = resolveLongSessionContextPolicy().recentChatWindow) => chatHistory.slice(-maxMessages);
 const trimRelatedCards = (relatedCards, maxCards = resolveLongSessionContextPolicy().relatedCards) => relatedCards.slice(0, maxCards);
@@ -62817,7 +63077,7 @@ const formatCollapsedChatHistory = (chatHistory, settings2) => {
   const sanitized = sanitizeChatHistoryForModel(chatHistory);
   return formatSanitizedTranscript(sanitized.slice(-windowSize));
 };
-const formatColumnProfiles = (columns2) => columns2.length > 0 ? safeJsonStringify(columns2, 2) : "[]";
+const formatColumnProfiles = (columns2) => columns2.length > 0 ? safeJsonStringify$2(columns2, 2) : "[]";
 const formatColumnQualitySummary = (columns2, maxColumns = 24) => {
   if (columns2.length === 0) {
     return "No column quality profile is available.";
@@ -62834,9 +63094,9 @@ const formatColumnQualitySummary = (columns2, maxColumns = 24) => {
   return lines.join("\n");
 };
 const formatColumnNames = (columns2) => columns2.length > 0 ? columns2.map((column) => column.name).join(", ") : "None available";
-const formatRows = (rows) => rows.length > 0 ? safeJsonStringify(rows, 2) : "[]";
+const formatRows = (rows) => rows.length > 0 ? safeJsonStringify$2(rows, 2) : "[]";
 const formatRelatedCards = (relatedCards) => relatedCards.length > 0 ? relatedCards.map((card) => `- (${card.relevance.toFixed(2)}) ${card.displayTitle || card.title} | Group By: ${card.groupByColumn || "n/a"} | Value: ${card.valueColumn || "n/a"} | Aggregation: ${card.aggregation || "n/a"} | Card ID: ${card.id}`).join("\n") : "No high-confidence matches were found for this query.";
-const formatCardContext = (cardContext) => cardContext.length > 0 ? safeJsonStringify(cardContext, 2) : "No cards yet.";
+const formatCardContext = (cardContext) => cardContext.length > 0 ? safeJsonStringify$2(cardContext, 2) : "No cards yet.";
 const formatCardTitles = (cards) => cards.length > 0 ? cards.map((card) => card.plan.title).join(", ") : "No cards created yet.";
 const formatLongTermMemory = (memoryHits) => memoryHits.length > 0 ? memoryHits.join("\n---\n") : "No relevant long-term memory.";
 const formatActiveDataQueryEvidence = (state2) => {
@@ -62855,7 +63115,7 @@ const formatActiveDataQueryEvidence = (state2) => {
     `Rows: ${result.returnedRows}/${result.totalMatchedRows}`,
     `Order: ${result.appliedOrderBy.length > 0 ? result.appliedOrderBy.map((order) => `${order.column} ${order.direction}`).join(", ") : "none"}`,
     `Full-result digest:
-${safeJsonStringify(buildDataQueryResultDigest(
+${safeJsonStringify$2(buildDataQueryResultDigest(
       result.rows,
       result.selectedColumns
     ), 2)}`,
@@ -62873,7 +63133,7 @@ const formatActiveSpreadsheetFilterEvidence = (state2) => {
     `Matched rows: ${activeSpreadsheetFilter.observation.matchedRowCount}`,
     `Selected column: ${activeSpreadsheetFilter.observation.selectedColumn ?? "n/a"}`,
     `Operator: ${activeSpreadsheetFilter.observation.operator ?? "n/a"}`,
-    `Value: ${activeSpreadsheetFilter.observation.value === null || activeSpreadsheetFilter.observation.value === void 0 ? "n/a" : safeJsonStringify(activeSpreadsheetFilter.observation.value)}`,
+    `Value: ${activeSpreadsheetFilter.observation.value === null || activeSpreadsheetFilter.observation.value === void 0 ? "n/a" : safeJsonStringify$2(activeSpreadsheetFilter.observation.value)}`,
     `Preview rows:
 ${formatCompactRowSample(activeSpreadsheetFilter.observation.previewRows)}`
   ].join("\n");
@@ -69414,7 +69674,7 @@ const persistSuccessfulCleaning = async ({
   logCleaningPersistStage("duckdb_sync", duckDbSyncStartedAt);
   const PIPELINE_ANNOTATION_PATTERN = /^(sectionlabel|headerpath|carryforwardappliedcolumns)$/i;
   const precheckProfiles = normalizedProfiles.filter(
-    (p) => (p.missingPercentage ?? 0) < 100 && (p.uniqueValues ?? 0) > 1 && !isStructuralMetadataColumn(p.name) && !PIPELINE_ANNOTATION_PATTERN.test(p.name)
+    (p) => (p.missingPercentage ?? 0) < 100 && (p.uniqueValues === void 0 ? !p.valueRange || p.valueRange[0] !== p.valueRange[1] : p.uniqueValues > 1) && !isStructuralMetadataColumn(p.name) && !PIPELINE_ANNOTATION_PATTERN.test(p.name)
   );
   const sqlPrecheckStartedAt = performance.now();
   const sqlPrecheck = await runSqlPrecheck(normalizedData, precheckProfiles, latestState.settings, reportDiagnostics);
@@ -89355,7 +89615,7 @@ const executeInitialAnalysisStageTool = async (params) => {
     params.args
   );
 };
-const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-FPYXJkel.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
+const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-RRNVQ8Hi.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values$1 = {
   "google-generative-ai": /* @__PURE__ */ JSON.parse('{"deep-research-max-preview-04-2026":{"id":"deep-research-max-preview-04-2026","name":"Deep Research Max Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"deep-research-preview-04-2026":{"id":"deep-research-preview-04-2026","name":"Deep Research Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-computer-use-preview-10-2025":{"id":"gemini-2.5-computer-use-preview-10-2025","name":"Gemini 2.5 Computer Use Preview 10-2025","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash":{"id":"gemini-2.5-flash","name":"Gemini 2.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash-lite":{"id":"gemini-2.5-flash-lite","name":"Gemini 2.5 Flash-Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.01,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-pro":{"id":"gemini-2.5-pro","name":"Gemini 2.5 Pro","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3-flash-preview":{"id":"gemini-3-flash-preview","name":"Gemini 3 Flash Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.5,"output":3,"cacheRead":0.05,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite":{"id":"gemini-3.1-flash-lite","name":"Gemini 3.1 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-image":{"id":"gemini-3.1-flash-lite-image","name":"Nano Banana 2 Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":null,"medium":null,"high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":65536,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-preview":{"id":"gemini-3.1-flash-lite-preview","name":"Gemini 3.1 Flash Lite Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-live-preview":{"id":"gemini-3.1-flash-live-preview","name":"Gemini 3.1 Flash Live Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview":{"id":"gemini-3.1-pro-preview","name":"Gemini 3.1 Pro Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview-customtools":{"id":"gemini-3.1-pro-preview-customtools","name":"Gemini 3.1 Pro Preview Custom Tools","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash":{"id":"gemini-3.5-flash","name":"Gemini 3.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash-lite":{"id":"gemini-3.5-flash-lite","name":"Gemini 3.5 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.6-flash":{"id":"gemini-3.6-flash","name":"Gemini 3.6 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.7-flash":{"id":"gemini-3.7-flash","name":"Gemini 3.7 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.8-flash":{"id":"gemini-3.8-flash","name":"Gemini 3.8 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-latest":{"id":"gemini-flash-latest","name":"Gemini Flash Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-lite-latest":{"id":"gemini-flash-lite-latest","name":"Gemini Flash-Lite Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-26b-a4b-it":{"id":"gemma-4-26b-a4b-it","name":"Gemma 4 26B A4B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-31b-it":{"id":"gemma-4-31b-it","name":"Gemma 4 31B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -89373,7 +89633,7 @@ function googleProvider() {
     api: googleGenerativeAIApi()
   });
 }
-const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-DJ56g5Op.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
+const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-ByTM2p1_.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values = {
   "openai-responses": /* @__PURE__ */ JSON.parse('{"gpt-4":{"id":"gpt-4","name":"GPT-4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text"],"cost":{"input":30,"output":60,"cacheRead":0,"cacheWrite":0},"contextWindow":8192,"maxTokens":8192,"compat":{"supportsStrictMode":true}},"gpt-4-turbo":{"id":"gpt-4-turbo","name":"GPT-4 Turbo","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":10,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1":{"id":"gpt-4.1","name":"GPT-4.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-mini":{"id":"gpt-4.1-mini","name":"GPT-4.1 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.4,"output":1.6,"cacheRead":0.1,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-nano":{"id":"gpt-4.1-nano","name":"GPT-4.1 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o":{"id":"gpt-4o","name":"GPT-4o","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-05-13":{"id":"gpt-4o-2024-05-13","name":"GPT-4o (2024-05-13)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":5,"output":15,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-08-06":{"id":"gpt-4o-2024-08-06","name":"GPT-4o (2024-08-06)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-11-20":{"id":"gpt-4o-2024-11-20","name":"GPT-4o (2024-11-20)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.15,"output":0.6,"cacheRead":0.075,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5":{"id":"gpt-5","name":"GPT-5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-chat-latest":{"id":"gpt-5-chat-latest","name":"GPT-5 Chat Latest","api":"openai-responses","baseUrl":"https://api.openai.com/v1","provider":"openai","reasoning":false,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-mini":{"id":"gpt-5-mini","name":"GPT-5 Mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.25,"output":2,"cacheRead":0.025,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-nano":{"id":"gpt-5-nano","name":"GPT-5 Nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.05,"output":0.4,"cacheRead":0.005,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-pro":{"id":"gpt-5-pro","name":"GPT-5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":120,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":null,"high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.1":{"id":"gpt-5.1","name":"GPT-5.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2":{"id":"gpt-5.2","name":"GPT-5.2","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-chat-latest":{"id":"gpt-5.2-chat-latest","name":"GPT-5.2 Chat","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":null,"xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-pro":{"id":"gpt-5.2-pro","name":"GPT-5.2 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":21,"output":168,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-chat-latest":{"id":"gpt-5.3-chat-latest","name":"GPT-5.3 Chat (latest)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"xhigh":"xhigh"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex":{"id":"gpt-5.3-codex","name":"GPT-5.3 Codex","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex-spark":{"id":"gpt-5.3-codex-spark","name":"GPT-5.3 Codex Spark","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4":{"id":"gpt-5.4","name":"GPT-5.4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2.5,"output":15,"cacheRead":0.25,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":5,"output":22.5,"cacheRead":0.5,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-mini":{"id":"gpt-5.4-mini","name":"GPT-5.4 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0.075,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-nano":{"id":"gpt-5.4-nano","name":"GPT-5.4 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.25,"cacheRead":0.02,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-pro":{"id":"gpt-5.4-pro","name":"GPT-5.4 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5":{"id":"gpt-5.5","name":"GPT-5.5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":5,"output":30,"cacheRead":0.5,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":10,"output":45,"cacheRead":1,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5-pro":{"id":"gpt-5.5-pro","name":"GPT-5.5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-luna":{"id":"gpt-5.6-luna","name":"GPT-5.6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.2,"cacheRead":0.02,"cacheWrite":0.25,"tiers":[{"inputTokensAbove":272000,"input":0.4,"output":1.8,"cacheRead":0.04,"cacheWrite":0.5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-sol":{"id":"gpt-5.6-sol","name":"GPT-5.6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":20,"cacheRead":0.4,"cacheWrite":5,"tiers":[{"inputTokensAbove":272000,"input":8,"output":30,"cacheRead":0.8,"cacheWrite":10}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-terra":{"id":"gpt-5.6-terra","name":"GPT-5.6 Terra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":18,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-astra":{"id":"gpt-6-astra","name":"GPT-6 Astra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":10,"output":50,"cacheRead":1,"cacheWrite":12.5,"tiers":[{"inputTokensAbove":272000,"input":20,"output":75,"cacheRead":2,"cacheWrite":25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-luna":{"id":"gpt-6-luna","name":"GPT-6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"inputTokensAbove":272000,"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-sol":{"id":"gpt-6-sol","name":"GPT-6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":10,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":15,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-realtime-2.1":{"id":"gpt-realtime-2.1","name":"GPT-Realtime-2.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":24,"cacheRead":0.4,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1":{"id":"o1","name":"o1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":60,"cacheRead":7.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1-pro":{"id":"o1-pro","name":"o1-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":150,"output":600,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3":{"id":"o3","name":"o3","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3-mini":{"id":"o3-mini","name":"o3-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.55,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true}},"o3-pro":{"id":"o3-pro","name":"o3-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":20,"output":80,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o4-mini":{"id":"o4-mini","name":"o4-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.275,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -89388,6 +89648,84 @@ function openaiProvider() {
     api: openAIResponsesApi()
   });
 }
+const projectedTokens = (messages, hasSummary) => {
+  const visibleTokens = Math.ceil(JSON.stringify(messages).length / 3);
+  return hasSummary ? visibleTokens : Math.max(visibleTokens, estimateContextTokens(messages).tokens);
+};
+const createPiContextCompactor = (contextWindow, summarize) => {
+  if (!Number.isFinite(contextWindow) || contextWindow <= 0) {
+    throw new Error("Pi requires a known context window for automatic compaction.");
+  }
+  const triggerTokens = Math.floor(contextWindow * PI_CONTEXT_COMPACTION_TRIGGER_RATIO);
+  let summary = "";
+  let summarizedThrough = 1;
+  let summaryTimestamp = 0;
+  return async (messages, signal) => {
+    var _a;
+    if (((_a = messages[0]) == null ? void 0 : _a.role) !== "system") return messages;
+    const summaryMessage = () => ({
+      role: "user",
+      content: [{ type: "text", text: `Earlier conversation summary:
+${summary}` }],
+      timestamp: summaryTimestamp
+    });
+    const projected = [
+      messages[0],
+      ...summary ? [summaryMessage()] : [],
+      ...messages.slice(summarizedThrough)
+    ];
+    const estimated = projectedTokens(projected, Boolean(summary));
+    if (estimated < triggerTokens) return projected;
+    let cut = projected.length;
+    let recentTokens = 0;
+    while (cut > 1 && recentTokens < PI_CONTEXT_COMPACTION_KEEP_RECENT_TOKENS) {
+      cut -= 1;
+      recentTokens += estimateTokens$1(projected[cut]);
+    }
+    while (cut > 1 && projected[cut].role === "toolResult") cut -= 1;
+    if (cut <= (summary ? 2 : 1)) return projected;
+    try {
+      const nextSummary = (await summarize(projected.slice(1, cut), signal)).trim();
+      if (!nextSummary || nextSummary.length > 2e4 || (signal == null ? void 0 : signal.aborted)) return projected;
+      const nextSummarizedThrough = summarizedThrough + cut - 1 - (summary ? 1 : 0);
+      const nextTimestamp = Date.now();
+      const compacted = [
+        messages[0],
+        { role: "user", content: [{ type: "text", text: `Earlier conversation summary:
+${nextSummary}` }], timestamp: nextTimestamp },
+        ...messages.slice(nextSummarizedThrough)
+      ];
+      if (projectedTokens(compacted, true) >= triggerTokens) return projected;
+      summary = nextSummary;
+      summarizedThrough = nextSummarizedThrough;
+      summaryTimestamp = nextTimestamp;
+      return compacted;
+    } catch {
+      return projected;
+    }
+  };
+};
+const createPiProviderContextCompactor = (model, models2, apiKey, providerFetch) => createPiContextCompactor(model.contextWindow, async (messages, signal) => {
+  const history = serializeConversation(convertToLlm(messages));
+  const response = await models2.completeSimple(model, {
+    systemPrompt: "Summarize earlier Pi agent history for continuation. Preserve the user goal, dataset identity, completed tool results, decisions, and outstanding work. Never invent evidence or include credentials. Keep the summary concise.",
+    messages: [{
+      role: "user",
+      content: [{ type: "text", text: history }],
+      timestamp: Date.now()
+    }]
+  }, {
+    apiKey,
+    fetch: providerFetch,
+    signal,
+    timeoutMs: 45e3,
+    maxRetries: 0
+  });
+  if (response.stopReason === "error" || response.stopReason === "aborted") {
+    throw new Error("Pi context summarization failed.");
+  }
+  return contentText(response.content);
+});
 const models$1 = createModels();
 models$1.setProvider(openaiProvider());
 models$1.setProvider(googleProvider());
@@ -89404,6 +89742,7 @@ const resolvePiModel = (settings2) => {
   return {
     ...model,
     id,
+    contextWindow: Math.min(model.contextWindow, PROVIDER_CONTEXT_WINDOW_CAP),
     ...settings2.provider === "default" ? {
       baseUrl: DEFAULT_GATEWAY_BASE_URL,
       // The shared demo gateway rejects this optional Responses API field.
@@ -89418,13 +89757,24 @@ const resolvePiThinkingLevel = (settings2) => clampThinkingLevel(
 const createPiProviderStream = (settings2) => {
   const apiKey = resolveProviderApiKey(settings2);
   if (!apiKey.trim()) throw new Error("The selected AI provider has no API key.");
+  const providerFetch = settings2.provider === "default" ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent;
   return (model, context, options2) => models$1.streamSimple(model, context, {
     ...options2,
     apiKey,
-    fetch: fetchWithoutForbiddenUserAgent,
+    fetch: providerFetch,
     timeoutMs: 45e3,
     maxRetries: 0
   });
+};
+const createPiProviderContextTransform = (settings2) => {
+  const apiKey = resolveProviderApiKey(settings2);
+  if (!apiKey.trim()) throw new Error("The selected AI provider has no API key.");
+  return createPiProviderContextCompactor(
+    resolvePiModel(settings2),
+    models$1,
+    apiKey,
+    settings2.provider === "default" ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent
+  );
 };
 const STAGES = createInitialAnalysisStageToolManifests();
 const CHECKPOINT_PREFIX = "pi-initial-analysis-v1:";
@@ -89604,6 +89954,7 @@ const run = async (request, store, checkpoint, streamOverride) => {
       tools: [tool]
     },
     streamFn: streamOverride ?? createPiProviderStream(store.getState().settings),
+    transformContext: createPiProviderContextTransform(store.getState().settings),
     toolExecution: "sequential",
     finishTurn: () => {
       var _a2;
@@ -96732,7 +97083,7 @@ const formatCardEvidence = (state2) => {
     const groupBy = card.plan.groupByColumn ?? "n/a";
     const value2 = card.plan.valueColumn ?? card.plan.yValueColumn ?? "n/a";
     const sample2 = truncate(
-      safeJsonStringify(
+      safeJsonStringify$2(
         card.aggregatedData.slice(0, MAX_CARD_ROWS)
       ),
       MAX_CARD_SAMPLE_CHARS
@@ -97269,6 +97620,7 @@ const runPiFollowUpTurn = async (request, store, streamOverride) => {
         tools: createPiAppTools(store, datasetVersion)
       },
       streamFn: streamOverride ?? createPiProviderStream(state2.settings),
+      transformContext: createPiProviderContextTransform(state2.settings),
       toolExecution: "sequential",
       finishTurn: () => {
         providerTurns += 1;
@@ -97535,14 +97887,20 @@ const createPiDatasetTools = ({ dataset, columnRegistry: columnRegistry2, numeri
 };
 const createPiBrowserAgent = (options2) => {
   var _a;
-  const model = models.getModel("openai", PI_TEST_MODEL);
-  if (!model) throw new Error(`Pi model ${PI_TEST_MODEL} is unavailable.`);
-  if (options2.mode === "live" && !((_a = options2.apiKey) == null ? void 0 : _a.trim())) throw new Error("Set an OpenAI API key in Settings first.");
+  const catalogModel = models.getModel("openai", PI_TEST_MODEL);
+  if (!catalogModel) throw new Error(`Pi model ${PI_TEST_MODEL} is unavailable.`);
+  const model = { ...catalogModel, contextWindow: Math.min(catalogModel.contextWindow, PROVIDER_CONTEXT_WINDOW_CAP) };
+  const apiKey = ((_a = options2.apiKey) == null ? void 0 : _a.trim()) ?? "";
+  if (options2.mode === "live" && !apiKey) throw new Error("Set an OpenAI API key in Settings first.");
   let turns = 0;
   const streamFn = options2.mode === "mock" ? mockStream : (requestedModel, context, settings2) => {
     turns += 1;
     if (turns > MAX_PROVIDER_TURNS) throw new Error("Pi stopped after six provider turns.");
-    return models.streamSimple(requestedModel, context, { ...settings2, apiKey: options2.apiKey });
+    return models.streamSimple(requestedModel, context, {
+      ...settings2,
+      apiKey,
+      fetch: fetchWithoutForbiddenUserAgent
+    });
   };
   const agent = new Agent({
     initialState: {
@@ -97552,6 +97910,7 @@ const createPiBrowserAgent = (options2) => {
       tools: createPiDatasetTools(options2.context)
     },
     streamFn,
+    transformContext: options2.mode === "live" ? createPiProviderContextCompactor(model, models, apiKey, fetchWithoutForbiddenUserAgent) : void 0,
     toolExecution: "sequential"
   });
   if (options2.onEvent) agent.subscribe(options2.onEvent);

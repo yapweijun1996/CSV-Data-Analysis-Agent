@@ -19,3 +19,27 @@ export const fetchWithoutForbiddenUserAgent: typeof fetch = (
         headers,
     });
 };
+
+/** Enforce the demo gateway's request contract at the final browser boundary. */
+export const fetchDefaultGateway: typeof fetch = async (input, init) => {
+    const request = new Request(input, init);
+    if (request.method.toUpperCase() !== 'POST') {
+        return fetchWithoutForbiddenUserAgent(request);
+    }
+
+    let payload: unknown;
+    try {
+        payload = JSON.parse(await request.clone().text());
+    } catch {
+        throw new Error('The demo gateway requires a JSON request body.');
+    }
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        throw new Error('The demo gateway requires a JSON object request body.');
+    }
+
+    const body = { ...payload as Record<string, unknown> };
+    delete body.max_output_tokens;
+    return fetchWithoutForbiddenUserAgent(new Request(request, {
+        body: JSON.stringify(body),
+    }));
+};

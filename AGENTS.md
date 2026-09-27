@@ -20,6 +20,8 @@
 - Keep source code and comments in English. Explain non-obvious reasons, not obvious syntax.
 - Update `README.md` and `context.md` when behavior, structure, or project direction changes.
 - Verify changes against the checked-in React app. Do not claim that a source file is active or a workflow works solely because it exists.
+- For the Default demo gateway, never send `max_output_tokens` in an HTTP request. Before changing provider or SDK integration, inspect the final serialized request payload and run the gateway boundary regression test; a model compatibility flag alone does not prove the wire contract.
+- Keep the app's context planning cap at 200,000 tokens and Pi auto-compaction trigger at 80% unless the current request changes that policy. Verify that compressed summaries remain visible to the model and preserve recent tool-call/result pairs.
 - For review requests, report findings and evidence without changing application code unless the user asks for a fix.
 
 ## Communication

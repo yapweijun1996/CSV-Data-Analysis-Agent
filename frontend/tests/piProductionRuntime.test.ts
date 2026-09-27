@@ -106,10 +106,12 @@ describe('Pi production runtime', () => {
     it('uses the app-selected OpenAI, Google, and shared gateway models', () => {
         const settings = createStore().getState().settings;
         expect(resolvePiModel(settings).id).toBe('gpt-5.4-mini');
+        expect(resolvePiModel(settings).contextWindow).toBe(200_000);
         expect(resolvePiThinkingLevel(settings)).toBe('medium');
         expect(resolvePiModel({ ...settings, provider: 'google', complexModel: 'gemini-2.5-flash' }).provider).toBe('google');
         const gatewayModel = resolvePiModel({ ...settings, provider: 'default' });
         expect(gatewayModel.baseUrl).toBe('https://gpt.yapweijun1996.com/v1');
+        expect(gatewayModel.contextWindow).toBe(200_000);
         expect(gatewayModel.compat).toMatchObject({ supportsMaxOutputTokens: false });
         expect(resolvePiModel(settings).compat).not.toMatchObject({ supportsMaxOutputTokens: false });
     });

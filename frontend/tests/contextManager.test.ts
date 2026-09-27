@@ -268,7 +268,7 @@ describe('contextManager', () => {
         });
 
         expect(managed.diagnostics.budgetStrategy).toBe('model_aware');
-        expect(managed.diagnostics.contextWindow).toBe(250000);
+        expect(managed.diagnostics.contextWindow).toBe(200000);
         expect(managed.diagnostics.softBudget).toBeGreaterThan(7000);
         expect(managed.diagnostics.softBudget).toBeLessThanOrEqual(32000);
     });

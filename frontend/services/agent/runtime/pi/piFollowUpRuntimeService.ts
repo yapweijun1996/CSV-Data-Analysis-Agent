@@ -23,7 +23,7 @@ import {
 } from '../runtimeState';
 import { createPiAppTools } from './piAppTools';
 import { createPiFollowUpSystemPrompt } from './piContext';
-import { createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
+import { createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
 import {
     buildGroundedCompleteQueryReply,
     buildGroundedDerivedCostPerResultReply,
@@ -98,6 +98,7 @@ export const runPiFollowUpTurn = async (
                 tools: createPiAppTools(store, datasetVersion),
             },
             streamFn: streamOverride ?? createPiProviderStream(state.settings),
+            transformContext: createPiProviderContextTransform(state.settings),
             toolExecution: 'sequential',
             finishTurn: () => {
                 providerTurns += 1;

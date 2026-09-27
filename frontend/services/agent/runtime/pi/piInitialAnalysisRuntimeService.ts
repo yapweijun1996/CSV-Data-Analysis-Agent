@@ -13,7 +13,7 @@ import { requestDataResearchCancellation } from '../dataResearchCancellation';
 import { createInitialAnalysisStageExecutors } from './initialAnalysisStageExecutors';
 import { executeInitialAnalysisStageTool, type InitialAnalysisStageActionResult } from './initialAnalysisStageTools';
 import type { InitialAnalysisRunOutcome, InitialAnalysisRunRequest } from './initialAnalysisTypes';
-import { createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
+import { createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
 
 const STAGES = createInitialAnalysisStageToolManifests();
 const CHECKPOINT_PREFIX = 'pi-initial-analysis-v1:';
@@ -204,6 +204,7 @@ const run = async (
             tools: [tool],
         },
         streamFn: streamOverride ?? createPiProviderStream(store.getState().settings),
+        transformContext: createPiProviderContextTransform(store.getState().settings),
         toolExecution: 'sequential',
         finishTurn: () => {
             providerTurns += 1;

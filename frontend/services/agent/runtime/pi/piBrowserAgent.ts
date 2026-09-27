@@ -1,9 +1,12 @@
 import { Agent, type AgentEvent, type AgentTool, type StreamFn } from '@earendil-works/pi-agent-core';
 import { createAssistantMessageEventStream, createModels, Type, type AssistantMessage } from '@earendil-works/pi-ai';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
+import { PROVIDER_CONTEXT_WINDOW_CAP } from '../../../../config/agentDefaults';
 import type { ColumnRegistry, CsvData, QueryPlan } from '../../../../types';
+import { fetchWithoutForbiddenUserAgent } from '../../../ai/browserProviderFetch';
 import { getAllowedColumns } from '../../../data/columnRegistry';
 import { executeManagedDataQuery } from '../../../duckdb/queryEngine';
+import { createPiProviderContextCompactor } from './piContextCompaction';
 
 export const PI_TEST_MODEL = 'gpt-5.4-mini';
 const MAX_PROVIDER_TURNS = 6;
@@ -132,16 +135,20 @@ export const createPiBrowserAgent = (options: {
     apiKey?: string;
     onEvent?: (event: AgentEvent) => void;
 }): Agent => {
-    const model = models.getModel('openai', PI_TEST_MODEL);
-    if (!model) throw new Error(`Pi model ${PI_TEST_MODEL} is unavailable.`);
-    if (options.mode === 'live' && !options.apiKey?.trim()) throw new Error('Set an OpenAI API key in Settings first.');
+    const catalogModel = models.getModel('openai', PI_TEST_MODEL);
+    if (!catalogModel) throw new Error(`Pi model ${PI_TEST_MODEL} is unavailable.`);
+    const model = { ...catalogModel, contextWindow: Math.min(catalogModel.contextWindow, PROVIDER_CONTEXT_WINDOW_CAP) };
+    const apiKey = options.apiKey?.trim() ?? '';
+    if (options.mode === 'live' && !apiKey) throw new Error('Set an OpenAI API key in Settings first.');
     let turns = 0;
     const streamFn: StreamFn = options.mode === 'mock'
         ? mockStream
         : (requestedModel, context, settings) => {
             turns += 1;
             if (turns > MAX_PROVIDER_TURNS) throw new Error('Pi stopped after six provider turns.');
-            return models.streamSimple(requestedModel, context, { ...settings, apiKey: options.apiKey });
+            return models.streamSimple(requestedModel, context, {
+                ...settings, apiKey, fetch: fetchWithoutForbiddenUserAgent,
+            });
         };
     const agent = new Agent({
         initialState: {
@@ -151,6 +158,9 @@ export const createPiBrowserAgent = (options: {
             tools: createPiDatasetTools(options.context),
         },
         streamFn,
+        transformContext: options.mode === 'live'
+            ? createPiProviderContextCompactor(model, models, apiKey, fetchWithoutForbiddenUserAgent)
+            : undefined,
         toolExecution: 'sequential',
     });
     if (options.onEvent) agent.subscribe(options.onEvent);

@@ -3,9 +3,11 @@ import { googleProvider } from '@earendil-works/pi-ai/providers/google';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import type { StreamFn } from '@earendil-works/pi-agent-core';
 import type { Settings } from '../../../../types';
+import { PROVIDER_CONTEXT_WINDOW_CAP } from '../../../../config/agentDefaults';
 import { DEFAULT_GATEWAY_BASE_URL } from '../../../../config/defaultGatewayConfig';
-import { fetchWithoutForbiddenUserAgent } from '../../../ai/browserProviderFetch';
+import { fetchDefaultGateway, fetchWithoutForbiddenUserAgent } from '../../../ai/browserProviderFetch';
 import { resolveProviderApiKey, resolveProviderModelId } from '../../../ai/providerConfig';
+import { createPiProviderContextCompactor } from './piContextCompaction';
 
 const models = createModels();
 models.setProvider(openaiProvider());
@@ -22,6 +24,7 @@ export const resolvePiModel = (settings: Settings): Model<Api> => {
     return {
         ...model,
         id,
+        contextWindow: Math.min(model.contextWindow, PROVIDER_CONTEXT_WINDOW_CAP),
         ...(settings.provider === 'default' ? {
             baseUrl: DEFAULT_GATEWAY_BASE_URL,
             // The shared demo gateway rejects this optional Responses API field.
@@ -37,11 +40,23 @@ export const resolvePiThinkingLevel = (settings: Settings) =>
 export const createPiProviderStream = (settings: Settings): StreamFn => {
     const apiKey = resolveProviderApiKey(settings);
     if (!apiKey.trim()) throw new Error('The selected AI provider has no API key.');
+    const providerFetch = settings.provider === 'default' ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent;
     return (model, context, options) => models.streamSimple(model, context, {
         ...options,
         apiKey,
-        fetch: fetchWithoutForbiddenUserAgent,
+        fetch: providerFetch,
         timeoutMs: 45_000,
         maxRetries: 0,
     });
+};
+
+export const createPiProviderContextTransform = (settings: Settings) => {
+    const apiKey = resolveProviderApiKey(settings);
+    if (!apiKey.trim()) throw new Error('The selected AI provider has no API key.');
+    return createPiProviderContextCompactor(
+        resolvePiModel(settings),
+        models,
+        apiKey,
+        settings.provider === 'default' ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent,
+    );
 };
