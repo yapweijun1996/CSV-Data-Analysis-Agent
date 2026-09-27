@@ -22,7 +22,11 @@ export const resolvePiModel = (settings: Settings): Model<Api> => {
     return {
         ...model,
         id,
-        ...(settings.provider === 'default' ? { baseUrl: DEFAULT_GATEWAY_BASE_URL } : {}),
+        ...(settings.provider === 'default' ? {
+            baseUrl: DEFAULT_GATEWAY_BASE_URL,
+            // The shared demo gateway rejects this optional Responses API field.
+            compat: { ...model.compat, supportsMaxOutputTokens: false },
+        } : {}),
     };
 };
 

@@ -108,7 +108,10 @@ describe('Pi production runtime', () => {
         expect(resolvePiModel(settings).id).toBe('gpt-5.4-mini');
         expect(resolvePiThinkingLevel(settings)).toBe('medium');
         expect(resolvePiModel({ ...settings, provider: 'google', complexModel: 'gemini-2.5-flash' }).provider).toBe('google');
-        expect(resolvePiModel({ ...settings, provider: 'default' }).baseUrl).toBe('https://gpt.yapweijun1996.com/v1');
+        const gatewayModel = resolvePiModel({ ...settings, provider: 'default' });
+        expect(gatewayModel.baseUrl).toBe('https://gpt.yapweijun1996.com/v1');
+        expect(gatewayModel.compat).toMatchObject({ supportsMaxOutputTokens: false });
+        expect(resolvePiModel(settings).compat).not.toMatchObject({ supportsMaxOutputTokens: false });
     });
 
     it('completes a keyless Pi follow-up and projects the answer into the app contract', async () => {
