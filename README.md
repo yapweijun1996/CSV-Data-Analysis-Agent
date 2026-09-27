@@ -1,78 +1,57 @@
 # CSV Data Analysis Agent
 
-Browser-based CSV analysis with a Vanilla JavaScript implementation and a React reference/build artifact. This document describes the **current repository state**, not an intended future deployment.
+This repository contains a browser-only React CSV analysis app. It has an editable source package and a checked-in static deployment. No Node.js server is needed when users run the deployed app; Node.js is used to build and test the source.
 
-## Current entry point — read before running
+## Repository layout
 
-The root `index.html` currently loads compiled JavaScript and CSS bundles from `assets/`, preloads a React vendor bundle, and mounts into `<div id="root">`. It does **not** import the root Vanilla `main.js` module or create `<csv-data-analysis-app>`.
+| Path | Responsibility |
+| --- | --- |
+| `frontend/` | Canonical React/TypeScript source, tests, build configuration, and source documentation. |
+| `frontend/components/`, `frontend/hooks/`, `frontend/icons/` | Browser UI and presentation helpers. |
+| `frontend/store/` | Zustand state and feature slices. |
+| `frontend/services/agent/` | Agent orchestration, planning, runtime, governed tools, and execution. |
+| `frontend/services/ai/`, `frontend/services/data/`, `frontend/services/duckdb/`, `frontend/services/workers/` | Model providers, CSV processing, local query engine, and browser workers. |
+| `index.html`, `assets/`, `service-worker.js`, `SHA256SUMS.txt` | Checked-in production build. Treat these as generated deployment files. |
+| `duckdb/`, `pyodide/`, `sandbox/`, `demo-data/` | Browser runtime resources and sample data used by the static deployment. |
+| `public/models/` | Optional local model files retained in the repository; the current app loads its vector model from a CDN. |
+| `scripts/` | Build-resource preparation, guarded publication to the root, and verified GitHub Pages artifact staging. |
 
-The Vanilla implementation exists in root-level ES modules (`main.js`, `services/`, `utils/`, `render/`, and related directories), but the checked-in root HTML entry does not connect it. Consequently, `npm run dev`, `npm run build`, and static hosting from the repository root use the root HTML entry and currently select the compiled React application. The presence of Vanilla source files is not evidence that they are the currently served app. The React reference under `original/` is not to be modified as part of the Vanilla conversion.
+The active React source was recovered from `React-CSV-Data-Analysis-Agent-Backup`, revision `b268e31b37de94ea3b7a5b9e604ce3eca3a48e3d` (2026-07-28). Rebuilding that revision produced the same 74-file SHA-256 manifest, `index.html`, and service worker as the existing deployment. The earlier root-level Vanilla implementation and the older `original/` reference have been removed. Do not edit compiled files in `assets/` to change app behavior.
 
-The repository's project goal is a browser-only Vanilla frontend. The root-entry wiring, its dependencies, and deployment assets still need to be reconciled before claiming the Vanilla app is the active deployment.
+## Agent flow
 
-## Development commands
+`frontend/index.tsx` boots the React shell in `frontend/App.tsx`. The shell reads state from `frontend/store/useAppStore.ts`, which composes focused state slices. CSV intake enters `frontend/services/agent/orchestration/fileOrchestrator.ts`; planning and analysis run through the agent orchestration/runtime modules, with tool contracts under `frontend/services/agent/tools/` and execution under `frontend/services/agent/execution/`. The app records progress and verification in UI state and browser persistence. This recovered release uses the pinned Agrun browser runtime. It does not contain the later Pi-harness changes present in newer commits of the backup repository.
 
-Run from the repository root:
+The app's tool and data policies live with the agent and data services. UI components display state and user decisions; they should not duplicate business rules. The local source backup also contains internal planning notes and a business-report regression corpus; those are not included in the public source candidate.
+
+## Develop and verify
+
+Use Node.js `>=22.13 <23` for the source package. Its lockfile pins the dependencies.
 
 ```bash
-npm install
-npm run dev       # Vite development server; serves the current root index.html entry
-npm run build     # builds the current Vite entry, not an unreferenced main.js module
-npm run preview   # previews the generated build
-npm test          # runs the configured Vitest suite
+npm ci --prefix frontend
+npm run dev
+npm run typecheck
+npm run test
+npm run build
 ```
 
-Node.js is required for Vite and the test/build tooling. The application code is browser-side; there is no application backend in the reviewed Vanilla modules. Static hosting is possible once the intended entry and required assets are wired and verified.
+`npm run dev` serves editable source on port 3000. `npm run build` writes `frontend/dist/`; it does not replace the checked-in deployment. The build scripts copy the existing root `duckdb/` and `demo-data/` resources into the source package's ignored `frontend/public/` directory, and copy Pyodide from the installed dependency. Those generated copies are not committed. The current vector worker loads its model from a CDN, and the build intentionally excludes local model files.
 
-Optional local embedding-model download (about 330 MB):
+After reviewing the generated output, run `npm run publish:root` to rebuild and copy manifest-managed deployment files to the repository root. The publisher verifies source checksums, refuses to overwrite modified or unmanaged root files, removes only unchanged obsolete build files, and leaves source, documentation, and model resources untouched. Its safety tests run with `npm run test:publish`.
+
+To preview the checked-in deployment without Node.js, serve the repository root over HTTP:
 
 ```bash
-npm run download:model
+python3 -m http.server 8765 --bind 127.0.0.1
 ```
 
-The script places model files under `public/models/Xenova/all-MiniLM-L6-v2`. The Vanilla vector-store implementation has a local-model path and a bag-of-words fallback. Verify the final hosting path and browser loading behavior before relying on this model in a deployment.
+Open `http://127.0.0.1:8765/`. CSV-to-report, provider-backed AI, offline behavior, and mobile flows require separate end-to-end checks before a release.
 
-## Vanilla source map
+## GitHub Pages release
 
-- `main.js` — large Web Component application entry; defines `<csv-data-analysis-app>`, application state, event wiring, orchestration, chat, and view integration. It is not imported by the current root `index.html`.
-- `utils/dataProcessor.js` — CSV parsing, shape/header detection, profiling, preparation helpers, JavaScript transform execution, and analysis-plan execution.
-- `utils/` — header mapping, data-preparation tools, DOM action parsing, export helpers, pipeline audit, and repair utilities.
-- `services/` — provider requests and prompts, task orchestration, memory/RAG/vector-store logic, and the reusable skill catalog.
-- `render/` and `handlers/` — chart/cards, assistant, raw-data, memory, and workflow-timeline rendering and interactions.
-- `state/` and `types/` — shared constants and JSDoc typedefs.
-- `storageService.js` — settings in `localStorage`, plus IndexedDB report and memory helpers.
-- `sandbox/python-transformation-worker.js` — a separate Pyodide worker; the reviewed Vanilla modules do not call it for generated JavaScript transforms.
-- `original/csv-data-analysis-agent/` — React/TypeScript reference project; leave unchanged.
+GitHub Pages is configured to publish from GitHub Actions. `.github/workflows/publish-pages.yml` runs only when manually dispatched from `main`; it does not publish on every push. It verifies the staging scripts, checks each file against `SHA256SUMS.txt`, and uploads only the allowed site files from `pages-artifact/`. The artifact contains the app entry, bundles, service worker, offline page, manifest, and required browser resources under `demo-data/`, `duckdb/`, `pyodide/`, and `sandbox/`. It excludes `frontend/`, tests, repository documents, the legacy `main_page.html`, and `public/models/`.
 
-## Vanilla source behavior
+For a new release, first build and review the source, run `npm run publish:root`, and verify the checked-in deployment. Merge the release files into `main`, then manually run **Publish verified GitHub Pages site** in GitHub Actions. The workflow is already on `main`. `npm run test:publish` checks the publisher and stager locally; `npm run stage:pages` creates the ignored `pages-artifact/` directory for inspection and requires that directory to be absent before it runs. The workflow stages a fresh artifact on each run. Until it is manually run, Pages continues serving its last published version.
 
-The following describes source-level implementation, not a browser-tested root deployment:
-
-1. **CSV ingestion and profiling.** `utils/dataProcessor.js` uses PapaParse through `window.Papa`, attempts worker parsing, and falls back to non-worker parsing on `DataCloneError`. It detects headers and report/context rows, records shape and header metadata, and profiles column roles and data quality. Parsing does not guarantee that summary rows are removed; preparation is a separate step.
-2. **Iterative preparation.** `services/taskOrchestrator.js` tracks Diagnose, Plan, Execute, Adjust, and Verify phases, step status, context, progress, and chat-log entries. Preparation prefers deterministic tool calls; plan normalization can supply default tools when the model provides neither tools nor JavaScript. The workflow can retry/adjust and refresh metadata after transformations.
-3. **Analysis and interaction.** Source modules implement local plan execution and chart/card rendering, including grouped aggregations, scatter/correlation, clustering, trend/forecast operations, chart-type controls, Top-N/Others, selections, and raw-data filtering/sorting/editing. Availability through the current root entry has not been verified.
-4. **Persistence.** Vanilla settings and API keys are saved in `localStorage`. IndexedDB helpers store reports and per-dataset memory entries. `ENABLE_MEMORY_FEATURES` is enabled in the source; `ENABLE_PIPELINE_REPAIR` is disabled by default.
-
-## AI and security boundaries
-
-- Gemini/OpenAI requests are sent directly from the browser to provider APIs; there is no server-side credential broker in the reviewed Vanilla source.
-- API keys saved through Vanilla settings are stored in browser `localStorage`. Do not treat browser storage as a secret store.
-- Prompt builders use bounded previews/samples in inspected paths. This static review did not capture runtime network traffic; do not make a stronger privacy claim without verifying every request path.
-- Generated JavaScript transforms run via `new Function` in the page realm. This is **not** an isolated sandbox. The root Content Security Policy permits `unsafe-eval`.
-- The Python/Pyodide worker is a separate implementation and is not evidence that JavaScript transforms are sandboxed.
-- External provider access and CDN/model loading require network access and suitable browser/CSP settings.
-
-## Tests and known limits
-
-The repository currently has four Vitest files with 18 test cases focused on CSV processing, DOM-action utilities, header mapping, and task orchestration. They do not establish end-to-end browser behavior. The root-entry, build, and browser integration were not verified by the static inventory that informed this document; run the commands above and add browser smoke tests before claiming a working Vanilla deployment.
-
-Other known source/document alignment points:
-
-- Root `index.html` configuration defaults differ from the Vanilla `storageService.js` defaults; confirm which configuration should own settings when wiring the Vanilla app.
-- The root service worker pre-caches the compiled root application assets. Do not assume it already caches the Vanilla app correctly.
-- Several source modules implement report/history and export-related helpers; this does not prove those flows are reachable through the current root entry.
-- `applyDeterministicPreprocessing()` exists in `main.js`, but no caller was found in the reviewed source. Do not describe it as an active automatic pre-processing stage without verifying its call path.
-
-## Repository guidance
-
-Keep application code in plain HTML, CSS, and JavaScript; do not add React or Tailwind to the Vanilla implementation. Treat `original/` as read-only. When the entry wiring changes, update this README and `roadmap.md` from the tested behavior, then run the relevant build, tests, and browser checks.
+This repository is public, but the recovered `frontend/` source came from a private backup. Review its source, tests, and sample CSV files and obtain an explicit publication decision before pushing `frontend/` to the public remote. The Pages artifact allowlist limits what the website serves; it does not make files in a public Git repository private.

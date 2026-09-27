@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "types": [
+      "node",
+      "vite/client"
+    ],
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": [
+    "App.tsx",
+    "index.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "config/**/*.ts",
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx",
+    "icons/**/*.ts",
+    "icons/**/*.tsx",
+    "services/**/*.ts",
+    "store/**/*.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "types/**/*.ts",
+    "types/**/*.d.ts",
+    "utils/**/*.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "output",
+    "sample project for study only",
+    "src"
+  ]
+}

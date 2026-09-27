@@ -1,0 +1,20 @@
+{
+  "name": "AI Analysis",
+  "short_name": "AI Analysis",
+  "description": "Privacy-aware browser CSV analysis with governed AI assistance.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+release-artifacts/
+*.local
+.env
+.env.*
+!.env.example
+public/pyodide/
+public/duckdb/
+public/demo-data/
+public/models/
+
+# Local business reports and outputs derived from those reports.
+sample csv/
+tests/benchmark/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ralph runtime state files (auto-generated, not config)
+.ralph/.call_count
+.ralph/.circuit_breaker_history
+.ralph/.circuit_breaker_state
+.ralph/.last_output_length
+.ralph/.last_reset
+.ralph/.loop_start_sha
+.ralph/.ralph_session
+.ralph/.ralph_session_history
+.ralph/.exit_signals
+.ralph/progress.json
+.ralph/status.json
+
+# Local workspace / operator state
+.ralphy/
+.claude/
+.wrangler/
+
+# Playwright / test artifacts
+test-results/
+playwright-report/
+output/playwright/*.png
+output/playwright/*.jpg
+output/playwright/*.jpeg
+output/playwright/*.webp
+output/playwright/*.mjs
+
+# Local scratch scripts / temp live specs
+scripts/tmp_*.mjs
+tests/live/tmp-*.spec.ts
+
+# ERP reference pages (not part of the React app build)
+main_page2.html
