@@ -27,7 +27,6 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: pages-artifact
-          include-hidden-files: true
 
   deploy:
     needs: stage
