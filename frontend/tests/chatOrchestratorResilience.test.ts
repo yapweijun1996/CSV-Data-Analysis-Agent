@@ -3,7 +3,7 @@
 /**
  * P0 Anti-Survivorship Resilience: chatOrchestrator guards
  *
- * Verifies that if the Agrun follow-up runtime or interaction resume throws
+ * Verifies that if the Pi follow-up runtime or interaction resume throws
  * unexpectedly, the chat:
  *  1. Posts a friendly Mandarin error message to the chat history
  *  2. Sets isBusy: false so the chat remains interactive
@@ -23,21 +23,23 @@ const {
     resolveEffectivePendingClarificationMock,
     tryHandlePendingMutationConfirmationMock,
     classifyRowDeleteIntentMock,
-    runAgrunFollowUpTurnMock,
-    resumeAgrunFollowUpInteractionMock,
+    runPiFollowUpTurnMock,
+    resumePiMutationApprovalMock,
 } = vi.hoisted(() => ({
     isProviderConfiguredMock: vi.fn(),
     classifyChatIntentMock: vi.fn(),
     resolveEffectivePendingClarificationMock: vi.fn(),
     tryHandlePendingMutationConfirmationMock: vi.fn(),
     classifyRowDeleteIntentMock: vi.fn(),
-    runAgrunFollowUpTurnMock: vi.fn(),
-    resumeAgrunFollowUpInteractionMock: vi.fn(),
+    runPiFollowUpTurnMock: vi.fn(),
+    resumePiMutationApprovalMock: vi.fn(),
 }));
 
-vi.mock('../services/agent/runtime/agrun/followUpRuntimeService', () => ({
-    runAgrunFollowUpTurn: runAgrunFollowUpTurnMock,
-    resumeAgrunFollowUpInteraction: resumeAgrunFollowUpInteractionMock,
+vi.mock('../services/agent/runtime/pi/piFollowUpRuntimeService', () => ({
+    runPiFollowUpTurn: runPiFollowUpTurnMock,
+}));
+vi.mock('../services/agent/runtime/pi/piMutationApproval', () => ({
+    resumePiMutationApproval: resumePiMutationApprovalMock,
 }));
 
 vi.mock('../services/ai/providerConfig', () => ({
@@ -119,7 +121,7 @@ const createStore = (overrides: Partial<TestState> = {}) => {
     return { getState, setState };
 };
 
-describe('chatOrchestrator resilience — Agrun follow-up guard (P0)', () => {
+describe('chatOrchestrator resilience — Pi follow-up guard (P0)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -130,9 +132,9 @@ describe('chatOrchestrator resilience — Agrun follow-up guard (P0)', () => {
         classifyRowDeleteIntentMock.mockReturnValue({ kind: 'unsupported' });
     });
 
-    it('posts a Mandarin error message and resets isBusy when Agrun throws', async () => {
+    it('posts a Mandarin error message and resets isBusy when Pi throws', async () => {
         const store = createStore();
-        runAgrunFollowUpTurnMock.mockRejectedValueOnce(new Error('Unexpected internal crash'));
+        runPiFollowUpTurnMock.mockRejectedValueOnce(new Error('Unexpected internal crash'));
 
         await orchestrateChatResponse('show me data', store as never);
 
@@ -150,9 +152,9 @@ describe('chatOrchestrator resilience — Agrun follow-up guard (P0)', () => {
         expect(String(errorMessages[0].text)).toContain('意外错误');
     });
 
-    it('does not propagate the Agrun error to the caller', async () => {
+    it('does not propagate the Pi error to the caller', async () => {
         const store = createStore();
-        runAgrunFollowUpTurnMock.mockRejectedValueOnce(new Error('Critical failure'));
+        runPiFollowUpTurnMock.mockRejectedValueOnce(new Error('Critical failure'));
 
         // Must not throw
         await expect(orchestrateChatResponse('query', store as never)).resolves.toBeUndefined();
@@ -162,7 +164,7 @@ describe('chatOrchestrator resilience — Agrun follow-up guard (P0)', () => {
         const store = createStore({
             settings: { provider: 'openai', language: 'English', openAIApiKey: 'key', geminiApiKey: '', simpleModel: 'gpt-5-mini', complexModel: 'gpt-5.2', autoConfirmGoal: true },
         });
-        runAgrunFollowUpTurnMock.mockRejectedValueOnce(new Error('Failure'));
+        runPiFollowUpTurnMock.mockRejectedValueOnce(new Error('Failure'));
 
         await orchestrateChatResponse('query', store as never);
 
@@ -173,17 +175,17 @@ describe('chatOrchestrator resilience — Agrun follow-up guard (P0)', () => {
         expect(String(errorMsg?.text)).toContain('unexpected error');
     });
 
-    it('routes every eligible follow-up turn directly to Agrun', async () => {
+    it('routes every eligible follow-up turn directly to Pi', async () => {
         const store = createStore();
-        runAgrunFollowUpTurnMock.mockResolvedValue({
+        runPiFollowUpTurnMock.mockResolvedValue({
             status: 'completed',
-            appTurnId: 'turn-agrun',
+            appTurnId: 'turn-pi',
             text: 'Done.',
         });
 
         await orchestrateChatResponse('summarize the current report', store as never);
 
-        expect(runAgrunFollowUpTurnMock).toHaveBeenCalledWith(
+        expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'summarize the current report',
                 intentFindings: expect.objectContaining({
@@ -195,91 +197,54 @@ describe('chatOrchestrator resilience — Agrun follow-up guard (P0)', () => {
     });
 });
 
-describe('chatOrchestrator resilience — Agrun interaction resume guard (P0)', () => {
-    const agrunPending = {
-        question: 'Which metric?',
-        options: [{ label: 'Revenue', value: 'revenue' }],
+describe('chatOrchestrator resilience — Pi approval guard (P0)', () => {
+    const pending: ClarificationRequest = {
+        question: 'Approve this dataset change?',
+        options: [{ label: 'Approve', value: 'approve' }, { label: 'Deny', value: 'deny' }],
+        interactionKind: 'approval',
         resumeContext: {
-            followUpRuntimeInteraction: {
-                owner: 'agrun' as const,
-                kind: 'clarification' as const,
+            piMutationApproval: {
                 sessionId: 'session-1',
-                turnId: 'turn-1',
-                resumeToken: { opaque: true },
+                datasetVersion: 'version-1',
+                originalRequest: 'Change the dataset',
+                args: { operation: 'update' },
             },
         },
     };
-
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(console, 'error').mockImplementation(() => undefined);
         vi.spyOn(console, 'log').mockImplementation(() => undefined);
-        resolveEffectivePendingClarificationMock.mockReturnValue(agrunPending);
-    });
-
-    it('posts a Mandarin error message and resets isBusy when Agrun resume throws', async () => {
-        const store = createStore({ pendingClarification: agrunPending });
-        resumeAgrunFollowUpInteractionMock.mockRejectedValueOnce(new Error('Resume crash'));
-
-        await handleClarificationResponse({ label: 'Revenue', value: 'revenue' }, store as never);
-
-        // isBusy must be false — chat must remain interactive
-        expect(store.getState().isBusy).toBe(false);
-
-        // Error message must have been added to chat
-        const errorMessages = store.getState().chatHistory.filter(
-            (m: Record<string, unknown>) => m.isError === true,
-        );
-        expect(errorMessages).toHaveLength(1);
-
-        // Must be in Mandarin; formatUserError({ surface: 'chat', language: 'Mandarin' })
-        expect(String(errorMessages[0].text)).toContain('意外错误');
-    });
-
-    it('does not propagate the Agrun resume error to the caller', async () => {
-        const store = createStore({ pendingClarification: agrunPending });
-        resumeAgrunFollowUpInteractionMock.mockRejectedValueOnce(new Error('Fatal resume error'));
-
-        await expect(
-            handleClarificationResponse({ label: 'Revenue', value: 'revenue' }, store as never),
-        ).resolves.toBeUndefined();
-    });
-
-    it('resumes an Agrun-owned interaction through the same runtime adapter', async () => {
-        const pending = {
-            question: 'Approve the read-only action?',
-            options: [
-                { label: 'Approve', value: 'approve' },
-                { label: 'Deny', value: 'deny' },
-            ],
-            interactionKind: 'approval' as const,
-            resumeContext: {
-                followUpRuntimeInteraction: {
-                    owner: 'agrun' as const,
-                    kind: 'approval' as const,
-                    sessionId: 'session-1',
-                    turnId: 'turn-1',
-                    resumeToken: { opaque: true },
-                },
-            },
-        };
         resolveEffectivePendingClarificationMock.mockReturnValue(pending);
-        resumeAgrunFollowUpInteractionMock.mockResolvedValue({
-            status: 'completed',
-            appTurnId: 'turn-1',
-            text: 'Resumed.',
-        });
-        const store = createStore({
-            pendingClarification: pending,
-        });
+    });
+
+    it('posts an error and resets isBusy when Pi approval execution throws', async () => {
+        const store = createStore({ pendingClarification: pending });
+        resumePiMutationApprovalMock.mockRejectedValueOnce(new Error('Approval execution failed'));
+        await handleClarificationResponse({ label: 'Approve', value: 'approve' }, store as never);
+        expect(store.getState().isBusy).toBe(false);
+        expect(store.getState().chatHistory.filter(message => message.isError === true)).toHaveLength(1);
+    });
+
+    it('passes the exact pending action and choice to Pi approval', async () => {
+        const store = createStore({ pendingClarification: pending });
+        resumePiMutationApprovalMock.mockResolvedValueOnce(undefined);
         const choice = { label: 'Approve', value: 'approve' };
-
         await handleClarificationResponse(choice, store as never);
+        expect(resumePiMutationApprovalMock).toHaveBeenCalledWith(pending, choice, store);
+    });
 
-        expect(resumeAgrunFollowUpInteractionMock).toHaveBeenCalledWith(
-            pending,
-            choice,
-            store,
-        );
+    it('denies interrupted older approval without executing it', async () => {
+        const oldPending: ClarificationRequest = {
+            question: 'Approve old action?',
+            options: [{ label: 'Approve', value: 'approve' }],
+            interactionKind: 'approval',
+        };
+        resolveEffectivePendingClarificationMock.mockReturnValue(oldPending);
+        const store = createStore({ pendingClarification: oldPending });
+        await handleClarificationResponse({ label: 'Approve', value: 'approve' }, store as never);
+        expect(resumePiMutationApprovalMock).not.toHaveBeenCalled();
+        expect(store.getState().pendingClarification).toBeNull();
+        expect(String(store.getState().chatHistory.at(-1)?.text)).toContain('No changes were made');
     });
 });

@@ -16,11 +16,11 @@
  * - `batch_analysis`:  Open-ended exploration ("analyse this data", "show insights").
  *                      Routes to runDataAnalysisSession().
  * - `precise_card`:    Specific card request with explicit columns/aggregation/grouping.
- *                      Routes to the Agrun follow-up runtime so the AI executes the user's exact spec.
+ *                      Routes to the Pi follow-up runtime so the AI executes the user's exact spec.
  * - `data_query`:      Row-level lookup / filter ("show rows where X = Y").
- *                      Routes to the Agrun follow-up runtime.
+ *                      Routes to the Pi follow-up runtime.
  * - `conversation`:    General chat, clarification, or non-analysis message.
- *                      Routes to the Agrun follow-up runtime.
+ *                      Routes to the Pi follow-up runtime.
  * - `mutation`:        Data mutation (delete rows, restart cleaning).
  *                      Handled before classification by existing mutation checks.
  */

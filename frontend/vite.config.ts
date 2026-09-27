@@ -24,7 +24,6 @@ function stripLocalModelAssetsPlugin(): Plugin {
 function shouldExcludeFromModulePreload(file: string): boolean {
   return file.includes('vendor-monaco')
     || file.includes('vendor-ai-local')
-    || file.includes('agrun')
     || file.includes('app-agent')
     || file.includes('app-ai')
     || file.includes('duckDbWorker')
@@ -83,12 +82,6 @@ export default defineConfig(({ mode }) => {
                     inlineDynamicImports: singleFileBuild,
                     ...(!singleFileBuild && {
                         manualChunks(id) {
-                            // Agent Runtime JavaScript is a large UMD bundle reached
-                            // only from the follow-up canary's dynamic import. Keep it
-                            // out of shared vendor chunks so it cannot become eager.
-                            if (id.includes('/node_modules/agent-runtime-javascript-dist/')) {
-                              return 'agrun';
-                            }
                             // correlation.ts is a pure utility (no runtime agent deps)
                             // that must remain synchronously importable for telemetry.
                             if (id.includes('/services/agent/correlation')) {

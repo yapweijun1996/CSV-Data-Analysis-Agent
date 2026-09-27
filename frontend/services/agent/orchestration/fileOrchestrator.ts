@@ -92,7 +92,7 @@ const runPostImportPipeline = (
         'import_ready',
         'done',
         'The imported dataset is ready for governed automatic analysis.',
-        { datasetId, runtimeOwner: 'agrun' },
+        { datasetId, runtimeOwner: 'pi' },
     );
     void (async () => {
         const state = store.getState();
@@ -121,8 +121,8 @@ const runPostImportPipeline = (
             store,
             'goal_proposal',
             'in_progress',
-            'Agrun.js is running the governed initial analysis.',
-            { datasetId, runtimeOwner: 'agrun' },
+            'Pi Harness is running the governed initial analysis.',
+            { datasetId, runtimeOwner: 'pi' },
         );
         try {
             const outcome = await state.handleInitialAnalysis(
@@ -146,7 +146,7 @@ const runPostImportPipeline = (
                         : 'Automatic analysis is ready.'),
                 {
                     datasetId,
-                    runtimeOwner: 'agrun',
+                    runtimeOwner: 'pi',
                     status: outcome.status,
                 },
             );
@@ -184,7 +184,7 @@ const runPostImportPipeline = (
                 'goal_proposal',
                 'error',
                 `Unexpected initial-analysis error: ${message}`,
-                { datasetId, runtimeOwner: 'agrun' },
+                { datasetId, runtimeOwner: 'pi' },
             );
         } finally {
             await persistOriginalSnapshot();
@@ -478,7 +478,7 @@ export async function* orchestrateFileUpload(
         rowCount: getCsvDataRowCount(getState().csvData),
     });
     // The consumer has committed the imported dataset. Give React and WebKit
-    // one browser task to paint it before the Agrun lifecycle starts its own
+    // one browser task to paint it before the Pi lifecycle starts its own
     // CPU- and promise-heavy stage chain.
     await yieldToBrowser();
 

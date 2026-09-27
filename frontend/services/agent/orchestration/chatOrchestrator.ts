@@ -110,25 +110,27 @@ export const handleClarificationResponse = async (
     console.log(`${LOG_PREFIX} Resuming runtime turn from clarification.`, { userChoice });
     setState({ isBusy: true });
     try {
-        const { resumeAgrunFollowUpInteraction, runAgrunFollowUpTurn } =
-            await import('../runtime/agrun/followUpRuntimeService');
-        if (pendingClarification.resumeContext?.followUpRuntimeInteraction?.owner === 'agrun') {
-            await resumeAgrunFollowUpInteraction(
-                pendingClarification,
-                userChoice,
-                store,
-            );
+        if (pendingClarification.resumeContext?.piMutationApproval) {
+            const { resumePiMutationApproval } = await import('../runtime/pi/piMutationApproval');
+            await resumePiMutationApproval(pendingClarification, userChoice, store);
+        } else if (pendingClarification.interactionKind === 'approval') {
+            setState({ pendingClarification: null, activeTurn: null });
+            setState(prev => ({
+                chatHistory: [...prev.chatHistory, createChatMessage({
+                    sender: 'ai',
+                    text: 'This approval belongs to an interrupted older runtime turn. No changes were made. Start a new request to review the action again.',
+                    timestamp: new Date(),
+                    type: 'ai_message',
+                })],
+            }));
         } else {
-            const { prepareAgrunClarificationCompatibilityRequest } =
-                await import(
-                    '../runtime/agrun/clarificationCompatibility'
-                );
-            const request =
-                await prepareAgrunClarificationCompatibilityRequest(
-                    userChoice,
-                    store,
-                );
-            if (request) await runAgrunFollowUpTurn(request, store);
+            const { preparePiClarificationCompatibilityRequest } =
+                await import('../runtime/pi/clarificationCompatibility');
+            const request = await preparePiClarificationCompatibilityRequest(userChoice, store);
+            if (request) {
+                const { runPiFollowUpTurn } = await import('../runtime/pi/piFollowUpRuntimeService');
+                await runPiFollowUpTurn(request, store);
+            }
         }
     } catch (error) {
         console.error(`${LOG_PREFIX} resumeAgentTurnFromClarification threw unexpectedly.`, error);
@@ -319,8 +321,7 @@ export const orchestrateChatResponse = async (message: string, store: StoreApi) 
         console.log(`${LOG_PREFIX} Artifact continuity: using original artifact (${effectiveArtifact?.taskSignal}) instead of re-classified (${routingDirective.artifact?.taskSignal})`);
     }
 
-    // AGRUN-010: promote app-owned report memory once, before selecting either
-    // follow-up runtime. Agrun global memory remains disabled.
+    // Promote app-owned report memory once; it remains the source of truth.
     void import('../memory/followUpMemory')
         .then(({ promoteAppFollowUpMemory }) =>
             promoteAppFollowUpMemory(store, message))
@@ -333,8 +334,8 @@ export const orchestrateChatResponse = async (message: string, store: StoreApi) 
 
     setState({ isBusy: true, pendingClarification: null });
     try {
-        const { runAgrunFollowUpTurn } = await import(
-            '../runtime/agrun/followUpRuntimeService'
+        const { runPiFollowUpTurn } = await import(
+            '../runtime/pi/piFollowUpRuntimeService'
         );
         const canonicalArtifact = effectiveArtifact && getState().columnRegistry
             ? {
@@ -345,7 +346,7 @@ export const orchestrateChatResponse = async (message: string, store: StoreApi) 
                     resolveColumnReference(column, getState().columnRegistry) ?? column),
             }
             : effectiveArtifact;
-        await runAgrunFollowUpTurn({
+        await runPiFollowUpTurn({
             message,
             intentFindings: routingDirective.findings,
             queryUnderstandingArtifact: canonicalArtifact,

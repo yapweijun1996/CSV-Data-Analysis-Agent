@@ -366,7 +366,7 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
                         if (update.payload.currentView === 'analysis_dashboard' && update.payload.csvData) {
                             // This import boundary also switches from the small
                             // landing tree to the lazy analysis workspace. Force
-                            // that one critical commit before Agrun starts so
+                            // that one critical commit before Pi starts so
                             // WebKit cannot retain the stale upload screen while
                             // the analysis microtask chain is running.
                             flushSync(() => set(update.payload));

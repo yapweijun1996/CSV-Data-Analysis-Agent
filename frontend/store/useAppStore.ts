@@ -451,22 +451,11 @@ export const useAppStore = createWithEqualityFn<AppStore>()((set, get, store) =>
         } finally {
             set({ isAppInitializing: false });
         }
-        // Resume a same-tab, single-turn Agrun checkpoint only after app state
-        // and the DuckDB binding have been restored.
+        // Resume a Pi stage checkpoint only after app state and DuckDB are restored.
         if (get().csvData) {
-            void Promise.all([
-                import('../services/agent/runtime/agrun/initialAnalysisRuntimeService'),
-                import('../services/agent/runtime/agrun/followUpRuntimeService'),
-            ])
-            .then(async ([
-                { recoverAgrunInitialAnalysisIfNeeded },
-                { recoverAgrunFollowUpTurnIfNeeded },
-            ]) => {
-                const initialOutcome =
-                    await recoverAgrunInitialAnalysisIfNeeded(store);
-                if (!initialOutcome) {
-                    await recoverAgrunFollowUpTurnIfNeeded(store);
-                }
+            void import('../services/agent/runtime/pi/piInitialAnalysisRuntimeService')
+            .then(async ({ recoverPiInitialAnalysisIfNeeded }) => {
+                await recoverPiInitialAnalysisIfNeeded(store);
             })
             .catch(error => {
                 get().addProgress(

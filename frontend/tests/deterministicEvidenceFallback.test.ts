@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDeterministicEvidenceFallbackPlan } from '../services/agent/runtime/agrun/deterministicEvidenceFallback';
+import { buildDeterministicEvidenceFallbackPlan } from '../services/agent/runtime/pi/deterministicEvidenceFallback';
 
 describe('deterministic evidence fallback', () => {
     it('prefers a business amount and bounded business dimension over unit helpers', () => {

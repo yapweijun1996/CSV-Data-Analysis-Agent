@@ -26,16 +26,16 @@ import {
     resolveReportMemoryScope,
 } from '../../services/agent/memory/memoryScope';
 
-const discardAgrunSessionCheckpoint = async (sessionId: string) => {
-    const { discardAgrunFollowUpSession } =
-        await import('../../services/agent/runtime/agrun/followUpRuntimeService');
-    await discardAgrunFollowUpSession(sessionId);
+const discardPiSessionCheckpoint = async (sessionId: string) => {
+    const { discardPiInitialAnalysisCheckpoint } =
+        await import('../../services/agent/runtime/pi/piInitialAnalysisRuntimeService');
+    discardPiInitialAnalysisCheckpoint(sessionId);
 };
 
-const purgeInactiveAgrunCheckpoints = async (activeSessionId: string) => {
-    const { purgeAgrunFollowUpCheckpoints } =
-        await import('../../services/agent/runtime/agrun/followUpRuntimeService');
-    await purgeAgrunFollowUpCheckpoints([activeSessionId]);
+const purgeInactivePiCheckpoints = async (activeSessionId: string) => {
+    const { purgePiInitialAnalysisCheckpoints } =
+        await import('../../services/agent/runtime/pi/piInitialAnalysisRuntimeService');
+    purgePiInitialAnalysisCheckpoints([activeSessionId]);
 };
 
 export interface IHistorySlice {
@@ -81,7 +81,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
             import('../../services/agent/cleaningRunState'),
         ]);
         if (report) {
-            await discardAgrunSessionCheckpoint(get().sessionId);
+            await discardPiSessionCheckpoint(get().sessionId);
             const normalizedAppState = normalizeRestoredAppState(report.appState);
             const restoredMemoryScope = normalizedAppState.reportMemoryScope
                 ?? (report.lineage
@@ -234,7 +234,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
     handlePurgeStorage: async () => {
         try {
             const result = await purgeAllStorage(get().sessionId);
-            await purgeInactiveAgrunCheckpoints(get().sessionId);
+            await purgeInactivePiCheckpoints(get().sessionId);
             await get().loadReportsList();
             return result;
         } catch (error) {
@@ -397,7 +397,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
             const maintenanceResults = await Promise.allSettled([
                 archivedSession ? saveReport(archivedSession) : Promise.resolve(),
                 outgoingSessionId
-                    ? discardAgrunSessionCheckpoint(outgoingSessionId)
+                    ? discardPiSessionCheckpoint(outgoingSessionId)
                     : Promise.resolve(),
                 outgoingSessionId
                     ? deleteOriginalData(outgoingSessionId)

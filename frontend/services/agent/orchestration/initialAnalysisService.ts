@@ -8,9 +8,9 @@ import { buildDatasetVersionId } from '../../../utils/datasetId';
 import { getCurrentAnalysisDatasetVersion } from '../artifactProvenance';
 import { finalizeAndSaveRun } from '../memory/memoryManager';
 import {
-    runAgrunInitialAnalysis,
-} from '../runtime/agrun/initialAnalysisRuntimeService';
-import type { InitialAnalysisRunOutcome } from '../runtime/agrun/initialAnalysisTypes';
+    runPiInitialAnalysis,
+} from '../runtime/pi/piInitialAnalysisRuntimeService';
+import type { InitialAnalysisRunOutcome } from '../runtime/pi/initialAnalysisTypes';
 import type { StoreApi } from '../types';
 
 const toLegacyOutcome = (
@@ -39,7 +39,7 @@ const toLegacyOutcome = (
 
 /**
  * The sole production entry for a first-pass or regenerated analysis.
- * Agrun.js owns lifecycle order; app services continue to own every mutation.
+ * Pi owns the agent loop; app services continue to own every mutation.
  */
 export const handleInitialAnalysis = async (
     dataForAnalysis: CsvData,
@@ -68,7 +68,7 @@ export const handleInitialAnalysis = async (
     });
 
     try {
-        const outcome = await runAgrunInitialAnalysis({
+        const outcome = await runPiInitialAnalysis({
             appSessionId: state.sessionId,
             datasetId,
             datasetVersion,

@@ -1,9 +1,9 @@
 /**
- * AGRUN-010: runtime-neutral follow-up memory boundary.
+ * Runtime-neutral follow-up memory boundary.
  *
- * Both the legacy and Agrun follow-up paths enter through chatOrchestrator, so
+ * All follow-up paths enter through chatOrchestrator, so
  * promotion happens once here before runtime selection. Retrieval also remains
- * app-owned and is projected into Agrun as bounded read-only context.
+ * app-owned and is projected into Pi as bounded read-only context.
  */
 import type { ChatMessage } from '../../../types';
 import { vectorStore } from '../../vectorStore';
@@ -52,7 +52,7 @@ const collectExistingInsightIds = (
  * Activate app memory and promote deterministic chat insights when due.
  *
  * This is intentionally called once before follow-up runtime selection, so
- * enabling Agrun cannot create a second promotion path.
+ * enabling Pi cannot create a second promotion path.
  */
 export const promoteAppFollowUpMemory = async (
     store: StoreApi,

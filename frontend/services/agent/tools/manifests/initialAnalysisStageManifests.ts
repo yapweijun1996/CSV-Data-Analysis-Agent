@@ -1,5 +1,5 @@
 import type { ToolManifest, ToolName } from '../../../../types';
-import type { InitialAnalysisPhase } from '../../runtime/agrun/initialAnalysisTypes';
+import type { InitialAnalysisPhase } from '../../runtime/pi/initialAnalysisTypes';
 import { requireDataset } from '../toolManifestSupport';
 
 export type InitialAnalysisStageToolName =

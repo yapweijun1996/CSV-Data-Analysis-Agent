@@ -5,13 +5,13 @@ import { orchestrateChatResponse } from '../services/agent/orchestration/chatOrc
 
 const {
     isProviderConfiguredMock,
-    runAgrunFollowUpTurnMock,
+    runPiFollowUpTurnMock,
     tryHandlePendingMutationConfirmationMock,
     runRowDeletePreflightMock,
     classifyRowDeleteIntentMock,
 } = vi.hoisted(() => ({
     isProviderConfiguredMock: vi.fn(),
-    runAgrunFollowUpTurnMock: vi.fn(),
+    runPiFollowUpTurnMock: vi.fn(),
     tryHandlePendingMutationConfirmationMock: vi.fn(),
     runRowDeletePreflightMock: vi.fn(),
     classifyRowDeleteIntentMock: vi.fn(),
@@ -23,8 +23,8 @@ vi.mock('../services/ai/providerConfig', () => ({
     invalidateProviderHealthCache: () => {},
 }));
 
-vi.mock('../services/agent/runtime/agrun/followUpRuntimeService', () => ({
-    runAgrunFollowUpTurn: runAgrunFollowUpTurnMock,
+vi.mock('../services/agent/runtime/pi/piFollowUpRuntimeService', () => ({
+    runPiFollowUpTurn: runPiFollowUpTurnMock,
 }));
 
 vi.mock('../services/agent/orchestration/chatMutationWorkflow', () => ({
@@ -70,7 +70,7 @@ describe('chat row delete runtime wiring', () => {
         isProviderConfiguredMock.mockReturnValue(true);
         tryHandlePendingMutationConfirmationMock.mockResolvedValue(false);
         runRowDeletePreflightMock.mockResolvedValue(undefined);
-        runAgrunFollowUpTurnMock.mockResolvedValue(undefined);
+        runPiFollowUpTurnMock.mockResolvedValue(undefined);
         classifyRowDeleteIntentMock.mockReturnValue({ kind: 'ignored' });
     });
 
@@ -81,7 +81,7 @@ describe('chat row delete runtime wiring', () => {
         await orchestrateChatResponse('remove rows where Code = 501001', store as never);
 
         expect(runRowDeletePreflightMock).toHaveBeenCalledWith('remove rows where Code = 501001', store);
-        expect(runAgrunFollowUpTurnMock).not.toHaveBeenCalled();
+        expect(runPiFollowUpTurnMock).not.toHaveBeenCalled();
     });
 
     it('handles pending delete confirmations before provider gating or runtime startup', async () => {
@@ -93,7 +93,7 @@ describe('chat row delete runtime wiring', () => {
 
         expect(tryHandlePendingMutationConfirmationMock).toHaveBeenCalledWith('confirm delete', store);
         expect(runRowDeletePreflightMock).not.toHaveBeenCalled();
-        expect(runAgrunFollowUpTurnMock).not.toHaveBeenCalled();
+        expect(runPiFollowUpTurnMock).not.toHaveBeenCalled();
         expect(store.getState().chatHistory).toHaveLength(0);
     });
 
@@ -104,7 +104,7 @@ describe('chat row delete runtime wiring', () => {
 
         expect(tryHandlePendingMutationConfirmationMock).toHaveBeenCalledWith('confirm delete', store);
         expect(runRowDeletePreflightMock).not.toHaveBeenCalled();
-        expect(runAgrunFollowUpTurnMock).toHaveBeenCalledWith(
+        expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'confirm delete',
                 intentFindings: expect.objectContaining({ intent: 'conversation' }),

@@ -8,8 +8,8 @@ const { runMock, finalizeMock } = vi.hoisted(() => ({
     finalizeMock: vi.fn(),
 }));
 
-vi.mock('../services/agent/runtime/agrun/initialAnalysisRuntimeService', () => ({
-    runAgrunInitialAnalysis: runMock,
+vi.mock('../services/agent/runtime/pi/piInitialAnalysisRuntimeService', () => ({
+    runPiInitialAnalysis: runMock,
 }));
 
 vi.mock('../services/agent/memory/memoryManager', () => ({
@@ -54,7 +54,7 @@ describe('initialAnalysisService production ownership', () => {
         finalizeMock.mockResolvedValue(undefined);
     });
 
-    it('routes the first-pass analysis through Agrun and maps completion', async () => {
+    it('routes the first-pass analysis through Pi and maps completion', async () => {
         runMock.mockResolvedValue({
             status: 'completed',
             currentDatasetVersion: 'version-1',

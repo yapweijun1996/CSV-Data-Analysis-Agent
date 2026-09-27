@@ -35,9 +35,9 @@ describe('tool capability declarations', () => {
         expect(manifest?.capabilities?.supportsConditionalAggregate).toBe(true);
     });
 
-    it('declares the five Agrun canary actions as read-only in the manifest source of truth', () => {
+    it('declares the five Pi canary actions as read-only in the manifest source of truth', () => {
         const canaryNames = manifests
-            .filter(manifest => manifest.capabilities?.agrunReadOnlyCanary === true)
+            .filter(manifest => manifest.capabilities?.piFollowUpReadOnly === true)
             .map(manifest => manifest.name)
             .sort();
 

@@ -9,19 +9,13 @@ const EAGER_CHUNK_BUDGET_BYTES = 900 * 1024;
 const FORBIDDEN_EAGER_PATTERNS = [
   /vendor-monaco/i,
   /vendor-ai-local/i,
-  /agrun/i,
   /vendor-duckdb/i,
   /duckDbWorker/i,
   /duckdb-browser/i,
   /app-agent/i,
   /app-ai/i,
 ];
-const FORBIDDEN_EAGER_CONTENT = [
-  {
-    label: 'Agent Runtime JavaScript distribution',
-    pattern: /agrun\.trace\.v1/,
-  },
-];
+const FORBIDDEN_EAGER_CONTENT = [];
 
 const failures = [];
 const warnings = [];

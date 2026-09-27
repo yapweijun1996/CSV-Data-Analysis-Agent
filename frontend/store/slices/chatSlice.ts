@@ -335,7 +335,7 @@ export const createChatSlice: StateCreator<AppStore, [], [], IChatSlice> = (set,
             // Show the user message in chat IMMEDIATELY — before any async work
             // (lazy imports, health checks, intent classification). This ensures
             // the user sees their message right away regardless of API latency.
-            // Exception: if a clarification is pending, skip — the Agrun interaction resume will
+            // Exception: if a clarification is pending, skip — the Pi interaction resume will
             // add its own formatted message ("Clarification selected: ...").
             const displayText = options?.displayText ?? message;
             const source = options?.source ?? 'composer';

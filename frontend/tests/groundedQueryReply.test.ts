@@ -5,7 +5,7 @@ import {
     buildGroundedDerivedMarginReply,
     buildIncompleteRankedShareReply,
     buildGroundedRankedShareReply,
-} from '../services/agent/runtime/agrun/groundedQueryReply';
+} from '../services/agent/runtime/pi/groundedQueryReply';
 
 const makeQuery = (overrides: Record<string, unknown> = {}) => ({
     explanation: 'Sum Sales Amount Base grouped by UOM',

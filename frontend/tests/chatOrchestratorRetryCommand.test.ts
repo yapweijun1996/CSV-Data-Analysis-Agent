@@ -4,14 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
     isProviderConfiguredMock,
-    runAgrunFollowUpTurnMock,
+    runPiFollowUpTurnMock,
     runDataAnalysisSessionMock,
     classifyChatIntentMock,
     tryHandlePendingMutationConfirmationMock,
     classifyRowDeleteIntentMock,
 } = vi.hoisted(() => ({
     isProviderConfiguredMock: vi.fn(),
-    runAgrunFollowUpTurnMock: vi.fn(),
+    runPiFollowUpTurnMock: vi.fn(),
     runDataAnalysisSessionMock: vi.fn(),
     classifyChatIntentMock: vi.fn(),
     tryHandlePendingMutationConfirmationMock: vi.fn(),
@@ -24,8 +24,8 @@ vi.mock('../services/ai/providerConfig', () => ({
     invalidateProviderHealthCache: () => {},
 }));
 
-vi.mock('../services/agent/runtime/agrun/followUpRuntimeService', () => ({
-    runAgrunFollowUpTurn: runAgrunFollowUpTurnMock,
+vi.mock('../services/agent/runtime/pi/piFollowUpRuntimeService', () => ({
+    runPiFollowUpTurn: runPiFollowUpTurnMock,
 }));
 
 vi.mock('../services/agent/runtime/dataAnalysisSessionRunner', () => ({
@@ -51,7 +51,7 @@ describe('chatOrchestrator explicit follow-up handling', () => {
         isProviderConfiguredMock.mockReturnValue(true);
         tryHandlePendingMutationConfirmationMock.mockResolvedValue(false);
         classifyRowDeleteIntentMock.mockReturnValue({ kind: 'unsupported' });
-        runAgrunFollowUpTurnMock.mockResolvedValue(undefined);
+        runPiFollowUpTurnMock.mockResolvedValue(undefined);
         runDataAnalysisSessionMock.mockResolvedValue({ acceptedCardCount: 1, session: { acceptedOutputs: [] } });
         classifyChatIntentMock.mockResolvedValue({ target: 'agent_turn', findings: { intent: 'conversation', classifiedBy: 'deterministic', confidence: 'high' } });
     });
@@ -84,7 +84,7 @@ describe('chatOrchestrator explicit follow-up handling', () => {
 
         await orchestrateChatResponse('retry', store as never);
 
-        expect(runAgrunFollowUpTurnMock).toHaveBeenCalledWith(
+        expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'retry',
                 intentFindings: expect.objectContaining({ intent: 'conversation' }),
@@ -113,7 +113,7 @@ describe('chatOrchestrator explicit follow-up handling', () => {
 
         await orchestrateChatResponse('retry', store as never);
 
-        expect(runAgrunFollowUpTurnMock).toHaveBeenCalledWith(
+        expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'retry',
                 intentFindings: expect.objectContaining({ intent: 'conversation' }),
@@ -152,7 +152,7 @@ describe('chatOrchestrator explicit follow-up handling', () => {
             origin: 'chat_follow_up',
             goal: 'analyze this dataset and show key insights',
         }));
-        expect(runAgrunFollowUpTurnMock).not.toHaveBeenCalled();
+        expect(runPiFollowUpTurnMock).not.toHaveBeenCalled();
         expect(state.chatHistory.at(-1)?.text).toContain('1 analysis card');
     });
 });

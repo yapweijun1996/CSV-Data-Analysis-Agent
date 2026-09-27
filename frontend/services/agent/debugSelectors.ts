@@ -3,8 +3,6 @@ import { buildAiDebugBundle, buildCleaningFailureBundleExport, buildIrDiagnostic
 import { buildScopedDebugRequestFlows, selectScopedDebugLogEntries, type DebugFlowViewModel, type DebugLogEntryViewModel } from './debugLogEntries';
 import { buildSurfaceTraceContract } from './runtime/runtimeControlPlaneContract';
 import { summarizeTraceContract } from './traceContractView';
-import { getAgrunRuntimeDebugState } from './runtime/agrun/agrunLoader';
-import type { AgrunRuntimeDebugState } from './runtime/agrun/types';
 
 export type FailureBundleViewModel = {
     markdown: string;
@@ -151,11 +149,3 @@ export const selectDebugOperatorSummary = (
                 : null,
     };
 };
-
-/**
- * AGRUN-001: agrun intake debug state (pinned revision, rollout flag, load
- * lifecycle) for the debug telemetry surface. Reads loader-local state only —
- * no store access and no agrun module load is triggered by selecting it.
- */
-export const selectAgrunRuntimeDebugState = (): AgrunRuntimeDebugState =>
-    getAgrunRuntimeDebugState();

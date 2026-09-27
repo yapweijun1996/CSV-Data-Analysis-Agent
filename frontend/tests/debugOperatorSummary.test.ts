@@ -28,7 +28,7 @@ describe('debug operator summary', () => {
                     ),
                     failureClass: 'tool_execution',
                 },
-                event('observation_recorded', 'agrun_phase', 2),
+                event('observation_recorded', 'pi_phase', 2),
             ],
             runtimeRunHistory: [],
             latestAnalysisSession: null,

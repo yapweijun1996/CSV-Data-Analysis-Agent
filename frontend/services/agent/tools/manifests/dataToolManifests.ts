@@ -38,7 +38,7 @@ export const createDataToolManifests = (): ToolManifest[] => [
         resultShape: 'Mutates the cleaned dataset and regenerates analyses.',
         capabilities: {
             mutatesState: true,
-            agrunMutationCanary: true,
+            piFollowUpMutation: true,
         },
         isAvailable: requireDataset,
         validate: args => validateDataMutatePayload(args ?? {}),
@@ -79,7 +79,7 @@ export const createDataToolManifests = (): ToolManifest[] => [
             supportsConditionalAggregate: true,
             supportsPostAggregateFilter: true,
             readOnly: true,
-            agrunReadOnlyCanary: true,
+            piFollowUpReadOnly: true,
         },
         isAvailable: requireDataset,
         validate: args => validateDataQueryPayload(args ?? {}),
@@ -97,7 +97,7 @@ export const createDataToolManifests = (): ToolManifest[] => [
             'Returns summary stats for all numeric columns by default, or specify columns to focus on.',
         ],
         resultShape: 'Shows summary statistics table in the data explorer.',
-        capabilities: { readOnly: true, agrunReadOnlyCanary: true },
+        capabilities: { readOnly: true, piFollowUpReadOnly: true },
         isAvailable: requireDataset,
     },
     {

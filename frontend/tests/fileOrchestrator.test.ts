@@ -319,7 +319,7 @@ describe('orchestrateFileUpload post-import pipeline timing', () => {
         expect(state.proposeAnalysisGoals).toHaveBeenCalledTimes(1);
     });
 
-    it('delegates cleaning outcomes to the single Agrun lifecycle owner', async () => {
+    it('delegates cleaning outcomes to the single Pi lifecycle owner', async () => {
         const { store, state, callOrder } = createStore();
         orchestrateAutonomousAiCleaningMock.mockImplementation(async (activeStore: StoreApi) => {
             callOrder.push('cleaning');
@@ -348,7 +348,7 @@ describe('orchestrateFileUpload post-import pipeline timing', () => {
         expect(state.proposeAnalysisGoals).toHaveBeenCalledTimes(1);
     });
 
-    it('records the Agrun lifecycle owner at the import boundary', async () => {
+    it('records the Pi lifecycle owner at the import boundary', async () => {
         const { store, state, callOrder } = createStore();
         orchestrateAutonomousAiCleaningMock.mockImplementation(async (activeStore: StoreApi) => {
             callOrder.push('cleaning');
@@ -373,7 +373,7 @@ describe('orchestrateFileUpload post-import pipeline timing', () => {
         expect(state.agentEvents.some(event =>
             event.step === 'pipeline_import_ready'
             && event.status === 'done'
-            && event.detail?.runtimeOwner === 'agrun',
+            && event.detail?.runtimeOwner === 'pi',
         )).toBe(true);
         expect(state.ensureDatasetSemanticSnapshot).not.toHaveBeenCalled();
         expect(state.handleInitialAnalysis).toHaveBeenCalledTimes(1);

@@ -29,13 +29,11 @@ export interface ClarificationRequest {
         resumeTargetRunId?: string;
         resumeTargetTurnId?: string;
         resumeOriginalUserMessage?: string;
-        followUpRuntimeInteraction?: {
-            owner: 'agrun';
-            kind: 'clarification' | 'approval';
+        piMutationApproval?: {
             sessionId: string;
-            turnId: string;
-            runtimeRunId?: string;
-            resumeToken?: unknown;
+            datasetVersion: string | null;
+            originalRequest: string;
+            args: Record<string, unknown>;
         };
         /** AGENT-209: Artifact/grounding context captured at clarification time for resume continuity. */
         queryUnderstandingArtifact?: QueryUnderstandingArtifact;
