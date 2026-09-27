@@ -4,14 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "download:model": "bash scripts/download-model.sh",
-    "test": "vitest run"
-  },
-  "devDependencies": {
-    "vite": "^6.4.1",
-    "vitest": "^1.6.0"
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "typecheck": "npm --prefix frontend run typecheck",
+    "test": "npm --prefix frontend run test",
+    "test:publish": "node --test scripts/publish-frontend-build.test.mjs scripts/stage-pages-artifact.test.mjs",
+    "stage:pages": "node scripts/stage-pages-artifact.mjs",
+    "publish:root": "npm run build && node scripts/publish-frontend-build.mjs",
+    "download:model": "bash scripts/download-model.sh"
   }
 }

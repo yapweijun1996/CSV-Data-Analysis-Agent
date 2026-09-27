@@ -1,0 +1,285 @@
+// @vitest-environment node
+
+/**
+ * P0 Anti-Survivorship Resilience: chatOrchestrator guards
+ *
+ * Verifies that if the Agrun follow-up runtime or interaction resume throws
+ * unexpectedly, the chat:
+ *  1. Posts a friendly Mandarin error message to the chat history
+ *  2. Sets isBusy: false so the chat remains interactive
+ *  3. Never propagates the error to the caller
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    handleClarificationResponse,
+    orchestrateChatResponse,
+} from '../services/agent/orchestration/chatOrchestrator';
+import type { AgentRuntimeEvent, AgentTurn, ClarificationRequest } from '../types';
+
+const {
+    isProviderConfiguredMock,
+    classifyChatIntentMock,
+    resolveEffectivePendingClarificationMock,
+    tryHandlePendingMutationConfirmationMock,
+    classifyRowDeleteIntentMock,
+    runAgrunFollowUpTurnMock,
+    resumeAgrunFollowUpInteractionMock,
+} = vi.hoisted(() => ({
+    isProviderConfiguredMock: vi.fn(),
+    classifyChatIntentMock: vi.fn(),
+    resolveEffectivePendingClarificationMock: vi.fn(),
+    tryHandlePendingMutationConfirmationMock: vi.fn(),
+    classifyRowDeleteIntentMock: vi.fn(),
+    runAgrunFollowUpTurnMock: vi.fn(),
+    resumeAgrunFollowUpInteractionMock: vi.fn(),
+}));
+
+vi.mock('../services/agent/runtime/agrun/followUpRuntimeService', () => ({
+    runAgrunFollowUpTurn: runAgrunFollowUpTurnMock,
+    resumeAgrunFollowUpInteraction: resumeAgrunFollowUpInteractionMock,
+}));
+
+vi.mock('../services/ai/providerConfig', () => ({
+    isProviderConfigured: isProviderConfiguredMock,
+    validateProviderHealth: () => Promise.resolve({ status: 'healthy', checkedAt: new Date().toISOString() }),
+    invalidateProviderHealthCache: () => {},
+}));
+
+vi.mock('../services/agent/runtime/intentClassifier', () => ({
+    classifyChatIntent: classifyChatIntentMock,
+}));
+
+vi.mock('../services/agent/runtime/runtimeClarification', () => ({
+    resolveEffectivePendingClarification: resolveEffectivePendingClarificationMock,
+}));
+
+vi.mock('../services/agent/orchestration/chatMutationWorkflow', () => ({
+    tryHandlePendingMutationConfirmation: tryHandlePendingMutationConfirmationMock,
+    runRowDeletePreflight: vi.fn(),
+}));
+
+vi.mock('../services/agent/orchestration/rowDeleteIntent', () => ({
+    classifyRowDeleteIntent: classifyRowDeleteIntentMock,
+}));
+
+vi.mock('../services/vectorStore', () => ({
+    vectorStore: {
+        searchIfReady: vi.fn().mockResolvedValue([]),
+        search: vi.fn().mockResolvedValue([]),
+        addDocument: vi.fn(),
+        getDocuments: vi.fn().mockReturnValue([]),
+        clear: vi.fn(),
+        init: vi.fn(),
+    },
+}));
+
+type TestState = {
+    settings: { provider: 'openai'; language: 'English' | 'Mandarin' | 'Japanese'; openAIApiKey: string; geminiApiKey: string; simpleModel: string; complexModel: string; autoConfirmGoal: boolean };
+    chatHistory: Array<Record<string, unknown>>;
+    isBusy: boolean;
+    pendingClarification: ClarificationRequest | null;
+    activeTurn: AgentTurn | null;
+    cancelRequestedTurnId: string | null;
+    runtimeEvents: AgentRuntimeEvent[];
+    csvData: { fileName: string; data: Array<Record<string, unknown>> } | null;
+    addProgress: ReturnType<typeof vi.fn>;
+    logAgentToolUsage: ReturnType<typeof vi.fn>;
+    logTelemetryEvent: ReturnType<typeof vi.fn>;
+    clearActiveTurnCancellation: ReturnType<typeof vi.fn>;
+    recordRuntimeEvent: (event: Omit<AgentRuntimeEvent, 'id' | 'timestamp'>) => AgentRuntimeEvent;
+};
+
+const createStore = (overrides: Partial<TestState> = {}) => {
+    let state: TestState = {
+        settings: { provider: 'openai', language: 'Mandarin', openAIApiKey: 'key', geminiApiKey: '', simpleModel: 'gpt-5-mini', complexModel: 'gpt-5.2', autoConfirmGoal: true },
+        chatHistory: [],
+        isBusy: false,
+        pendingClarification: null,
+        activeTurn: null,
+        cancelRequestedTurnId: null,
+        runtimeEvents: [],
+        csvData: { fileName: 'report.csv', data: [{ Amount: 10 }] },
+        addProgress: vi.fn(),
+        logAgentToolUsage: vi.fn(),
+        logTelemetryEvent: vi.fn(),
+        clearActiveTurnCancellation: vi.fn(),
+        recordRuntimeEvent: (event) => {
+            const stored = { ...event, id: `ev-${state.runtimeEvents.length + 1}`, timestamp: new Date() } as AgentRuntimeEvent;
+            state = { ...state, runtimeEvents: [...state.runtimeEvents, stored] };
+            return stored;
+        },
+        ...overrides,
+    };
+    const setState = (update: Partial<TestState> | ((s: TestState) => Partial<TestState>)) => {
+        const partial = typeof update === 'function' ? update(state) : update;
+        state = { ...state, ...partial };
+    };
+    const getState = () => state;
+    return { getState, setState };
+};
+
+describe('chatOrchestrator resilience — Agrun follow-up guard (P0)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        vi.spyOn(console, 'log').mockImplementation(() => undefined);
+        isProviderConfiguredMock.mockReturnValue(true);
+        classifyChatIntentMock.mockResolvedValue({ target: 'agent_turn', findings: { intent: 'conversation', classifiedBy: 'deterministic', confidence: 'high' } });
+        tryHandlePendingMutationConfirmationMock.mockResolvedValue(false);
+        classifyRowDeleteIntentMock.mockReturnValue({ kind: 'unsupported' });
+    });
+
+    it('posts a Mandarin error message and resets isBusy when Agrun throws', async () => {
+        const store = createStore();
+        runAgrunFollowUpTurnMock.mockRejectedValueOnce(new Error('Unexpected internal crash'));
+
+        await orchestrateChatResponse('show me data', store as never);
+
+        // isBusy must be false — chat must remain interactive
+        expect(store.getState().isBusy).toBe(false);
+
+        // An error message must have been added to chat history
+        const errorMessages = store.getState().chatHistory.filter(
+            (m: Record<string, unknown>) => m.isError === true,
+        );
+        expect(errorMessages).toHaveLength(1);
+
+        // Message must be in Mandarin (settings.language = 'Mandarin') and contain Chinese
+        // The message comes from formatUserError({ surface: 'chat', language: 'Mandarin' })
+        expect(String(errorMessages[0].text)).toContain('意外错误');
+    });
+
+    it('does not propagate the Agrun error to the caller', async () => {
+        const store = createStore();
+        runAgrunFollowUpTurnMock.mockRejectedValueOnce(new Error('Critical failure'));
+
+        // Must not throw
+        await expect(orchestrateChatResponse('query', store as never)).resolves.toBeUndefined();
+    });
+
+    it('posts error message in English when language is English', async () => {
+        const store = createStore({
+            settings: { provider: 'openai', language: 'English', openAIApiKey: 'key', geminiApiKey: '', simpleModel: 'gpt-5-mini', complexModel: 'gpt-5.2', autoConfirmGoal: true },
+        });
+        runAgrunFollowUpTurnMock.mockRejectedValueOnce(new Error('Failure'));
+
+        await orchestrateChatResponse('query', store as never);
+
+        const errorMsg = store.getState().chatHistory.find(
+            (m: Record<string, unknown>) => m.isError === true,
+        );
+        // formatUserError({ surface: 'chat', language: 'English' }) returns 'unexpected error'
+        expect(String(errorMsg?.text)).toContain('unexpected error');
+    });
+
+    it('routes every eligible follow-up turn directly to Agrun', async () => {
+        const store = createStore();
+        runAgrunFollowUpTurnMock.mockResolvedValue({
+            status: 'completed',
+            appTurnId: 'turn-agrun',
+            text: 'Done.',
+        });
+
+        await orchestrateChatResponse('summarize the current report', store as never);
+
+        expect(runAgrunFollowUpTurnMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                message: 'summarize the current report',
+                intentFindings: expect.objectContaining({
+                    intent: 'conversation',
+                }),
+            }),
+            store,
+        );
+    });
+});
+
+describe('chatOrchestrator resilience — Agrun interaction resume guard (P0)', () => {
+    const agrunPending = {
+        question: 'Which metric?',
+        options: [{ label: 'Revenue', value: 'revenue' }],
+        resumeContext: {
+            followUpRuntimeInteraction: {
+                owner: 'agrun' as const,
+                kind: 'clarification' as const,
+                sessionId: 'session-1',
+                turnId: 'turn-1',
+                resumeToken: { opaque: true },
+            },
+        },
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        vi.spyOn(console, 'log').mockImplementation(() => undefined);
+        resolveEffectivePendingClarificationMock.mockReturnValue(agrunPending);
+    });
+
+    it('posts a Mandarin error message and resets isBusy when Agrun resume throws', async () => {
+        const store = createStore({ pendingClarification: agrunPending });
+        resumeAgrunFollowUpInteractionMock.mockRejectedValueOnce(new Error('Resume crash'));
+
+        await handleClarificationResponse({ label: 'Revenue', value: 'revenue' }, store as never);
+
+        // isBusy must be false — chat must remain interactive
+        expect(store.getState().isBusy).toBe(false);
+
+        // Error message must have been added to chat
+        const errorMessages = store.getState().chatHistory.filter(
+            (m: Record<string, unknown>) => m.isError === true,
+        );
+        expect(errorMessages).toHaveLength(1);
+
+        // Must be in Mandarin; formatUserError({ surface: 'chat', language: 'Mandarin' })
+        expect(String(errorMessages[0].text)).toContain('意外错误');
+    });
+
+    it('does not propagate the Agrun resume error to the caller', async () => {
+        const store = createStore({ pendingClarification: agrunPending });
+        resumeAgrunFollowUpInteractionMock.mockRejectedValueOnce(new Error('Fatal resume error'));
+
+        await expect(
+            handleClarificationResponse({ label: 'Revenue', value: 'revenue' }, store as never),
+        ).resolves.toBeUndefined();
+    });
+
+    it('resumes an Agrun-owned interaction through the same runtime adapter', async () => {
+        const pending = {
+            question: 'Approve the read-only action?',
+            options: [
+                { label: 'Approve', value: 'approve' },
+                { label: 'Deny', value: 'deny' },
+            ],
+            interactionKind: 'approval' as const,
+            resumeContext: {
+                followUpRuntimeInteraction: {
+                    owner: 'agrun' as const,
+                    kind: 'approval' as const,
+                    sessionId: 'session-1',
+                    turnId: 'turn-1',
+                    resumeToken: { opaque: true },
+                },
+            },
+        };
+        resolveEffectivePendingClarificationMock.mockReturnValue(pending);
+        resumeAgrunFollowUpInteractionMock.mockResolvedValue({
+            status: 'completed',
+            appTurnId: 'turn-1',
+            text: 'Resumed.',
+        });
+        const store = createStore({
+            pendingClarification: pending,
+        });
+        const choice = { label: 'Approve', value: 'approve' };
+
+        await handleClarificationResponse(choice, store as never);
+
+        expect(resumeAgrunFollowUpInteractionMock).toHaveBeenCalledWith(
+            pending,
+            choice,
+            store,
+        );
+    });
+});
