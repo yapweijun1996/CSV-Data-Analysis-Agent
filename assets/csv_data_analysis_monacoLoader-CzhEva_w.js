@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_vendor-ai-sdk-J3KEucyx.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-CTyAUw0K.js","./csv_data_analysis_vendor-ai-openai-Cf4Uvg1A.js"])))=>i.map(i=>d[i]);
-import { _ as __vitePreload } from "./csv_data_analysis_app-agent-DytoEScF.js";
+import { _ as __vitePreload } from "./csv_data_analysis_app-agent-FZCW06wJ.js";
 import "./csv_data_analysis_vendor-ai-sdk-J3KEucyx.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
@@ -18,12 +18,12 @@ async function ensureMonacoConfigured() {
     tsWorkerMod
   ] = await Promise.all([
     __vitePreload(() => import("./csv_data_analysis_vendor-react-core-C-mUT8EF.js").then((n) => n.i), true ? [] : void 0, import.meta.url),
-    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-qW3DRawE.js").then((n) => n.i), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-qW3DRawE.js").then((n) => n.e), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-qW3DRawE.js").then((n) => n.j), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-qW3DRawE.js").then((n) => n.c), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-qW3DRawE.js").then((n) => n.h), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-qW3DRawE.js").then((n) => n.t), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-V9j059rj.js").then((n) => n.i), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-V9j059rj.js").then((n) => n.e), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-V9j059rj.js").then((n) => n.j), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-V9j059rj.js").then((n) => n.c), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-V9j059rj.js").then((n) => n.h), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+    __vitePreload(() => import("./csv_data_analysis_vendor-monaco-V9j059rj.js").then((n) => n.t), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
   ]);
   const EditorWorker = editorWorkerMod.default;
   const JsonWorker = jsonWorkerMod.default;

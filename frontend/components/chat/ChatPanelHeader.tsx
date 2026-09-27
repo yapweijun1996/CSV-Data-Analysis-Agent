@@ -11,9 +11,11 @@ interface ChatPanelHeaderProps {
     showMemoryPanel: boolean;
     showAgentThinking: boolean;
     showSettings: boolean;
+    showPiBrowserLab: boolean;
     onOpenMemory: () => void;
     onOpenAgent: () => void;
     onOpenSettings: () => void;
+    onOpenPiBrowserLab: () => void;
     onHidePanel: () => void;
 }
 
@@ -23,14 +25,21 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
     showMemoryPanel,
     showAgentThinking,
     showSettings,
+    showPiBrowserLab,
     onOpenMemory,
     onOpenAgent,
     onOpenSettings,
+    onOpenPiBrowserLab,
     onHidePanel,
 }) => (
     <div className="relative flex items-center justify-between border-b border-slate-200 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:py-3">
         <h2 className="text-xl font-semibold text-slate-900">{getTranslation('assistant', language)}</h2>
         <div className="flex items-center gap-2">
+            {showPiBrowserLab && (
+                <button type="button" data-pi-browser-lab-trigger="true" onClick={onOpenPiBrowserLab}
+                    className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                    aria-label="Open Pi Browser Lab" title="Open Pi Browser Lab">Pi Lab</button>
+            )}
             {showMemoryPanel && (
                 <button
                     onClick={onOpenMemory}

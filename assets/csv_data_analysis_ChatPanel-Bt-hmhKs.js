@@ -1,8 +1,9 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_PiBrowserLab-BUijBG2z.js","./csv_data_analysis_vendor-ai-sdk-J3KEucyx.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-CTyAUw0K.js","./csv_data_analysis_vendor-ai-openai-Cf4Uvg1A.js","./csv_data_analysis_vendor-react-core-C-mUT8EF.js","./csv_data_analysis_index-CGA8WNde.js","./csv_data_analysis_vendor-state-LvY-J6mW.js"])))=>i.map(i=>d[i]);
+import { U as getTranslation, ay as normalizeClarificationRequest, az as resolveEffectivePendingClarification, aA as resolveDisplayPlanTitle, aB as resolveSuggestedActionPrompt, aC as MAX_TIMELINE_CHAT_MESSAGES, aD as TERMINAL_CHAT_LIFECYCLE_STATES, aE as shouldShowSettingsButton, av as shouldShowAgentThinkingModal, aw as shouldShowLongTermMemory, _ as __vitePreload, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-FZCW06wJ.js";
 import { a as reactExports, j as jsxRuntimeExports, W as We } from "./csv_data_analysis_vendor-react-core-C-mUT8EF.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-LvY-J6mW.js";
-import { u as useAppStore, I as IconChangeGoal } from "./csv_data_analysis_index-L92MBGHW.js";
-import { U as getTranslation, ay as normalizeClarificationRequest, az as resolveEffectivePendingClarification, aA as resolveDisplayPlanTitle, aB as resolveSuggestedActionPrompt, aC as MAX_TIMELINE_CHAT_MESSAGES, aD as TERMINAL_CHAT_LIFECYCLE_STATES, aE as shouldShowSettingsButton, av as shouldShowAgentThinkingModal, aw as shouldShowLongTermMemory, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-DytoEScF.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-8qXuZeTk.js";
+import { u as useAppStore, I as IconChangeGoal } from "./csv_data_analysis_index-CGA8WNde.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-CW2J7TGC.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-miXHhJGo.js";
 import { I as IconThinking, a as IconSettings } from "./csv_data_analysis_IconSettings-B7Z7C3gl.js";
 import { I as IconMemory } from "./csv_data_analysis_IconMemory-CuUVrq-7.js";
@@ -516,13 +517,27 @@ const ChatPanelHeader = ({
   showMemoryPanel,
   showAgentThinking,
   showSettings,
+  showPiBrowserLab,
   onOpenMemory,
   onOpenAgent,
   onOpenSettings,
+  onOpenPiBrowserLab,
   onHidePanel
 }) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative flex items-center justify-between border-b border-slate-200 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:py-3", children: [
   /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-xl font-semibold text-slate-900", children: getTranslation("assistant", language) }),
   /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+    showPiBrowserLab && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        type: "button",
+        "data-pi-browser-lab-trigger": "true",
+        onClick: onOpenPiBrowserLab,
+        className: "rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100",
+        "aria-label": "Open Pi Browser Lab",
+        title: "Open Pi Browser Lab",
+        children: "Pi Lab"
+      }
+    ),
     showMemoryPanel && /* @__PURE__ */ jsxRuntimeExports.jsx(
       "button",
       {
@@ -1018,6 +1033,7 @@ const ChatComposer = ({
     /* @__PURE__ */ jsxRuntimeExports.jsx("p", { id: disclaimerTextId, className: "mt-1.5 text-center text-xs text-slate-600", children: getTranslation("chat_disclaimer_verify", language) })
   ] }) });
 };
+const PiBrowserLab = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_PiBrowserLab-BUijBG2z.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7,8]) : void 0, import.meta.url).then((module) => ({ default: module.PiBrowserLab })));
 const chatDebug = (message, detail) => {
   return;
 };
@@ -1144,6 +1160,7 @@ const ChatPanel = We.memo(() => {
     };
   }, shallow$1);
   const [showScrollToBottom, setShowScrollToBottom] = We.useState(false);
+  const [isPiBrowserLabOpen, setIsPiBrowserLabOpen] = reactExports.useState(false);
   const messagesContainerRef = reactExports.useRef(null);
   const messagesContentRef = reactExports.useRef(null);
   const autoScrollEnabledRef = reactExports.useRef(true);
@@ -1326,6 +1343,7 @@ const ChatPanel = We.memo(() => {
     scheduleAutoScroll("auto");
   }, []);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full flex-col rounded-card bg-slate-100 md:rounded-none", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.Suspense, { fallback: null, children: isPiBrowserLabOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(PiBrowserLab, { onClose: () => setIsPiBrowserLabOpen(false) }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       ChatPanelHeader,
       {
@@ -1334,9 +1352,11 @@ const ChatPanel = We.memo(() => {
         showMemoryPanel: shouldShowLongTermMemory(),
         showAgentThinking: shouldShowAgentThinkingModal(),
         showSettings: shouldShowSettingsButton(),
+        showPiBrowserLab: currentView === "analysis_dashboard",
         onOpenMemory: () => setIsMemoryPanelOpen(true),
         onOpenAgent: () => setIsAgentModalOpen(true),
         onOpenSettings: () => setIsSettingsModalOpen(true),
+        onOpenPiBrowserLab: () => setIsPiBrowserLabOpen(true),
         onHidePanel: () => setIsAsideVisible(false)
       }
     ),

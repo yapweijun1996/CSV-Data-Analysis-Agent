@@ -26,6 +26,8 @@
     "@ai-sdk/google": "^3.0.43",
     "@ai-sdk/openai": "^3.0.41",
     "@duckdb/duckdb-wasm": "^1.33.1-dev20.0",
+    "@earendil-works/pi-agent-core": "0.87.1",
+    "@earendil-works/pi-ai": "0.87.1",
     "@huggingface/transformers": "^3.8.1",
     "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-virtual": "^3.13.12",
