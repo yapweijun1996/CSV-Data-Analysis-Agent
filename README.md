@@ -22,7 +22,7 @@ The active React source was recovered from `React-CSV-Data-Analysis-Agent-Backup
 
 `frontend/index.tsx` boots the React shell in `frontend/App.tsx`. The shell reads state from `frontend/store/useAppStore.ts`, which composes focused state slices. CSV intake enters `frontend/services/agent/orchestration/fileOrchestrator.ts`; planning and analysis run through the agent orchestration/runtime modules, with tool contracts under `frontend/services/agent/tools/` and execution under `frontend/services/agent/execution/`. The app records progress and verification in UI state and browser persistence. This recovered release uses the pinned Agrun browser runtime. It does not contain the later Pi-harness changes present in newer commits of the backup repository.
 
-The app's tool and data policies live with the agent and data services. UI components display state and user decisions; they should not duplicate business rules. The local source backup also contains internal planning notes and a business-report regression corpus; those are not included in the public source candidate.
+The app's tool and data policies live with the agent and data services. UI components display state and user decisions; they should not duplicate business rules. The local source backup also contains internal planning notes and a business-report regression corpus; those are not included in this public repository.
 
 ## Develop and verify
 
@@ -54,4 +54,4 @@ GitHub Pages is configured to publish from GitHub Actions. `.github/workflows/pu
 
 For a new release, first build and review the source, run `npm run publish:root`, and verify the checked-in deployment. Merge the release files into `main`, then manually run **Publish verified GitHub Pages site** in GitHub Actions. The workflow is already on `main`. `npm run test:publish` checks the publisher and stager locally; `npm run stage:pages` creates the ignored `pages-artifact/` directory for inspection and requires that directory to be absent before it runs. The workflow stages a fresh artifact on each run. Until it is manually run, Pages continues serving its last published version.
 
-This repository is public, but the recovered `frontend/` source came from a private backup. Review its source, tests, and sample CSV files and obtain an explicit publication decision before pushing `frontend/` to the public remote. The Pages artifact allowlist limits what the website serves; it does not make files in a public Git repository private.
+The recovered `frontend/` source came from a private backup. The public package contains the reviewed application source and synthetic unit tests; local business CSVs, derived benchmark snapshots, and operator-only notes and tests are excluded by `frontend/.gitignore`. Review new files before committing them. The Pages artifact allowlist limits what the website serves; it does not make files in a public Git repository private.

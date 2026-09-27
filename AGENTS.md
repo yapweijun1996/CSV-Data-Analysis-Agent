@@ -11,7 +11,7 @@
 - Before removing or moving a browser resource, trace references from `assets/`, `index.html`, and `service-worker.js`. In particular, preserve required paths under `duckdb/`, `pyodide/`, `sandbox/`, and `public/models/`.
 - Preserve the source package's existing ownership boundaries under `components/`, `store/`, and `services/`; do not create a parallel source tree merely to group files by extension.
 - GitHub Pages publishes through a manually dispatched Actions workflow. Stage only checksum-verified site files with `npm run stage:pages`; do not upload the repository root as the Pages artifact.
-- `frontend/` came from a private backup while this repository is public. Do not push its source, tests, or sample CSV files to the public remote without an explicit publication decision.
+- The public `frontend/` package was recovered from a private backup after excluding local business reports and private QA material. Keep `sample csv/`, `tests/benchmark/`, ignored operator-only files, and `.env` files out of public commits; review new files for credentials and business data before pushing.
 
 ## Engineering rules
 
