@@ -23,6 +23,20 @@ public/models/
 # Local business reports and outputs derived from those reports.
 sample csv/
 tests/benchmark/
+tests/liveSupport/
+tests/live/*
+!tests/live/defaultGatewayTestSettings.ts
+
+# Internal planning and operator notes pending a separate publication review.
+docs/
+task.md
+task_ui.md
+DESIGN.md
+EPIC.md
+PRD.md
+PRODUCT_ROADMAP.md
+ROADMAP.md
+SPEC.md
 
 # Editor directories and files
 .vscode/*
