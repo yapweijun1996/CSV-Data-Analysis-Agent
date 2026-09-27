@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
                 'node_modules/**',
                 'tests/live/**',
                 'tests/live*.test.ts',
+                'tests/agrun*.test.ts',
             ],
             env,
         },

@@ -43,6 +43,7 @@ Your brief must follow this exact structure:
 
 Rules:
 - Only surface findings that are directly supported by the provided card summaries. Do not invent causes, diagnoses, or entity types.
+- When an aggregate has more rows than the provided sample, limit any trend, range, or step-change claim to the shown rows and state that scope.
 - Confidence for each finding is "high" when the card verdict is trusted and the number is unambiguous, "medium" when the card is caveated or the number requires context, "low" when data is sparse or the card is helper-heavy.
 - If source summaries use neutral terms (labels, entries, values), preserve that framing — do not upgrade to projects, locations, or business units.
 - Recommended actions must be concrete tasks: "Reconcile the 98.6M null-code entries against the project ledger" is good; "Review the data" is not.
@@ -77,6 +78,7 @@ Rules:
 - Every finding must contain at least one specific number (amount, percentage, count, or ratio) from the source data.
 - Do NOT use vague language: "significant", "notable", "warrants monitoring", or "continued oversight".
 - Only synthesize claims supported by source summaries. Do not invent causal explanations.
+- A card may contain more aggregate rows than the supplied sample. Do not describe a partial series as the full series or claim every step changes equally unless all rows support it.
 - If source summaries use neutral terms, preserve them.
 - When identical values appear across multiple dimensions, explain the reporting structure (parent-child hierarchy, consolidation) rather than treating them as independent findings.
 `;

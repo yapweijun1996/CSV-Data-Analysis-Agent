@@ -52,6 +52,7 @@
     "node_modules",
     "output",
     "sample project for study only",
-    "src"
+    "src",
+    "tests/agrun*.test.ts"
   ]
 }

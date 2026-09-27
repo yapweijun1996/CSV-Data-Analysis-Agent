@@ -31,6 +31,7 @@ const sortByNarrativePriority = (left: DisplayAnalysisNarrativeInput, right: Dis
 export const buildNarrativeAnalysisIrInputList = (
     cards: AnalysisCardData[],
     columnProfiles: ColumnProfile[] = [],
+    maxRows = 5,
 ): DisplayAnalysisNarrativeInput[] => {
     const irList = buildDisplayAnalysisIrList(cards, columnProfiles);
 
@@ -55,7 +56,8 @@ export const buildNarrativeAnalysisIrInputList = (
                 selectionScore: 0,
                 selectionReasons: ['legacy_card_context'],
                 summary: card.summary.text,
-                aggregatedDataSample: card.aggregatedData.slice(0, 5),
+                aggregatedDataSample: card.aggregatedData.slice(0, maxRows),
+                aggregatedRowCount: card.aggregatedData.length,
                 isFallback: Boolean(card.plan.isFallback),
             };
         }
@@ -74,7 +76,8 @@ export const buildNarrativeAnalysisIrInputList = (
             selectionScore: ir.selectionScore,
             selectionReasons: ir.selectionReasons,
             summary: card.summary.text,
-            aggregatedDataSample: ir.aggregatedData.slice(0, 5),
+            aggregatedDataSample: ir.aggregatedData.slice(0, maxRows),
+            aggregatedRowCount: ir.aggregatedData.length,
             isFallback: ir.isFallback,
         };
     }).sort(sortByNarrativePriority);

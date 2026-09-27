@@ -620,6 +620,7 @@ export interface DisplayAnalysisNarrativeInput {
     selectionReasons: string[];
     summary: string;
     aggregatedDataSample: CsvRow[];
+    aggregatedRowCount?: number;
     isFallback: boolean;
 }
 

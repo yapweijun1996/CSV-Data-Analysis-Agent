@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AgentMessage } from '@earendil-works/pi-agent-core';
+import { createAssistantMessageEventStream, createModels, type AssistantMessage } from '@earendil-works/pi-ai';
+import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
+import { Agent, type AgentMessage, type StreamFn } from '@earendil-works/pi-agent-core';
 import { createPiContextCompactor } from '../services/agent/runtime/pi/piContextCompaction';
 
 const system = { role: 'system', content: 'Keep the dataset evidence accurate.' } as AgentMessage;
@@ -61,11 +63,106 @@ describe('Pi automatic context compaction', () => {
     });
 
     it('keeps the original context when summarization fails', async () => {
-        const compact = createPiContextCompactor(200_000, async () => {
+        const summarize = vi.fn(async () => {
             throw new Error('Provider failure');
         });
+        const compact = createPiContextCompactor(200_000, summarize);
         const messages = [system, user('A'.repeat(500_000)), user('Current request.')];
 
         expect(await compact(messages)).toEqual(messages);
+        expect(summarize).toHaveBeenCalledOnce();
+    });
+
+    it('starts at 160k estimated tokens and leaves the original transcript intact', async () => {
+        const summarize = vi.fn(async () => 'The previous dataset goal and verified evidence.');
+        const compact = createPiContextCompactor(200_000, summarize);
+        const old = user('A'.repeat(450_000));
+        const latest = user('Current question.');
+
+        expect(await compact([system, old, assistant(159_000), latest])).toEqual([
+            system, old, assistant(159_000), latest,
+        ]);
+        expect(summarize).not.toHaveBeenCalled();
+
+        const messages = [system, old, assistant(160_000), latest];
+        const result = await compact(messages);
+        expect(summarize).toHaveBeenCalledOnce();
+        expect(result[1]).toMatchObject({ role: 'user', content: [{ type: 'text', text: expect.stringContaining('previous dataset goal') }] });
+        expect(result.at(-1)).toBe(latest);
+        expect(messages[1]).toBe(old);
+    });
+
+    it('recompacts growing history without replaying already summarized messages', async () => {
+        const summarize = vi.fn(async (_messages: AgentMessage[]) => `Summary ${summarize.mock.calls.length}`);
+        const compact = createPiContextCompactor(200_000, summarize);
+        const original = [system, user('A'.repeat(500_000)), user('First current question.')];
+
+        expect((await compact(original))[1]).toMatchObject({
+            role: 'user', content: [{ type: 'text', text: 'Earlier conversation summary:\nSummary 1' }],
+        });
+
+        const grown = [
+            ...original,
+            ...Array.from({ length: 12 }, (_, index) => user(`${index}:${'B'.repeat(50_000)}`)),
+            user('Latest question.'),
+        ];
+        const result = await compact(grown);
+
+        expect(summarize).toHaveBeenCalledTimes(2);
+        expect(JSON.stringify(summarize.mock.calls[1][0])).not.toContain('A'.repeat(1000));
+        expect(result[1]).toMatchObject({
+            role: 'user', content: [{ type: 'text', text: 'Earlier conversation summary:\nSummary 2' }],
+        });
+        expect(result.at(-1)).toBe(grown.at(-1));
+    });
+
+    it('counts multilingual content conservatively near the 160k threshold', async () => {
+        const summarize = vi.fn(async () => 'Earlier Chinese-language discussion.');
+        const compact = createPiContextCompactor(200_000, summarize);
+        const messages = [system, user('数'.repeat(80_000)), user('Current question.')];
+
+        const result = await compact(messages);
+
+        expect(summarize).toHaveBeenCalledOnce();
+        expect(result[1]).toMatchObject({ role: 'user', content: [{ type: 'text', text: expect.stringContaining('Earlier Chinese-language discussion.') }] });
+    });
+
+    it('passes the summary into Pi Agent model context while retaining full history', async () => {
+        const models = createModels();
+        models.setProvider(openaiProvider());
+        const model = models.getModel('openai', 'gpt-5.4-mini');
+        expect(model).toBeDefined();
+        const summarize = vi.fn(async () => 'Verified historical evidence: Revenue total 470.');
+        const observedContexts: AgentMessage[][] = [];
+        const streamFn: StreamFn = (requestedModel, context) => {
+            observedContexts.push(context.messages as AgentMessage[]);
+            const stream = createAssistantMessageEventStream();
+            const message: AssistantMessage = {
+                role: 'assistant', content: [{ type: 'text', text: 'Answer from compacted context.' }],
+                api: requestedModel.api, provider: requestedModel.provider, model: requestedModel.id,
+                usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0,
+                    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+                stopReason: 'stop', timestamp: Date.now(),
+            };
+            stream.push({ type: 'start', partial: message });
+            stream.push({ type: 'done', reason: 'stop', message });
+            return stream;
+        };
+        const old = user('A'.repeat(500_000));
+        const agent = new Agent({
+            initialState: { systemPrompt: 'Keep dataset evidence accurate.', model: model!, messages: [system, old] },
+            streamFn,
+            transformContext: createPiContextCompactor(200_000, summarize),
+        });
+
+        await agent.prompt('Current question.');
+
+        expect(summarize).toHaveBeenCalledOnce();
+        expect(observedContexts).toHaveLength(1);
+        expect(observedContexts[0][1]).toMatchObject({
+            role: 'user', content: [{ type: 'text', text: expect.stringContaining('Revenue total 470') }],
+        });
+        expect(observedContexts[0].some(message => JSON.stringify(message).includes('A'.repeat(1000)))).toBe(false);
+        expect(agent.state.messages).toContain(old);
     });
 });

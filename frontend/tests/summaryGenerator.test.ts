@@ -126,6 +126,27 @@ describe('generateCoreAnalysisSummary', () => {
         expect(request.messages[0].content).toContain('Do not introduce unsupported business causes');
     });
 
+    it('shows aggregate-series coverage in card and executive prompts', async () => {
+        const rows = Array.from({ length: 30 }, (_, index) => ({
+            Region: `Period-${index + 1}`,
+            Revenue: index + 1,
+        }));
+
+        await generateSummary('Revenue by Period', rows, settings, columns);
+        const cardRequest = generateTextMock.mock.calls[0][0] as { messages: Array<{ content: string }> };
+        expect(cardRequest.messages[1].content).toContain('24 of 30 aggregated rows shown');
+        expect(cardRequest.messages[1].content).toContain('Period-24');
+        expect(cardRequest.messages[1].content).not.toContain('Period-25');
+
+        generateTextMock.mockClear();
+        await generateFinalSummary([{ ...cards[0], aggregatedData: rows }], settings);
+        const finalRequest = generateTextMock.mock.calls[0][0] as { messages: Array<{ content: string }> };
+        expect(finalRequest.messages[1].content).toContain('"aggregatedRowCount": 30');
+        expect(finalRequest.messages[1].content).toContain('Period-24');
+        expect(finalRequest.messages[1].content).not.toContain('Period-25');
+        expect(finalRequest.messages[0].content).toContain('limit any trend, range, or step-change claim to the shown rows');
+    });
+
     it('uses the structured executive brief system prompt for final summaries', async () => {
         generateTextMock.mockResolvedValue({ text: '### Key Findings\n1. **Revenue peak** — East leads at 500. Confidence: high\n   → Recommended Action: Investigate East drivers.' });
 

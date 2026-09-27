@@ -52,7 +52,7 @@ export const resolveEvidenceResearchBudgetMs = (state: ReturnType<StoreApi['getS
         ? INITIAL_LARGE_DATASET_EVIDENCE_RESEARCH_BUDGET_MS
         : INITIAL_EVIDENCE_RESEARCH_BUDGET_MS;
 };
-export const INITIAL_SUMMARY_FINALIZATION_BUDGET_MS = 20_000;
+export const INITIAL_SUMMARY_FINALIZATION_BUDGET_MS = 45_000;
 
 const assertNotAborted = (signal: AbortSignal) => {
     if (signal.aborted) {

@@ -11,7 +11,6 @@ import {
     formatRows,
     prepareManagedContext,
     reportContextDiagnostics,
-    trimAnalysisCards,
     trimCardContext,
     trimRawDataSample,
 } from './contextManager';
@@ -69,7 +68,7 @@ export const generateSummary = async (
                     baseUserText: `Summarize the chart titled "${title}".`,
                     sections: [
                         createContextSection('report_context', `Report context:\n${formatReportContextForPrompt(reportContext)}`, 'high', 'sticky'),
-                        createContextSection('chart_data', `Chart data sample:\n${formatRows(trimRawDataSample(data, 8))}`, 'required', 'sticky'),
+                        createContextSection('chart_data', `Chart data: ${Math.min(data.length, 24)} of ${data.length} aggregated rows shown.\n${formatRows(trimRawDataSample(data, 24))}`, 'required', 'sticky'),
                         createContextSection('dataset_columns', `Dataset columns:\n${formatColumnNames(allColumns)}`, 'medium', 'prunable'),
                         createContextSection('column_display_hints', `User-facing column label hints:\n${formatColumnDisplayHints(allColumns)}`, 'medium', 'prunable'),
                     ],
@@ -201,8 +200,7 @@ export const generateFinalSummary = async (
         };
     }
 
-    const trimmedCards = trimAnalysisCards(cards, 6, 5);
-    const narrativeInputs = selectNarrativeAnalysisInputs(buildNarrativeAnalysisIrInputList(trimmedCards), 6);
+    const narrativeInputs = selectNarrativeAnalysisInputs(buildNarrativeAnalysisIrInputList(cards.slice(0, 6), [], 24), 6);
     const narrativePayload = formatNarrativeAnalysisInputs(narrativeInputs);
 
     try {

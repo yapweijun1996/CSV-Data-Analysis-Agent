@@ -10,8 +10,17 @@ import {
 
 type SummarizeHistory = (messages: AgentMessage[], signal?: AbortSignal) => Promise<string>;
 
+const estimateVisibleTokens = (value: unknown): number => {
+    const serialized = JSON.stringify(value);
+    let nonAsciiUnits = 0;
+    for (let index = 0; index < serialized.length; index += 1) {
+        if (serialized.charCodeAt(index) > 127) nonAsciiUnits += 1;
+    }
+    return Math.ceil((serialized.length - nonAsciiUnits) / 3 + nonAsciiUnits * 2);
+};
+
 const projectedTokens = (messages: AgentMessage[], hasSummary: boolean): number => {
-    const visibleTokens = Math.ceil(JSON.stringify(messages).length / 3);
+    const visibleTokens = estimateVisibleTokens(messages);
     return hasSummary ? visibleTokens : Math.max(visibleTokens, estimateContextTokens(messages).tokens);
 };
 
@@ -46,8 +55,13 @@ export const createPiContextCompactor = (
         let cut = projected.length;
         let recentTokens = 0;
         while (cut > 1 && recentTokens < PI_CONTEXT_COMPACTION_KEEP_RECENT_TOKENS) {
+            const nextTokens = Math.max(
+                estimateTokens(projected[cut - 1]),
+                estimateVisibleTokens(projected[cut - 1]),
+            );
+            if (recentTokens > 0 && recentTokens + nextTokens > PI_CONTEXT_COMPACTION_KEEP_RECENT_TOKENS) break;
             cut -= 1;
-            recentTokens += estimateTokens(projected[cut]);
+            recentTokens += nextTokens;
         }
         while (cut > 1 && projected[cut].role === 'toolResult') cut -= 1;
         if (cut <= (summary ? 2 : 1)) return projected;
