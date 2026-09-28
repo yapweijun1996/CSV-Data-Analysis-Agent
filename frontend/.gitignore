@@ -29,6 +29,9 @@ tests/live/*
 
 # Internal planning and operator notes pending a separate publication review.
 docs/
+!docs/
+docs/*
+!docs/localization-coverage.md
 task.md
 task_ui.md
 DESIGN.md
