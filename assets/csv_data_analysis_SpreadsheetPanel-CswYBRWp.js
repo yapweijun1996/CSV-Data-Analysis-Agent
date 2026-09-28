@@ -1,12 +1,12 @@
 import { a as reactExports, j as jsxRuntimeExports, W as We } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-XDOAMxBP.js";
-import { U as getTranslation, bf as applySpreadsheetFilterOperation, bg as buildDataPreparationWorkflowBundle, bh as resolveDatasetBindingTarget, aU as collectOrderedColumnNames, a0 as buildEffectiveColumnRegistryFromState, bi as buildDisplayLabelMap, bj as buildColumnDisplayLabels, bk as getSemanticHiddenRowCount, bl as isPreviewDataQuery } from "./csv_data_analysis_app-agent-DTr3q9d8.js";
-import { u as useAppStore, e as IconLoadingSpinner } from "./csv_data_analysis_index-BFI7fVv0.js";
+import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-O7IGDCBw.js";
+import { U as getTranslation, bg as applySpreadsheetFilterOperation, bh as buildDataPreparationWorkflowBundle, bi as resolveDatasetBindingTarget, aU as collectOrderedColumnNames, a0 as buildEffectiveColumnRegistryFromState, bj as buildDisplayLabelMap, bk as buildColumnDisplayLabels, bl as getSemanticHiddenRowCount, bm as isPreviewDataQuery } from "./csv_data_analysis_app-agent-ThQ6z2YJ.js";
+import { u as useAppStore, e as IconLoadingSpinner } from "./csv_data_analysis_index-BPv--tJl.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
 import { I as IconAi } from "./csv_data_analysis_IconAi-DV4Egu6s.js";
 import { I as IconSearch } from "./csv_data_analysis_IconSearch-j9OYkQx7.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
-import { V as ViewModeToggle, C as CleaningRunBanner, G as GroupByTest } from "./csv_data_analysis_CleaningRunBanner-DrBKh0oO.js";
+import { V as ViewModeToggle, C as CleaningRunBanner, G as GroupByTest } from "./csv_data_analysis_CleaningRunBanner-CrjZSDuK.js";
 import "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
@@ -441,6 +441,7 @@ const SpreadsheetPanel = ({ isVisible }) => {
   const setColumnAnnotation = useAppStore((state) => state.setColumnAnnotation);
   const removeColumnAnnotation = useAppStore((state) => state.removeColumnAnnotation);
   const columnProfiles = useAppStore((state) => state.columnProfiles);
+  const initialAnalysisFailureKind = useAppStore((state) => state.initialAnalysisFailureKind);
   const [isGroupByMode, setIsGroupByMode] = We.useState(false);
   const [annotatingColumn, setAnnotatingColumn] = We.useState(null);
   const annotatedColumns = reactExports.useMemo(
@@ -561,7 +562,7 @@ const SpreadsheetPanel = ({ isVisible }) => {
           sampleRows: largeDatasetBacking.sampleRowCount.toLocaleString()
         }) })
       ] }),
-      cleaningRun && cleaningRun.status !== "completed" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      cleaningRun && cleaningRun.status !== "completed" && initialAnalysisFailureKind !== "provider" && /* @__PURE__ */ jsxRuntimeExports.jsx(
         CleaningRunBanner,
         {
           cleaningRun,

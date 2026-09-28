@@ -1264,4 +1264,88 @@ describe('analysis panel rendering', () => {
         expect(screen.queryByText('Analysis Steps')).not.toBeInTheDocument();
         expect(screen.queryByText('Build semantic understanding')).not.toBeInTheDocument();
     });
+
+    const createRecoveryStore = () => ({
+        analysisCards: [],
+        initialAnalysisStatus: 'error',
+        initialAnalysisFailureKind: 'analysis',
+        pipelineOutcome: { status: 'ready', canAutoAnalyze: true },
+        reportStructureResolution: null as { requiresHumanReview: boolean } | null,
+        rawIntakeIr: null as object | null,
+        csvData: {
+            fileName: 'demo.csv',
+            data: [{ Town: 'WOODLANDS', Price: 1000 }],
+            metadataRows: [],
+            summaryRows: [],
+            headerDepth: 1,
+        },
+        canonicalCsvData: null,
+        columnProfiles: [],
+        finalSummary: null,
+        isGeneratingReport: false,
+        isBusy: false,
+        isSpreadsheetVisible: false,
+        settings: { language: 'English' },
+        reportGenerationProgress: null,
+        aiTaskStatus: null,
+        dataQualityIssues: [],
+        agentMemoryRun: null,
+        cleaningRun: null as { status: 'failed' } | null,
+        confirmedAnalysisGoal: 'Summarize resale prices.',
+        handleInitialAnalysis: vi.fn(async () => ({ status: 'error' })),
+        setIsSettingsModalOpen: vi.fn(),
+        setIsReportBoundaryConfirmModalOpen: vi.fn(),
+        setIsDataPreparationModalOpen: vi.fn(),
+        setResultsViewMode: vi.fn(),
+        addProgress: vi.fn(),
+        resumeCleaningRun: vi.fn(),
+        restartCleaningRun: vi.fn(),
+        generateAnalystReport: vi.fn(),
+        handleShowCardFromChat: vi.fn(),
+        workspaceFiles: {},
+    });
+
+    it('offers retry and provider settings after a provider failure, without blaming data structure', async () => {
+        const store = createRecoveryStore();
+        store.initialAnalysisFailureKind = 'provider';
+        store.cleaningRun = { status: 'failed' };
+        (useAppStoreModule.useAppStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: (value: typeof store) => unknown) => selector(store));
+
+        render(<AnalysisPanel />);
+
+        expect(screen.getByText(/selected AI provider did not complete/i)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Review and repair data structure' })).not.toBeInTheDocument();
+        expect(screen.queryByText(/Dataset cleaning stopped after an error/)).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Retry analysis' }));
+        await waitFor(() => expect(store.handleInitialAnalysis).toHaveBeenCalledWith(
+            store.csvData, 'Summarize resale prices.', { trigger: 'manual' },
+        ));
+        fireEvent.click(screen.getByRole('button', { name: 'Change provider' }));
+        expect(store.setIsSettingsModalOpen).toHaveBeenCalledWith(true);
+    });
+
+    it('opens structure repair only for a verified structure block', () => {
+        const store = createRecoveryStore();
+        store.pipelineOutcome = { status: 'needs_structure_review', canAutoAnalyze: false };
+        store.reportStructureResolution = { requiresHumanReview: true };
+        store.rawIntakeIr = { normalizedRows: [['Town', 'Price']] };
+        (useAppStoreModule.useAppStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: (value: typeof store) => unknown) => selector(store));
+
+        render(<AnalysisPanel />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Review and repair data structure' }));
+        expect(store.setIsReportBoundaryConfirmModalOpen).toHaveBeenCalledWith(true);
+        expect(screen.queryByRole('button', { name: 'Retry analysis' })).not.toBeInTheDocument();
+    });
+
+    it('routes insufficient evidence to detailed results instead of structure repair', () => {
+        const store = createRecoveryStore();
+        (useAppStoreModule.useAppStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: (value: typeof store) => unknown) => selector(store));
+
+        render(<AnalysisPanel />);
+
+        expect(screen.queryByRole('button', { name: 'Review and repair data structure' })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Review analysis evidence' }));
+        expect(store.setResultsViewMode).toHaveBeenCalledWith('explore');
+    });
 });

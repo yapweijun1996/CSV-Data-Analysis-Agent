@@ -30,6 +30,8 @@ The app's tool and data policies live with the agent and data services. UI compo
 
 Ordinary row-oriented CSV files, including the bundled HDB resale demo, proceed through structure detection without requiring users to assign every column role. The review dialog is reserved for ambiguous report boundaries or transformations that cannot be verified automatically.
 
+When initial analysis cannot finish, the results page uses the recorded failure reason for its next action. Provider errors offer **Retry analysis** and **Change provider**; verified structure blocks offer **Review and repair data structure**; missing trusted conclusions offer **Review analysis evidence**. Imported data stays available for retry. A provider failure does not by itself imply a CSV structure or cleaning problem, so the cleaning failure banner is hidden for that case.
+
 For large CSVs backed directly by DuckDB, analysis queries use the columns returned by the backing table. Preview-only lineage and row-role annotations remain available in the interface but are excluded from SQL planning unless they are actual source columns.
 
 ## Develop and verify

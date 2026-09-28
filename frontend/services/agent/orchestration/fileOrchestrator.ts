@@ -17,6 +17,7 @@ import { duckDbWorkerClient } from '../../workers/duckDbWorkerClient';
 import { DEFAULT_AUTO_ANALYSIS_GOAL } from '../analysisDefaults';
 import { getPreferredAnalysisDataset } from '../reportStructureState';
 import { hasDeclinedCloudAiConsent } from '../../privacy/cloudAiConsent';
+import { isInitialAnalysisProviderFailure } from '../runtime/pi/initialAnalysisFailure';
 import { persistCurrentAppSessionSnapshot } from '../../persistence/currentSessionPersistence';
 import { replayDatasetBundlePrograms } from '../../data/datasetBundleReplay';
 
@@ -112,6 +113,7 @@ const runPostImportPipeline = (
             store.setState({
                 isBusy: false,
                 initialAnalysisStatus: 'error',
+                initialAnalysisFailureKind: 'analysis',
             });
             emitFilePipelineEvent(store, 'goal_proposal', 'error', message);
             return;
@@ -169,6 +171,7 @@ const runPostImportPipeline = (
                 isBusy: false,
                 isGeneratingReport: false,
                 initialAnalysisStatus: 'error',
+                initialAnalysisFailureKind: isInitialAnalysisProviderFailure(error) ? 'provider' : 'analysis',
             });
             updateAgentTaskStatus(store, {
                 status: 'error',
@@ -469,6 +472,7 @@ export async function* orchestrateFileUpload(
         isBusy: false, // Make UI interactive
         currentView: 'analysis_dashboard',
         initialAnalysisStatus: 'idle',
+        initialAnalysisFailureKind: null,
         cleaningRun: createCleaningRun(),
         duckDbSessionStatus: createBindingDuckDbSessionStatus(getState().duckDbSessionStatus),
     } };

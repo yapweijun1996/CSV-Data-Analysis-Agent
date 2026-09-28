@@ -230,4 +230,27 @@ describe('Pi production runtime', () => {
         expect(calls).toBe(9);
         expect(store.getState().initialAnalysisStatus).toBe('ready');
     });
+
+    it('records a provider failure when Pi returns an assistant stream error', async () => {
+        const stream: StreamFn = model => {
+            const output = createAssistantMessageEventStream();
+            const message: AssistantMessage = {
+                role: 'assistant', content: [], api: model.api, provider: model.provider,
+                model: model.id, usage, stopReason: 'error', errorMessage: 'Upstream request failed',
+                timestamp: Date.now(),
+            };
+            output.push({ type: 'start', partial: message });
+            output.push({ type: 'error', reason: 'error', error: message });
+            return output;
+        };
+        const store = createStore();
+        const outcome = await runPiInitialAnalysis({
+            appSessionId: 'session-1', datasetId: 'dataset-1', datasetVersion: 'version-1',
+            researchGoal: 'Find patterns.', provider: { provider: 'openai', modelId: 'gpt-5.4-mini' },
+        }, store as never, stream);
+
+        expect(outcome.status).toBe('failed');
+        expect(store.getState().initialAnalysisStatus).toBe('error');
+        expect(store.getState().initialAnalysisFailureKind).toBe('provider');
+    });
 });

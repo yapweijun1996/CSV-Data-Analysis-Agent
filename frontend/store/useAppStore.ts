@@ -152,6 +152,7 @@ export const initialAppState: AppState = {
     visibleAnalysisTrace: [],
     aiTaskStatus: null,
     initialAnalysisStatus: 'idle',
+    initialAnalysisFailureKind: null,
     confirmedAnalysisGoal: null,
     goalState: 'idle',
     dataQualityIssues: null,
@@ -339,6 +340,7 @@ export const useAppStore = createWithEqualityFn<AppStore>()((set, get, store) =>
                                 ? 'ready'
                                 : 'idle'
                         ),
+                    initialAnalysisFailureKind: normalizedAppState.initialAnalysisFailureKind ?? null,
                     cleaningRun: normalizedAppState.cleaningRun
                         ? updateCleaningRun(normalizedAppState.cleaningRun, {
                             status: normalizedAppState.cleaningRun.status === 'completed'

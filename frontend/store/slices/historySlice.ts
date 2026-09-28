@@ -158,6 +158,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
                                 ? 'ready'
                                 : 'idle')
                     ),
+                initialAnalysisFailureKind: normalizedAppState.initialAnalysisFailureKind ?? null,
                 goalState: normalizeRestoredGoalState(normalizedAppState.goalState),
                 currentView: normalizedAppState.csvData ? 'analysis_dashboard' : 'file_upload',
                 isHistoryPanelOpen: false,
@@ -364,6 +365,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
                 runtimeRunHistory: [],
                 aiTaskStatus: null,
                 initialAnalysisStatus: 'idle',
+                initialAnalysisFailureKind: null,
                 confirmedAnalysisGoal: null,
                 goalState: 'idle',
                 dataQualityIssues: null,

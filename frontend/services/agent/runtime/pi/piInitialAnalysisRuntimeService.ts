@@ -14,6 +14,7 @@ import { createInitialAnalysisStageExecutors } from './initialAnalysisStageExecu
 import { executeInitialAnalysisStageTool, type InitialAnalysisStageActionResult } from './initialAnalysisStageTools';
 import type { InitialAnalysisRunOutcome, InitialAnalysisRunRequest } from './initialAnalysisTypes';
 import { createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
+import { isInitialAnalysisProviderFailure } from './initialAnalysisFailure';
 
 const STAGES = createInitialAnalysisStageToolManifests();
 const CHECKPOINT_PREFIX = 'pi-initial-analysis-v1:';
@@ -224,19 +225,24 @@ const run = async (
         agent.abort();
     };
     controller.signal.addEventListener('abort', abortAgent, { once: true });
-    store.setState({ isBusy: true, isGeneratingReport: true, initialAnalysisStatus: 'running' });
+    store.setState({ isBusy: true, isGeneratingReport: true, initialAnalysisStatus: 'running', initialAnalysisFailureKind: null });
     let status: InitialAnalysisRunOutcome['status'] = 'failed';
     let errorMessage = '';
+    let providerFailure = false;
     try {
         if (!streamOverride) await ensureCloudAiConsent(store.getState().settings.provider);
         await persistCheckpoint(null);
         await agent.prompt('Start the next governed stage. Continue until all stages are complete.');
         if (controller.signal.aborted) throw controller.signal.reason;
-        if (agent.state.errorMessage) throw new Error(agent.state.errorMessage);
+        if (agent.state.errorMessage) {
+            providerFailure = true;
+            throw new Error(agent.state.errorMessage);
+        }
         status = nextStageIndex === STAGES.length && results.every(result => result.decision === 'pass')
             && warnings.length === 0 ? 'completed' : 'degraded';
     } catch (error) {
         errorMessage = sanitizeError(error);
+        providerFailure ||= isInitialAnalysisProviderFailure(error);
         status = controller.signal.aborted && request.signal?.aborted ? 'cancelled'
             : results.length > 0 ? 'degraded' : 'failed';
         if (status === 'degraded') warnings.push({
@@ -266,6 +272,8 @@ const run = async (
         initialAnalysisStatus: status === 'cancelled' ? 'paused'
             : noUsableResults || status === 'failed' ? 'error'
                 : status === 'completed' ? 'ready' : 'degraded',
+        initialAnalysisFailureKind: providerFailure ? 'provider'
+            : noUsableResults || status === 'failed' ? 'analysis' : null,
     });
     if (noUsableResults && store.getState().pipelineOutcome?.canAutoAnalyze === false
         && store.getState().reportStructureResolution && store.getState().rawIntakeIr) {

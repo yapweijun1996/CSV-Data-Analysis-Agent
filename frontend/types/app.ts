@@ -92,6 +92,7 @@ export interface PendingVectorMemoryDoc {
     metadata?: VectorStoreDocumentMetadata;
 }
 export type InitialAnalysisStatus = 'idle' | 'running' | 'ready' | 'degraded' | 'paused' | 'error';
+export type InitialAnalysisFailureKind = 'provider' | 'analysis';
 export type InitialAnalysisTrigger = 'automatic' | 'manual';
 export type InitialAnalysisReasonCode =
     | 'parse_errors'
@@ -202,6 +203,8 @@ export interface AppState {
     visibleAnalysisTrace: VisibleAnalysisTraceEntry[];
     aiTaskStatus: AiTaskStatusMessage | null;
     initialAnalysisStatus: InitialAnalysisStatus;
+    /** Last terminal failure category; absent in reports saved before this field existed. */
+    initialAnalysisFailureKind?: InitialAnalysisFailureKind | null;
     agentEvents: AgentEvent[];
     agentToolLogs: AgentToolLogEntry[];
     confirmedAnalysisGoal: string | null;

@@ -1,16 +1,16 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports, r as reactDomExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-DsMvNH9V.js";
-import { U as getTranslation, a8 as getCurrentAnalysisDatasetVersion, aF as resolveAnalysisArtifactFreshness, aG as summarizeDataQualityForEndUser, aH as normalizeCategoryLabel, aI as parseNumericValue, aJ as formatAnalysisMeasureValue, aK as formatTemporalDisplayValue, aL as applyTopNWithOthers, aM as buildPivotStackedChartState, aN as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aA as resolveDisplayPlanTitle, aO as resolveDisplayPlanDescription, aP as resolvePlanGroupLabel, aQ as resolvePlanMetricLabel, aR as formatAnalysisValue, aS as getBarChartReadabilityHints, aT as PIVOT_FOLDED_OTHERS_KEY, aU as collectOrderedColumnNames, aV as getNumericColumns, aW as getAnalysisColumnLabels, aX as formatAnalysisCellValue, aY as isProviderConfigured, aZ as createProviderModel, a_ as resolveCardTrustDecision, a$ as getLocalizedText, b0 as evaluateChartPresentation, b1 as getAvailableChartTypes, b2 as isTimeLikeDimensionColumn, b3 as buildStackedPivotChartPlan, b4 as getPivotCardQualitySummary, b5 as normalizeDisplayLabel, b6 as isUsableReportTitle, b7 as isLatestReportPartial, b8 as resolveLatestReportBlockedInfo, a7 as hasOpenableLatestReport, b9 as resolveAnalysisCompletionGate, ba as buildDisplayAnalysisIr, bb as buildExecutiveKpis, bc as resolveEffectiveReportContext, bd as shouldShowDataWarnings, be as getCsvDataRowCount } from "./csv_data_analysis_app-agent-DTr3q9d8.js";
-import { u as useAppStore, a as IconWarning, g as getCachedChart, c as computeChartCacheKey, b as computeDataContentHash, s as setCachedChart, d as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-BFI7fVv0.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-BiMn8ZDX.js";
+import { U as getTranslation, a8 as getCurrentAnalysisDatasetVersion, aF as resolveAnalysisArtifactFreshness, aG as summarizeDataQualityForEndUser, aH as normalizeCategoryLabel, aI as parseNumericValue, aJ as formatAnalysisMeasureValue, aK as formatTemporalDisplayValue, aL as applyTopNWithOthers, aM as buildPivotStackedChartState, aN as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aA as resolveDisplayPlanTitle, aO as resolveDisplayPlanDescription, aP as resolvePlanGroupLabel, aQ as resolvePlanMetricLabel, aR as formatAnalysisValue, aS as getBarChartReadabilityHints, aT as PIVOT_FOLDED_OTHERS_KEY, aU as collectOrderedColumnNames, aV as getNumericColumns, aW as getAnalysisColumnLabels, aX as formatAnalysisCellValue, aY as isProviderConfigured, aZ as createProviderModel, a_ as resolveCardTrustDecision, a$ as getLocalizedText, b0 as evaluateChartPresentation, b1 as getAvailableChartTypes, b2 as isTimeLikeDimensionColumn, b3 as buildStackedPivotChartPlan, b4 as getPivotCardQualitySummary, b5 as normalizeDisplayLabel, b6 as isUsableReportTitle, b7 as isLatestReportPartial, b8 as resolveLatestReportBlockedInfo, a7 as hasOpenableLatestReport, b9 as resolveAnalysisCompletionGate, ba as buildDisplayAnalysisIr, bb as DEFAULT_AUTO_ANALYSIS_GOAL, bc as buildExecutiveKpis, bd as resolveEffectiveReportContext, be as shouldShowDataWarnings, bf as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-ThQ6z2YJ.js";
+import { u as useAppStore, a as IconWarning, g as getCachedChart, c as computeChartCacheKey, b as computeDataContentHash, s as setCachedChart, d as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-BPv--tJl.js";
 import { C as Chart, p as plugin, a as plugin$1, M as Masonry } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import { e as exportToHtml, a as exportToCsv, b as exportToPng } from "./csv_data_analysis_exportUtils-CPeSo2GB.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
-import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-XDOAMxBP.js";
-import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-DrBKh0oO.js";
+import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-O7IGDCBw.js";
+import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-CrjZSDuK.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
-import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-BbJ-RXfV.js";
+import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-DIYkG2Y7.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
 import "./csv_data_analysis_vendor-ai-google-Brpu0J-t.js";
@@ -4667,12 +4667,13 @@ const CARD_LOAD_INCREMENT = 4;
 const SIMPLE_VIEW_CARD_LIMIT = 2;
 const AnalysisPanelComponent = () => {
   const _renderT0 = performance.now();
-  const { cards, finalSummary, finalSummaryProvenance, isGeneratingReport, language, reportTemplate, setReportTemplate, reportGenerationProgress, aiTaskDone, cleaningRun, isSpreadsheetVisible, resumeCleaningRun, restartCleaningRun, generateAnalystReport, cancelReportGeneration, openLatestAnalystReport, exportLatestAnalystReportPdf, csvData, canonicalCsvData, rawCsvData, reportContextResolution, reportStructureResolution, rawIntakeIr, columnProfiles, dataPreparationPlan, runWorkspaceDataQuery, setIsSpreadsheetVisible, addProgress, handleShowCardFromChat, setIsDataPreparationModalOpen, setIsReportBoundaryConfirmModalOpen, hasLatestAnalystReport, reportBlockedInfo, isReportPartial, initialAnalysisStatus, latestAnalysisSession, visibleAnalysisTrace, storeResultsViewMode, setStoreResultsViewMode } = useAppStore(
+  const { cards, finalSummary, finalSummaryProvenance, isGeneratingReport, isBusy, language, reportTemplate, setReportTemplate, reportGenerationProgress, aiTaskDone, cleaningRun, isSpreadsheetVisible, resumeCleaningRun, restartCleaningRun, handleInitialAnalysis, confirmedAnalysisGoal, generateAnalystReport, cancelReportGeneration, openLatestAnalystReport, exportLatestAnalystReportPdf, csvData, canonicalCsvData, rawCsvData, reportContextResolution, reportStructureResolution, pipelineOutcome, initialAnalysisFailureKind, rawIntakeIr, columnProfiles, dataPreparationPlan, runWorkspaceDataQuery, setIsSpreadsheetVisible, addProgress, handleShowCardFromChat, setIsDataPreparationModalOpen, setIsReportBoundaryConfirmModalOpen, setIsSettingsModalOpen, hasLatestAnalystReport, reportBlockedInfo, isReportPartial, initialAnalysisStatus, latestAnalysisSession, visibleAnalysisTrace, storeResultsViewMode, setStoreResultsViewMode } = useAppStore(
     (state) => ({
       cards: state.analysisCards,
       finalSummary: state.finalSummary,
       finalSummaryProvenance: state.finalSummaryProvenance ?? null,
       isGeneratingReport: state.isGeneratingReport,
+      isBusy: state.isBusy,
       language: state.settings.language,
       reportTemplate: state.settings.reportTemplate ?? "management_review",
       setReportTemplate: state.setReportTemplate,
@@ -4684,6 +4685,8 @@ const AnalysisPanelComponent = () => {
       isSpreadsheetVisible: state.isSpreadsheetVisible,
       resumeCleaningRun: state.resumeCleaningRun,
       restartCleaningRun: state.restartCleaningRun,
+      handleInitialAnalysis: state.handleInitialAnalysis,
+      confirmedAnalysisGoal: state.confirmedAnalysisGoal,
       generateAnalystReport: state.generateAnalystReport,
       cancelReportGeneration: state.cancelReportGeneration,
       openLatestAnalystReport: state.openLatestAnalystReport,
@@ -4693,6 +4696,8 @@ const AnalysisPanelComponent = () => {
       rawCsvData: state.rawCsvData,
       reportContextResolution: state.reportContextResolution,
       reportStructureResolution: state.reportStructureResolution,
+      pipelineOutcome: state.pipelineOutcome,
+      initialAnalysisFailureKind: state.initialAnalysisFailureKind ?? null,
       rawIntakeIr: state.rawIntakeIr,
       columnProfiles: state.columnProfiles,
       dataPreparationPlan: state.dataPreparationPlan,
@@ -4702,6 +4707,7 @@ const AnalysisPanelComponent = () => {
       handleShowCardFromChat: state.handleShowCardFromChat,
       setIsDataPreparationModalOpen: state.setIsDataPreparationModalOpen,
       setIsReportBoundaryConfirmModalOpen: state.setIsReportBoundaryConfirmModalOpen,
+      setIsSettingsModalOpen: state.setIsSettingsModalOpen,
       hasLatestAnalystReport: hasOpenableLatestReport(state.workspaceFiles),
       reportBlockedInfo: resolveLatestReportBlockedInfo(state.workspaceFiles),
       isReportPartial: isLatestReportPartial(state.workspaceFiles),
@@ -4725,6 +4731,7 @@ const AnalysisPanelComponent = () => {
   const [expandOverrideKey, setExpandOverrideKey] = reactExports.useState(1);
   const [expandOverrideValue, setExpandOverrideValue] = reactExports.useState(true);
   const [resultsViewMode, setResultsViewMode] = reactExports.useState(storeResultsViewMode);
+  const [isRetryingAnalysis, setIsRetryingAnalysis] = reactExports.useState(false);
   reactExports.useEffect(() => {
     setResultsViewMode(storeResultsViewMode);
   }, [storeResultsViewMode]);
@@ -4777,6 +4784,18 @@ const AnalysisPanelComponent = () => {
     setExpandOverrideValue(true);
     setExpandOverrideKey((previous) => previous + 1);
   }, [setStoreResultsViewMode]);
+  const retryAnalysis = reactExports.useCallback(async () => {
+    const dataset = canonicalCsvData ?? csvData;
+    if (!dataset || !handleInitialAnalysis || isBusy || isRetryingAnalysis) return;
+    setIsRetryingAnalysis(true);
+    try {
+      await handleInitialAnalysis(dataset, confirmedAnalysisGoal ?? DEFAULT_AUTO_ANALYSIS_GOAL, { trigger: "manual" });
+    } catch (error) {
+      addProgress(error instanceof Error ? error.message : "Analysis retry failed.", "error");
+    } finally {
+      setIsRetryingAnalysis(false);
+    }
+  }, [addProgress, canonicalCsvData, confirmedAnalysisGoal, csvData, handleInitialAnalysis, isBusy, isRetryingAnalysis]);
   const handleToggleAllCards = reactExports.useCallback(() => {
     setExpandOverrideValue((prev) => !prev);
     setExpandOverrideKey((prev) => prev + 1);
@@ -4946,10 +4965,13 @@ const AnalysisPanelComponent = () => {
     const finalSummaryTitle = getTranslation("overall_insights", language);
     const showWarnings = shouldShowDataWarnings();
     const analysisAlreadyStarted = initialAnalysisStatus === "ready" || initialAnalysisStatus === "degraded" || cards.length > 0;
-    const showCleaningBanner = cleaningRun && (cleaningRun.status !== "completed" || ((_a = dataPreparationPlan == null ? void 0 : dataPreparationPlan.sqlPrecheck) == null ? void 0 : _a.status) === "blocked" || ((_b = dataPreparationPlan == null ? void 0 : dataPreparationPlan.sqlPrecheck) == null ? void 0 : _b.status) === "warning") && !isSpreadsheetVisible && !analysisAlreadyStarted;
+    const showCleaningBanner = cleaningRun && (cleaningRun.status !== "completed" || ((_a = dataPreparationPlan == null ? void 0 : dataPreparationPlan.sqlPrecheck) == null ? void 0 : _a.status) === "blocked" || ((_b = dataPreparationPlan == null ? void 0 : dataPreparationPlan.sqlPrecheck) == null ? void 0 : _b.status) === "warning") && !isSpreadsheetVisible && !analysisAlreadyStarted && initialAnalysisFailureKind !== "provider";
     const showReportHeader = Boolean(reportContext && csvData);
     const analysisTerminal = initialAnalysisStatus === "ready" || initialAnalysisStatus === "degraded" || initialAnalysisStatus === "error";
     const analysisComplete = analysisTerminal && completionGate.status === "complete";
+    const needsStructureRepair = completionGate.status === "blocked" && (pipelineOutcome == null ? void 0 : pipelineOutcome.status) === "needs_structure_review" && (reportStructureResolution == null ? void 0 : reportStructureResolution.requiresHumanReview) === true;
+    const needsProviderRecovery = !needsStructureRepair && initialAnalysisFailureKind === "provider" && (initialAnalysisStatus === "error" || initialAnalysisStatus === "degraded");
+    const needsEvidenceReview = completionGate.status === "blocked" && !needsStructureRepair && !needsProviderRecovery;
     const showHeadlineSections = aiTaskDone;
     const showAnalystReportAction = analysisComplete && cards.length > 0;
     const isArtifactReportGeneration = (reportGenerationProgress == null ? void 0 : reportGenerationProgress.mode) === "artifact";
@@ -4981,7 +5003,7 @@ const AnalysisPanelComponent = () => {
       }
     ) : null;
     const skeletonCount = isGeneratingReport && reportGenerationProgress && reportGenerationProgress.mode !== "artifact" ? Math.max(0, reportGenerationProgress.total - cards.length) : 0;
-    if (cards.length === 0 && !isGeneratingReport && skeletonCount === 0 && aiTaskDone && visibleAnalysisTrace.length === 0 && !showWarnings && !showCleaningBanner) {
+    if (cards.length === 0 && !isGeneratingReport && skeletonCount === 0 && aiTaskDone && visibleAnalysisTrace.length === 0 && !showWarnings && !showCleaningBanner && !analysisTerminal) {
       return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "analysis-results-section", className: "scroll-mt-6 space-y-4", children: [
         showReportHeader && /* @__PURE__ */ jsxRuntimeExports.jsx(
           ReportHeader,
@@ -5076,11 +5098,11 @@ const AnalysisPanelComponent = () => {
       resultsViewMode === "simple" && analysisTerminal && /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-card border border-blue-200 bg-blue-50 p-4", "aria-label": getTranslation("analysis_results_next_step_title", language), children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold uppercase tracking-[0.18em] text-blue-700", children: getTranslation("analysis_results_next_step_title", language) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-2 text-sm font-semibold text-slate-900", children: getTranslation(
-          completionGate.status === "blocked" ? "analysis_results_next_step_reason_repair" : initialAnalysisStatus === "degraded" ? "analysis_results_next_step_reason_degraded_report" : "analysis_results_next_step_reason_ready_report",
+          needsStructureRepair ? "analysis_results_next_step_reason_structure" : needsProviderRecovery ? "analysis_results_next_step_reason_provider" : needsEvidenceReview ? "analysis_results_next_step_reason_repair" : initialAnalysisStatus === "degraded" ? "analysis_results_next_step_reason_degraded_report" : "analysis_results_next_step_reason_ready_report",
           language
         ) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-600", children: getTranslation(
-          completionGate.status === "blocked" ? "analysis_results_next_step_outcome_repair" : "analysis_results_next_step_outcome_report",
+          needsStructureRepair ? "analysis_results_next_step_outcome_repair" : needsProviderRecovery ? "analysis_results_next_step_outcome_provider" : needsEvidenceReview ? "analysis_results_next_step_outcome_evidence" : "analysis_results_next_step_outcome_report",
           language
         ) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -5088,25 +5110,38 @@ const AnalysisPanelComponent = () => {
           {
             type: "button",
             onClick: () => {
-              if (completionGate.status === "blocked") {
+              if (needsStructureRepair) {
                 if (reportStructureResolution && rawIntakeIr) {
                   setIsReportBoundaryConfirmModalOpen(true);
                 } else {
                   setIsDataPreparationModalOpen(true);
                 }
+              } else if (needsProviderRecovery) {
+                void retryAnalysis();
+              } else if (needsEvidenceReview) {
+                handleResultsViewChange("explore");
               } else if (hasLatestAnalystReport) {
                 openLatestAnalystReport();
               } else {
                 void generateAnalystReport();
               }
             },
-            disabled: completionGate.status === "complete" && (isGeneratingReport || isSimpleReportBlocked),
+            disabled: isRetryingAnalysis || isBusy || !needsStructureRepair && !needsProviderRecovery && !needsEvidenceReview && (isGeneratingReport || isSimpleReportBlocked),
             title: isSimpleReportBlocked ? getTranslation("report_blocked_title", language) : void 0,
             className: "mt-3 min-h-[44px] rounded-card bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300",
             children: getTranslation(
-              completionGate.status === "blocked" ? "analysis_results_repair_action" : hasLatestAnalystReport ? "report_open" : isGeneratingReport ? "generate_analyst_report_running" : "generate_analyst_report",
+              needsStructureRepair ? "analysis_results_repair_action" : needsProviderRecovery ? "analysis_results_retry_action" : needsEvidenceReview ? "analysis_results_review_evidence_action" : hasLatestAnalystReport ? "report_open" : isGeneratingReport ? "generate_analyst_report_running" : "generate_analyst_report",
               language
             )
+          }
+        ),
+        needsProviderRecovery && shouldAllowSettingsSurface() && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            onClick: () => setIsSettingsModalOpen == null ? void 0 : setIsSettingsModalOpen(true),
+            className: "ml-2 mt-3 min-h-[44px] rounded-card border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50",
+            children: getTranslation("analysis_results_change_provider_action", language)
           }
         )
       ] }),

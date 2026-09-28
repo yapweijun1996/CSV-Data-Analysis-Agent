@@ -3105,6 +3105,16 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Mandarin': '目前没有业务结论通过全部证据检查，因此系统不会把本次分析标记为完成。',
         'Japanese': 'すべての根拠チェックを通過したビジネス結論がないため、この分析は完了として扱われません。',
     },
+    'analysis_results_next_step_reason_structure': {
+        'English': 'The data structure check needs your review before analysis can continue.',
+        'Mandarin': '数据结构检查需要你确认，分析才能继续。',
+        'Japanese': '分析を続ける前にデータ構造の確認が必要です。',
+    },
+    'analysis_results_next_step_reason_provider': {
+        'English': 'The selected AI provider did not complete this analysis. Your imported data is still available.',
+        'Mandarin': '所选 AI provider 未能完成分析；已导入的数据仍可使用。',
+        'Japanese': '選択した AI プロバイダーが分析を完了できませんでした。取り込んだデータは保持されています。',
+    },
     'analysis_results_next_step_outcome': {
         'English': 'Expected outcome: traceable evidence, adjustable chart settings, and the underlying aggregate data.',
         'Mandarin': '预期结果：可追溯证据、可调整的图表设置和底层聚合数据。',
@@ -3125,10 +3135,35 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Mandarin': '预期结果：确认数据边界与字段角色，重新验证后，再根据修正的数据集生成新证据。',
         'Japanese': '期待される結果：データ境界とフィールド役割を確認し、再検証後に修正済みデータから新しい根拠を生成します。',
     },
+    'analysis_results_next_step_outcome_provider': {
+        'English': 'Retry with this provider or choose another provider in Settings.',
+        'Mandarin': '可重试当前 provider，或在 Settings 中选择其他 provider。',
+        'Japanese': '現在のプロバイダーで再試行するか、設定で別のプロバイダーを選んでください。',
+    },
+    'analysis_results_next_step_outcome_evidence': {
+        'English': 'Review the analysis evidence and reasons, then retry if needed.',
+        'Mandarin': '请查看分析证据及原因，必要时重试。',
+        'Japanese': '分析の根拠と理由を確認し、必要に応じて再試行してください。',
+    },
     'analysis_results_repair_action': {
         'English': 'Review and repair data structure',
         'Mandarin': '检查并修复数据结构',
         'Japanese': 'データ構造を確認・修正',
+    },
+    'analysis_results_retry_action': {
+        'English': 'Retry analysis',
+        'Mandarin': '重试分析',
+        'Japanese': '分析を再試行',
+    },
+    'analysis_results_change_provider_action': {
+        'English': 'Change provider',
+        'Mandarin': '更换 provider',
+        'Japanese': 'プロバイダーを変更',
+    },
+    'analysis_results_review_evidence_action': {
+        'English': 'Review analysis evidence',
+        'Mandarin': '查看分析证据',
+        'Japanese': '分析の根拠を確認',
     },
     'chat_copy': { 'English': 'Copy', 'Mandarin': '复制', 'Japanese': 'コピー' },
     'chat_copied': { 'English': 'Copied', 'Mandarin': '已复制', 'Japanese': 'コピーしました' },

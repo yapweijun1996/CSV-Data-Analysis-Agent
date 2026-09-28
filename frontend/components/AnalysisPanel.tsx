@@ -12,13 +12,14 @@ import { ExecutiveKpiRow } from './dashboard/ExecutiveKpiRow';
 import { ReportDelivery } from './dashboard/ReportDelivery';
 import { ReportHeader } from './dashboard/ReportHeader';
 import { CredibilityBanner } from './dashboard/CredibilityBanner';
-import { shouldShowDataWarnings } from '../config/runtimeConfig';
+import { shouldAllowSettingsSurface, shouldShowDataWarnings } from '../config/runtimeConfig';
 import { buildExecutiveKpis, type ExecutiveKpi } from '../services/dashboard/executiveKpis';
 import { resolveEffectiveReportContext } from '../services/agent/reportContext';
 import { getCurrentAnalysisDatasetVersion } from '../services/agent/artifactProvenance';
 import { getCsvDataRowCount } from '../utils/datasetId';
 import { resolveCardTrustDecision } from '../services/agent/cardTrustDecision';
 import { resolveAnalysisCompletionGate } from '../services/agent/analysisCompletionGate';
+import { DEFAULT_AUTO_ANALYSIS_GOAL } from '../services/agent/analysisDefaults';
 import { buildDisplayAnalysisIr } from '../services/dashboard/displayAnalysisIr';
 import { hasOpenableLatestReport, isLatestReportPartial, resolveLatestReportBlockedInfo } from '../services/reporting/reportArtifactManifest';
 import type { SqlPrecheckFinding, WorkspacePreviewRowsQueryRequest } from '../types';
@@ -44,12 +45,13 @@ const AnalysisPanelComponent: React.FC = () => {
     // ... hook usage
     // PERF-303: Full aiTaskStatus object moved to AnalysisStatusSection (independent subscription).
     // Only aiTaskDone (boolean) is kept here for conditional rendering logic.
-    const { cards, finalSummary, finalSummaryProvenance, isGeneratingReport, language, reportTemplate, setReportTemplate, reportGenerationProgress, aiTaskDone, cleaningRun, isSpreadsheetVisible, resumeCleaningRun, restartCleaningRun, generateAnalystReport, cancelReportGeneration, openLatestAnalystReport, exportLatestAnalystReportPdf, csvData, canonicalCsvData, rawCsvData, reportContextResolution, reportStructureResolution, rawIntakeIr, columnProfiles, dataPreparationPlan, runWorkspaceDataQuery, setIsSpreadsheetVisible, addProgress, handleShowCardFromChat, setIsDataPreparationModalOpen, setIsReportBoundaryConfirmModalOpen, hasLatestAnalystReport, reportBlockedInfo, isReportPartial, initialAnalysisStatus, latestAnalysisSession, visibleAnalysisTrace, storeResultsViewMode, setStoreResultsViewMode } = useAppStore(
+    const { cards, finalSummary, finalSummaryProvenance, isGeneratingReport, isBusy, language, reportTemplate, setReportTemplate, reportGenerationProgress, aiTaskDone, cleaningRun, isSpreadsheetVisible, resumeCleaningRun, restartCleaningRun, handleInitialAnalysis, confirmedAnalysisGoal, generateAnalystReport, cancelReportGeneration, openLatestAnalystReport, exportLatestAnalystReportPdf, csvData, canonicalCsvData, rawCsvData, reportContextResolution, reportStructureResolution, pipelineOutcome, initialAnalysisFailureKind, rawIntakeIr, columnProfiles, dataPreparationPlan, runWorkspaceDataQuery, setIsSpreadsheetVisible, addProgress, handleShowCardFromChat, setIsDataPreparationModalOpen, setIsReportBoundaryConfirmModalOpen, setIsSettingsModalOpen, hasLatestAnalystReport, reportBlockedInfo, isReportPartial, initialAnalysisStatus, latestAnalysisSession, visibleAnalysisTrace, storeResultsViewMode, setStoreResultsViewMode } = useAppStore(
         (state: AppStore) => ({
             cards: state.analysisCards,
             finalSummary: state.finalSummary,
             finalSummaryProvenance: state.finalSummaryProvenance ?? null,
             isGeneratingReport: state.isGeneratingReport,
+            isBusy: state.isBusy,
             language: state.settings.language,
             reportTemplate: state.settings.reportTemplate ?? 'management_review',
             setReportTemplate: state.setReportTemplate,
@@ -61,6 +63,8 @@ const AnalysisPanelComponent: React.FC = () => {
             isSpreadsheetVisible: state.isSpreadsheetVisible,
             resumeCleaningRun: state.resumeCleaningRun,
             restartCleaningRun: state.restartCleaningRun,
+            handleInitialAnalysis: state.handleInitialAnalysis,
+            confirmedAnalysisGoal: state.confirmedAnalysisGoal,
             generateAnalystReport: state.generateAnalystReport,
             cancelReportGeneration: state.cancelReportGeneration,
             openLatestAnalystReport: state.openLatestAnalystReport,
@@ -70,6 +74,8 @@ const AnalysisPanelComponent: React.FC = () => {
             rawCsvData: state.rawCsvData,
             reportContextResolution: state.reportContextResolution,
             reportStructureResolution: state.reportStructureResolution,
+            pipelineOutcome: state.pipelineOutcome,
+            initialAnalysisFailureKind: state.initialAnalysisFailureKind ?? null,
             rawIntakeIr: state.rawIntakeIr,
             columnProfiles: state.columnProfiles,
             dataPreparationPlan: state.dataPreparationPlan,
@@ -79,6 +85,7 @@ const AnalysisPanelComponent: React.FC = () => {
             handleShowCardFromChat: state.handleShowCardFromChat,
             setIsDataPreparationModalOpen: state.setIsDataPreparationModalOpen,
             setIsReportBoundaryConfirmModalOpen: state.setIsReportBoundaryConfirmModalOpen,
+            setIsSettingsModalOpen: state.setIsSettingsModalOpen,
             hasLatestAnalystReport: hasOpenableLatestReport(state.workspaceFiles),
             reportBlockedInfo: resolveLatestReportBlockedInfo(state.workspaceFiles),
             isReportPartial: isLatestReportPartial(state.workspaceFiles),
@@ -105,6 +112,7 @@ const AnalysisPanelComponent: React.FC = () => {
     const [expandOverrideKey, setExpandOverrideKey] = useState(1);
     const [expandOverrideValue, setExpandOverrideValue] = useState(true);
     const [resultsViewMode, setResultsViewMode] = useState<ResultsViewMode>(storeResultsViewMode);
+    const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
 
     useEffect(() => {
         setResultsViewMode(storeResultsViewMode);
@@ -180,6 +188,18 @@ const AnalysisPanelComponent: React.FC = () => {
         setExpandOverrideValue(true);
         setExpandOverrideKey(previous => previous + 1);
     }, [setStoreResultsViewMode]);
+    const retryAnalysis = useCallback(async () => {
+        const dataset = canonicalCsvData ?? csvData;
+        if (!dataset || !handleInitialAnalysis || isBusy || isRetryingAnalysis) return;
+        setIsRetryingAnalysis(true);
+        try {
+            await handleInitialAnalysis(dataset, confirmedAnalysisGoal ?? DEFAULT_AUTO_ANALYSIS_GOAL, { trigger: 'manual' });
+        } catch (error) {
+            addProgress(error instanceof Error ? error.message : 'Analysis retry failed.', 'error');
+        } finally {
+            setIsRetryingAnalysis(false);
+        }
+    }, [addProgress, canonicalCsvData, confirmedAnalysisGoal, csvData, handleInitialAnalysis, isBusy, isRetryingAnalysis]);
     const handleToggleAllCards = useCallback(() => {
         setExpandOverrideValue(prev => !prev);
         setExpandOverrideKey(prev => prev + 1);
@@ -391,12 +411,21 @@ const AnalysisPanelComponent: React.FC = () => {
         const showCleaningBanner = cleaningRun
             && (cleaningRun.status !== 'completed' || dataPreparationPlan?.sqlPrecheck?.status === 'blocked' || dataPreparationPlan?.sqlPrecheck?.status === 'warning')
             && !isSpreadsheetVisible
-            && !analysisAlreadyStarted;
+            && !analysisAlreadyStarted
+            && initialAnalysisFailureKind !== 'provider';
         const showReportHeader = Boolean(reportContext && csvData);
         const analysisTerminal = initialAnalysisStatus === 'ready'
             || initialAnalysisStatus === 'degraded'
             || initialAnalysisStatus === 'error';
         const analysisComplete = analysisTerminal && completionGate.status === 'complete';
+        const needsStructureRepair = completionGate.status === 'blocked'
+            && pipelineOutcome?.status === 'needs_structure_review'
+            && reportStructureResolution?.requiresHumanReview === true;
+        const needsProviderRecovery = !needsStructureRepair
+            && initialAnalysisFailureKind === 'provider'
+            && (initialAnalysisStatus === 'error' || initialAnalysisStatus === 'degraded');
+        const needsEvidenceReview = completionGate.status === 'blocked'
+            && !needsStructureRepair && !needsProviderRecovery;
         const showHeadlineSections = aiTaskDone;
         const showAnalystReportAction = analysisComplete && cards.length > 0;
         const isArtifactReportGeneration = reportGenerationProgress?.mode === 'artifact';
@@ -450,6 +479,7 @@ const AnalysisPanelComponent: React.FC = () => {
             && visibleAnalysisTrace.length === 0
             && !showWarnings
             && !showCleaningBanner
+            && !analysisTerminal
         ) {
             return (
                 <div id="analysis-results-section" className="scroll-mt-6 space-y-4">
@@ -579,8 +609,12 @@ const AnalysisPanelComponent: React.FC = () => {
                             </p>
                             <p className="mt-2 text-sm font-semibold text-slate-900">
                                 {getTranslation(
-                                    completionGate.status === 'blocked'
-                                        ? 'analysis_results_next_step_reason_repair'
+                                    needsStructureRepair
+                                        ? 'analysis_results_next_step_reason_structure'
+                                        : needsProviderRecovery
+                                            ? 'analysis_results_next_step_reason_provider'
+                                            : needsEvidenceReview
+                                                ? 'analysis_results_next_step_reason_repair'
                                         : initialAnalysisStatus === 'degraded'
                                             ? 'analysis_results_next_step_reason_degraded_report'
                                             : 'analysis_results_next_step_reason_ready_report',
@@ -589,8 +623,12 @@ const AnalysisPanelComponent: React.FC = () => {
                             </p>
                             <p className="mt-1 text-sm text-slate-600">
                                 {getTranslation(
-                                    completionGate.status === 'blocked'
+                                    needsStructureRepair
                                         ? 'analysis_results_next_step_outcome_repair'
+                                        : needsProviderRecovery
+                                            ? 'analysis_results_next_step_outcome_provider'
+                                            : needsEvidenceReview
+                                                ? 'analysis_results_next_step_outcome_evidence'
                                         : 'analysis_results_next_step_outcome_report',
                                     language,
                                 )}
@@ -598,27 +636,35 @@ const AnalysisPanelComponent: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    if (completionGate.status === 'blocked') {
+                                    if (needsStructureRepair) {
                                         if (reportStructureResolution && rawIntakeIr) {
                                             setIsReportBoundaryConfirmModalOpen(true);
                                         } else {
                                             setIsDataPreparationModalOpen(true);
                                         }
+                                    } else if (needsProviderRecovery) {
+                                        void retryAnalysis();
+                                    } else if (needsEvidenceReview) {
+                                        handleResultsViewChange('explore');
                                     } else if (hasLatestAnalystReport) {
                                         openLatestAnalystReport();
                                     } else {
                                         void generateAnalystReport();
                                     }
                                 }}
-                                disabled={completionGate.status === 'complete' && (isGeneratingReport || isSimpleReportBlocked)}
+                                disabled={isRetryingAnalysis || isBusy || (!needsStructureRepair && !needsProviderRecovery && !needsEvidenceReview && (isGeneratingReport || isSimpleReportBlocked))}
                                 title={isSimpleReportBlocked
                                     ? getTranslation('report_blocked_title', language)
                                     : undefined}
                                 className="mt-3 min-h-[44px] rounded-card bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                             >
                                 {getTranslation(
-                                    completionGate.status === 'blocked'
+                                    needsStructureRepair
                                         ? 'analysis_results_repair_action'
+                                        : needsProviderRecovery
+                                            ? 'analysis_results_retry_action'
+                                            : needsEvidenceReview
+                                                ? 'analysis_results_review_evidence_action'
                                         : hasLatestAnalystReport
                                             ? 'report_open'
                                             : isGeneratingReport
@@ -627,6 +673,15 @@ const AnalysisPanelComponent: React.FC = () => {
                                     language,
                                 )}
                             </button>
+                            {needsProviderRecovery && shouldAllowSettingsSurface() && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSettingsModalOpen?.(true)}
+                                    className="ml-2 mt-3 min-h-[44px] rounded-card border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                                >
+                                    {getTranslation('analysis_results_change_provider_action', language)}
+                                </button>
+                            )}
                         </section>
                     )}
 

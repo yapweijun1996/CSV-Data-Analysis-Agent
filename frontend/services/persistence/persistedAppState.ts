@@ -123,6 +123,7 @@ export const buildPersistedAppState = (state: AppStore): AppState => ({
     visibleAnalysisTrace: state.visibleAnalysisTrace,
     aiTaskStatus: state.aiTaskStatus,
     initialAnalysisStatus: state.initialAnalysisStatus,
+    initialAnalysisFailureKind: state.initialAnalysisFailureKind ?? null,
     telemetryEvents: state.telemetryEvents,
     agentEvents: state.agentEvents,
     agentToolLogs: state.agentToolLogs,

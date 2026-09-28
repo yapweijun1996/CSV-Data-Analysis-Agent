@@ -25,6 +25,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
     const setColumnAnnotation = useAppStore(state => state.setColumnAnnotation);
     const removeColumnAnnotation = useAppStore(state => state.removeColumnAnnotation);
     const columnProfiles = useAppStore(state => state.columnProfiles);
+    const initialAnalysisFailureKind = useAppStore(state => state.initialAnalysisFailureKind);
     const [isGroupByMode, setIsGroupByMode] = React.useState(false);
     const [annotatingColumn, setAnnotatingColumn] = React.useState<{ name: string; rect: DOMRect } | null>(null);
 
@@ -194,7 +195,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                         </div>
                     )}
 
-                    {cleaningRun && cleaningRun.status !== 'completed' && (
+                    {cleaningRun && cleaningRun.status !== 'completed' && initialAnalysisFailureKind !== 'provider' && (
                         <CleaningRunBanner
                             cleaningRun={cleaningRun}
                             onContinue={() => void resumeCleaningRun()}
