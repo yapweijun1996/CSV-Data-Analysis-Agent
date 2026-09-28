@@ -7,6 +7,7 @@ Date: 2026-09-28. React source and checked-in static build tested in Chromium an
 | Upload and consent | File chooser works with keyboard Enter; provider consent precedes cloud AI. Automated analysis completed 9/9. Same-file retry is supported. |
 | Settings and provider | Default gateway **Test Connection** succeeded for `gpt-5.4-mini`. Provider tab changes and Cancel preserved saved selection. Mobile controls measured at least 44px; no 390px viewport overflow. |
 | Pi Assistant | Asked for a new card with average resale price and row count by Town over all 90 rows. Pi created **Resale Price by Town**, with 3 rows: averages 419,625 / 422,375 / 425,125 and 30 records per Town. The chat card link navigated to it. [Card screenshot](pi-card-e2e.png). |
+| Live public HDB demo | On the deployed GitHub Pages app, **Load Full Raw HDB Data** imported 982,589 original rows in read-only mode and completed automated analysis 9/9. Pi created **Avg Resale Price by Town** with 27 Towns and a transaction-count series. Showing all 27 table rows yielded a transaction-count sum of exactly 982,589, confirming full-dataset coverage rather than the 2,000-row preview. The card is marked Unverified under the current evidence policy. [Live card screenshot](pi-live-hdb-card.png). |
 | Cards and report | Simple/Explore switch, Pie → Bar, full data table, card CSV/PNG/HTML export worked. Downloaded PNG was 732 × 1354; HTML contained all three Towns and the expected averages. Analyst report completed all seven stages with caveats; Open Report worked. Export PDF invoked browser print; a PDF file was not separately inspected. |
 | Data Explorer | Preview, filter, aggregate, duplicate candidates, and null/blank templates returned plausible results. Search and local sort worked. A historical AI query whose preview rows were not saved now says **Preview unavailable** rather than incorrectly saying no rows match. |
 | History | Saved report restored after selecting the original CSV. The Pi-created card and prior cards returned in both source and static build. A same-name file with changed contents was rejected in the source browser; selecting the correct CSV afterward restored successfully. The card evidence version matched the restored analysis dataset. |
@@ -23,6 +24,6 @@ Date: 2026-09-28. React source and checked-in static build tested in Chromium an
 
 ## Verification limits
 
-- The synthetic CSV confirms the main Pi and UI journey, but this audit did not rerun every path against the full 79 MB official HDB demo.
+- The full HDB demo was tested for import, initial analysis, and Pi card creation. The other UI journeys above were tested with the synthetic CSV, not repeated against every row of the full demo.
 - PDF generation stopped at the browser print action; no produced PDF was inspected.
 - Browser offline/update behavior and every possible CSV structure were not exercised.
