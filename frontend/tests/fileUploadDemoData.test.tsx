@@ -92,7 +92,7 @@ describe('FileUpload demo data button', () => {
         expect(screen.getByRole('status')).toHaveTextContent(
             'Upload will be available as soon as the workspace is ready.',
         );
-        expect(screen.getByLabelText('Preparing upload…')).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Preparing upload…' })).toBeDisabled();
         expect(screen.getByRole('button', { name: 'Load Full Raw HDB Data' })).toBeDisabled();
 
         fireEvent.click(screen.getByRole('button', { name: 'Load Full Raw HDB Data' }));

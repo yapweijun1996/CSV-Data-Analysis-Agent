@@ -1,6 +1,6 @@
 import React from 'react';
 import type { AppLanguage, CsvData } from '../../types';
-import type { DatabaseModalQueryActivity } from './databaseModalQueryActivity';
+import { hasUnavailableQueryPreview, type DatabaseModalQueryActivity } from './databaseModalQueryActivity';
 import { summarizeTraceContract } from '../../services/agent/traceContractView';
 import { getTranslation } from '../../utils/localization';
 
@@ -240,7 +240,9 @@ export const DatabaseModalSidebar: React.FC<DatabaseModalSidebarProps> = ({
                                     <span>{getTranslation('explorer_rows_count', language, { count: `${activity.result.returnedRows} / ${activity.result.totalMatchedRows}` })}</span>
                                     <span>{activity.result.durationMs} ms</span>
                                     <span>{getTranslation(
-                                        activity.result.truncated
+                                        hasUnavailableQueryPreview(activity)
+                                            ? 'explorer_preview_unavailable'
+                                            : activity.result.truncated
                                             ? 'explorer_preview_truncated'
                                             : 'explorer_preview_complete',
                                         language,

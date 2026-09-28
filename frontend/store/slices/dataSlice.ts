@@ -36,6 +36,7 @@ import { trimProgressMessages } from '../../utils/storeLimits';
 import { createWorkerDiagnosticsTelemetryReporter } from '../../services/workers/workerDiagnostics';
 import { getOriginalData } from '../../services/storageService';
 import { buildColumnRegistry, buildEffectiveColumnRegistryFromState, getAllowedColumns } from '../../services/data/columnRegistry';
+import { captureHistoryAnalysisSnapshot, getRestoredHistoryAnalysisState } from '../../services/agent/orchestration/historyAnalysisRestore';
 
 export interface IDataSlice {
     addProgress: (message: string, type?: 'system' | 'warning' | 'error', model?: string) => void;
@@ -346,6 +347,7 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
         // look like a fresh import and can carry unrelated session state into
         // the newly selected dataset.
         const restoreBundle = resolvePendingDatasetBundleRestore(get());
+        const restoreSnapshot = restoreBundle ? captureHistoryAnalysisSnapshot(get()) : null;
         // Commit the intake lock before the first dynamic import. This function
         // is called directly from the upload event, so React can paint the busy
         // state as soon as the handler yields instead of leaving WebKit on the
@@ -357,7 +359,7 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
         }));
         const { orchestrateFileUpload } = await import('../../services/agent/orchestration/fileOrchestrator');
         try {
-            for await (const update of orchestrateFileUpload(file, storeApi, { restoreBundle })) {
+            for await (const update of orchestrateFileUpload(file, storeApi, { restoreBundle, restoreSnapshot })) {
                 switch (update.type) {
                     case 'progress':
                         get().addProgress(update.message, update.messageType, update.model);
@@ -384,7 +386,10 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
                 isBusy: false,
                 chatLifecycleState: 'idle' as const,
                 currentView: 'file_upload',
+                csvData: null,
+                canonicalCsvData: null,
                 ...(restoreBundle ? { datasetBundle: restoreBundle } : {}),
+                ...(restoreSnapshot ? getRestoredHistoryAnalysisState(restoreSnapshot, restoreSnapshot.workspaceFiles) : {}),
             });
         }
     };

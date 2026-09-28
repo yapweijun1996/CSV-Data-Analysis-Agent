@@ -20,6 +20,13 @@ export interface DatabaseModalQueryActivity {
     traceContract?: QueryTraceEntry['traceContract'];
 }
 
+export const hasUnavailableQueryPreview = (activity: DatabaseModalQueryActivity | null): boolean => Boolean(
+    activity
+    && activity.source === 'history'
+    && activity.result.returnedRows > 0
+    && activity.result.previewRows.length === 0,
+);
+
 const toDate = (value: Date) => value instanceof Date ? value : new Date(value);
 
 const getActivitySignature = (activity: Pick<DatabaseModalQueryActivity, 'appliedAt' | 'engine' | 'sqlPreview' | 'tableName' | 'loadVersion'>) => [

@@ -51,5 +51,6 @@ describe('DatabaseModalSidebar', () => {
         expect(screen.getAllByText(/query_trace_recorded/i).length).toBeGreaterThan(0);
         expect(screen.getAllByText(/semantic_recovery/i).length).toBeGreaterThan(0);
         expect(screen.getByText(/runtime_v1/i)).toBeInTheDocument();
+        expect(screen.getByText('Preview unavailable')).toBeInTheDocument();
     });
 });

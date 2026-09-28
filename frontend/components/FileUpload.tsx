@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { shallow } from 'zustand/shallow';
 import { useAppStore } from '../store/useAppStore';
 import { IconApiKeyRequired } from '../icons/IconApiKeyRequired';
@@ -39,6 +39,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
 
     const [dragActive, setDragActive] = useState(false);
     const [demoLoadState, setDemoLoadState] = useState<'idle' | 'loading' | 'error'>('idle');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Relative (no leading slash) so it resolves against <base href> in
     // index.html — this app supports deployment from arbitrary subpaths.
@@ -86,6 +87,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
         if (!isApiKeySet || isWorkspaceRestoring) return;
         if (e.target.files && e.target.files[0]) {
             handleFileUpload(e.target.files[0]);
+            e.target.value = '';
         }
     };
 
@@ -259,10 +261,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
             </p>
             <p className="mb-2 text-lg text-slate-500">{getTranslation('file_upload_drag_drop', language)}</p>
             <p className="text-slate-600">{getTranslation('file_upload_or', language)}</p>
-            <label
-                htmlFor="file-upload"
-                aria-disabled={isUploadUnavailable}
-                className={`mt-4 rounded-card px-4 py-2 font-bold text-white transition-colors ${
+            <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadUnavailable}
+                className={`mt-4 inline-flex min-h-[44px] items-center justify-center rounded-card px-4 py-2 text-sm font-bold text-white transition-colors ${
                     isUploadUnavailable
                         ? 'cursor-wait bg-slate-400'
                         : 'cursor-pointer bg-blue-600 hover:bg-blue-700'
@@ -271,8 +274,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
                 {isWorkspaceRestoring
                     ? getTranslation('file_upload_preparing_action', language)
                     : getTranslation('file_upload_select', language)}
-            </label>
-            <input id="file-upload" type="file" accept=".csv" onChange={handleChange} className="hidden" disabled={isUploadUnavailable} />
+            </button>
+            <input ref={fileInputRef} id="file-upload" type="file" accept=".csv" onChange={handleChange} className="hidden" disabled={isUploadUnavailable} tabIndex={-1} />
 
             {!datasetBundle && <div className="mt-6 w-full max-w-sm rounded-card border border-blue-100 bg-blue-50 p-4 text-center">
                 <p className="text-sm text-slate-600">{getTranslation('file_upload_load_demo_hint', language)}</p>
@@ -280,7 +283,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
                     type="button"
                     onClick={handleLoadDemoData}
                     disabled={isUploadUnavailable || demoLoadState === 'loading'}
-                    className="mt-3 inline-flex items-center justify-center gap-2 rounded-card border-2 border-blue-600 bg-white px-4 py-2 font-bold text-blue-600 transition-colors hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-card border-2 border-blue-600 bg-white px-4 py-2 text-sm font-bold text-blue-600 transition-colors hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {demoLoadState === 'loading' && <IconLoadingSpinner className="h-4 w-4" />}
                     {demoLoadState === 'loading'
@@ -292,7 +295,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
                 )}
             </div>}
 
-            <p className="mt-4 text-xs text-slate-500">{getTranslation('data_privacy_note', language)}</p>
+            <p className="mt-4 max-w-sm text-center text-sm leading-5 text-slate-500">{getTranslation('data_privacy_note', language)}</p>
         </div>
     );
 };

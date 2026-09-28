@@ -7,6 +7,7 @@ import type { CsvRow, WorkspaceDataQueryRequest, WorkspaceQueryRunOutcome, Works
 import {
     buildDatabaseModalQueryActivityFromOutcome,
     buildDatabaseModalQueryActivities,
+    hasUnavailableQueryPreview,
     type DatabaseModalQueryActivity,
 } from './databaseModalQueryActivity';
 import { DatabaseModalSidebar } from './DatabaseModalSidebar';
@@ -230,6 +231,8 @@ export const DatabaseModal: React.FC = () => {
         : getTranslation('explorer_no_sort_applied', language);
     const emptyStateText = !resolvedQueryActivity
         ? getTranslation('explorer_empty_run_template', language)
+        : hasUnavailableQueryPreview(resolvedQueryActivity) && currentRows.length === 0
+            ? getTranslation('explorer_empty_preview_unavailable', language)
         : currentColumns.length === 0
             ? getTranslation('explorer_empty_no_columns', language)
             : getTranslation('explorer_empty_no_rows', language);
@@ -458,8 +461,8 @@ export const DatabaseModal: React.FC = () => {
                         </details>
                     </section>
 
-                    <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto xl:grid-cols-[minmax(0,1fr)_360px] xl:grid-rows-1 xl:overflow-hidden">
-                        <div className="space-y-4 pr-1 xl:min-h-0 xl:overflow-y-auto">
+                    <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto xl:grid-cols-[minmax(0,1fr)_360px] xl:grid-rows-1 xl:overflow-hidden">
+                        <div className="min-w-0 space-y-4 pr-1 xl:min-h-0 xl:overflow-y-auto">
                             <DatabaseWorkspaceQueryComposer
                                 availableColumns={availableColumns}
                                 groupableColumns={groupableColumns}
@@ -476,7 +479,7 @@ export const DatabaseModal: React.FC = () => {
                                 language={language}
                             />
 
-                            <section className="rounded-card border border-slate-200 bg-white shadow-sm">
+                            <section className="min-w-0 rounded-card border border-slate-200 bg-white shadow-sm">
                                 {queryRunState.status === 'succeeded' ? (
                                     <div role="status" className="border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
                                         {getTranslation('explorer_query_completed', language, {

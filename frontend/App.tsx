@@ -196,7 +196,7 @@ const App: React.FC = () => {
     const renderMainContent = () => {
         if (currentView === 'file_upload' || !csvData) {
             return (
-                <div className="h-full">
+                <div className="min-h-min" style={{ height: `calc(100% - ${headerHeight}px)` }}>
                     <FileUpload isWorkspaceRestoring={isAppInitializing} />
                 </div>
             );

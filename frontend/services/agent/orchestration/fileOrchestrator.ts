@@ -20,6 +20,8 @@ import { hasDeclinedCloudAiConsent } from '../../privacy/cloudAiConsent';
 import { isInitialAnalysisProviderFailure } from '../runtime/pi/initialAnalysisFailure';
 import { persistCurrentAppSessionSnapshot } from '../../persistence/currentSessionPersistence';
 import { replayDatasetBundlePrograms } from '../../data/datasetBundleReplay';
+import { canRestoreHistoryAnalysis, getRestoredHistoryAnalysisState, type HistoryAnalysisSnapshot } from './historyAnalysisRestore';
+import { orchestrateAutonomousAiCleaning } from './autonomousCleaningPipeline';
 
 // Define the update types the orchestrator can produce
 export type FileOrchestrationUpdate = 
@@ -203,7 +205,7 @@ const runPostImportPipeline = (
 export async function* orchestrateFileUpload(
     file: File,
     store: StoreApi,
-    options: { restoreBundle?: DatasetBundle | null } = {},
+    options: { restoreBundle?: DatasetBundle | null; restoreSnapshot?: HistoryAnalysisSnapshot | null } = {},
 ): AsyncGenerator<FileOrchestrationUpdate, void, unknown> {
     const { getState, setState } = store;
     const _orchestrationStart = performance.now();
@@ -345,6 +347,8 @@ export async function* orchestrateFileUpload(
         datasetBundle,
     } = processorResult;
 
+    let sourceVerified = false;
+    let verifiedReplay = false;
     if (options.restoreBundle) {
         const sourceMatches = options.restoreBundle.source.fileName === datasetBundle.source.fileName
             && options.restoreBundle.source.byteSize === datasetBundle.source.byteSize
@@ -352,11 +356,13 @@ export async function* orchestrateFileUpload(
         if (!sourceMatches) {
             throw new Error('The selected CSV does not match the saved source fingerprint. Select the original file to restore this analysis.');
         }
+        sourceVerified = true;
         const replay = replayDatasetBundlePrograms({
             bundle: options.restoreBundle,
             currentData: dataForAnalysis,
         });
         if (replay.status === 'replayed') {
+            verifiedReplay = true;
             dataForAnalysis = replay.data;
             canonicalCsvData = null;
             datasetBundle = options.restoreBundle;
@@ -396,6 +402,13 @@ export async function* orchestrateFileUpload(
     }
 
     const materialDataset = canonicalCsvData ?? dataForAnalysis;
+    const restoredAnalysis = canRestoreHistoryAnalysis(
+        options.restoreSnapshot,
+        verifiedReplay,
+        getCsvDatasetVersion(materialDataset),
+    ) && options.restoreSnapshot.analysisDatasetVersion === getCsvDatasetVersion(materialDataset)
+        ? options.restoreSnapshot
+        : null;
     const persistOriginalSnapshot = async () => {
         const sessionId = getState().sessionId;
         if (!sessionId || dataForAnalysis.backing?.ephemeral) return;
@@ -475,6 +488,7 @@ export async function* orchestrateFileUpload(
         initialAnalysisFailureKind: null,
         cleaningRun: createCleaningRun(),
         duckDbSessionStatus: createBindingDuckDbSessionStatus(getState().duckDbSessionStatus),
+        ...(restoredAnalysis ? getRestoredHistoryAnalysisState(restoredAnalysis, workspaceFiles) : {}),
     } };
     console.log(`${LOG_PREFIX} Imported dataset state committed.`, {
         currentView: getState().currentView,
@@ -498,6 +512,79 @@ export async function* orchestrateFileUpload(
     }).catch(error => {
         console.warn(`${LOG_PREFIX} Could not restore optional AI memory history.`, error);
     });
+
+    let verifiedAnalysis = restoredAnalysis;
+    let restoredCanonicalDataset: CsvData | null = null;
+    if (!verifiedAnalysis && sourceVerified && options.restoreSnapshot) {
+        try {
+            await orchestrateAutonomousAiCleaning(store);
+            // The intake's canonical preview may still point at pre-cleaning
+            // rows. Cleaning commits the verified primary table to csvData.
+            const preparedDataset = getState().csvData;
+            const preparedMatches = (
+                getState().cleaningRun?.status === 'completed'
+                && preparedDataset
+                && canRestoreHistoryAnalysis(
+                    options.restoreSnapshot,
+                    true,
+                    getCsvDatasetVersion(preparedDataset),
+                )
+            );
+            const analysisVersion = options.restoreSnapshot.analysisDatasetVersion;
+            const cleanedIsAnalysis = preparedMatches
+                && analysisVersion === getCsvDatasetVersion(preparedDataset);
+            const importedIsAnalysis = preparedMatches
+                && analysisVersion === getCsvDatasetVersion(materialDataset);
+            if (cleanedIsAnalysis || importedIsAnalysis) {
+                verifiedAnalysis = options.restoreSnapshot;
+                restoredCanonicalDataset = cleanedIsAnalysis ? null : materialDataset;
+                setState({
+                    ...getRestoredHistoryAnalysisState(verifiedAnalysis, getState().workspaceFiles),
+                    canonicalCsvData: restoredCanonicalDataset,
+                });
+            }
+        } catch (error) {
+            console.warn(`${LOG_PREFIX} Could not reproduce the saved prepared dataset; starting a fresh analysis.`, error);
+        }
+    }
+
+    if (verifiedAnalysis) {
+        updateAgentTaskStatus(store, {
+            status: 'done',
+            title: 'Saved analysis restored',
+            subtitle: 'The source fingerprint and prepared dataset version matched the saved report.',
+            totalSteps: 1,
+            currentStep: 1,
+        });
+        yield {
+            type: 'progress',
+            message: 'Restored saved cards and report after verifying the source and prepared dataset version.',
+        };
+        void getState().refreshDuckDbSession().catch(error => {
+            console.warn(`${LOG_PREFIX} Query session refresh after history restore failed.`, error);
+        });
+        if (verifiedAnalysis.vectorStoreDocuments.length > 0
+            && verifiedAnalysis.vectorStoreDocuments.every(doc => Array.isArray(doc.embedding) && doc.embedding.length > 0)) {
+            void vectorStore.rehydrate(verifiedAnalysis.vectorStoreDocuments).catch(error => {
+                console.warn(`${LOG_PREFIX} Optional memory rehydration after history restore failed.`, error);
+            });
+        }
+        await persistOriginalSnapshot();
+        try {
+            await persistCurrentAppSessionSnapshot(getState());
+        } catch (error) {
+            console.warn(`${LOG_PREFIX} Could not persist the restored current session.`, error);
+        }
+        return;
+    }
+
+    if (options.restoreSnapshot && sourceVerified) {
+        yield {
+            type: 'progress',
+            messageType: 'warning',
+            message: 'The original source matched, but the prepared dataset version could not be reproduced. Saved cards were not reused; a fresh analysis will run.',
+        };
+    }
 
     // FIX: `isApiKeySet` is not a property on the store state. It must be derived from the `settings` object.
     const settings = getState().settings;

@@ -274,6 +274,7 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
     'explorer_empty_run_template': { 'English': 'Run a query template to populate the result grid.', 'Mandarin': '运行查询模板后，结果会显示在这里。', 'Japanese': 'クエリテンプレートを実行すると結果がここに表示されます。' },
     'explorer_empty_no_columns': { 'English': 'This result does not contain any visible columns.', 'Mandarin': '此结果没有可显示的列。', 'Japanese': 'この結果には表示できる列がありません。' },
     'explorer_empty_no_rows': { 'English': 'No rows match the current search.', 'Mandarin': '没有数据行符合当前搜索。', 'Japanese': '現在の検索に一致する行はありません。' },
+    'explorer_empty_preview_unavailable': { 'English': 'No row preview was saved for this query. Run a query template to inspect the current dataset.', 'Mandarin': '此查询没有保存数据行预览。运行查询模板以检查当前数据集。', 'Japanese': 'このクエリの行プレビューは保存されていません。現在のデータセットを確認するには、クエリテンプレートを実行してください。' },
     'explorer_sidebar_hint': { 'English': 'Inspect the selected result, reload its template, or rerun it against the current dataset.', 'Mandarin': '检查所选结果、载入其模板，或针对当前数据集重新运行。', 'Japanese': '選択した結果を確認し、テンプレートの再読み込みや現在のデータでの再実行ができます。' },
     'explorer_recorded': { 'English': 'Recorded', 'Mandarin': '记录数', 'Japanese': '記録数' },
     'explorer_file': { 'English': 'File', 'Mandarin': '文件', 'Japanese': 'ファイル' },
@@ -293,6 +294,7 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
     'explorer_needs_review': { 'English': 'Needs review', 'Mandarin': '需要复核', 'Japanese': '要確認' },
     'explorer_preview_truncated': { 'English': 'Preview limited', 'Mandarin': '预览已限制', 'Japanese': 'プレビュー制限あり' },
     'explorer_preview_complete': { 'English': 'Preview complete', 'Mandarin': '预览完整', 'Japanese': 'プレビュー完了' },
+    'explorer_preview_unavailable': { 'English': 'Preview unavailable', 'Mandarin': '预览不可用', 'Japanese': 'プレビューなし' },
     'explorer_no_history': { 'English': 'No query history yet. Run a template or ask the Assistant to explore this dataset.', 'Mandarin': '暂无查询历史。请运行模板或让助手探索此数据集。', 'Japanese': 'クエリ履歴はまだありません。テンプレートを実行するか、アシスタントにデータ探索を依頼してください。' },
     'executive_overview': {
         'English': 'Executive Overview',

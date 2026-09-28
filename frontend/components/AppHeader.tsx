@@ -6,6 +6,7 @@ import { IconHistory } from '../icons/IconHistory';
 import { IconShowAssistant } from '../icons/IconShowAssistant';
 import { IconChangeGoal } from '../icons/IconChangeGoal';
 import { IconCode } from '../icons/IconCode';
+import { IconMoreHorizontal } from '../icons/IconMoreHorizontal';
 import {
     shouldShowAssistantToggleButton,
     shouldShowChangeGoalButton,
@@ -197,7 +198,7 @@ export const AppHeader: React.FC = () => {
                         aria-disabled={!showAnalysisTools}
                         disabled={!showAnalysisTools}
                     >
-                       <IconCode className="h-5 w-5 m-0" />
+                       <IconCode className="m-0 h-6 w-6 md:h-5 md:w-5" />
                        <span className="hidden md:inline">{getTranslation('header_data_explorer', language)}</span>
                     </button>
                 )}
@@ -214,7 +215,7 @@ export const AppHeader: React.FC = () => {
                             aria-expanded={isAdvancedOpen}
                             onClick={() => setIsAdvancedOpen(open => !open)}
                         >
-                            <IconCode className="h-5 w-5 m-0" />
+                            <IconMoreHorizontal className="h-6 w-6 md:h-5 md:w-5" />
                             <span className="hidden md:inline">{getTranslation('header_advanced', language)}</span>
                         </button>
                         {isAdvancedOpen && createPortal(

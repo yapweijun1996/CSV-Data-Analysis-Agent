@@ -210,7 +210,7 @@ export const SettingsModal: React.FC = () => {
                 aria-modal="true"
                 aria-labelledby="settings-dialog-title"
                 tabIndex={-1}
-                className="flex max-h-[80vh] w-full max-w-md flex-col rounded-card border border-slate-200 bg-white shadow-xl"
+                className="flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col rounded-card border border-slate-200 bg-white shadow-xl sm:max-h-[80vh]"
                 onClick={e => e.stopPropagation()}
             >
                 <header className="shrink-0 border-b border-slate-200 px-4 py-3">
@@ -224,13 +224,13 @@ export const SettingsModal: React.FC = () => {
                                 {getTranslation('settings_ai_provider', language)}
                             </label>
                             <div className="flex gap-2 rounded-card bg-slate-200 p-1">
-                                <button onClick={() => handleProviderChange('default')} className={`w-full rounded-md py-1.5 text-sm font-medium transition-colors ${settings.provider === 'default' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
+                                <button onClick={() => handleProviderChange('default')} className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === 'default' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
                                     {getTranslation('settings_ai_provider_default_label', language)}
                                 </button>
-                                <button onClick={() => handleProviderChange('google')} className={`w-full rounded-md py-1.5 text-sm font-medium transition-colors ${settings.provider === 'google' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
+                                <button onClick={() => handleProviderChange('google')} className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === 'google' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
                                     Google Gemini
                                 </button>
-                                <button onClick={() => handleProviderChange('openai')} className={`w-full rounded-md py-1.5 text-sm font-medium transition-colors ${settings.provider === 'openai' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
+                                <button onClick={() => handleProviderChange('openai')} className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === 'openai' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
                                     OpenAI
                                 </button>
                             </div>
@@ -291,7 +291,7 @@ export const SettingsModal: React.FC = () => {
                                 type="button"
                                 onClick={handleTestConnection}
                                 disabled={testStatus === 'testing'}
-                                className={`w-full rounded-md py-1.5 text-sm font-medium transition-colors ${
+                                className={`min-h-[44px] w-full rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                                     testStatus === 'testing'
                                         ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
                                         : 'bg-emerald-600 text-white hover:bg-emerald-700'
@@ -382,7 +382,7 @@ export const SettingsModal: React.FC = () => {
                                 name="reasoningEffort"
                                 value={settings.reasoningEffort ?? 'medium'}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                             >
                                 {reasoningEffortLevels.map(level => (
                                     <option key={level} value={level}>
@@ -405,7 +405,7 @@ export const SettingsModal: React.FC = () => {
                                 value={settings.language}
                                 onChange={handleInputChange}
                                 options={languages}
-                                className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                             />
                             <p className="text-xs text-slate-500 mt-1">
                                 {getTranslation('settings_agent_language_hint', language)}
@@ -448,7 +448,7 @@ export const SettingsModal: React.FC = () => {
                                         max={MAX_MAX_AGENT_TURNS}
                                         value={settings.maxAgentTurns ?? DEFAULT_MAX_AGENT_TURNS}
                                         onChange={handleInputChange}
-                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
                                         {getTranslation('settings_max_agent_turns_hint', language, { min: MIN_MAX_AGENT_TURNS, max: MAX_MAX_AGENT_TURNS })}
@@ -467,7 +467,7 @@ export const SettingsModal: React.FC = () => {
                                         max={MAX_TOOL_OUTPUT_CUTOFF}
                                         value={settings.toolOutputCutoff ?? DEFAULT_TOOL_OUTPUT_CUTOFF}
                                         onChange={handleInputChange}
-                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
                                         {getTranslation('settings_tool_output_cutoff_hint', language, { min: MIN_TOOL_OUTPUT_CUTOFF, max: MAX_TOOL_OUTPUT_CUTOFF })}
@@ -537,13 +537,13 @@ export const SettingsModal: React.FC = () => {
                     <div className="flex justify-end gap-2">
                         <button
                             onClick={onClose}
-                            className="rounded-md bg-slate-200 px-3 py-1.5 text-slate-800 transition-colors hover:bg-slate-300"
+                            className="min-h-[44px] rounded-md bg-slate-200 px-4 py-2 text-sm text-slate-800 transition-colors hover:bg-slate-300"
                         >
                             {getTranslation('settings_cancel', language)}
                         </button>
                         <button
                             onClick={handleSave}
-                            className="rounded-md bg-blue-600 px-3 py-1.5 font-semibold text-white transition-colors hover:bg-blue-700"
+                            className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                         >
                             {getTranslation('settings_save', language)}
                         </button>

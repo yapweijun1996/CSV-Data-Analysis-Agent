@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { AnalysisPlan, CsvRow } from '../types';
-import { formatAnalysisCellValue, formatAnalysisMeasureValue, getAnalysisColumnLabels, getNumericColumns, normalizeCategoryLabel } from '../utils/analysisCardPresentation';
+import { coerceNumericValue, formatAnalysisCellValue, formatAnalysisMeasureValue, getAnalysisColumnLabels, getNumericColumns, normalizeCategoryLabel } from '../utils/analysisCardPresentation';
 import { collectOrderedColumnNames } from '../services/data/columnRegistry';
 import { getTranslation } from '../utils/localization';
 import { useAppStore } from '../store/useAppStore';
@@ -95,7 +95,10 @@ const DataTableComponent: React.FC<DataTableProps> = ({ data, plan, displayColum
                             <tr key={rowIndex} className="border-b border-slate-200 last:border-b-0">
                                 {headers.map(header => {
                                     const displayValue = numericColumns.has(header)
-                                        ? formatAnalysisMeasureValue(row[header])
+                                        ? formatAnalysisMeasureValue(
+                                            row[header],
+                                            /(^|_)count($|_)/i.test(header) && Number.isInteger(coerceNumericValue(row[header])) ? 0 : 2,
+                                        )
                                         : formatAnalysisCellValue(header, row[header]);
 
                                     return (
