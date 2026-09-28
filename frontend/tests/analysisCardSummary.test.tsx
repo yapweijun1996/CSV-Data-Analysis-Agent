@@ -15,6 +15,27 @@ afterEach(() => {
 });
 
 describe('AnalysisCardSummary', () => {
+    it('does not claim an Others bucket is hidden when all groups are visible', () => {
+        render(<AnalysisCardSummary
+            cardId="all-groups"
+            plan={{ ...plan, aggregation: 'count' }}
+            totalValue={135}
+            overallTotalValue={135}
+            displayedRowCount={27}
+            totalRowCount={27}
+            displayedMetricLabel="Count Rows"
+            displayedGroupLabel="Town"
+            topN={null}
+            hideOthers={true}
+            hiddenLabelCount={0}
+            language="English"
+        />);
+
+        expect(screen.getByText('Full dataset')).toBeInTheDocument();
+        expect(screen.queryByText('"Others" hidden')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Scope: Full dataset; "Others" hidden/)).not.toBeInTheDocument();
+    });
+
     it('describes table-only results without promising a chart', () => {
         render(<AnalysisCardSummary
             cardId="table-only"

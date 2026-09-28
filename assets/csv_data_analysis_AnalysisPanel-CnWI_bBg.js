@@ -1,16 +1,16 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports, r as reactDomExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-Csj8Hd6A.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-CTTp8qpO.js";
 import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as getBarChartReadabilityHints, aX as PIVOT_FOLDED_OTHERS_KEY, aY as collectOrderedColumnNames, aZ as getNumericColumns, a_ as getAnalysisColumnLabels, a$ as coerceNumericValue, b0 as formatAnalysisCellValue, b1 as isProviderConfigured, b2 as createProviderModel, b3 as resolveCardTrustDecision, b4 as getLocalizedText, b5 as evaluateChartPresentation, b6 as getAvailableChartTypes, b7 as isTimeLikeDimensionColumn, b8 as buildStackedPivotChartPlan, b9 as getPivotCardQualitySummary, ba as normalizeDisplayLabel, bb as isUsableReportTitle, bc as isLatestReportPartial, bd as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, be as resolveAnalysisCompletionGate, bf as buildDisplayAnalysisIr, bg as DEFAULT_AUTO_ANALYSIS_GOAL, bh as buildExecutiveKpis, bi as resolveEffectiveReportContext, bj as shouldShowDataWarnings, bk as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-D8-dGKW6.js";
-import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-BcDkep5Z.js";
+import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-cW2KBJir.js";
 import { C as Chart, p as plugin, a as plugin$1, M as Masonry } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import { e as exportToHtml, a as exportToCsv, b as exportToPng } from "./csv_data_analysis_exportUtils-DfKSpD2m.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
 import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-D7JHuTAm.js";
 import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-2V0oRz3I.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
-import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-Doqce9NC.js";
+import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-DfoegMKQ.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
 import "./csv_data_analysis_vendor-ai-google-Brpu0J-t.js";
@@ -2065,6 +2065,8 @@ const AnalysisCardSummaryComponent = ({
     return getTranslation("analysis_card_scope_filter", language, { column: filter.column, values });
   }, [filter, language]);
   const formatSummaryMeasure = plan.aggregation === "count" ? formatAnalysisValue : formatAnalysisMeasureValue;
+  const hasFoldedGroups = topN !== null && displayedRowCount < totalRowCount;
+  const showsHiddenOthers = hasAdditiveMeasure && hasFoldedGroups && hideOthers;
   const previewLines = reactExports.useMemo(() => {
     var _a2;
     const lines = [
@@ -2082,12 +2084,12 @@ const AnalysisCardSummaryComponent = ({
         dimension: displayedGroupLabel
       })
     ];
-    if (topN || hasAdditiveMeasure && hideOthers || hiddenLabelCount > 0 || filterLabel) {
+    if (topN || hiddenLabelCount > 0 || filterLabel) {
       const params = {
         scope: scopeLabel,
         hidden: hiddenLabelCount > 0 ? getTranslation("analysis_card_scope_hidden_count", language, { count: String(hiddenLabelCount) }) : getTranslation("analysis_card_scope_no_hidden", language)
       };
-      lines.push(hasAdditiveMeasure ? getTranslation("analysis_card_view_line_focus", language, {
+      lines.push(hasAdditiveMeasure && hasFoldedGroups ? getTranslation("analysis_card_view_line_focus", language, {
         ...params,
         others: hideOthers ? getTranslation("analysis_card_scope_hide_others", language) : getTranslation("analysis_card_scope_include_others", language)
       }) : getTranslation("analysis_card_view_line_focus_non_additive", language, params));
@@ -2103,6 +2105,7 @@ const AnalysisCardSummaryComponent = ({
     hiddenLabelCount,
     hideOthers,
     hasAdditiveMeasure,
+    hasFoldedGroups,
     language,
     overallTotalValue,
     plan.aggregation,
@@ -2186,7 +2189,7 @@ const AnalysisCardSummaryComponent = ({
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200", children: scopeLabel }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200", children: displayedMetricLabel }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200", children: displayedGroupLabel }),
-      hasAdditiveMeasure && hideOthers && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200", children: getTranslation("analysis_card_scope_hide_others", language) }),
+      showsHiddenOthers && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200", children: getTranslation("analysis_card_scope_hide_others", language) }),
       filterLabel && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200", children: filterLabel })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-1 text-slate-800", children: previewLines.map((line, index) => /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "leading-relaxed", children: line }, `summary-preview-${index}`)) }),

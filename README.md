@@ -26,7 +26,7 @@ When the user explicitly asks the main assistant to create a dashboard card, Pi 
 
 Dashboard cards distinguish additive measures (`sum`, `count`) from averages and other non-additive measures. Top N on an average card shows only the selected groups; it does not invent an `Others` average, sum group averages, or display each average as a share of that sum. Dense average comparisons default to a horizontal bar chart, and the full chart scrolls vertically so labels remain readable. The table exposes the full grouped values. Temporal average trends can still use line or area charts.
 
-When SQL evidence is designated table-only, its card opens with the data table visible and omits the chart controls and chart-only export. Count legends display whole numbers.
+When SQL evidence is designated table-only, its card opens with the data table visible and omits the chart controls and chart-only export. Count legends display whole numbers. Full-group views do not claim that an `Others` bucket is hidden.
 
 The app caps model context planning at 200,000 tokens. Pi's provider context starts automatic summarization at an estimated 80% of that window, preserving the system instruction and recent tool-call/result pairs. Its estimate counts non-ASCII text conservatively and retains only recent messages that fit the configured reserve. The transcript stored for UI/history remains intact. If summarization fails, Pi retains the original context and the provider may still reject an oversized request; a successful summary is not inferred from the trigger alone. AI chart and executive summaries state aggregate-row coverage and include up to 24 rows per card so partial samples are not presented as complete series.
 

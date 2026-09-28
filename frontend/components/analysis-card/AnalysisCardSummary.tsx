@@ -85,6 +85,8 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
     const formatSummaryMeasure = plan.aggregation === 'count'
         ? formatAnalysisValue
         : formatAnalysisMeasureValue;
+    const hasFoldedGroups = topN !== null && displayedRowCount < totalRowCount;
+    const showsHiddenOthers = hasAdditiveMeasure && hasFoldedGroups && hideOthers;
     const previewLines = useMemo(() => {
         const lines = [
             hasAdditiveMeasure
@@ -106,14 +108,14 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
             }),
         ];
 
-        if (topN || (hasAdditiveMeasure && hideOthers) || hiddenLabelCount > 0 || filterLabel) {
+        if (topN || hiddenLabelCount > 0 || filterLabel) {
             const params = {
                 scope: scopeLabel,
                 hidden: hiddenLabelCount > 0
                     ? getTranslation('analysis_card_scope_hidden_count', language, { count: String(hiddenLabelCount) })
                     : getTranslation('analysis_card_scope_no_hidden', language),
             };
-            lines.push(hasAdditiveMeasure
+            lines.push(hasAdditiveMeasure && hasFoldedGroups
                 ? getTranslation('analysis_card_view_line_focus', language, {
                     ...params,
                     others: hideOthers ? getTranslation('analysis_card_scope_hide_others', language) : getTranslation('analysis_card_scope_include_others', language),
@@ -136,6 +138,7 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
         hiddenLabelCount,
         hideOthers,
         hasAdditiveMeasure,
+        hasFoldedGroups,
         language,
         overallTotalValue,
         plan.aggregation,
@@ -246,7 +249,7 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
                     <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
                         {displayedGroupLabel}
                     </span>
-                    {hasAdditiveMeasure && hideOthers && (
+                    {showsHiddenOthers && (
                         <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
                             {getTranslation('analysis_card_scope_hide_others', language)}
                         </span>
