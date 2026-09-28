@@ -320,13 +320,15 @@ export const detectReportShape = (data: CsvData | null): ReportShapeProfile => {
     const tabularContext = inferTabularShapeContext(data);
     const explicitHeaderLayout = buildExplicitHeaderLayoutCandidate(data, tabularContext);
     // A flat schema is confirmed when the parser identified metadata rows (strong structural evidence),
-    // OR when the schema's column names are clearly human-readable labels (contain spaces or metric-style
-    // special characters like parentheses/percent signs). Label-style headers indicate a well-parsed
-    // ad-platform export or similar fact table, and running in-body header detection on such files
+    // OR when the schema's column names are clearly labels (spaces, metric-style
+    // punctuation, or descriptive snake_case). Label-style headers indicate a well-parsed
+    // export or similar fact table, and running in-body header detection on such files
     // causes false positives: data rows with 4-8 digit metric values (e.g. Reach=43993) match
     // CODE_LIKE_PATTERN and incorrectly register as wide-crosstab header candidates.
     const schemaColumnNames = getColumns(data);
-    const labelStyleColumnCount = schemaColumnNames.filter(col => /\s/.test(col) || /[()%]/.test(col)).length;
+    const labelStyleColumnCount = schemaColumnNames.filter(col =>
+        /\s/.test(col) || /[()%]/.test(col) || /^[a-z][a-z0-9]*(?:_[a-z][a-z0-9]*)+$/.test(col),
+    ).length;
     const columnNamesAreLabelStyle = schemaColumnNames.length >= 5
         && (labelStyleColumnCount / schemaColumnNames.length) >= 0.5;
     const parserResolvedFlatSchema = Boolean(

@@ -28,6 +28,8 @@ After loading a CSV, open **Pi Lab** from the Assistant header. **Run mock tool 
 
 The app's tool and data policies live with the agent and data services. UI components display state and user decisions; they should not duplicate business rules. The local source backup also contains internal planning notes and a business-report regression corpus; those are not included in this public repository.
 
+Ordinary row-oriented CSV files, including the bundled HDB resale demo, proceed through structure detection without requiring users to assign every column role. The review dialog is reserved for ambiguous report boundaries or transformations that cannot be verified automatically.
+
 ## Develop and verify
 
 Use Node.js `>=22.13 <23` for the source package. Its lockfile pins the dependencies.

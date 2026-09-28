@@ -1,8 +1,8 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_WorkspaceModalEditor-Bmm2k6lc.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js"])))=>i.map(i=>d[i]);
-import { a7 as hasOpenableLatestReport, bJ as buildWorkspaceBundle, bK as isWorkspaceWritablePath, _ as __vitePreload } from "./csv_data_analysis_app-agent-BsxXw77c.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_WorkspaceModalEditor-DnS9RRUE.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js"])))=>i.map(i=>d[i]);
+import { a7 as hasOpenableLatestReport, bJ as buildWorkspaceBundle, bK as isWorkspaceWritablePath, _ as __vitePreload } from "./csv_data_analysis_app-agent-L1_9Zwxf.js";
 import { a as reactExports, j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
-import { u as useAppStore, d as useDialogAccessibility } from "./csv_data_analysis_index-C-xP18IE.js";
+import { u as useAppStore, d as useDialogAccessibility } from "./csv_data_analysis_index-CKyc9sFf.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
 import "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
@@ -29,7 +29,7 @@ const getMonacoLanguage = (language) => {
   }
 };
 const WorkspaceModalEditor = reactExports.lazy(
-  () => __vitePreload(() => import("./csv_data_analysis_WorkspaceModalEditor-Bmm2k6lc.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6]) : void 0, import.meta.url).then((module) => ({ default: module.WorkspaceModalEditor }))
+  () => __vitePreload(() => import("./csv_data_analysis_WorkspaceModalEditor-DnS9RRUE.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6]) : void 0, import.meta.url).then((module) => ({ default: module.WorkspaceModalEditor }))
 );
 const WorkspaceModal = () => {
   const { isOpen, onClose, logAgentToolUsage, workspaceState, openLatestAnalystReport, exportLatestAnalystReportPdf, hasLatestAnalystReport } = useAppStore((store) => ({
