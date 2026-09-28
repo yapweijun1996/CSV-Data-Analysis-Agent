@@ -208,6 +208,8 @@ export interface CsvDatasetBacking {
     rowCount: number;
     sampleRowCount: number;
     byteSize: number;
+    /** Columns returned by the backing DuckDB table, before preview-only annotations. */
+    columnNames?: string[];
     readOnly: true;
     ephemeral: true;
     /** Session-scoped OPFS copy used for recovery/worker hand-off when available. */

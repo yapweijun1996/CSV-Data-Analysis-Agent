@@ -1,5 +1,6 @@
 import type { AppStore } from '../../../store/useAppStore';
 import type {
+    ColumnProfile,
     CsvData,
     EvidenceHarnessContext,
 } from '../../../types';
@@ -24,6 +25,20 @@ export type RefreshedAnalysisContext = {
     qualityGovernance: ReturnType<typeof analyzeDatasetQualityGovernance> | null;
     datasetSemanticSnapshot: AppStore['datasetSemanticSnapshot'];
     semanticDatasetVersion: AppStore['semanticDatasetVersion'];
+};
+
+export const getQueryableColumnProfiles = (
+    data: CsvData,
+    profiles: ColumnProfile[],
+    rawData: CsvData | null | undefined,
+): ColumnProfile[] => {
+    if (data.backing?.mode !== 'duckdb_file') return profiles;
+    const physicalColumns = data.backing.columnNames?.length
+        ? data.backing.columnNames
+        : Object.keys(rawData?.data[0] ?? {});
+    if (physicalColumns.length === 0) return [];
+    const available = new Set(physicalColumns.map(column => column.trim().toLowerCase()));
+    return profiles.filter(profile => available.has(profile.name.trim().toLowerCase()));
 };
 
 export const applyInvestigationSteering = (
@@ -150,7 +165,7 @@ export const refreshAnalysisContext = async (
     const {
         datasetSemanticSnapshot,
         semanticDatasetVersion,
-        columnProfiles,
+        columnProfiles: storedColumnProfiles,
         reportContextResolution,
         dataPreparationPlan,
     } = store.getState();
@@ -161,6 +176,11 @@ export const refreshAnalysisContext = async (
         semanticDatasetVersion,
     });
     const semanticDataForAnalysis = bindingTarget?.dataset ?? inputData;
+    const columnProfiles = getQueryableColumnProfiles(
+        semanticDataForAnalysis,
+        storedColumnProfiles,
+        store.getState().rawCsvData,
+    );
     const hiddenSemanticRows = getSemanticHiddenRowCount(
         datasetSemanticSnapshot,
         semanticDatasetVersion,

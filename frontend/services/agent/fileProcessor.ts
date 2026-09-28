@@ -197,6 +197,7 @@ export async function* processAndCleanFile(file: File, store: StoreApi): AsyncGe
             rowCount: loaded.rowCount,
             sampleRowCount: parsedData.data.length,
             byteSize: file.size,
+            columnNames: Object.keys(loaded.preview[0] ?? {}),
             readOnly: true,
             ephemeral: true,
             opfsPath,

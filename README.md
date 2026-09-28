@@ -30,6 +30,8 @@ The app's tool and data policies live with the agent and data services. UI compo
 
 Ordinary row-oriented CSV files, including the bundled HDB resale demo, proceed through structure detection without requiring users to assign every column role. The review dialog is reserved for ambiguous report boundaries or transformations that cannot be verified automatically.
 
+For large CSVs backed directly by DuckDB, analysis queries use the columns returned by the backing table. Preview-only lineage and row-role annotations remain available in the interface but are excluded from SQL planning unless they are actual source columns.
+
 ## Develop and verify
 
 Use Node.js `>=22.13 <23` for the source package. Its lockfile pins the dependencies.

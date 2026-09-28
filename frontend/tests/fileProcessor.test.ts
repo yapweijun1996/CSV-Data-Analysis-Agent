@@ -515,6 +515,7 @@ describe('processAndCleanFile', () => {
             mode: 'duckdb_file',
             rowCount: 982_589,
             sampleRowCount: 2,
+            columnNames: ['month', 'town', 'resale_price'],
             readOnly: true,
             ephemeral: true,
         });
