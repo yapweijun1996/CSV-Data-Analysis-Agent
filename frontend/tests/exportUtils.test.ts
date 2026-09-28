@@ -110,4 +110,21 @@ describe('analysis exports', () => {
         expect(capturedRoot.querySelector('[data-analysis-export-metadata]')).toBeNull();
         expect(root.querySelector('[data-analysis-export-metadata]')).toBeNull();
     });
+
+    it('captures every row of a vertically scrollable chart and restores its viewport', async () => {
+        const root = document.createElement('div');
+        const chartScroll = document.createElement('div');
+        chartScroll.className = 'max-h-[540px] overflow-y-auto';
+        chartScroll.dataset.exportChartScroll = 'true';
+        root.appendChild(chartScroll);
+        toPngMock.mockImplementationOnce(async () => {
+            expect(chartScroll.style.maxHeight).toBe('none');
+            expect(chartScroll.style.overflowY).toBe('visible');
+            return 'data:image/png;base64,export';
+        });
+
+        expect(await exportToPng(root, 'All Towns')).toEqual({ success: true });
+        expect(chartScroll.style.maxHeight).toBe('');
+        expect(chartScroll.style.overflowY).toBe('');
+    });
 });

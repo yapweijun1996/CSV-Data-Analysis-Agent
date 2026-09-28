@@ -5,9 +5,11 @@ import { getTranslation } from '../../../utils/localization';
 import { createProgressMessage } from '../../../utils/messageState';
 import { trimProgressMessages } from '../../../utils/storeLimits';
 import { DEFAULT_STACKED_PIVOT_COLUMN_TOP_N } from '../../../utils/pivotMatrixCharting';
-import { getRecommendedPivotChartType } from '../../../utils/chartTypeUtils';
+import { getAvailableChartTypes, getRecommendedPivotChartType } from '../../../utils/chartTypeUtils';
+import { isAdditiveAggregation } from '../../../utils/analysisCardPresentation';
 import { applyMultiSeriesUpgrade } from './presentationSkill';
 import { isStructuralMetadataColumn } from '../structuralMetadata';
+import { isTimeLikeDimensionColumn } from '../analysisColumnRoles';
 import { buildAnalysisArtifactProvenance } from '../artifactProvenance';
 import { buildCardSemanticFingerprint } from '../cardSemanticFingerprint';
 
@@ -18,10 +20,21 @@ type StoreApi = {
 
 const LOG_PREFIX = '[CardCreator]';
 
-const resolveDisplayChartType = (plan: AnalysisPlan, rows: CsvRow[]) =>
-    plan.artifactType === 'pivot_matrix'
-        ? getRecommendedPivotChartType(plan, rows)
-        : plan.chartType;
+const resolveDisplayChartType = (plan: AnalysisPlan, rows: CsvRow[]) => {
+    if (plan.artifactType === 'pivot_matrix') {
+        return getRecommendedPivotChartType(plan, rows);
+    }
+    if (
+        !isAdditiveAggregation(plan.aggregation)
+        && rows.length > 12
+        && (plan.chartType === 'bar' || plan.chartType === 'combo')
+        && plan.groupByColumn
+        && !isTimeLikeDimensionColumn(plan.groupByColumn)
+    ) {
+        return 'horizontal_bar';
+    }
+    return getAvailableChartTypes(plan, rows)[0];
+};
 
 const buildFallbackSummary = (
     title: string,
@@ -161,6 +174,7 @@ export const createNewCard = async (
     console.log(`${LOG_PREFIX} Generated summary for "${displayIr.displayTitle}"`);
 
     const preserveFullSeries = ['line', 'area', 'multi_line'].includes(plan.chartType);
+    const canFoldOthers = isAdditiveAggregation(plan.aggregation);
 
     const newCard: AnalysisCardData = {
         id: `card-${Date.now()}-${Math.random()}`,
@@ -172,7 +186,7 @@ export const createNewCard = async (
         topN: plan.disableTopNControls || preserveFullSeries
             ? null
             : (plan.chartType !== 'scatter' && aggregatedData.length > 15 ? 8 : (plan.defaultTopN || null)),
-        hideOthers: plan.disableTopNControls || preserveFullSeries
+        hideOthers: plan.disableTopNControls || preserveFullSeries || !canFoldOthers
             ? false
             : (plan.chartType !== 'scatter' && aggregatedData.length > 15 ? true : (plan.defaultHideOthers || false)),
         hideZeroValueRows: false,

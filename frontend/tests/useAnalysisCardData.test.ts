@@ -97,6 +97,90 @@ describe('useAnalysisCardData', () => {
         expect(result.current.chartHiddenZeroValueRowCount).toBe(0);
     });
 
+    it('keeps a top-N average card free of a fabricated Others average', () => {
+        mockStore.analysisCards = [{
+            id: 'average-card',
+            plan: {
+                title: 'Average price by Town',
+                description: 'Compare prices.',
+                chartType: 'bar',
+                aggregation: 'avg',
+                groupByColumn: 'Town',
+                valueColumn: 'Avg Price',
+            },
+            aggregatedData: [
+                { Town: 'A', 'Avg Price': 500, 'Transaction Count': 10 },
+                { Town: 'B', 'Avg Price': 400, 'Transaction Count': 20 },
+                { Town: 'C', 'Avg Price': 300, 'Transaction Count': 30 },
+            ],
+            summary: { language: 'English', text: '' },
+            displayChartType: 'bar',
+            isDataVisible: true,
+            topN: 2,
+            hideOthers: true,
+            hiddenLabels: [],
+        }];
+
+        const { result } = renderHook(() => useAnalysisCardData('average-card'));
+
+        expect(result.current.tableDataForDisplay).toEqual([
+            { Town: 'A', 'Avg Price': 500, 'Transaction Count': 10 },
+            { Town: 'B', 'Avg Price': 400, 'Transaction Count': 20 },
+        ]);
+        expect(result.current.dataForLegend).toHaveLength(2);
+        expect(result.current.totalRowCount).toBe(3);
+    });
+
+    it('keeps every average group ranked when switching to All', () => {
+        mockStore.analysisCards = [{
+            id: 'average-card',
+            plan: {
+                title: 'Average price by Town',
+                description: 'Compare prices.',
+                chartType: 'bar',
+                aggregation: 'avg',
+                groupByColumn: 'Town',
+                valueColumn: 'Avg Price',
+            },
+            aggregatedData: [
+                { Town: 'A', 'Avg Price': 300 },
+                { Town: 'B', 'Avg Price': 500 },
+                { Town: 'C', 'Avg Price': 400 },
+            ],
+            topN: null,
+            hideOthers: false,
+            hiddenLabels: [],
+        }];
+
+        const { result } = renderHook(() => useAnalysisCardData('average-card'));
+        expect(result.current.dataForLegend.map(row => row.Town)).toEqual(['B', 'C', 'A']);
+    });
+
+    it('keeps temporal average rows in their original order', () => {
+        mockStore.analysisCards = [{
+            id: 'average-trend',
+            plan: {
+                title: 'Average price by month',
+                description: 'Compare prices over time.',
+                chartType: 'area',
+                aggregation: 'avg',
+                groupByColumn: 'month',
+                valueColumn: 'Avg Price',
+            },
+            aggregatedData: [
+                { month: '2026-01', 'Avg Price': 300 },
+                { month: '2026-02', 'Avg Price': 500 },
+                { month: '2026-03', 'Avg Price': 400 },
+            ],
+            topN: null,
+            hideOthers: false,
+            hiddenLabels: [],
+        }];
+
+        const { result } = renderHook(() => useAnalysisCardData('average-trend'));
+        expect(result.current.dataForLegend.map(row => row.month)).toEqual(['2026-01', '2026-02', '2026-03']);
+    });
+
     it('formats temporal group labels and time-like table columns into DD/MM/YYYY', () => {
         mockStore.analysisCards = [
             {

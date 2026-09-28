@@ -808,6 +808,7 @@ export const buildAnalysisPlanFromPresentation = (
     // all evidence that didn't qualify for a chart.
     if (presentationPlan.presentationMode === 'table') {
         const groupByColumn = evidencePlan.query.groupBy?.[0];
+        const primaryAggregate = evidencePlan.query.aggregates?.[0]?.function;
         const primaryMetric = (evidencePlan.query.aggregates ?? [])
             .map(a => a.as?.trim())
             .find((v): v is string => Boolean(v))
@@ -816,6 +817,9 @@ export const buildAnalysisPlanFromPresentation = (
             chartType: smartDefaultChartType(),
             title: presentationPlan.title,
             description: presentationPlan.description,
+            aggregation: primaryAggregate === 'sum' || primaryAggregate === 'count' || primaryAggregate === 'avg'
+                ? primaryAggregate
+                : undefined,
             groupByColumn,
             valueColumn: primaryMetric,
             preFilter: evidencePlan.preFilter,

@@ -1856,6 +1856,18 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Paparan semasa menunjukkan {visible} daripada {total} entri dan {shown} daripada {overall}.',
         'Japanese': '現在のビューでは {total} 件中 {visible} 件を表示し、{shown} / {overall} をカバーしています。',
     },
+    'analysis_card_view_line_scope_non_additive': {
+        'English': 'Current view shows {visible} of {total} groups. Compare each value separately; these measures cannot be added together.',
+        'Mandarin': '当前视图显示 {visible}/{total} 个分组。请逐项比较数值；这些指标不能相加。',
+        'Malay': 'Paparan semasa menunjukkan {visible} daripada {total} kumpulan. Bandingkan setiap nilai secara berasingan; ukuran ini tidak boleh dijumlahkan.',
+        'Japanese': '現在のビューでは {total} グループ中 {visible} グループを表示しています。各値を個別に比較してください。これらの指標は合算できません。',
+    },
+    'analysis_card_view_line_scope_unknown': {
+        'English': 'Current view shows {visible} of {total} groups. The aggregation type is unavailable, so no combined total is shown.',
+        'Mandarin': '当前视图显示 {visible}/{total} 个分组。聚合类型未记录，因此不显示合计。',
+        'Malay': 'Paparan semasa menunjukkan {visible} daripada {total} kumpulan. Jenis pengagregatan tiada, jadi jumlah gabungan tidak dipaparkan.',
+        'Japanese': '現在のビューでは {total} グループ中 {visible} グループを表示しています。集計種別が不明なため、合計は表示しません。',
+    },
     'analysis_card_view_line_metric': {
         'English': 'This summary is based on {metric} grouped by {dimension}.',
         'Mandarin': '该摘要基于按 {dimension} 聚合的 {metric}。',
@@ -1868,11 +1880,29 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Skop: {scope}; {others}; {hidden}.',
         'Japanese': '範囲: {scope}、{others}、{hidden}。',
     },
+    'analysis_card_view_line_focus_non_additive': {
+        'English': 'Scope: {scope}; {hidden}.',
+        'Mandarin': '范围：{scope}；{hidden}。',
+        'Malay': 'Skop: {scope}; {hidden}.',
+        'Japanese': '範囲: {scope}、{hidden}。',
+    },
     'analysis_card_view_line_ready': {
         'English': 'The visible table, chart, and totals are now aligned for verification.',
         'Mandarin': '当前显示的表格、图表与总计已保持一致，便于核对。',
         'Malay': 'Jadual, carta, dan jumlah yang dipaparkan kini sejajar untuk semakan.',
         'Japanese': '表示中の表、グラフ、合計は照合しやすいように整合しています。',
+    },
+    'analysis_card_view_line_ready_non_additive': {
+        'English': 'The visible table and chart show the same groups for comparison.',
+        'Mandarin': '当前表格与图表显示相同分组，便于比较。',
+        'Malay': 'Jadual dan carta yang dipaparkan menunjukkan kumpulan yang sama untuk perbandingan.',
+        'Japanese': '表示中の表とグラフには、比較できるよう同じグループが示されています。',
+    },
+    'card_chart_scroll_hint': {
+        'English': 'Scroll within the chart to view all {count} groups.',
+        'Mandarin': '在图表内滚动，查看全部 {count} 个分组。',
+        'Malay': 'Tatal dalam carta untuk melihat semua {count} kumpulan.',
+        'Japanese': 'グラフ内をスクロールして全 {count} グループを表示します。',
     },
     'analysis_card_ai_narrative_label': {
         'English': 'Expanded AI narrative',

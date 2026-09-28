@@ -27,6 +27,7 @@ import { buildDisplayAnalysisIrList } from './displayAnalysisIr';
 import { resolveCardTrustDecision } from '../agent/cardTrustDecision';
 import { getTranslation } from '../../utils/localization';
 import { isStructuralMetadataColumn } from '../agent/structuralMetadata';
+import { isAdditiveAggregation } from '../../utils/analysisCardPresentation';
 
 export type { ExecutiveKpi } from './executiveKpiTypes';
 
@@ -72,7 +73,7 @@ const getScopedMetricRows = (
 
     // With "Others" visible, the chart still represents the complete filtered
     // result because the remainder is folded into that synthetic category.
-    if (topN === null || !card.hideOthers) return visibleRows;
+    if (topN === null || (isAdditiveAggregation(card.plan.aggregation) && !card.hideOthers)) return visibleRows;
     return visibleRows.slice(0, topN);
 };
 
@@ -121,7 +122,7 @@ const buildCardScope = (
         ...(card.filter ? [`${card.filter.column} in ${card.filter.values.join(', ')}`] : []),
     ];
 
-    if (explicitTopN !== null && card.hideOthers) {
+    if (explicitTopN !== null && (card.hideOthers || !isAdditiveAggregation(card.plan.aggregation))) {
         return {
             kind: 'top_n',
             sourceCardId: card.id,
@@ -258,12 +259,37 @@ export const buildExecutiveKpis = ({
     const pluralGroupLabel = pluralizeLabel(groupLabel);
     const datasetRowCount = csvData ? getCsvDataRowCount(csvData) : null;
     const scope = buildCardScope(primaryCard, datasetRowCount, pluralGroupLabel, language);
-    const totalValue = metricRows.reduce((sum, entry) => sum + entry.value, 0);
     const topEntry = metricRows[0];
     const rawTopLabel = getRowValue(topEntry.row, primaryIr.groupByColumn ?? primaryCard.plan.groupByColumn);
     const topLabelValue = rawTopLabel != null && String(rawTopLabel).trim() !== ''
         ? String(rawTopLabel).trim()
         : null;
+    if (!isAdditiveAggregation(primaryCard.plan.aggregation)) {
+        return [
+            buildInteractiveKpi({
+                id: 'top-group',
+                label: buildTopGroupKpiLabel(groupLabel, language),
+                value: formatMetricValue(topEntry.value, primaryCard.plan.valueColumn, safeProfiles),
+                detail: buildTopGroupKpiDetail({ topLabelValue, shareValue: null, metricLabel, language }),
+                tone: 'primary',
+                hierarchy: 'primary',
+                sourceCardId: primaryCard.id,
+                scope,
+            }),
+            buildInteractiveKpi({
+                id: 'group-count',
+                label: buildGroupCountKpiLabel(pluralGroupLabel, language),
+                value: metricRows.length.toLocaleString(),
+                detail: buildGroupCountKpiDetail({ pluralGroupLabel, language }),
+                tone: 'neutral',
+                hierarchy: 'secondary',
+                sourceCardId: primaryCard.id,
+                scope,
+            }),
+        ];
+    }
+
+    const totalValue = metricRows.reduce((sum, entry) => sum + entry.value, 0);
     const topEntryShare = totalValue !== 0 ? topEntry.value / totalValue : null;
     const datasetRowDetail = buildTotalMetricKpiDetail({
         rowCount: scope.kind === 'dataset' ? datasetRowCount : null,

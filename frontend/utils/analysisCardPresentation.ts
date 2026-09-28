@@ -31,6 +31,10 @@ export const normalizeCategoryLabel = (value: CsvCellValue): string => {
 
 export const normalizeNumericValue = (value: number): number => (Math.abs(value) < NUMBER_EPSILON ? 0 : value);
 
+/** Only additive aggregates can form a meaningful "Others" total or category share. */
+export const isAdditiveAggregation = (aggregation?: AnalysisPlan['aggregation']): boolean =>
+    aggregation === 'sum' || aggregation === 'count';
+
 export const coerceNumericValue = (value: CsvCellValue): number | null => {
     if (typeof value === 'number' && Number.isFinite(value)) {
         return normalizeNumericValue(value);

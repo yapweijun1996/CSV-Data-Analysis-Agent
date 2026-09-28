@@ -1,7 +1,10 @@
 import { AnalysisPlan, ChartType, CsvRow } from '../types';
 import { DEFAULT_PIVOT_GROUP_KEY, getEffectivePivotMatrixValueColumns } from './pivotMatrixCharting';
+import { isAdditiveAggregation } from './analysisCardPresentation';
+import { isTemporalDisplayColumn } from './temporalDisplay';
 
 const BASE_CHART_TYPES: ChartType[] = ['bar', 'horizontal_bar', 'line', 'area', 'pie', 'doughnut', 'polar_area', 'radar'];
+const NON_ADDITIVE_CHART_TYPES: ChartType[] = ['bar', 'horizontal_bar', 'line'];
 
 // --- Smart chart recommendation based on data characteristics ---
 
@@ -97,11 +100,11 @@ const getRowOnlyPivotChartTypes = (plan: AnalysisPlan, rows: CsvRow[]): ChartTyp
     if (rowCount >= 2) {
         addUnique(types, 'line');
     }
-    if (!hasNegativeValue && rowCount >= 2 && rowCount <= MAX_PIVOT_PIE_ROWS) {
+    if (isAdditiveAggregation(plan.aggregation) && !hasNegativeValue && rowCount >= 2 && rowCount <= MAX_PIVOT_PIE_ROWS) {
         addUnique(types, 'pie');
         addUnique(types, 'doughnut');
     }
-    if (!hasNegativeValue && rowCount >= 3 && rowCount <= MAX_PIVOT_RADAR_ROWS) {
+    if (isAdditiveAggregation(plan.aggregation) && !hasNegativeValue && rowCount >= 3 && rowCount <= MAX_PIVOT_RADAR_ROWS) {
         addUnique(types, 'radar');
     }
 
@@ -111,6 +114,10 @@ const getRowOnlyPivotChartTypes = (plan: AnalysisPlan, rows: CsvRow[]): ChartTyp
 export const getRecommendedPivotChartType = (plan: AnalysisPlan, rows: CsvRow[] = []): ChartType => {
     if (plan.artifactType !== 'pivot_matrix') {
         return plan.chartType || 'bar';
+    }
+
+    if (!isAdditiveAggregation(plan.aggregation)) {
+        return 'bar';
     }
 
     const matrixValueColumns = getPivotMatrixValueColumns(plan, rows);
@@ -142,7 +149,7 @@ export const getAvailableChartTypes = (plan?: AnalysisPlan | null, rows: CsvRow[
     const sourceTypes = plan.artifactType === 'pivot_matrix'
         ? (
             getPivotMatrixValueColumns(plan, rows).length > 1
-                ? STACKED_PIVOT_CHART_TYPES
+                ? (isAdditiveAggregation(plan.aggregation) ? STACKED_PIVOT_CHART_TYPES : NON_ADDITIVE_CHART_TYPES)
                 : getRowOnlyPivotChartTypes(plan, rows)
         )
         : null;
@@ -155,16 +162,23 @@ export const getAvailableChartTypes = (plan?: AnalysisPlan | null, rows: CsvRow[
         return types;
     }
 
-    addUnique(types, preferred);
-
     const hasGroup = Boolean(plan.groupByColumn);
     const hasPrimaryMetric = Boolean(plan.valueColumn) || plan.aggregation === 'count';
     const hasSecondaryMetric = Boolean(plan.secondaryValueColumn && plan.secondaryAggregation);
     const hasXYAxes = Boolean(plan.xValueColumn && plan.yValueColumn);
     const hasBubbleRadius = hasXYAxes && Boolean(plan.valueColumn);
+    const groupedChartTypes = isAdditiveAggregation(plan.aggregation)
+        ? BASE_CHART_TYPES
+        : isTemporalDisplayColumn(plan.groupByColumn)
+            ? [...NON_ADDITIVE_CHART_TYPES, 'area' as ChartType]
+            : NON_ADDITIVE_CHART_TYPES;
+
+    addUnique(types, !groupedChartTypes.includes(preferred) && !['combo', 'scatter', 'bubble', 'multi_line'].includes(preferred)
+        ? 'bar'
+        : preferred);
 
     if (hasGroup && hasPrimaryMetric) {
-        BASE_CHART_TYPES.forEach(type => addUnique(types, type));
+        groupedChartTypes.forEach(type => addUnique(types, type));
         if (hasSecondaryMetric) {
             addUnique(types, 'combo');
         }

@@ -577,6 +577,37 @@ const passGate: EvidenceValueGateResult = {
     semanticRisk: 'low',
 };
 
+describe('table presentation aggregation', () => {
+    it('retains the executed aggregate when chart presentation is table-first', () => {
+        const evidencePlan = makeEvidencePlan();
+        const analysisPlan = buildAnalysisPlanFromPresentation(evidencePlan, {
+            title: 'Revenue by Region',
+            description: 'Inspect revenue by region.',
+            presentationMode: 'table',
+        });
+
+        expect(analysisPlan?.aggregation).toBe('sum');
+        expect(analysisPlan?.valueColumn).toBe('total_revenue');
+    });
+
+    it('retains a non-additive average in table mode', () => {
+        const evidencePlan = makeEvidencePlan({
+            query: {
+                select: ['Region', 'avg_revenue'],
+                groupBy: ['Region'],
+                aggregates: [{ function: 'avg', column: 'Revenue', as: 'avg_revenue' }],
+            },
+        });
+        const analysisPlan = buildAnalysisPlanFromPresentation(evidencePlan, {
+            title: 'Average Revenue by Region',
+            description: 'Inspect average revenue by region.',
+            presentationMode: 'table',
+        });
+
+        expect(analysisPlan?.aggregation).toBe('avg');
+    });
+});
+
 describe('applyPresentationSafetyFloor', () => {
     it('downgrades to table when AI bindings reference columns not in executed output', () => {
         const plan: SqlPresentationPlan = {

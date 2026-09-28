@@ -83,6 +83,40 @@ describe('cardCreator', () => {
         expect(state.progressMessages.at(-1)?.text).toBe('Generated View: Project Cost Distribution');
     });
 
+    it('defaults a dense average comparison to readable horizontal bars without Others', async () => {
+        const { createNewCard } = await import('../services/agent/execution/cardCreator');
+        const state = {
+            analysisCards: [],
+            progressMessages: [],
+            settings: { language: 'English' },
+            columnProfiles: [],
+        } as any;
+        const store = {
+            getState: () => state,
+            setState: (partial: any) => Object.assign(state, typeof partial === 'function' ? partial(state) : partial),
+        };
+        const rows = Array.from({ length: 16 }, (_, index) => ({
+            Town: `Town ${index}`,
+            'Avg Price': 500 - index,
+            'Transaction Count': index + 1,
+        }));
+
+        const card = await createNewCard({
+            title: 'Average Price by Town',
+            description: 'Compare average price and transaction count.',
+            chartType: 'combo',
+            groupByColumn: 'Town',
+            valueColumn: 'Avg Price',
+            aggregation: 'avg',
+            secondaryValueColumn: 'Transaction Count',
+            secondaryAggregation: 'count',
+        }, rows, store);
+
+        expect(card.displayChartType).toBe('horizontal_bar');
+        expect(card.topN).toBe(8);
+        expect(card.hideOthers).toBe(false);
+    });
+
     it('records dataset-version and transformation provenance on every new card', async () => {
         const { createNewCard } = await import('../services/agent/execution/cardCreator');
         const csvData = {

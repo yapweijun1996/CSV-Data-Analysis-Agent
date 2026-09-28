@@ -2,6 +2,57 @@ import { describe, expect, it } from 'vitest';
 import { getAvailableChartTypes, getRecommendedPivotChartType } from '../utils/chartTypeUtils';
 
 describe('getAvailableChartTypes', () => {
+    it('does not offer part-to-whole charts for average metrics', () => {
+        const types = getAvailableChartTypes({
+            chartType: 'pie',
+            aggregation: 'avg',
+            groupByColumn: 'Town',
+            valueColumn: 'Avg Price',
+            title: 'Average Price by Town',
+            description: 'Compare Town averages.',
+        }, [
+            { Town: 'A', 'Avg Price': 500 },
+            { Town: 'B', 'Avg Price': 400 },
+        ]);
+
+        expect(types).toEqual(['bar', 'horizontal_bar', 'line']);
+    });
+
+    it('preserves area charts for average trends over time', () => {
+        const types = getAvailableChartTypes({
+            chartType: 'area',
+            aggregation: 'avg',
+            groupByColumn: 'month',
+            valueColumn: 'avg_price',
+            title: 'Average Price by Month',
+            description: 'Monthly average trend.',
+        }, [{ month: '2026-01', avg_price: 500 }]);
+
+        expect(types[0]).toBe('area');
+        expect(types).not.toContain('pie');
+    });
+
+    it('does not stack non-additive pivot measures', () => {
+        const plan = {
+            chartType: 'stacked_bar' as const,
+            artifactType: 'pivot_matrix' as const,
+            aggregation: 'avg' as const,
+            groupByColumn: 'Town',
+            valueColumn: 'Avg Price',
+            title: 'Average Price by Town',
+            description: 'Compare Town averages.',
+            artifactMetadata: {
+                artifactType: 'pivot_matrix' as const,
+                matrixColumns: ['Town', 'Q1', 'Q2', 'Avg Price'],
+                matrixValueColumns: ['Q1', 'Q2'],
+            },
+        };
+        const rows = [{ Town: 'A', Q1: 500, Q2: 450, 'Avg Price': 475 }];
+
+        expect(getRecommendedPivotChartType(plan, rows)).toBe('bar');
+        expect(getAvailableChartTypes(plan, rows)).toEqual(['bar', 'horizontal_bar', 'line']);
+    });
+
     it('returns stacked-first options for multi-series pivot tables', () => {
         const types = getAvailableChartTypes(
             {

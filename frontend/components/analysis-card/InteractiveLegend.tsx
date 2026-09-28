@@ -13,11 +13,12 @@ interface InteractiveLegendProps {
     valueKey: string;
     hiddenLabels: string[];
     onLabelClick: (label: string) => void;
+    showPercentage?: boolean;
 }
 
 const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'];
 
-const InteractiveLegendComponent: React.FC<InteractiveLegendProps> = ({ data, total, groupByKey, valueKey, hiddenLabels, onLabelClick }) => {
+const InteractiveLegendComponent: React.FC<InteractiveLegendProps> = ({ data, total, groupByKey, valueKey, hiddenLabels, onLabelClick, showPercentage = true }) => {
     const language = useAppStore(state => state.settings.language);
 
     return (
@@ -45,7 +46,7 @@ const InteractiveLegendComponent: React.FC<InteractiveLegendProps> = ({ data, to
                         </div>
                         <div className="flex items-baseline ml-2 flex-shrink-0">
                             <span className={`font-semibold text-sm ${isHidden ? 'text-slate-400' : 'text-slate-800'}`}>{formatAnalysisMeasureValue(value)}</span>
-                            <span className="text-xs text-slate-500 ml-1.5 w-12 text-right">({percentage}%)</span>
+                            {showPercentage && <span className="text-xs text-slate-500 ml-1.5 w-12 text-right">({percentage}%)</span>}
                         </div>
                     </button>
                 );

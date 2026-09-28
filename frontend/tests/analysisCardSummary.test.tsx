@@ -176,4 +176,46 @@ describe('AnalysisCardSummary', () => {
 
         expect(screen.getByText('The stacked chart shows the top 8 column groups and folds 6 additional columns into Others; the table and totals still reflect the full pivot.')).toBeInTheDocument();
     });
+
+    it('does not sum averages or describe a nonexistent Others group', () => {
+        const { container } = render(<AnalysisCardSummary
+            cardId="average-card"
+            plan={{ ...plan, aggregation: 'avg', title: 'Average Price by Town' }}
+            totalValue={900}
+            overallTotalValue={1200}
+            displayedRowCount={2}
+            totalRowCount={3}
+            displayedMetricLabel="Avg Price"
+            displayedGroupLabel="Town"
+            topN={2}
+            hideOthers={true}
+            hiddenLabelCount={0}
+            language="English"
+        />);
+
+        expect(screen.getByText('Current view shows 2 of 3 groups. Compare each value separately; these measures cannot be added together.')).toBeInTheDocument();
+        expect(screen.getByText('Scope: Top 2 view; No hidden labels.')).toBeInTheDocument();
+        expect(container.textContent).not.toContain('1,200');
+        expect(container.textContent).not.toContain('Others');
+    });
+
+    it('does not claim legacy cards with missing aggregation are non-additive', () => {
+        const { container } = render(<AnalysisCardSummary
+            cardId="legacy-card"
+            plan={{ ...plan, aggregation: undefined }}
+            totalValue={900}
+            overallTotalValue={1200}
+            displayedRowCount={2}
+            totalRowCount={3}
+            displayedMetricLabel="Value"
+            displayedGroupLabel="Town"
+            topN={null}
+            hideOthers={false}
+            hiddenLabelCount={0}
+            language="English"
+        />);
+
+        expect(screen.getByText('Current view shows 2 of 3 groups. The aggregation type is unavailable, so no combined total is shown.')).toBeInTheDocument();
+        expect(container.textContent).not.toContain('cannot be added together');
+    });
 });

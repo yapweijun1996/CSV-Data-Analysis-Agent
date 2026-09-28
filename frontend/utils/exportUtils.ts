@@ -147,9 +147,9 @@ const withExportMetadataColumns = (
  * When including the data table in PNG export, temporarily remove
  * max-height / overflow constraints so the full table is visible.
  */
-const expandOverflowContainers = (root: HTMLElement): (() => void) => {
+const expandOverflowContainers = (root: HTMLElement, selector: string): (() => void) => {
   const restored: { el: HTMLElement; maxHeight: string; overflow: string; overflowY: string }[] = [];
-  root.querySelectorAll<HTMLElement>('[data-export-table] [class*="max-h-"], [data-export-table][class*="max-h-"]').forEach(el => {
+  root.querySelectorAll<HTMLElement>(selector).forEach(el => {
     restored.push({
       el,
       maxHeight: el.style.maxHeight,
@@ -175,16 +175,18 @@ export const exportToPng = async (element: HTMLElement, title: string, options?:
   let restoreExcluded: (() => void) | null = null;
   let restoreTableContent: (() => void) | null = null;
   let restoreOverflow: (() => void) | null = null;
+  let restoreChartOverflow: (() => void) | null = null;
   let restoreMetadata: (() => void) | null = null;
   try {
     // 1. Hide interactive UI controls that should not appear in the screenshot
     restoreExcluded = hideExportExcluded(element);
+    restoreChartOverflow = expandOverflowContainers(element, '[data-export-chart-scroll]');
     // 2. Optionally hide data-table content when exporting chart-only
     if (!includeTable) {
       restoreTableContent = hideExportExcluded(element, 'data-export-table');
     } else {
       // When including table, expand overflow so full table is captured
-      restoreOverflow = expandOverflowContainers(element);
+      restoreOverflow = expandOverflowContainers(element, '[data-export-table] [class*="max-h-"], [data-export-table][class*="max-h-"]');
     }
     // 3. Replace <canvas> with <img> so html-to-image captures chart content
     restoreCanvases = swapCanvasesToImages(element);
@@ -208,6 +210,7 @@ export const exportToPng = async (element: HTMLElement, title: string, options?:
     restoreMetadata?.();
     restoreCanvases?.();
     restoreOverflow?.();
+    restoreChartOverflow?.();
     restoreTableContent?.();
     restoreExcluded?.();
   }

@@ -93,4 +93,33 @@ describe('AnalysisCardControls', () => {
         expect(screen.queryByText('Pivot chart')).not.toBeInTheDocument();
         expect(screen.queryByLabelText('Visible pivot columns')).not.toBeInTheDocument();
     });
+
+    it('does not offer a fabricated Others bucket for average cards', () => {
+        render(<AnalysisCardControls
+            cardId="average-card"
+            isDataVisible={true}
+            plan={{ title: 'Average Price by Town', chartType: 'bar', aggregation: 'avg', groupByColumn: 'Town', valueColumn: 'Avg Price' } as any}
+            aggregatedData={Array.from({ length: 6 }, (_, index) => ({ Town: `Town ${index}`, 'Avg Price': 500 - index }))}
+            availableChartTypes={['bar', 'horizontal_bar', 'line']}
+            displayChartType="bar"
+            topN={5}
+            hideOthers={true}
+            hideZeroValueRows={false}
+            zeroValueRowCount={0}
+            pivotColumnTopN={null}
+            pivotHideOtherColumns={false}
+            pivotFoldedColumnCount={0}
+            showPivotColumnControls={false}
+            onToggleDataVisibility={vi.fn()}
+            onChartTypeSelect={vi.fn()}
+            onTopNChange={vi.fn()}
+            onHideOthersChange={vi.fn()}
+            onHideZeroValueRowsChange={vi.fn()}
+            onPivotColumnTopNChange={vi.fn()}
+            onPivotHideOtherColumnsChange={vi.fn()}
+        />);
+
+        expect(screen.getByLabelText('Visible categories')).toHaveValue('5');
+        expect(screen.queryByLabelText('Hide "Others"')).not.toBeInTheDocument();
+    });
 });

@@ -16,6 +16,7 @@ interface AnalysisCardChartProps {
     selectedIndices: number[];
     isZoomed: boolean;
     chartHeight?: number;
+    scrollable?: boolean;
     disableAnimation?: boolean;
     showDataLabels?: boolean;
     onElementClick: (index: number, event: MouseEvent) => void;
@@ -34,6 +35,7 @@ export const AnalysisCardChart: React.FC<AnalysisCardChartProps> = React.memo(({
     selectedIndices,
     isZoomed,
     chartHeight = 256,
+    scrollable = false,
     disableAnimation,
     showDataLabels,
     onElementClick,
@@ -62,6 +64,13 @@ export const AnalysisCardChart: React.FC<AnalysisCardChartProps> = React.memo(({
                 </button>
             </div>
         )}
+        <div
+            className={scrollable ? 'max-h-[540px] overflow-y-auto overscroll-contain' : undefined}
+            data-export-chart-scroll={scrollable ? true : undefined}
+            role={scrollable ? 'region' : undefined}
+            aria-label={scrollable ? getTranslation('card_chart_scroll_hint', language, { count: dataForDisplay.length }) : undefined}
+            tabIndex={scrollable ? 0 : undefined}
+        >
         <div className="relative" style={{ height: `${chartHeight}px` }}>
             <ChartRenderer
                 ref={chartRendererRef}
@@ -88,6 +97,12 @@ export const AnalysisCardChart: React.FC<AnalysisCardChartProps> = React.memo(({
                 )}
             </div>
         </div>
+        </div>
+        {scrollable && (
+            <p className="mt-2 text-xs text-slate-500" data-export-exclude>
+                {getTranslation('card_chart_scroll_hint', language, { count: dataForDisplay.length })}
+            </p>
+        )}
         {showDataLabels && (
             <p className="sr-only">
                 {(dataForDisplay ?? []).map(row => {

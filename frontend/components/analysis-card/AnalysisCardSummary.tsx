@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnalysisPlan, LocalizedText, Settings } from '../../types';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { getTranslation } from '../../utils/localization';
-import { PivotCardQualitySummary, formatAnalysisMeasureValue, formatAnalysisValue, normalizeCategoryLabel } from '../../utils/analysisCardPresentation';
+import { PivotCardQualitySummary, formatAnalysisMeasureValue, formatAnalysisValue, isAdditiveAggregation, normalizeCategoryLabel } from '../../utils/analysisCardPresentation';
 
 interface AnalysisCardSummaryProps {
     cardId: string;
@@ -63,6 +63,7 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
     const showLanguageBadge = Boolean(summary && summary.language !== language);
     const summaryTitle = getTranslation('analysis_card_ai_summary', language);
     const summaryPlaceholder = getTranslation('analysis_card_summary_placeholder', language);
+    const hasAdditiveMeasure = isAdditiveAggregation(plan.aggregation);
     const showingLabel = getTranslation('analysis_card_showing_total_label', language);
     const overallLabel = getTranslation('analysis_card_overall_total_label', language);
     const expandLabel = getTranslation('analysis_card_expand', language);
@@ -86,28 +87,42 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
         : formatAnalysisMeasureValue;
     const previewLines = useMemo(() => {
         const lines = [
-            getTranslation('analysis_card_view_line_scope', language, {
-                visible: displayedRowCount.toLocaleString(),
-                total: totalRowCount.toLocaleString(),
-                shown: formatSummaryMeasure(totalValue),
-                overall: formatSummaryMeasure(overallTotalValue),
-            }),
+            hasAdditiveMeasure
+                ? getTranslation('analysis_card_view_line_scope', language, {
+                    visible: displayedRowCount.toLocaleString(),
+                    total: totalRowCount.toLocaleString(),
+                    shown: formatSummaryMeasure(totalValue),
+                    overall: formatSummaryMeasure(overallTotalValue),
+                })
+                : getTranslation(plan.aggregation
+                    ? 'analysis_card_view_line_scope_non_additive'
+                    : 'analysis_card_view_line_scope_unknown', language, {
+                    visible: displayedRowCount.toLocaleString(),
+                    total: totalRowCount.toLocaleString(),
+                }),
             getTranslation('analysis_card_view_line_metric', language, {
                 metric: displayedMetricLabel,
                 dimension: displayedGroupLabel,
             }),
         ];
 
-        if (topN || hideOthers || hiddenLabelCount > 0 || filterLabel) {
-            lines.push(getTranslation('analysis_card_view_line_focus', language, {
+        if (topN || (hasAdditiveMeasure && hideOthers) || hiddenLabelCount > 0 || filterLabel) {
+            const params = {
                 scope: scopeLabel,
-                others: hideOthers ? getTranslation('analysis_card_scope_hide_others', language) : getTranslation('analysis_card_scope_include_others', language),
                 hidden: hiddenLabelCount > 0
                     ? getTranslation('analysis_card_scope_hidden_count', language, { count: String(hiddenLabelCount) })
                     : getTranslation('analysis_card_scope_no_hidden', language),
-            }));
+            };
+            lines.push(hasAdditiveMeasure
+                ? getTranslation('analysis_card_view_line_focus', language, {
+                    ...params,
+                    others: hideOthers ? getTranslation('analysis_card_scope_hide_others', language) : getTranslation('analysis_card_scope_include_others', language),
+                })
+                : getTranslation('analysis_card_view_line_focus_non_additive', language, params));
         } else {
-            lines.push(getTranslation('analysis_card_view_line_ready', language));
+            lines.push(getTranslation(hasAdditiveMeasure
+                ? 'analysis_card_view_line_ready'
+                : 'analysis_card_view_line_ready_non_additive', language));
         }
 
         return lines;
@@ -118,8 +133,10 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
         filterLabel,
         hiddenLabelCount,
         hideOthers,
+        hasAdditiveMeasure,
         language,
         overallTotalValue,
+        plan.aggregation,
         scopeLabel,
         topN,
         totalRowCount,
@@ -226,7 +243,7 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
                     <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
                         {displayedGroupLabel}
                     </span>
-                    {hideOthers && (
+                    {hasAdditiveMeasure && hideOthers && (
                         <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
                             {getTranslation('analysis_card_scope_hide_others', language)}
                         </span>

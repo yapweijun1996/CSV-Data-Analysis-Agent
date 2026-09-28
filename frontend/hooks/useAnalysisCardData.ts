@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { applyTopNWithOthers, parseNumericValue } from '../utils/dataHelpers';
 import { CsvRow, AnalysisCardData, AnalysisPlan } from '../types';
-import { normalizeCategoryLabel } from '../utils/analysisCardPresentation';
+import { isAdditiveAggregation, normalizeCategoryLabel } from '../utils/analysisCardPresentation';
 import { buildPivotStackedChartState, DEFAULT_STACKED_PIVOT_COLUMN_TOP_N } from '../utils/pivotMatrixCharting';
-import { formatTemporalDisplayValue } from '../utils/temporalDisplay';
+import { formatTemporalDisplayValue, isTemporalDisplayColumn } from '../utils/temporalDisplay';
 
 export const useAnalysisCardData = (cardId: string) => {
     const cardData = useAppStore(state => state.analysisCards.find(c => c.id === cardId));
@@ -89,15 +89,26 @@ export const useAnalysisCardData = (cardId: string) => {
 
     const dataForLegend = useMemo(() => {
         if (!plan) return [];
+        const rankedNonAdditive = plan.aggregation
+            && !isAdditiveAggregation(plan.aggregation)
+            && !isTemporalDisplayColumn(groupByKey)
+            && !['line', 'area', 'multi_line'].includes(plan.chartType)
+            ? [...dataAfterFilter].sort((a, b) => parseNumericValue(b[valueKey]) - parseNumericValue(a[valueKey]))
+            : dataAfterFilter;
         if (!plan.disableTopNControls && plan.chartType !== 'scatter' && groupByKey && topN) {
-            return applyTopNWithOthers(dataAfterFilter, groupByKey, valueKey, topN);
+            if (isAdditiveAggregation(plan.aggregation)) {
+                return applyTopNWithOthers(dataAfterFilter, groupByKey, valueKey, topN);
+            }
+            return [...rankedNonAdditive]
+                .sort((a, b) => parseNumericValue(b[valueKey]) - parseNumericValue(a[valueKey]))
+                .slice(0, topN);
         }
-        return dataAfterFilter;
+        return rankedNonAdditive;
     }, [dataAfterFilter, plan, groupByKey, topN, valueKey]);
 
     const tableDataForDisplay = useMemo(() => {
         let data = dataForLegend;
-        if (!plan?.disableTopNControls && topN && hideOthers) {
+        if (!plan?.disableTopNControls && topN && hideOthers && isAdditiveAggregation(plan.aggregation)) {
             data = data.filter(row => row[groupByKey] !== 'Others');
         }
         if (groupByKey && hiddenLabels) {

@@ -16,7 +16,7 @@ import { ChartType } from '../../types';
 import { getAvailableChartTypes } from '../../utils/chartTypeUtils';
 import { getLocalizedText } from '../../utils/localizedText';
 import { getTranslation } from '../../utils/localization';
-import { getBarChartReadabilityHints, getPivotCardQualitySummary } from '../../utils/analysisCardPresentation';
+import { getBarChartReadabilityHints, getPivotCardQualitySummary, isAdditiveAggregation } from '../../utils/analysisCardPresentation';
 import { resolvePlanGroupLabel, resolvePlanMetricLabel } from '../../services/dashboard/businessLabelResolver';
 import { buildStackedPivotChartPlan } from '../../utils/pivotMatrixCharting';
 
@@ -108,6 +108,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
         () => resolveCardTrustDecision(cardData, currentDatasetVersion),
         [cardData, currentDatasetVersion],
     );
+    const hasAdditiveMeasure = isAdditiveAggregation(cardData?.plan?.aggregation);
     const exportMetadata = useMemo<AnalysisExportMetadata>(() => {
         const scopeParts: string[] = [];
         if (cardData?.topN) {
@@ -116,7 +117,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
         if (cardData?.filter?.column && cardData.filter.values.length > 0) {
             scopeParts.push(`${cardData.filter.column} = ${cardData.filter.values.join(', ')}`);
         }
-        if (cardData?.hideOthers) {
+        if (hasAdditiveMeasure && cardData?.hideOthers) {
             scopeParts.push('Others hidden');
         }
         if (
@@ -132,7 +133,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
             trustStatus: trustDecision.status,
             datasetVersion: currentDatasetVersion ?? cardData?.provenance?.datasetVersion ?? 'unverified',
         };
-    }, [cardData, cardId, currentDatasetVersion, trustDecision.status]);
+    }, [cardData, cardId, currentDatasetVersion, hasAdditiveMeasure, trustDecision.status]);
 
     // Panel-level expand/collapse override
     useEffect(() => {
@@ -311,9 +312,15 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
         ? stackedChartColumnState.chartRows
         : chartDataForDisplay;
     const chartPresentation = useMemo(
-        () => renderChartType === 'bar' || renderChartType === 'stacked_bar' || renderChartType === 'stacked_column'
-            ? getBarChartReadabilityHints(chartRowsForDisplay, groupByKey)
-            : { useHorizontalLayout: false, suggestedHeight: 256, categoryTickLimit: 24 },
+        () => renderChartType === 'horizontal_bar'
+            ? {
+                useHorizontalLayout: true,
+                suggestedHeight: Math.max(320, chartRowsForDisplay.length * 38 + 80),
+                categoryTickLimit: chartRowsForDisplay.length,
+            }
+            : renderChartType === 'bar' || renderChartType === 'stacked_bar' || renderChartType === 'stacked_column'
+                ? getBarChartReadabilityHints(chartRowsForDisplay, groupByKey)
+                : { useHorizontalLayout: false, suggestedHeight: 256, categoryTickLimit: 24 },
         [chartRowsForDisplay, groupByKey, renderChartType],
     );
     const pivotQualitySummary = useMemo(
@@ -432,6 +439,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
                         selectedIndices={selectedIndices}
                         isZoomed={isZoomed}
                         chartHeight={chartPresentation.suggestedHeight}
+                        scrollable={renderChartType === 'horizontal_bar' && chartRowsForDisplay.length > 12}
                         disableAnimation={disableAnimation}
                         showDataLabels={showDataLabels}
                         onElementClick={handleChartClick}
@@ -472,6 +480,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
                             valueKey={valueKey}
                             hiddenLabels={cardData.hiddenLabels || []}
                             onLabelClick={onLabelClick}
+                            showPercentage={hasAdditiveMeasure}
                         />
                     </div>
                 )}
@@ -497,7 +506,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
                 displayedMetricLabel={displayMetricLabel}
                 displayedGroupLabel={displayGroupLabel}
                 topN={topN}
-                hideOthers={hideOthers}
+                hideOthers={hasAdditiveMeasure && hideOthers}
                 hiddenLabelCount={cardData.hiddenLabels?.length ?? 0}
                 filter={filter}
                 language={language}

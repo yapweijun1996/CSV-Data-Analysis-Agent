@@ -68,6 +68,33 @@ const buildColumnProfiles = (overrides: ColumnProfile[] = []): ColumnProfile[] =
 ]);
 
 describe('buildExecutiveKpis', () => {
+    it('does not create a total or concentration share from Town averages', () => {
+        const kpis = buildExecutiveKpis({
+            cards: [buildCard({
+                plan: {
+                    title: 'Average Price by Town',
+                    description: 'Compare prices.',
+                    chartType: 'bar',
+                    aggregation: 'avg',
+                    groupByColumn: 'Project',
+                    valueColumn: 'Spend',
+                },
+                topN: 2,
+                hideOthers: true,
+            })],
+            columnProfiles: buildColumnProfiles(),
+            csvData: buildCsvData([
+                { Project: '36 TUAS ROAD', Spend: 1200 },
+                { Project: 'Depot Upgrade', Spend: 800 },
+            ]),
+        });
+
+        expect(kpis.map(kpi => kpi.id)).toEqual(['top-group', 'group-count']);
+        expect(kpis[0]).toMatchObject({ value: '1,200', scope: { kind: 'top_n', topN: 2 } });
+        expect(kpis[0].detail).not.toContain('%');
+        expect(kpis[1].value).toBe('2');
+    });
+
     it('returns no executive KPIs when there are no trusted cards', () => {
         const kpis = buildExecutiveKpis({
             cards: [buildCard({

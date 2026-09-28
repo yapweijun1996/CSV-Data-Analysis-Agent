@@ -3,6 +3,7 @@ import React from 'react';
 import { AnalysisPlan, ChartType, CsvRow } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import { getTranslation } from '../../utils/localization';
+import { isAdditiveAggregation } from '../../utils/analysisCardPresentation';
 
 interface AnalysisCardControlsProps {
     cardId: string;
@@ -103,7 +104,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
                         <option value="15">{t('card_controls_top_n', { n: 15 })}</option>
                         <option value="20">{t('card_controls_top_n', { n: 20 })}</option>
                     </select>
-                    {topN && (
+                    {topN && isAdditiveAggregation(plan.aggregation) && (
                         <div className="flex items-center">
                             <label htmlFor={`hide-others-${cardId}`} className="flex min-h-[44px] items-center gap-1.5 text-xs font-semibold text-slate-500 md:min-h-0">
                                 <input
