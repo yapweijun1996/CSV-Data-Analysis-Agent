@@ -270,6 +270,7 @@ export const finalizeRuntimeOutcome = ({
                     timestamp: new Date(),
                     type: 'ai_message',
                     isError: normalizedOutcome.assistantMessageIsError ?? false,
+                    cardId: normalizedOutcome.assistantCardId ?? undefined,
                 }),
             ];
         }

@@ -449,6 +449,7 @@ export interface RuntimeOutcomeEnvelope {
     eventDetail?: Record<string, unknown>;
     assistantMessage?: string | null;
     assistantMessageIsError?: boolean;
+    assistantCardId?: string | null;
     shouldDrainQueue?: boolean;
 }
 

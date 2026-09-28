@@ -1,6 +1,7 @@
 import { Agent, type AgentEvent, type StreamFn } from '@earendil-works/pi-agent-core';
 import type { ClarificationRequest } from '../../../../types';
 import { createChatMessage } from '../../../../utils/messageState';
+import { resolveDisplayPlanLabels } from '../../../dashboard/displayLabelContext';
 import { validateDataMutatePayload } from '../../execution/dataMutateContract';
 import { isDestructiveRowDeleteAction } from '../../execution/destructiveRowDelete';
 import type { GroundingResult, IntentClassificationFindings, QueryUnderstandingArtifact } from '../intentClassificationTypes';
@@ -84,25 +85,36 @@ export const runPiFollowUpTurn = async (
     let pendingMutation: Record<string, unknown> | null = null;
     let pendingClarification: ClarificationRequest | null = null;
     let providerTurns = 0;
+    let createdCardId: string | null = null;
+    let failureClass: 'provider' | 'tool_execution' = 'provider';
+    const allowCardCreation = request.queryUnderstandingArtifact?.expectedOutput === 'chart_card'
+        || request.intentFindings?.intent === 'precise_card';
     try {
         await persistCurrentAppSessionSnapshot(state);
         if (!streamOverride) await ensureCloudAiConsent(state.settings.provider);
         const appMemory = await readAppFollowUpMemory(store, request.message);
         if (controller.signal.aborted) throw controller.signal.reason;
-        const prompt = createPiFollowUpSystemPrompt(store.getState(), appMemory, request);
+        const prompt = createPiFollowUpSystemPrompt(store.getState(), appMemory, {
+            ...request,
+            allowCardCreation,
+        });
         agent = new Agent({
             initialState: {
                 systemPrompt: prompt,
                 model: resolvePiModel(state.settings),
                 thinkingLevel: resolvePiThinkingLevel(state.settings),
-                tools: createPiAppTools(store, datasetVersion),
+                tools: createPiAppTools(store, datasetVersion, {
+                    allowCardCreation,
+                    onCardCreated: cardId => { createdCardId = cardId; },
+                }),
             },
             streamFn: streamOverride ?? createPiProviderStream(state.settings),
             transformContext: createPiProviderContextTransform(state.settings),
             toolExecution: 'sequential',
             finishTurn: () => {
                 providerTurns += 1;
-                return pendingMutation || providerTurns >= 6 ? { action: 'end' } : undefined;
+                return pendingMutation || createdCardId || providerTurns >= 6
+                    ? { action: 'end' } : undefined;
             },
             beforeToolCall: async ({ toolCall, args }) => {
                 if (toolCall.name !== 'data_mutate') return undefined;
@@ -177,25 +189,40 @@ export const runPiFollowUpTurn = async (
             status = 'blocked';
             text = pendingClarification.question;
         } else {
-        const last = [...agent.state.messages].reverse().find(message => message.role === 'assistant');
-        text = last?.content.filter(part => part.type === 'text')
-            .map(part => part.text).join('\n').trim() ?? '';
-        if (!text) throw new Error('Pi completed without an answer.');
-        const currentState = store.getState();
-        const groundingParams = {
-            userMessage: request.message,
-            query: currentState.activeDataQuery,
-            fileName: currentState.csvData?.fileName ?? null,
-            language: currentState.settings.language,
-            qualityCaveats: currentState.dataQualityIssues,
-        };
-        text = buildGroundedDerivedMarginReply(groundingParams)
-            ?? buildGroundedDerivedCostPerResultReply(groundingParams)
-            ?? buildGroundedRankedShareReply(groundingParams)
-            ?? buildIncompleteRankedShareReply(groundingParams)
-            ?? buildGroundedCompleteQueryReply(groundingParams)
-            ?? text;
-        status = 'completed';
+        const createdCard = createdCardId
+            ? store.getState().analysisCards.find(card => card.id === createdCardId)
+            : null;
+        if (allowCardCreation && !createdCard) {
+            failureClass = 'tool_execution';
+            text = 'Pi could not add the requested dashboard card. The query result was not saved as a card. Please retry or review the analysis data.';
+            status = 'failed';
+        } else if (createdCard) {
+            store.getState().setResultsViewMode?.('explore');
+            const title = resolveDisplayPlanLabels(createdCard.plan).title;
+            const rowCount = createdCard.aggregatedData.length;
+            text = `Created dashboard card "${title}" with ${rowCount} result row${rowCount === 1 ? '' : 's'}.`;
+            status = 'completed';
+        } else {
+            const last = [...agent.state.messages].reverse().find(message => message.role === 'assistant');
+            text = last?.content.filter(part => part.type === 'text')
+                .map(part => part.text).join('\n').trim() ?? '';
+            if (!text) throw new Error('Pi completed without an answer.');
+            const currentState = store.getState();
+            const groundingParams = {
+                userMessage: request.message,
+                query: currentState.activeDataQuery,
+                fileName: currentState.csvData?.fileName ?? null,
+                language: currentState.settings.language,
+                qualityCaveats: currentState.dataQualityIssues,
+            };
+            text = buildGroundedDerivedMarginReply(groundingParams)
+                ?? buildGroundedDerivedCostPerResultReply(groundingParams)
+                ?? buildGroundedRankedShareReply(groundingParams)
+                ?? buildIncompleteRankedShareReply(groundingParams)
+                ?? buildGroundedCompleteQueryReply(groundingParams)
+                ?? text;
+            status = 'completed';
+        }
         }
     } catch (error) {
         status = controller.signal.aborted ? 'cancelled' : 'failed';
@@ -232,7 +259,7 @@ export const runPiFollowUpTurn = async (
                 stage: 'finalizing',
                 reason: `pi_follow_up_${status}`,
                 retryable: status === 'failed',
-                ...(status === 'failed' ? { failureClass: 'provider' as const } : {}),
+                ...(status === 'failed' ? { failureClass } : {}),
                 eventType: status === 'completed' ? 'turn_completed'
                     : status === 'blocked' ? 'turn_blocked'
                         : status === 'cancelled' ? 'turn_cancelled' : 'turn_failed',
@@ -240,6 +267,7 @@ export const runPiFollowUpTurn = async (
                 eventDetail: { runtimeOwner: 'pi' },
                 assistantMessage: status === 'cancelled' || status === 'blocked' ? null : text,
                 assistantMessageIsError: status === 'failed',
+                assistantCardId: status === 'completed' ? createdCardId : null,
             },
         });
         if (status === 'blocked') store.setState({ isBusy: false, chatLifecycleState: 'blocked' });

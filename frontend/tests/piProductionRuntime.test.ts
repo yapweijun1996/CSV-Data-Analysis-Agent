@@ -3,12 +3,13 @@ import { createAssistantMessageEventStream, type AssistantMessage } from '@earen
 import type { StreamFn } from '@earendil-works/pi-agent-core';
 import { resolvePiModel, resolvePiThinkingLevel } from '../services/agent/runtime/pi/piProvider';
 
-const { persistMock, memoryMock, consentMock, finalizeMock, stageMock } = vi.hoisted(() => ({
+const { persistMock, memoryMock, consentMock, finalizeMock, stageMock, actionMock } = vi.hoisted(() => ({
     persistMock: vi.fn(async () => true),
     memoryMock: vi.fn(async () => []),
     consentMock: vi.fn(async () => undefined),
     finalizeMock: vi.fn(),
     stageMock: vi.fn(),
+    actionMock: vi.fn(),
 }));
 
 vi.mock('../services/persistence/currentSessionPersistence', () => ({
@@ -26,6 +27,9 @@ vi.mock('../services/agent/runtime/runtimeFinalize', () => ({
 vi.mock('../services/agent/runtime/pi/initialAnalysisStageTools', () => ({
     executeInitialAnalysisStageTool: stageMock,
 }));
+vi.mock('../services/agent/actionHandler', () => ({
+    handleAiAction: actionMock,
+}));
 vi.mock('../services/agent/analysisCompletionGate', () => ({
     resolveAnalysisCompletionGate: () => ({ trustedBusinessCardIds: ['card-1'] }),
 }));
@@ -38,6 +42,7 @@ import { runPiFollowUpTurn } from '../services/agent/runtime/pi/piFollowUpRuntim
 import { runPiInitialAnalysis } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
 import { recoverPiInitialAnalysisIfNeeded } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
 import { getCurrentAnalysisDatasetVersion } from '../services/agent/artifactProvenance';
+import { createPiAppTools } from '../services/agent/runtime/pi/piAppTools';
 
 const usage = {
     input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0,
@@ -74,7 +79,7 @@ const createStore = () => {
         csvData: { fileName: 'sample.csv', data: [{ Town: 'A', Amount: 10 }] },
         canonicalCsvData: null,
         semanticDatasetVersion: 'version-1',
-        columnProfiles: [],
+        columnProfiles: [{ name: 'Town' }, { name: 'Amount' }],
         analysisCards: [],
         chatHistory: [],
         dataQualityIssues: [],
@@ -91,6 +96,10 @@ const createStore = () => {
         initialAnalysisStatus: 'idle',
         clearActiveTurnCancellation: vi.fn(),
         setStreamingMessage: vi.fn(),
+        setResultsViewMode: vi.fn((mode: 'simple' | 'explore') => {
+            state.resultsViewMode = mode;
+        }),
+        resultsViewMode: 'simple',
     } as any;
     return {
         getState: () => state,
@@ -133,6 +142,83 @@ describe('Pi production runtime', () => {
             }),
         }));
         expect(consentMock).not.toHaveBeenCalled();
+    });
+
+    it('exposes card creation only for an explicit card turn', () => {
+        const store = createStore();
+        const version = getCurrentAnalysisDatasetVersion(store.getState());
+        expect(createPiAppTools(store as never, version).map(tool => tool.name))
+            .not.toContain('analysis_create_plan');
+        expect(createPiAppTools(store as never, version, { allowCardCreation: true })
+            .map(tool => tool.name)).toContain('analysis_create_plan');
+    });
+
+    it('does not report success when Pi answers a card request without creating one', async () => {
+        const store = createStore();
+        const result = await runPiFollowUpTurn({
+            message: 'Add a dashboard card by Town.',
+            intentFindings: { intent: 'precise_card' } as never,
+        }, store as never, answerStream('Here are the values; I cannot save a card.'));
+
+        expect(result.status).toBe('failed');
+        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
+            outcome: expect.objectContaining({
+                outcomeKind: 'failed',
+                failureClass: 'tool_execution',
+                assistantCardId: null,
+            }),
+        }));
+    });
+
+    it('links a card created by Pi and reveals it in the dashboard', async () => {
+        const store = createStore();
+        const plan = {
+            title: 'Average Amount by Town',
+            description: 'Average amount per town.',
+            chartType: 'bar',
+            groupByColumn: 'Town',
+            valueColumn: 'Amount',
+            aggregation: 'avg',
+        };
+        actionMock.mockImplementationOnce(async () => {
+            store.setState({ analysisCards: [{
+                id: 'created-card', plan, aggregatedData: [{ Town: 'A', Amount: 10 }],
+            }] });
+            return {
+                status: 'success',
+                message: 'Created analysis card.',
+                artifacts: { createdCardId: 'created-card' },
+            };
+        });
+        const stream: StreamFn = model => {
+            const output = createAssistantMessageEventStream();
+            const message: AssistantMessage = {
+                role: 'assistant',
+                content: [{ type: 'toolCall', id: 'create-card-1', name: 'analysis_create_plan', arguments: { plan } }],
+                api: model.api, provider: model.provider, model: model.id,
+                usage, stopReason: 'toolUse', timestamp: Date.now(),
+            };
+            output.push({ type: 'start', partial: message });
+            output.push({ type: 'done', reason: 'toolUse', message });
+            return output;
+        };
+        const result = await runPiFollowUpTurn({
+            message: 'Add a dashboard card by Town.',
+            intentFindings: { intent: 'precise_card' } as never,
+        }, store as never, stream);
+
+        expect(actionMock).toHaveBeenCalledWith(expect.objectContaining({
+            toolName: 'analysis.create_plan',
+        }), store, expect.any(Object));
+        expect(result.status).toBe('completed');
+        expect(store.getState().resultsViewMode).toBe('explore');
+        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
+            outcome: expect.objectContaining({
+                outcomeKind: 'accepted',
+                assistantCardId: 'created-card',
+                assistantMessage: 'Created dashboard card "Average Amount by Town" with 1 result row.',
+            }),
+        }));
     });
 
     it('stops a proposed mutation at the app approval boundary', async () => {

@@ -87,13 +87,16 @@ const formatRecentTurns = (
 const buildSystemPrompt = (
     language: ReturnType<StoreApi['getState']>['settings']['language'],
     compactedContext: string,
+    allowCardCreation: boolean,
 ): string => [
     'You are the follow-up data-analysis assistant embedded in the current app.',
     `Always answer in ${language}.`,
-    'Use the host-provided session context and read-only app actions as the source of truth.',
+    allowCardCreation
+        ? 'Use the host-provided session context and app actions as the source of truth. The user requested a new dashboard card: use analysis_create_plan to create it, preferably with a SQL-first plan for a file-backed dataset. Query results in chat alone do not fulfill this request. Never claim a card was saved unless that tool succeeds.'
+        : 'Use the host-provided session context and read-only app actions as the source of truth.',
     'Trust card evidence only according to its explicit verified, caveated, unverified, stale, or weak label.',
     'When the user refers to these, current, visible, or verified results, use the supplied card evidence; do not ask the user to paste information that is already present.',
-    'If required evidence is genuinely missing, use an available read-only action or state exactly what is missing.',
+    'If required evidence is genuinely missing, use an available app action or state exactly what is missing.',
     'Keep SQL, trace IDs, internal enums, and implementation details out of the main answer unless the user asks for technical details.',
     'Host evidence for this turn:',
     truncate(compactedContext, MAX_SYSTEM_EVIDENCE_CHARS),
@@ -123,7 +126,7 @@ const formatResolvedRequestContract = (
             : '',
         ...(groundingResult?.resolvedAnchors ?? []).map(anchor =>
             `- Resolved reference: ${anchor.raw} -> ${anchor.resolved}${anchor.column ? ` (${anchor.column})` : ''}`),
-        'Use these exact resolved dataset column names in read-only query actions. Do not omit a requested grouping column from the query result.',
+        'Use these exact resolved dataset column names in app actions. Do not omit a requested grouping column from the query result.',
     ].filter(Boolean).join('\n');
 };
 
@@ -133,6 +136,7 @@ export const createPiFollowUpSystemPrompt = (
     requestContext: {
         queryUnderstandingArtifact?: QueryUnderstandingArtifact;
         groundingResult?: GroundingResult;
+        allowCardCreation?: boolean;
     } = {},
 ): string => {
     const fileName = state.csvData?.fileName || 'Current dataset';
@@ -164,7 +168,7 @@ export const createPiFollowUpSystemPrompt = (
     ].filter(Boolean).join('\n\n'), MAX_CONTEXT_CHARS);
 
     return [
-        buildSystemPrompt(state.settings.language, compactedContext),
+        buildSystemPrompt(state.settings.language, compactedContext, requestContext.allowCardCreation ?? false),
         `Current goal: ${state.confirmedAnalysisGoal ?? 'Answer the current follow-up accurately.'}`,
         `Recent turns:\n${formatRecentTurns(state)}`,
     ].join('\n\n');

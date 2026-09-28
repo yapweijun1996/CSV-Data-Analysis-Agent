@@ -1,20 +1,9 @@
 ## Current Work Context
 
-- **Goal**: Deliver a Vanilla JS CSV Agent that truly matches the “Brains + Brakes” blueprint from README — deterministic detection of shape/roles, safe preprocessing (tools first), fallback-only JS, and transparent logging.
-- **Recent Progress**:
-  - Added shape taxonomy + metadata flags (ragged, multi-header, multi-metric) with deterministic header merge/unpivot.
-  - Implemented Diagnose phase gate (header confidence + role coverage + ragged risk) plus health scores & dataset snapshots.
-  - Deterministic preprocessing trims whitespace, removes summary rows, and logs actions before AI plan.
-  - `executeJavaScriptDataTransform` now exposes `_util.getMetadata / setMetadata / log`, preventing “did not return array” crashes.
-  - Prompt updated with tool schemas; LLM is instructed to orchestrate tools via `{"tool":"name","args":"{...}"}` JSON calls.
-- **Issues Observed**:
-  - Some CSVs still trigger repeated “function did not return array” when LLM insists on custom JS.
-  - Need stronger tool-first guardrails and deterministic fallbacks when plan fails.
-- **Next Targets**:
-  1. Build explicit tool registry / API so LLM only uses deterministic helpers for raw-data manipulations.
-  2. Expand evidence fusion (context rows, subtotal verification) and integrate into phase gates.
-  3. Add fixtures/tests for each shape type to validate Brains + Brakes coverage.
-  4. Ensure README + code stay aligned after each capability milestone.
+- **Goal**: Maintain the React browser app and its checked-in GitHub Pages build. The main assistant and initial analysis run through Pi Harness and the governed app tools.
+- **Current issue**: An explicit Pi request to add a dashboard card was routed as `precise_card`, but the Pi follow-up tool list had no `analysis.create_plan`. Pi could query the full HDB dataset and reply in chat, then incorrectly say the interface was read-only instead of creating a card.
+- **Current change**: Expose `analysis.create_plan` only for card requests, verify the returned card in app state, reveal it in Explore, and attach its chat link. An answer without a saved card is reported as a failed card turn.
+- **Verification/release**: Full frontend tests (364 files / 3,421 tests), typecheck, lint, bundle budget, publisher tests, and manifest checks passed. In-app browser E2E on the local production build created a card over all 982,589 HDB rows. The release result must be checked against the remote main branch, Pages workflow, and live asset hashes. The historical Vanilla notes below are retained as project history, not the active architecture.
 
 ## 2025-11-07 Session Notes
 
@@ -406,3 +395,10 @@
 - **Verification**: The full frontend suite passed 364 files / 3,418 tests before the final cleaning-banner condition. Its affected component/Pi tests were rerun afterward (4 files / 37 tests), along with TypeScript and lint. `publish:root` rebuilt and checksum-verified 77 site files; the publisher/stager safety tests passed. Local `stage:pages` refused to overwrite a pre-existing ignored `pages-artifact/`, which was preserved; the GitHub workflow stages from a fresh checkout.
 - **Browser E2E**: In a separate Playwright browser against the final local build, imported a synthetic 60-row CSV and intercepted demo gateway `/v1` requests with a deterministic 503. The terminal UI kept the imported rows, showed Retry analysis and Change provider, and did not show either structure repair or a cleaning failure banner. An earlier browser pass verified that Change provider opened Settings and Retry analysis issued a new provider request. These failure-path tests intentionally do not prove the live gateway is healthy.
 - **Release verification**: Fix commit `3e48ca6448da128442ef9506a9c0b35ac4ccf15e` was pushed to public `origin/main` and the remote ref matched. Manual Pages run `36390754705` completed stage and deploy successfully from that commit. The live `index.html`, service worker, Pi app bundle, and AnalysisPanel bundle returned HTTP 200 with SHA-256 hashes matching the committed site files. A fresh separate browser opened the live React upload page; the user's existing in-app browser tab was not controlled. Provider-outage E2E was simulated against the final local build, so this release check does not assert current live gateway availability.
+
+## 2026-09-28 Pi Dashboard Card Creation
+
+- **Reproduction**: In the user's live in-app browser HDB session, Pi classified explicit add/save-card requests as `precise_card` and successfully queried the full dataset, but said its interface was read-only and left the dashboard unchanged. The `agent_turn` path exposed only read-only tools and the approval-gated `data.mutate`; `analysis.create_plan` was absent.
+- **Change**: Explicit card turns now expose the existing governed `analysis.create_plan` action with physical dataset column names. The Pi prompt requires a saved card, the runtime verifies the created card ID in app state, and a no-card response fails instead of claiming completion. Successful card turns reveal Explore and link the exact card from chat. Card creation is not replayable. Other follow-ups retain the read-only tool set.
+- **Local E2E**: A new Codex in-app browser tab loaded the production build at `127.0.0.1:8770`, imported all 982,589 HDB records, and completed initial analysis 9/9. Pi then created a 10-row average-resale-price-by-town bar chart card. Its table included transaction count, Explore displayed the new card, Show Related Card navigated to it, and browser error-log filtering returned no errors. An independent Python CSV aggregation matched all 10 displayed town averages and counts, including Punggol 512,896.93 over 24,314 transactions. The card is marked Unverified by the existing trust policy, so its evidence remains reviewable.
+- **Checks / scope**: Full frontend suite passed (364 files / 3,421 tests), along with typecheck, lint, bundle budget, publisher tests, and 77 deployment checksums. The final display-title wording was adjusted after the browser run; its focused tests and typecheck passed, and the production build was regenerated. This E2E covers the reported card path plus table/link/export-menu smoke, not every feature implied by unspecific end-user feedback. Public Pages publication and live hash verification are release steps after this note.
