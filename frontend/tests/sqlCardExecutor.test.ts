@@ -860,6 +860,46 @@ describe('sqlCardExecutor', () => {
             expect.objectContaining({ sourceTopic: 'Revenue by Month' }),
         );
         expect(result.presentationPlan.presentationMode).toBe('table_then_chart');
+
+        await executePresentationPlanAndCreateCard(
+            {
+                title: 'Revenue by Month',
+                queryMode: 'aggregate',
+                intentSummary: 'Inspect revenue trend by month.',
+                preferredResultShape: 'time_series',
+                query: {
+                    select: ['Month', 'total_revenue'],
+                    groupBy: ['Month'],
+                    aggregates: [{ function: 'sum', column: 'Revenue', as: 'total_revenue' }],
+                },
+            },
+            {
+                title: 'Revenue by Month',
+                description: 'Review the table only.',
+                presentationMode: 'table',
+            },
+            store,
+            summary,
+            {
+                result: {
+                    rows: [{ Month: '2026-01', total_revenue: 100 }, { Month: '2026-02', total_revenue: 120 }],
+                },
+                activeDataQuery: { result: { rows: [] } },
+            } as any,
+        );
+
+        expect(createNewCardMock).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                defaultDataVisible: true,
+                artifactMetadata: expect.objectContaining({
+                    dataTableFirst: true,
+                    hideChartByDefault: true,
+                }),
+            }),
+            expect.any(Array),
+            store,
+            expect.any(Object),
+        );
     });
 
     it('does not classify a long planned time series as fragmented categories when month is profiled as categorical', async () => {

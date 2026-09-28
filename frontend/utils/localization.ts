@@ -1898,6 +1898,12 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Jadual dan carta yang dipaparkan menunjukkan kumpulan yang sama untuk perbandingan.',
         'Japanese': '表示中の表とグラフには、比較できるよう同じグループが示されています。',
     },
+    'analysis_card_view_line_ready_table_only': {
+        'English': 'The result table is available for verification.',
+        'Mandarin': '结果表格已显示，便于核对。',
+        'Malay': 'Jadual hasil tersedia untuk semakan.',
+        'Japanese': '結果の表を確認できます。',
+    },
     'card_chart_scroll_hint': {
         'English': 'Scroll within the chart to view all {count} groups.',
         'Mandarin': '在图表内滚动，查看全部 {count} 个分组。',

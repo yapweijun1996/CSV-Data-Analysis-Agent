@@ -296,10 +296,11 @@ describe('sqlPresentationPlanner', () => {
         expect(presentationPlan.presentationMode).toBe('table');
         expect(presentationPlan.chartType).toBeUndefined();
         const analysisPlan = buildAnalysisPlanFromPresentation(evidencePlan, presentationPlan);
-        // table mode now creates a table-only card (data visible, chart secondary)
+        // Table mode keeps the data visible without a misleading default chart.
         expect(analysisPlan).not.toBeNull();
-        expect(analysisPlan!.defaultDataVisible).toBe(false);
-        expect(analysisPlan!.artifactMetadata?.dataTableFirst).toBe(false);
+        expect(analysisPlan!.defaultDataVisible).toBe(true);
+        expect(analysisPlan!.artifactMetadata?.dataTableFirst).toBe(true);
+        expect(analysisPlan!.artifactMetadata?.hideChartByDefault).toBe(true);
     });
 });
 

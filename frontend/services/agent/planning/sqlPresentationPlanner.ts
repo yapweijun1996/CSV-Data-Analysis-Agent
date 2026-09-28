@@ -803,9 +803,8 @@ export const buildAnalysisPlanFromPresentation = (
         });
     };
 
-    // "table" mode: create a table-only card (no chart) so the data is
-    // still visible to the user.  Previously this returned null, killing
-    // all evidence that didn't qualify for a chart.
+    // "table" mode keeps evidence visible without presenting a chart that
+    // could overstate a one-row or low-confidence result.
     if (presentationPlan.presentationMode === 'table') {
         const groupByColumn = evidencePlan.query.groupBy?.[0];
         const primaryAggregate = evidencePlan.query.aggregates?.[0]?.function;
@@ -823,10 +822,11 @@ export const buildAnalysisPlanFromPresentation = (
             groupByColumn,
             valueColumn: primaryMetric,
             preFilter: evidencePlan.preFilter,
-            defaultDataVisible: false,
+            defaultDataVisible: true,
             artifactMetadata: {
                 artifactType: 'distribution',
-                dataTableFirst: false,
+                dataTableFirst: true,
+                hideChartByDefault: true,
             },
         };
     }

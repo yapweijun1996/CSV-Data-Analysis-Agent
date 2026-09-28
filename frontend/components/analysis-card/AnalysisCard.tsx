@@ -481,6 +481,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
                             hiddenLabels={cardData.hiddenLabels || []}
                             onLabelClick={onLabelClick}
                             showPercentage={hasAdditiveMeasure}
+                            aggregation={plan.aggregation}
                         />
                     </div>
                 )}

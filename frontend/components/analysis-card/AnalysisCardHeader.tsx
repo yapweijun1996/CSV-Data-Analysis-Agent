@@ -274,7 +274,7 @@ const AnalysisCardHeaderComponent: React.FC<AnalysisCardHeaderProps> = ({
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 8l4 4 4-4" />
                         </svg>
                     </button>
-                    {plan.artifactType !== 'pivot_matrix' && (<div className="relative" ref={chartMenuRef}>
+                    {plan.artifactType !== 'pivot_matrix' && !plan.artifactMetadata?.hideChartByDefault && (<div className="relative" ref={chartMenuRef}>
                         <button
                             ref={chartButtonRef}
                             type="button"
@@ -359,7 +359,7 @@ const AnalysisCardHeaderComponent: React.FC<AnalysisCardHeaderProps> = ({
                             onKeyDown={handleMenuKeyDown('export')}
                             className="absolute right-0 z-10 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-card border border-slate-200 bg-white p-1 shadow-lg"
                         >
-                            <button
+                            {!plan.artifactMetadata?.hideChartByDefault && <button
                                 ref={element => {
                                     exportItemRefs.current[0] = element;
                                 }}
@@ -371,7 +371,7 @@ const AnalysisCardHeaderComponent: React.FC<AnalysisCardHeaderProps> = ({
                             >
                                 <span className="block text-sm font-medium text-slate-700">{getTranslation('export_png_chart', language)}</span>
                                 <span className="block text-xs text-slate-500">{getTranslation('export_png_chart_desc', language)}</span>
-                            </button>
+                            </button>}
                             <button
                                 ref={element => {
                                     exportItemRefs.current[1] = element;

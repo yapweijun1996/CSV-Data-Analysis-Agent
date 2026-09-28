@@ -1,16 +1,16 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports, r as reactDomExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-DehXb7O-.js";
-import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisMeasureValue, aM as formatTemporalDisplayValue, aN as isAdditiveAggregation, aO as isTemporalDisplayColumn, aP as applyTopNWithOthers, aQ as buildPivotStackedChartState, aR as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aS as resolveDisplayPlanDescription, aT as resolvePlanGroupLabel, aU as resolvePlanMetricLabel, aV as formatAnalysisValue, aW as getBarChartReadabilityHints, aX as PIVOT_FOLDED_OTHERS_KEY, aY as collectOrderedColumnNames, aZ as getNumericColumns, a_ as getAnalysisColumnLabels, a$ as coerceNumericValue, b0 as formatAnalysisCellValue, b1 as isProviderConfigured, b2 as createProviderModel, b3 as resolveCardTrustDecision, b4 as getLocalizedText, b5 as evaluateChartPresentation, b6 as getAvailableChartTypes, b7 as isTimeLikeDimensionColumn, b8 as buildStackedPivotChartPlan, b9 as getPivotCardQualitySummary, ba as normalizeDisplayLabel, bb as isUsableReportTitle, bc as isLatestReportPartial, bd as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, be as resolveAnalysisCompletionGate, bf as buildDisplayAnalysisIr, bg as DEFAULT_AUTO_ANALYSIS_GOAL, bh as buildExecutiveKpis, bi as resolveEffectiveReportContext, bj as shouldShowDataWarnings, bk as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-CNUKqFBT.js";
-import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-CoqTk6IW.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-Csj8Hd6A.js";
+import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as getBarChartReadabilityHints, aX as PIVOT_FOLDED_OTHERS_KEY, aY as collectOrderedColumnNames, aZ as getNumericColumns, a_ as getAnalysisColumnLabels, a$ as coerceNumericValue, b0 as formatAnalysisCellValue, b1 as isProviderConfigured, b2 as createProviderModel, b3 as resolveCardTrustDecision, b4 as getLocalizedText, b5 as evaluateChartPresentation, b6 as getAvailableChartTypes, b7 as isTimeLikeDimensionColumn, b8 as buildStackedPivotChartPlan, b9 as getPivotCardQualitySummary, ba as normalizeDisplayLabel, bb as isUsableReportTitle, bc as isLatestReportPartial, bd as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, be as resolveAnalysisCompletionGate, bf as buildDisplayAnalysisIr, bg as DEFAULT_AUTO_ANALYSIS_GOAL, bh as buildExecutiveKpis, bi as resolveEffectiveReportContext, bj as shouldShowDataWarnings, bk as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-D8-dGKW6.js";
+import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-BcDkep5Z.js";
 import { C as Chart, p as plugin, a as plugin$1, M as Masonry } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import { e as exportToHtml, a as exportToCsv, b as exportToPng } from "./csv_data_analysis_exportUtils-DfKSpD2m.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
-import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-D46Bnoif.js";
-import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-EOaMfk5T.js";
+import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-D7JHuTAm.js";
+import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-2V0oRz3I.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
-import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-De_faZ9P.js";
+import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-Doqce9NC.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
 import "./csv_data_analysis_vendor-ai-google-Brpu0J-t.js";
@@ -146,7 +146,7 @@ const DataQualityWarningsComponent = () => {
 };
 const DataQualityWarnings = We.memo(DataQualityWarningsComponent);
 const COLORS$1 = ["#4e79a7", "#f28e2c", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7", "#9c755f", "#bab0ab"];
-const InteractiveLegendComponent = ({ data, total, groupByKey, valueKey, hiddenLabels, onLabelClick, showPercentage = true }) => {
+const InteractiveLegendComponent = ({ data, total, groupByKey, valueKey, hiddenLabels, onLabelClick, showPercentage = true, aggregation }) => {
   const language = useAppStore((state) => state.settings.language);
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm space-y-1 max-h-48 overflow-y-auto pr-2", "data-export-exclude": true, children: data.map((item, index) => {
     const label = normalizeCategoryLabel(item[groupByKey]);
@@ -169,7 +169,7 @@ const InteractiveLegendComponent = ({ data, total, groupByKey, valueKey, hiddenL
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `truncate text-sm ${isHidden ? "line-through text-slate-400" : "text-slate-700"}`, children: label })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-baseline ml-2 flex-shrink-0", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `font-semibold text-sm ${isHidden ? "text-slate-400" : "text-slate-800"}`, children: formatAnalysisMeasureValue(value) }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `font-semibold text-sm ${isHidden ? "text-slate-400" : "text-slate-800"}`, children: aggregation === "count" ? formatAnalysisValue(value, 0) : formatAnalysisMeasureValue(value) }),
             showPercentage && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-slate-500 ml-1.5 w-12 text-right", children: [
               "(",
               percentage,
@@ -427,6 +427,7 @@ const AnalysisCardHeaderComponent = ({
   onDelete,
   showActions = true
 }) => {
+  var _a, _b;
   const [openMenu, setOpenMenu] = reactExports.useState(null);
   const chartMenuRef = reactExports.useRef(null);
   const exportMenuRef = reactExports.useRef(null);
@@ -444,8 +445,8 @@ const AnalysisCardHeaderComponent = ({
       more: moreButtonRef
     };
     requestAnimationFrame(() => {
-      var _a;
-      return (_a = triggerMap[menu].current) == null ? void 0 : _a.focus();
+      var _a2;
+      return (_a2 = triggerMap[menu].current) == null ? void 0 : _a2.focus();
     });
   }, []);
   const closeMenus = reactExports.useCallback((returnFocusTo) => {
@@ -462,17 +463,17 @@ const AnalysisCardHeaderComponent = ({
   const openMenuAndFocus = reactExports.useCallback((menu, focusIndex = 0) => {
     setOpenMenu(menu);
     requestAnimationFrame(() => {
-      var _a;
+      var _a2;
       const items = getItemRefs(menu).current.filter(Boolean);
-      (_a = items[focusIndex]) == null ? void 0 : _a.focus();
+      (_a2 = items[focusIndex]) == null ? void 0 : _a2.focus();
     });
   }, [getItemRefs]);
   reactExports.useEffect(() => {
     if (!openMenu) return;
     const handleClickOutside = (event) => {
-      var _a, _b, _c;
+      var _a2, _b2, _c;
       const target = event.target;
-      if (((_a = chartMenuRef.current) == null ? void 0 : _a.contains(target)) || ((_b = exportMenuRef.current) == null ? void 0 : _b.contains(target)) || ((_c = moreMenuRef.current) == null ? void 0 : _c.contains(target))) {
+      if (((_a2 = chartMenuRef.current) == null ? void 0 : _a2.contains(target)) || ((_b2 = exportMenuRef.current) == null ? void 0 : _b2.contains(target)) || ((_c = moreMenuRef.current) == null ? void 0 : _c.contains(target))) {
         return;
       }
       closeMenus();
@@ -498,21 +499,21 @@ const AnalysisCardHeaderComponent = ({
   reactExports.useEffect(() => {
     if (!openMenu) return;
     requestAnimationFrame(() => {
-      var _a;
+      var _a2;
       const items = getItemRefs(openMenu).current.filter(Boolean);
-      (_a = items[0]) == null ? void 0 : _a.focus();
+      (_a2 = items[0]) == null ? void 0 : _a2.focus();
     });
   }, [openMenu, getItemRefs]);
   const toggleMenu = (menu) => {
     setOpenMenu((previous) => previous === menu ? null : menu);
   };
   const moveFocusInMenu = (menu, direction) => {
-    var _a;
+    var _a2;
     const items = getItemRefs(menu).current.filter(Boolean);
     if (items.length === 0) return;
     const currentIndex = items.findIndex((item) => item === document.activeElement);
     const nextIndex = currentIndex === -1 ? direction === 1 ? 0 : items.length - 1 : (currentIndex + direction + items.length) % items.length;
-    (_a = items[nextIndex]) == null ? void 0 : _a.focus();
+    (_a2 = items[nextIndex]) == null ? void 0 : _a2.focus();
   };
   const handleExport = (format) => {
     closeMenus();
@@ -538,7 +539,7 @@ const AnalysisCardHeaderComponent = ({
     }
   };
   const handleMenuKeyDown = (menu) => (event) => {
-    var _a, _b;
+    var _a2, _b2;
     if (event.key === "ArrowDown") {
       event.preventDefault();
       moveFocusInMenu(menu, 1);
@@ -549,12 +550,12 @@ const AnalysisCardHeaderComponent = ({
     }
     if (event.key === "Home") {
       event.preventDefault();
-      (_a = getItemRefs(menu).current.filter(Boolean)[0]) == null ? void 0 : _a.focus();
+      (_a2 = getItemRefs(menu).current.filter(Boolean)[0]) == null ? void 0 : _a2.focus();
     }
     if (event.key === "End") {
       event.preventDefault();
       const items = getItemRefs(menu).current.filter(Boolean);
-      (_b = items[items.length - 1]) == null ? void 0 : _b.focus();
+      (_b2 = items[items.length - 1]) == null ? void 0 : _b2.focus();
     }
     if (event.key === "Escape") {
       event.preventDefault();
@@ -620,7 +621,7 @@ const AnalysisCardHeaderComponent = ({
             )
           }
         ),
-        plan.artifactType !== "pivot_matrix" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative", ref: chartMenuRef, children: [
+        plan.artifactType !== "pivot_matrix" && !((_a = plan.artifactMetadata) == null ? void 0 : _a.hideChartByDefault) && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative", ref: chartMenuRef, children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "button",
             {
@@ -711,7 +712,7 @@ const AnalysisCardHeaderComponent = ({
               onKeyDown: handleMenuKeyDown("export"),
               className: "absolute right-0 z-10 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-card border border-slate-200 bg-white p-1 shadow-lg",
               children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                !((_b = plan.artifactMetadata) == null ? void 0 : _b.hideChartByDefault) && /* @__PURE__ */ jsxRuntimeExports.jsxs(
                   "button",
                   {
                     ref: (element) => {
@@ -2028,11 +2029,12 @@ const AnalysisCardSummaryComponent = ({
   visuallyGrounded,
   pivotQualitySummary
 }) => {
+  var _a;
   const [isExpanded, setIsExpanded] = reactExports.useState(false);
   reactExports.useEffect(() => {
     const handler = (e) => {
-      var _a;
-      if (((_a = e.detail) == null ? void 0 : _a.cardId) === cardId) {
+      var _a2;
+      if (((_a2 = e.detail) == null ? void 0 : _a2.cardId) === cardId) {
         setIsExpanded(true);
       }
     };
@@ -2064,6 +2066,7 @@ const AnalysisCardSummaryComponent = ({
   }, [filter, language]);
   const formatSummaryMeasure = plan.aggregation === "count" ? formatAnalysisValue : formatAnalysisMeasureValue;
   const previewLines = reactExports.useMemo(() => {
+    var _a2;
     const lines = [
       hasAdditiveMeasure ? getTranslation("analysis_card_view_line_scope", language, {
         visible: displayedRowCount.toLocaleString(),
@@ -2089,7 +2092,7 @@ const AnalysisCardSummaryComponent = ({
         others: hideOthers ? getTranslation("analysis_card_scope_hide_others", language) : getTranslation("analysis_card_scope_include_others", language)
       }) : getTranslation("analysis_card_view_line_focus_non_additive", language, params));
     } else {
-      lines.push(getTranslation(hasAdditiveMeasure ? "analysis_card_view_line_ready" : "analysis_card_view_line_ready_non_additive", language));
+      lines.push(getTranslation(((_a2 = plan.artifactMetadata) == null ? void 0 : _a2.hideChartByDefault) ? "analysis_card_view_line_ready_table_only" : hasAdditiveMeasure ? "analysis_card_view_line_ready" : "analysis_card_view_line_ready_non_additive", language));
     }
     return lines;
   }, [
@@ -2103,6 +2106,7 @@ const AnalysisCardSummaryComponent = ({
     language,
     overallTotalValue,
     plan.aggregation,
+    (_a = plan.artifactMetadata) == null ? void 0 : _a.hideChartByDefault,
     scopeLabel,
     topN,
     totalRowCount,
@@ -2233,10 +2237,11 @@ const AnalysisCardControlsComponent = ({
   showDataLabels,
   onToggleDataLabels
 }) => {
+  var _a;
   const language = useAppStore((state) => state.settings.language);
   const t = (key, params) => getTranslation(key, language, params);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center justify-between gap-2 rounded-card border border-slate-200 bg-slate-50/80 px-3 py-2", "data-export-exclude": true, children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: onToggleDataVisibility, className: "min-h-[44px] text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline md:min-h-0", children: isDataVisible ? t("card_controls_hide_table") : t("card_controls_show_table") }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: (!((_a = plan.artifactMetadata) == null ? void 0 : _a.hideChartByDefault) || !isDataVisible) && /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: onToggleDataVisibility, className: "min-h-[44px] text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline md:min-h-0", children: isDataVisible ? t("card_controls_hide_table") : t("card_controls_show_table") }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center justify-end gap-2", children: [
       plan.artifactType === "pivot_matrix" && availableChartTypes.length > 1 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center gap-1.5", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-semibold text-slate-500", children: t("card_controls_pivot_chart") }),
@@ -3653,7 +3658,8 @@ const AnalysisCard = We.memo(({ cardId, isSpotlighted = false, expandOverrideKey
                 valueKey,
                 hiddenLabels: cardData.hiddenLabels || [],
                 onLabelClick,
-                showPercentage: hasAdditiveMeasure
+                showPercentage: hasAdditiveMeasure,
+                aggregation: plan.aggregation
               }
             ) })
           ] }),

@@ -62,9 +62,9 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
     return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-slate-200 bg-slate-50/80 px-3 py-2" data-export-exclude>
         <div>
-            <button onClick={onToggleDataVisibility} className="min-h-[44px] text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline md:min-h-0">
+            {(!plan.artifactMetadata?.hideChartByDefault || !isDataVisible) && <button onClick={onToggleDataVisibility} className="min-h-[44px] text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline md:min-h-0">
                 {isDataVisible ? t('card_controls_hide_table') : t('card_controls_show_table')}
-            </button>
+            </button>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
             {plan.artifactType === 'pivot_matrix' && availableChartTypes.length > 1 && (

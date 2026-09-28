@@ -58,6 +58,19 @@ describe('AnalysisCardHeader', () => {
         expect(onChartTypeChange).toHaveBeenCalledWith('line');
     });
 
+    it('does not offer chart controls or chart-only export for table-only evidence', () => {
+        render(<AnalysisCardHeader
+            {...baseProps}
+            plan={{ ...baseProps.plan, artifactMetadata: { hideChartByDefault: true } }}
+        />);
+
+        expect(screen.queryByRole('button', { name: /chart type/i })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /export chart or data/i }));
+        expect(screen.queryByRole('menuitem', { name: /PNG — Chart only/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /PNG — Full card/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /CSV table data/i })).toBeInTheDocument();
+    });
+
     it('supports keyboard opening and focus movement inside the chart type menu', async () => {
         render(<AnalysisCardHeader {...baseProps} />);
 

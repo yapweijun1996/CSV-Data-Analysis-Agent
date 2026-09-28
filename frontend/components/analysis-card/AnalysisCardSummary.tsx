@@ -120,9 +120,11 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
                 })
                 : getTranslation('analysis_card_view_line_focus_non_additive', language, params));
         } else {
-            lines.push(getTranslation(hasAdditiveMeasure
-                ? 'analysis_card_view_line_ready'
-                : 'analysis_card_view_line_ready_non_additive', language));
+            lines.push(getTranslation(plan.artifactMetadata?.hideChartByDefault
+                ? 'analysis_card_view_line_ready_table_only'
+                : hasAdditiveMeasure
+                    ? 'analysis_card_view_line_ready'
+                    : 'analysis_card_view_line_ready_non_additive', language));
         }
 
         return lines;
@@ -137,6 +139,7 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
         language,
         overallTotalValue,
         plan.aggregation,
+        plan.artifactMetadata?.hideChartByDefault,
         scopeLabel,
         topN,
         totalRowCount,

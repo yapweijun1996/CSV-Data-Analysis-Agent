@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import { AnalysisCardSummary } from '../components/analysis-card/AnalysisCardSummary';
 
 const plan = {
@@ -10,7 +10,31 @@ const plan = {
     description: 'Compare total value by SeriesLabelL1.',
 } as any;
 
+afterEach(() => {
+    cleanup();
+});
+
 describe('AnalysisCardSummary', () => {
+    it('describes table-only results without promising a chart', () => {
+        render(<AnalysisCardSummary
+            cardId="table-only"
+            plan={{ ...plan, artifactMetadata: { hideChartByDefault: true } }}
+            totalValue={12840}
+            overallTotalValue={12840}
+            displayedRowCount={1}
+            totalRowCount={1}
+            displayedMetricLabel="Total Value"
+            displayedGroupLabel="Series Label 1"
+            topN={null}
+            hideOthers={false}
+            hiddenLabelCount={0}
+            language="English"
+        />);
+
+        expect(screen.getByText('The result table is available for verification.')).toBeInTheDocument();
+        expect(screen.queryByText(/visible table, chart, and totals/)).not.toBeInTheDocument();
+    });
+
     it('shows only a three-line preview until the user expands the analysis', () => {
         render(
             <AnalysisCardSummary

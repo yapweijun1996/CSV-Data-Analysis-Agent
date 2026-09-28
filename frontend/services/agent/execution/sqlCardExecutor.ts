@@ -501,11 +501,11 @@ export const executePresentationPlanAndCreateCard = async (
         description: effectivePresentationPlan.description,
         defaultTopN: effectivePresentationPlan.defaultTopN ?? uiPlan.defaultTopN,
         defaultHideOthers: effectivePresentationPlan.defaultHideOthers ?? uiPlan.defaultHideOthers,
-        defaultDataVisible: false,
+        defaultDataVisible: uiPlan.defaultDataVisible ?? false,
         artifactMetadata: {
             ...(uiPlan.artifactMetadata ?? {}),
             artifactType: uiPlan.artifactMetadata?.artifactType ?? 'distribution',
-            dataTableFirst: false,
+            dataTableFirst: uiPlan.artifactMetadata?.dataTableFirst ?? false,
             sourceStepIds: options?.sourceStepIds ?? uiPlan.artifactMetadata?.sourceStepIds ?? [],
             analysisSessionRunId: options?.analysisSessionRunId ?? uiPlan.artifactMetadata?.analysisSessionRunId ?? null,
         },

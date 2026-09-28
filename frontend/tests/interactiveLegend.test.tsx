@@ -31,4 +31,11 @@ describe('InteractiveLegend', () => {
 
         expect(screen.getByText('(50.0%)')).toBeInTheDocument();
     });
+
+    it('shows row counts without decimal places', () => {
+        render(<InteractiveLegend {...props} data={[{ Town: 'Punggol', 'Avg Price': 135 }]} total={135} aggregation="count" />);
+
+        expect(screen.getByRole('button', { name: /Punggol 135 \(100\.0%\)/i })).toBeInTheDocument();
+        expect(screen.queryByText('135.00')).not.toBeInTheDocument();
+    });
 });

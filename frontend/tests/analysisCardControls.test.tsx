@@ -7,6 +7,34 @@ afterEach(() => {
 });
 
 describe('AnalysisCardControls', () => {
+    it('keeps a table-only card visible by omitting the hide-table control', () => {
+        render(<AnalysisCardControls
+            cardId="table-only"
+            isDataVisible={true}
+            plan={{ title: 'Total Revenue', chartType: 'bar', artifactMetadata: { hideChartByDefault: true } } as any}
+            aggregatedData={[{ Revenue: 100 }]}
+            availableChartTypes={['bar']}
+            displayChartType="bar"
+            topN={null}
+            hideOthers={false}
+            hideZeroValueRows={false}
+            zeroValueRowCount={0}
+            pivotColumnTopN={null}
+            pivotHideOtherColumns={false}
+            pivotFoldedColumnCount={0}
+            showPivotColumnControls={false}
+            onToggleDataVisibility={vi.fn()}
+            onChartTypeSelect={vi.fn()}
+            onTopNChange={vi.fn()}
+            onHideOthersChange={vi.fn()}
+            onHideZeroValueRowsChange={vi.fn()}
+            onPivotColumnTopNChange={vi.fn()}
+            onPivotHideOtherColumnsChange={vi.fn()}
+        />);
+
+        expect(screen.queryByRole('button', { name: /hide full data table/i })).not.toBeInTheDocument();
+    });
+
     it('shows pivot chart quick-select buttons and forwards the selected type', () => {
         const onChartTypeSelect = vi.fn();
 
