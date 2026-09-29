@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-BSJBenX0.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-C1OnMyud.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-CMko2kpd.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-CnoDWOhp.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-COHKfWoy.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-CLo0WVDz.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -27701,17 +27701,20 @@ const translations = {
   "header_analysis_actions": {
     "English": "Analysis actions",
     "Mandarin": "分析操作",
-    "Japanese": "分析操作"
+    "Japanese": "分析操作",
+    "Malay": "Tindakan analisis"
   },
   "header_new": {
     "English": "New",
     "Mandarin": "新建",
-    "Japanese": "新規"
+    "Japanese": "新規",
+    "Malay": "Baharu"
   },
   "header_new_title": {
     "English": "Start a new analysis session",
     "Mandarin": "开始新的分析工作",
-    "Japanese": "新しい分析セッションを開始"
+    "Japanese": "新しい分析セッションを開始",
+    "Malay": "Mulakan sesi analisis baharu"
   },
   "new_session_confirm_title": {
     "English": "Start a new analysis?",
@@ -27748,22 +27751,26 @@ const translations = {
   "header_history": {
     "English": "History",
     "Mandarin": "历史",
-    "Japanese": "履歴"
+    "Japanese": "履歴",
+    "Malay": "Sejarah"
   },
   "header_history_title": {
     "English": "View analysis history",
     "Mandarin": "查看分析历史",
-    "Japanese": "分析履歴を表示"
+    "Japanese": "分析履歴を表示",
+    "Malay": "Lihat sejarah analisis"
   },
   "header_data_explorer": {
     "English": "Data Explorer",
     "Mandarin": "数据探索",
-    "Japanese": "データ探索"
+    "Japanese": "データ探索",
+    "Malay": "Penjelajah Data"
   },
   "header_data_explorer_title": {
     "English": "Explore the prepared dataset",
     "Mandarin": "探索准备后的数据集",
-    "Japanese": "準備済みデータセットを探索"
+    "Japanese": "準備済みデータセットを探索",
+    "Malay": "Teroka set data yang disediakan"
   },
   "header_data_explorer_requires_upload": {
     "English": "Upload a CSV before opening Data Explorer",
@@ -27774,265 +27781,283 @@ const translations = {
   "header_advanced": {
     "English": "Advanced",
     "Mandarin": "高级",
-    "Japanese": "詳細"
+    "Japanese": "詳細",
+    "Malay": "Lanjutan"
   },
   "header_advanced_title": {
     "English": "Open advanced analysis tools",
     "Mandarin": "打开高级分析工具",
-    "Japanese": "詳細分析ツールを開く"
+    "Japanese": "詳細分析ツールを開く",
+    "Malay": "Buka alat analisis lanjutan"
   },
   "header_workflow": {
     "English": "Workflow",
     "Mandarin": "工作流程",
-    "Japanese": "ワークフロー"
+    "Japanese": "ワークフロー",
+    "Malay": "Aliran kerja"
   },
   "header_workflow_hint": {
     "English": "Review preparation and verification details",
     "Mandarin": "查看数据准备与验证详情",
-    "Japanese": "準備と検証の詳細を確認"
+    "Japanese": "準備と検証の詳細を確認",
+    "Malay": "Semak butiran penyediaan dan pengesahan"
   },
   "header_logs": {
     "English": "Logs",
     "Mandarin": "日志",
-    "Japanese": "ログ"
+    "Japanese": "ログ",
+    "Malay": "Log"
   },
   "header_logs_hint": {
     "English": "Inspect runtime diagnostics",
     "Mandarin": "检查运行诊断信息",
-    "Japanese": "実行時の診断情報を確認"
+    "Japanese": "実行時の診断情報を確認",
+    "Malay": "Periksa diagnostik masa jalan"
   },
   "header_change_goal": {
     "English": "Change goal",
     "Mandarin": "更改目标",
-    "Japanese": "目標を変更"
+    "Japanese": "目標を変更",
+    "Malay": "Tukar matlamat"
   },
   "header_show_assistant": {
     "English": "Show Assistant panel",
     "Mandarin": "显示助手面板",
-    "Japanese": "アシスタントパネルを表示"
+    "Japanese": "アシスタントパネルを表示",
+    "Malay": "Tunjukkan panel Pembantu"
   },
-  "research_run": { "English": "Research run", "Mandarin": "分析任务", "Japanese": "分析タスク" },
-  "research_prioritized_question": { "English": "{count} prioritized question", "Mandarin": "{count} 个优先问题", "Japanese": "優先課題 {count} 件" },
-  "research_prioritized_questions": { "English": "{count} prioritized questions", "Mandarin": "{count} 个优先问题", "Japanese": "優先課題 {count} 件" },
-  "research_clarification_needed": { "English": "Clarification needed", "Mandarin": "需要确认", "Japanese": "確認が必要です" },
-  "research_status_running": { "English": "Running", "Mandarin": "运行中", "Japanese": "実行中" },
-  "research_status_completed": { "English": "Completed", "Mandarin": "已完成", "Japanese": "完了" },
-  "research_status_degraded": { "English": "Completed with caveats", "Mandarin": "已完成（有保留）", "Japanese": "注意事項付きで完了" },
-  "research_status_failed": { "English": "Failed", "Mandarin": "失败", "Japanese": "失敗" },
-  "research_status_cancelled": { "English": "Cancelled", "Mandarin": "已取消", "Japanese": "キャンセル済み" },
-  "research_status_queued": { "English": "Queued", "Mandarin": "等待中", "Japanese": "待機中" },
-  "research_finding_supported": { "English": "Supported", "Mandarin": "已验证", "Japanese": "確認済み" },
-  "research_finding_hypothesis": { "English": "Needs review", "Mandarin": "需要复核", "Japanese": "要確認" },
-  "research_finding_rejected": { "English": "Not supported", "Mandarin": "未获支持", "Japanese": "裏付けなし" },
-  "research_finding_pending": { "English": "Pending", "Mandarin": "待处理", "Japanese": "保留中" },
-  "research_finding_investigating": { "English": "Checking", "Mandarin": "核查中", "Japanese": "確認中" },
-  "research_finding_unsupported": { "English": "Not supported", "Mandarin": "未获支持", "Japanese": "裏付けなし" },
-  "research_finding_cancelled": { "English": "Cancelled", "Mandarin": "已取消", "Japanese": "キャンセル済み" },
-  "research_supported_count": { "English": "{count} supported", "Mandarin": "{count} 项已验证", "Japanese": "確認済み {count} 件" },
-  "research_hypotheses_count": { "English": "{count} need review", "Mandarin": "{count} 项待复核", "Japanese": "要確認 {count} 件" },
-  "research_rejected_count": { "English": "{count} not supported", "Mandarin": "{count} 项未获支持", "Japanese": "裏付けなし {count} 件" },
-  "research_technical_details": { "English": "Technical details", "Mandarin": "技术详情", "Japanese": "技術詳細" },
-  "research_dataset_version": { "English": "Dataset version", "Mandarin": "数据集版本", "Japanese": "データセット版" },
-  "research_stop_reason": { "English": "Stop reason", "Mandarin": "结束原因", "Japanese": "終了理由" },
-  "analysis_readiness_columns_unavailable": { "English": "The related columns are not available in the current dataset view.", "Mandarin": "当前数据集视图中没有相关列。", "Japanese": "現在のデータセット表示に関連列がありません。" },
-  "analysis_readiness_inspection_failed": { "English": "The data check could not be opened. Please try again.", "Mandarin": "无法打开数据检查，请重试。", "Japanese": "データ確認を開けませんでした。もう一度お試しください。" },
-  "explorer_query_templates": { "English": "Query templates", "Mandarin": "查询模板", "Japanese": "クエリテンプレート" },
-  "explorer_query_builder": { "English": "Data query builder", "Mandarin": "数据查询生成器", "Japanese": "データクエリビルダー" },
-  "explorer_query_builder_hint": { "English": "Build bounded, read-only queries without writing code.", "Mandarin": "无需编写代码，即可建立有范围限制的只读查询。", "Japanese": "コードを書かずに、範囲を制限した読み取り専用クエリを作成します。" },
-  "explorer_refresh_session": { "English": "Refresh query session", "Mandarin": "刷新查询工作区", "Japanese": "クエリセッションを更新" },
-  "explorer_refreshing": { "English": "Refreshing…", "Mandarin": "正在刷新…", "Japanese": "更新中…" },
-  "explorer_run_query": { "English": "Run query", "Mandarin": "运行查询", "Japanese": "クエリを実行" },
-  "explorer_running_query": { "English": "Running query…", "Mandarin": "正在运行查询…", "Japanese": "クエリを実行中…" },
-  "explorer_session_contract": { "English": "Explorer queries require a ready local query session and never switch engines silently.", "Mandarin": "数据探索需要已就绪的本地查询工作区，且不会静默切换引擎。", "Japanese": "データ探索には準備済みのローカルクエリセッションが必要で、エンジンを通知なく切り替えることはありません。" },
-  "explorer_session_status": { "English": "Query session status: {status}.", "Mandarin": "查询工作区状态：{status}。", "Japanese": "クエリセッションの状態：{status}。" },
-  "explorer_session_rebind": { "English": "Refresh the session before running a query.", "Mandarin": "请先刷新工作区，再运行查询。", "Japanese": "クエリを実行する前にセッションを更新してください。" },
-  "explorer_select_target_column_error": { "English": "Select a target column before running the null / blank scan.", "Mandarin": "运行空值扫描前，请先选择目标列。", "Japanese": "空欄スキャンを実行する前に対象列を選択してください。" },
-  "explorer_template_preview_rows": { "English": "Preview rows", "Mandarin": "预览数据行", "Japanese": "行をプレビュー" },
-  "explorer_template_preview_rows_description": { "English": "Preview selected columns with optional sorting and a safe row limit.", "Mandarin": "在安全行数限制内，预览所选列并可选择排序。", "Japanese": "安全な行数制限内で、選択した列を並べ替えてプレビューします。" },
-  "explorer_template_filter_lookup": { "English": "Filter lookup", "Mandarin": "筛选查询", "Japanese": "フィルター検索" },
-  "explorer_template_filter_lookup_description": { "English": "Find rows that match one or more filter conditions.", "Mandarin": "查找符合一个或多个筛选条件的数据行。", "Japanese": "1つ以上のフィルター条件に一致する行を検索します。" },
-  "explorer_template_aggregate_breakdown": { "English": "Aggregate breakdown", "Mandarin": "汇总拆解", "Japanese": "集計内訳" },
-  "explorer_template_aggregate_breakdown_description": { "English": "Group rows and calculate a count, sum, or average.", "Mandarin": "按列分组，并计算计数、总和或平均值。", "Japanese": "行をグループ化し、件数・合計・平均を計算します。" },
-  "explorer_template_duplicate_candidates": { "English": "Duplicate candidates", "Mandarin": "疑似重复项", "Japanese": "重複候補" },
-  "explorer_template_duplicate_candidates_description": { "English": "Find repeated key combinations for review.", "Mandarin": "查找重复的关键列组合以供检查。", "Japanese": "確認用に重複したキーの組み合わせを検索します。" },
-  "explorer_template_null_blank_scan": { "English": "Null / blank scan", "Mandarin": "空值扫描", "Japanese": "空欄スキャン" },
-  "explorer_template_null_blank_scan_description": { "English": "Preview or count rows with an empty value in one column.", "Mandarin": "预览或统计指定列为空的数据行。", "Japanese": "指定列が空の行をプレビューまたは集計します。" },
-  "explorer_visible_columns": { "English": "Visible columns", "Mandarin": "显示列", "Japanese": "表示列" },
-  "explorer_visible_columns_hint": { "English": "Choose the columns returned by the row preview.", "Mandarin": "选择数据预览要返回的列。", "Japanese": "行プレビューに返す列を選択します。" },
-  "explorer_selected_columns_count": { "English": "{count} selected", "Mandarin": "已选择 {count} 列", "Japanese": "{count} 列を選択" },
-  "explorer_choose_columns": { "English": "Choose columns", "Mandarin": "选择列", "Japanese": "列を選択" },
-  "explorer_hide_columns": { "English": "Hide column list", "Mandarin": "收起列清单", "Japanese": "列一覧を閉じる" },
-  "explorer_output_columns": { "English": "Output columns", "Mandarin": "输出列", "Japanese": "出力列" },
-  "explorer_output_columns_hint": { "English": "Choose the columns returned after filtering.", "Mandarin": "选择筛选后要返回的列。", "Japanese": "フィルター後に返す列を選択します。" },
-  "explorer_sort_column": { "English": "Sort column", "Mandarin": "排序列", "Japanese": "並べ替え列" },
-  "explorer_sort_direction": { "English": "Sort direction", "Mandarin": "排序方向", "Japanese": "並べ替え方向" },
-  "explorer_no_sort": { "English": "No sort", "Mandarin": "不排序", "Japanese": "並べ替えなし" },
-  "explorer_ascending": { "English": "Ascending", "Mandarin": "升序", "Japanese": "昇順" },
-  "explorer_descending": { "English": "Descending", "Mandarin": "降序", "Japanese": "降順" },
-  "explorer_limit": { "English": "Limit", "Mandarin": "行数上限", "Japanese": "行数上限" },
-  "explorer_rows_count": { "English": "{count} rows", "Mandarin": "{count} 行", "Japanese": "{count} 行" },
-  "explorer_no_columns": { "English": "No columns available.", "Mandarin": "没有可用列。", "Japanese": "利用できる列がありません。" },
-  "explorer_match_all": { "English": "Match all", "Mandarin": "符合全部条件", "Japanese": "すべてに一致" },
-  "explorer_predicate_hint": { "English": "All conditions in this block must match.", "Mandarin": "此区块内的所有条件都必须符合。", "Japanese": "このブロック内のすべての条件に一致する必要があります。" },
-  "explorer_add_predicate": { "English": "Add condition", "Mandarin": "添加条件", "Japanese": "条件を追加" },
-  "explorer_remove": { "English": "Remove", "Mandarin": "移除", "Japanese": "削除" },
-  "explorer_column": { "English": "Column", "Mandarin": "列", "Japanese": "列" },
-  "explorer_operator": { "English": "Operator", "Mandarin": "条件", "Japanese": "演算子" },
-  "explorer_value": { "English": "Value", "Mandarin": "值", "Japanese": "値" },
-  "explorer_values_comma_separated": { "English": "Values (comma separated)", "Mandarin": "多个值（以逗号分隔）", "Japanese": "値（カンマ区切り）" },
-  "explorer_enter_value": { "English": "Enter a value", "Mandarin": "输入一个值", "Japanese": "値を入力" },
-  "explorer_and": { "English": "And", "Mandarin": "至", "Japanese": "および" },
-  "explorer_upper_bound": { "English": "Upper bound", "Mandarin": "上限值", "Japanese": "上限値" },
-  "explorer_or_groups": { "English": "Alternative condition groups", "Mandarin": "替代条件组", "Japanese": "代替条件グループ" },
-  "explorer_or_groups_hint": { "English": "A row may match this block or any alternative group.", "Mandarin": "数据行可符合主条件区块或任一替代条件组。", "Japanese": "行は主条件ブロックまたはいずれかの代替グループに一致できます。" },
-  "explorer_add_or_group": { "English": "Add alternative group", "Mandarin": "添加替代条件组", "Japanese": "代替グループを追加" },
-  "explorer_or_group_number": { "English": "Alternative group {count}", "Mandarin": "替代条件组 {count}", "Japanese": "代替グループ {count}" },
-  "explorer_remove_group": { "English": "Remove group", "Mandarin": "移除条件组", "Japanese": "グループを削除" },
-  "explorer_group_predicates": { "English": "Group conditions", "Mandarin": "条件组内容", "Japanese": "グループ条件" },
-  "explorer_no_or_groups": { "English": "No alternative groups configured.", "Mandarin": "尚未设置替代条件组。", "Japanese": "代替グループは設定されていません。" },
-  "explorer_group_by": { "English": "Group by", "Mandarin": "分组依据", "Japanese": "グループ化" },
-  "explorer_group_by_hint": { "English": "Choose the grouping columns for the aggregate result.", "Mandarin": "选择汇总结果的分组列。", "Japanese": "集計結果をグループ化する列を選択します。" },
-  "explorer_aggregate_function": { "English": "Calculation", "Mandarin": "计算方式", "Japanese": "計算方法" },
-  "explorer_aggregate_column": { "English": "Measure column", "Mandarin": "指标列", "Japanese": "集計列" },
-  "explorer_count": { "English": "Count", "Mandarin": "计数", "Japanese": "件数" },
-  "explorer_sum": { "English": "Sum", "Mandarin": "总和", "Japanese": "合計" },
-  "explorer_average": { "English": "Average", "Mandarin": "平均值", "Japanese": "平均" },
-  "explorer_all_rows": { "English": "All rows", "Mandarin": "所有行", "Japanese": "すべての行" },
-  "explorer_select_column": { "English": "Select a column", "Mandarin": "选择一列", "Japanese": "列を選択" },
-  "explorer_alias": { "English": "Result label", "Mandarin": "结果名称", "Japanese": "結果ラベル" },
-  "explorer_key_columns": { "English": "Key columns", "Mandarin": "关键列", "Japanese": "キー列" },
-  "explorer_key_columns_hint": { "English": "Choose columns that should uniquely identify a record.", "Mandarin": "选择应能唯一识别一笔记录的列。", "Japanese": "レコードを一意に識別する列を選択します。" },
-  "explorer_count_alias": { "English": "Count label", "Mandarin": "计数名称", "Japanese": "件数ラベル" },
-  "explorer_target_column": { "English": "Target column", "Mandarin": "目标列", "Japanese": "対象列" },
-  "explorer_result_mode": { "English": "Result mode", "Mandarin": "结果模式", "Japanese": "結果モード" },
-  "explorer_preview_matching_rows": { "English": "Preview matching rows", "Mandarin": "预览符合的数据行", "Japanese": "一致する行をプレビュー" },
-  "explorer_count_matching_rows": { "English": "Count matching rows", "Mandarin": "统计符合的数据行", "Japanese": "一致する行を集計" },
-  "explorer_operator_eq": { "English": "Equals", "Mandarin": "等于", "Japanese": "等しい" },
-  "explorer_operator_neq": { "English": "Not equal to", "Mandarin": "不等于", "Japanese": "等しくない" },
-  "explorer_operator_contains": { "English": "Contains", "Mandarin": "包含", "Japanese": "含む" },
-  "explorer_operator_starts_with": { "English": "Starts with", "Mandarin": "开头为", "Japanese": "次で始まる" },
-  "explorer_operator_ends_with": { "English": "Ends with", "Mandarin": "结尾为", "Japanese": "次で終わる" },
-  "explorer_operator_gt": { "English": "Greater than", "Mandarin": "大于", "Japanese": "より大きい" },
-  "explorer_operator_gte": { "English": "Greater than or equal to", "Mandarin": "大于或等于", "Japanese": "以上" },
-  "explorer_operator_lt": { "English": "Less than", "Mandarin": "小于", "Japanese": "より小さい" },
-  "explorer_operator_lte": { "English": "Less than or equal to", "Mandarin": "小于或等于", "Japanese": "以下" },
-  "explorer_operator_between": { "English": "Between", "Mandarin": "介于", "Japanese": "範囲内" },
-  "explorer_operator_in": { "English": "In list", "Mandarin": "在列表中", "Japanese": "リスト内" },
-  "explorer_operator_is_null": { "English": "Is empty", "Mandarin": "为空", "Japanese": "空である" },
-  "explorer_operator_not_null": { "English": "Is not empty", "Mandarin": "不为空", "Japanese": "空ではない" },
-  "explorer_title": { "English": "Data explorer", "Mandarin": "数据探索", "Japanese": "データ探索" },
-  "explorer_title_hint": { "English": "Validate and explore the prepared dataset with bounded, read-only queries.", "Mandarin": "使用有范围限制的只读查询来验证并探索准备后的数据集。", "Japanese": "範囲を制限した読み取り専用クエリで準備済みデータを検証・探索します。" },
-  "explorer_close": { "English": "Close data explorer", "Mandarin": "关闭数据探索", "Japanese": "データ探索を閉じる" },
-  "explorer_advanced_engine_status": { "English": "Advanced engine status", "Mandarin": "高级引擎状态", "Japanese": "詳細エンジン状態" },
-  "explorer_query_completed": { "English": "Query completed: {rows} rows in {duration}ms · data version {version}.", "Mandarin": "查询完成：{rows} 行，耗时 {duration} 毫秒 · 数据版本 {version}。", "Japanese": "クエリ完了：{rows} 行、{duration}ミリ秒 · データバージョン {version}。" },
-  "explorer_unavailable": { "English": "unavailable", "Mandarin": "不可用", "Japanese": "利用不可" },
-  "explorer_retry": { "English": "Retry", "Mandarin": "重试", "Japanese": "再試行" },
-  "explorer_current_result": { "English": "Current result", "Mandarin": "当前结果", "Japanese": "現在の結果" },
-  "explorer_no_query_selected": { "English": "No query selected", "Mandarin": "尚未选择查询", "Japanese": "クエリが選択されていません" },
-  "explorer_current_result_hint": { "English": "Search and local sorting apply only to this result preview.", "Mandarin": "搜索与本地排序只影响当前结果预览。", "Japanese": "検索とローカル並べ替えは、この結果プレビューにのみ適用されます。" },
-  "explorer_search_result": { "English": "Search current result", "Mandarin": "搜索当前结果", "Japanese": "現在の結果を検索" },
-  "explorer_search_placeholder": { "English": "Search visible columns in this result", "Mandarin": "搜索当前结果中显示的列", "Japanese": "この結果の表示列を検索" },
-  "explorer_rows": { "English": "Rows", "Mandarin": "行数", "Japanese": "行" },
-  "explorer_columns": { "English": "Columns", "Mandarin": "列数", "Japanese": "列" },
-  "explorer_order": { "English": "Order", "Mandarin": "排序", "Japanese": "並べ替え" },
-  "explorer_local_sort": { "English": "Local sort", "Mandarin": "本地排序", "Japanese": "ローカル並べ替え" },
-  "explorer_no_sort_applied": { "English": "No sort applied", "Mandarin": "未应用排序", "Japanese": "並べ替えなし" },
-  "explorer_technical_query_details": { "English": "Technical query details", "Mandarin": "技术查询详情", "Japanese": "技術的なクエリ詳細" },
-  "explorer_technical_details": { "English": "Technical details", "Mandarin": "技术详情", "Japanese": "技術詳細" },
-  "explorer_empty_run_template": { "English": "Run a query template to populate the result grid.", "Mandarin": "运行查询模板后，结果会显示在这里。", "Japanese": "クエリテンプレートを実行すると結果がここに表示されます。" },
-  "explorer_empty_no_columns": { "English": "This result does not contain any visible columns.", "Mandarin": "此结果没有可显示的列。", "Japanese": "この結果には表示できる列がありません。" },
-  "explorer_empty_no_rows": { "English": "No rows match the current search.", "Mandarin": "没有数据行符合当前搜索。", "Japanese": "現在の検索に一致する行はありません。" },
-  "explorer_empty_preview_unavailable": { "English": "No row preview was saved for this query. Run a query template to inspect the current dataset.", "Mandarin": "此查询没有保存数据行预览。运行查询模板以检查当前数据集。", "Japanese": "このクエリの行プレビューは保存されていません。現在のデータセットを確認するには、クエリテンプレートを実行してください。" },
-  "explorer_sidebar_hint": { "English": "Inspect the selected result, reload its template, or rerun it against the current dataset.", "Mandarin": "检查所选结果、载入其模板，或针对当前数据集重新运行。", "Japanese": "選択した結果を確認し、テンプレートの再読み込みや現在のデータでの再実行ができます。" },
-  "explorer_recorded": { "English": "Recorded", "Mandarin": "记录数", "Japanese": "記録数" },
-  "explorer_file": { "English": "File", "Mandarin": "文件", "Japanese": "ファイル" },
-  "explorer_no_dataset": { "English": "No dataset loaded", "Mandarin": "尚未载入数据集", "Japanese": "データセット未読込" },
-  "explorer_origin": { "English": "Origin", "Mandarin": "来源", "Japanese": "出所" },
-  "explorer_template": { "English": "Template", "Mandarin": "模板", "Japanese": "テンプレート" },
-  "explorer_phase": { "English": "Phase", "Mandarin": "阶段", "Japanese": "フェーズ" },
-  "explorer_applied_at": { "English": "Applied at", "Mandarin": "运行时间", "Japanese": "実行時刻" },
-  "explorer_load_template": { "English": "Load template", "Mandarin": "载入模板", "Japanese": "テンプレートを読込" },
-  "explorer_rerun_query": { "English": "Rerun query", "Mandarin": "重新运行查询", "Japanese": "クエリを再実行" },
-  "explorer_query_history": { "English": "Query history", "Mandarin": "查询历史", "Japanese": "クエリ履歴" },
-  "explorer_query_history_hint": { "English": "Browse recent explorer, chat, and automatic analysis queries.", "Mandarin": "查看近期的数据探索、聊天和自动分析查询。", "Japanese": "最近のデータ探索、チャット、自動分析クエリを確認します。" },
-  "explorer_origin_workspace": { "English": "Data Explorer", "Mandarin": "数据探索", "Japanese": "データ探索" },
-  "explorer_origin_chat": { "English": "Assistant", "Mandarin": "助手", "Japanese": "アシスタント" },
-  "explorer_origin_analysis": { "English": "Automatic analysis", "Mandarin": "自动分析", "Japanese": "自動分析" },
-  "explorer_current_query": { "English": "Current query", "Mandarin": "当前查询", "Japanese": "現在のクエリ" },
-  "explorer_needs_review": { "English": "Needs review", "Mandarin": "需要复核", "Japanese": "要確認" },
-  "explorer_preview_truncated": { "English": "Preview limited", "Mandarin": "预览已限制", "Japanese": "プレビュー制限あり" },
-  "explorer_preview_complete": { "English": "Preview complete", "Mandarin": "预览完整", "Japanese": "プレビュー完了" },
-  "explorer_preview_unavailable": { "English": "Preview unavailable", "Mandarin": "预览不可用", "Japanese": "プレビューなし" },
-  "explorer_no_history": { "English": "No query history yet. Run a template or ask the Assistant to explore this dataset.", "Mandarin": "暂无查询历史。请运行模板或让助手探索此数据集。", "Japanese": "クエリ履歴はまだありません。テンプレートを実行するか、アシスタントにデータ探索を依頼してください。" },
+  "research_run": { "English": "Research run", "Mandarin": "分析任务", "Japanese": "分析タスク", "Malay": "Larian penyelidikan" },
+  "research_prioritized_question": { "English": "{count} prioritized question", "Mandarin": "{count} 个优先问题", "Japanese": "優先課題 {count} 件", "Malay": "{count} soalan diutamakan" },
+  "research_prioritized_questions": { "English": "{count} prioritized questions", "Mandarin": "{count} 个优先问题", "Japanese": "優先課題 {count} 件", "Malay": "{count} soalan diutamakan" },
+  "research_clarification_needed": { "English": "Clarification needed", "Mandarin": "需要确认", "Japanese": "確認が必要です", "Malay": "Penjelasan diperlukan" },
+  "research_status_running": { "English": "Running", "Mandarin": "运行中", "Japanese": "実行中", "Malay": "Sedang dijalankan" },
+  "research_status_completed": { "English": "Completed", "Mandarin": "已完成", "Japanese": "完了", "Malay": "Selesai" },
+  "research_status_degraded": { "English": "Completed with caveats", "Mandarin": "已完成（有保留）", "Japanese": "注意事項付きで完了", "Malay": "Selesai dengan batasan" },
+  "research_status_failed": { "English": "Failed", "Mandarin": "失败", "Japanese": "失敗", "Malay": "Gagal" },
+  "research_status_cancelled": { "English": "Cancelled", "Mandarin": "已取消", "Japanese": "キャンセル済み", "Malay": "Dibatalkan" },
+  "research_status_queued": { "English": "Queued", "Mandarin": "等待中", "Japanese": "待機中", "Malay": "Dalam barisan" },
+  "research_finding_supported": { "English": "Supported", "Mandarin": "已验证", "Japanese": "確認済み", "Malay": "Disokong" },
+  "research_finding_hypothesis": { "English": "Needs review", "Mandarin": "需要复核", "Japanese": "要確認", "Malay": "Perlu disemak" },
+  "research_finding_rejected": { "English": "Not supported", "Mandarin": "未获支持", "Japanese": "裏付けなし", "Malay": "Tidak disokong" },
+  "research_finding_pending": { "English": "Pending", "Mandarin": "待处理", "Japanese": "保留中", "Malay": "Menunggu" },
+  "research_finding_investigating": { "English": "Checking", "Mandarin": "核查中", "Japanese": "確認中", "Malay": "Sedang diperiksa" },
+  "research_finding_unsupported": { "English": "Not supported", "Mandarin": "未获支持", "Japanese": "裏付けなし", "Malay": "Tidak disokong" },
+  "research_finding_cancelled": { "English": "Cancelled", "Mandarin": "已取消", "Japanese": "キャンセル済み", "Malay": "Dibatalkan" },
+  "research_supported_count": { "English": "{count} supported", "Mandarin": "{count} 项已验证", "Japanese": "確認済み {count} 件", "Malay": "{count} disokong" },
+  "research_hypotheses_count": { "English": "{count} need review", "Mandarin": "{count} 项待复核", "Japanese": "要確認 {count} 件", "Malay": "{count} perlu disemak" },
+  "research_rejected_count": { "English": "{count} not supported", "Mandarin": "{count} 项未获支持", "Japanese": "裏付けなし {count} 件", "Malay": "{count} tidak disokong" },
+  "research_technical_details": { "English": "Technical details", "Mandarin": "技术详情", "Japanese": "技術詳細", "Malay": "Butiran teknikal" },
+  "research_dataset_version": { "English": "Dataset version", "Mandarin": "数据集版本", "Japanese": "データセット版", "Malay": "Versi set data" },
+  "research_stop_reason": { "English": "Stop reason", "Mandarin": "结束原因", "Japanese": "終了理由", "Malay": "Sebab dihentikan" },
+  "analysis_readiness_columns_unavailable": { "English": "The related columns are not available in the current dataset view.", "Mandarin": "当前数据集视图中没有相关列。", "Japanese": "現在のデータセット表示に関連列がありません。", "Malay": "Lajur berkaitan tidak tersedia dalam paparan set data semasa." },
+  "analysis_readiness_inspection_failed": { "English": "The data check could not be opened. Please try again.", "Mandarin": "无法打开数据检查，请重试。", "Japanese": "データ確認を開けませんでした。もう一度お試しください。", "Malay": "Semakan data tidak dapat dibuka. Sila cuba lagi." },
+  "explorer_query_templates": { "English": "Query templates", "Mandarin": "查询模板", "Japanese": "クエリテンプレート", "Malay": "Templat pertanyaan" },
+  "explorer_query_builder": { "English": "Data query builder", "Mandarin": "数据查询生成器", "Japanese": "データクエリビルダー", "Malay": "Pembina pertanyaan data" },
+  "explorer_query_builder_hint": { "English": "Build bounded, read-only queries without writing code.", "Mandarin": "无需编写代码，即可建立有范围限制的只读查询。", "Japanese": "コードを書かずに、範囲を制限した読み取り専用クエリを作成します。", "Malay": "Bina pertanyaan baca sahaja dengan had yang ditetapkan tanpa menulis kod." },
+  "explorer_refresh_session": { "English": "Refresh query session", "Mandarin": "刷新查询工作区", "Japanese": "クエリセッションを更新", "Malay": "Muat semula sesi pertanyaan" },
+  "explorer_refreshing": { "English": "Refreshing…", "Mandarin": "正在刷新…", "Japanese": "更新中…", "Malay": "Sedang memuat semula…" },
+  "explorer_run_query": { "English": "Run query", "Mandarin": "运行查询", "Japanese": "クエリを実行", "Malay": "Jalankan pertanyaan" },
+  "explorer_running_query": { "English": "Running query…", "Mandarin": "正在运行查询…", "Japanese": "クエリを実行中…", "Malay": "Sedang menjalankan pertanyaan…" },
+  "explorer_session_contract": { "English": "Explorer queries require a ready local query session and never switch engines silently.", "Mandarin": "数据探索需要已就绪的本地查询工作区，且不会静默切换引擎。", "Japanese": "データ探索には準備済みのローカルクエリセッションが必要で、エンジンを通知なく切り替えることはありません。", "Malay": "Pertanyaan Penjelajah Data memerlukan sesi pertanyaan setempat yang sedia dan tidak akan menukar enjin tanpa pemberitahuan." },
+  "explorer_session_status": { "English": "Query session status: {status}.", "Mandarin": "查询工作区状态：{status}。", "Japanese": "クエリセッションの状態：{status}。", "Malay": "Status sesi pertanyaan: {status}." },
+  "explorer_session_rebind": { "English": "Refresh the session before running a query.", "Mandarin": "请先刷新工作区，再运行查询。", "Japanese": "クエリを実行する前にセッションを更新してください。", "Malay": "Muat semula sesi sebelum menjalankan pertanyaan." },
+  "explorer_select_target_column_error": { "English": "Select a target column before running the null / blank scan.", "Mandarin": "运行空值扫描前，请先选择目标列。", "Japanese": "空欄スキャンを実行する前に対象列を選択してください。", "Malay": "Pilih lajur sasaran sebelum menjalankan imbasan nilai null / kosong." },
+  "explorer_template_preview_rows": { "English": "Preview rows", "Mandarin": "预览数据行", "Japanese": "行をプレビュー", "Malay": "Pratonton baris" },
+  "explorer_template_preview_rows_description": { "English": "Preview selected columns with optional sorting and a safe row limit.", "Mandarin": "在安全行数限制内，预览所选列并可选择排序。", "Japanese": "安全な行数制限内で、選択した列を並べ替えてプレビューします。", "Malay": "Pratonton lajur yang dipilih dengan pengisihan pilihan dan had baris yang selamat." },
+  "explorer_template_filter_lookup": { "English": "Filter lookup", "Mandarin": "筛选查询", "Japanese": "フィルター検索", "Malay": "Carian berpenapis" },
+  "explorer_template_filter_lookup_description": { "English": "Find rows that match one or more filter conditions.", "Mandarin": "查找符合一个或多个筛选条件的数据行。", "Japanese": "1つ以上のフィルター条件に一致する行を検索します。", "Malay": "Cari baris yang sepadan dengan satu atau lebih syarat penapis." },
+  "explorer_template_aggregate_breakdown": { "English": "Aggregate breakdown", "Mandarin": "汇总拆解", "Japanese": "集計内訳", "Malay": "Pecahan agregat" },
+  "explorer_template_aggregate_breakdown_description": { "English": "Group rows and calculate a count, sum, or average.", "Mandarin": "按列分组，并计算计数、总和或平均值。", "Japanese": "行をグループ化し、件数・合計・平均を計算します。", "Malay": "Kumpulkan baris dan kira bilangan, jumlah atau purata." },
+  "explorer_template_duplicate_candidates": { "English": "Duplicate candidates", "Mandarin": "疑似重复项", "Japanese": "重複候補", "Malay": "Calon pendua" },
+  "explorer_template_duplicate_candidates_description": { "English": "Find repeated key combinations for review.", "Mandarin": "查找重复的关键列组合以供检查。", "Japanese": "確認用に重複したキーの組み合わせを検索します。", "Malay": "Cari gabungan kunci berulang untuk disemak." },
+  "explorer_template_null_blank_scan": { "English": "Null / blank scan", "Mandarin": "空值扫描", "Japanese": "空欄スキャン", "Malay": "Imbasan null / kosong" },
+  "explorer_template_null_blank_scan_description": { "English": "Preview or count rows with an empty value in one column.", "Mandarin": "预览或统计指定列为空的数据行。", "Japanese": "指定列が空の行をプレビューまたは集計します。", "Malay": "Pratonton atau kira baris yang mempunyai nilai kosong dalam satu lajur." },
+  "explorer_visible_columns": { "English": "Visible columns", "Mandarin": "显示列", "Japanese": "表示列", "Malay": "Lajur yang dipaparkan" },
+  "explorer_visible_columns_hint": { "English": "Choose the columns returned by the row preview.", "Mandarin": "选择数据预览要返回的列。", "Japanese": "行プレビューに返す列を選択します。", "Malay": "Pilih lajur yang dikembalikan oleh pratonton baris." },
+  "explorer_selected_columns_count": { "English": "{count} selected", "Mandarin": "已选择 {count} 列", "Japanese": "{count} 列を選択", "Malay": "{count} dipilih" },
+  "explorer_choose_columns": { "English": "Choose columns", "Mandarin": "选择列", "Japanese": "列を選択", "Malay": "Pilih lajur" },
+  "explorer_hide_columns": { "English": "Hide column list", "Mandarin": "收起列清单", "Japanese": "列一覧を閉じる", "Malay": "Sembunyikan senarai lajur" },
+  "explorer_output_columns": { "English": "Output columns", "Mandarin": "输出列", "Japanese": "出力列", "Malay": "Lajur hasil" },
+  "explorer_output_columns_hint": { "English": "Choose the columns returned after filtering.", "Mandarin": "选择筛选后要返回的列。", "Japanese": "フィルター後に返す列を選択します。", "Malay": "Pilih lajur yang dikembalikan selepas penapisan." },
+  "explorer_sort_column": { "English": "Sort column", "Mandarin": "排序列", "Japanese": "並べ替え列", "Malay": "Lajur pengisihan" },
+  "explorer_sort_direction": { "English": "Sort direction", "Mandarin": "排序方向", "Japanese": "並べ替え方向", "Malay": "Arah pengisihan" },
+  "explorer_no_sort": { "English": "No sort", "Mandarin": "不排序", "Japanese": "並べ替えなし", "Malay": "Tiada pengisihan" },
+  "explorer_ascending": { "English": "Ascending", "Mandarin": "升序", "Japanese": "昇順", "Malay": "Menaik" },
+  "explorer_descending": { "English": "Descending", "Mandarin": "降序", "Japanese": "降順", "Malay": "Menurun" },
+  "explorer_limit": { "English": "Limit", "Mandarin": "行数上限", "Japanese": "行数上限", "Malay": "Had" },
+  "explorer_rows_count": { "English": "{count} rows", "Mandarin": "{count} 行", "Japanese": "{count} 行", "Malay": "{count} baris" },
+  "explorer_no_columns": { "English": "No columns available.", "Mandarin": "没有可用列。", "Japanese": "利用できる列がありません。", "Malay": "Tiada lajur tersedia." },
+  "explorer_match_all": { "English": "Match all", "Mandarin": "符合全部条件", "Japanese": "すべてに一致", "Malay": "Padankan semua" },
+  "explorer_predicate_hint": { "English": "All conditions in this block must match.", "Mandarin": "此区块内的所有条件都必须符合。", "Japanese": "このブロック内のすべての条件に一致する必要があります。", "Malay": "Semua syarat dalam blok ini mesti sepadan." },
+  "explorer_add_predicate": { "English": "Add condition", "Mandarin": "添加条件", "Japanese": "条件を追加", "Malay": "Tambah syarat" },
+  "explorer_remove": { "English": "Remove", "Mandarin": "移除", "Japanese": "削除", "Malay": "Buang" },
+  "explorer_column": { "English": "Column", "Mandarin": "列", "Japanese": "列", "Malay": "Lajur" },
+  "explorer_operator": { "English": "Operator", "Mandarin": "条件", "Japanese": "演算子", "Malay": "Pengendali" },
+  "explorer_value": { "English": "Value", "Mandarin": "值", "Japanese": "値", "Malay": "Nilai" },
+  "explorer_values_comma_separated": { "English": "Values (comma separated)", "Mandarin": "多个值（以逗号分隔）", "Japanese": "値（カンマ区切り）", "Malay": "Nilai (dipisahkan dengan koma)" },
+  "explorer_enter_value": { "English": "Enter a value", "Mandarin": "输入一个值", "Japanese": "値を入力", "Malay": "Masukkan nilai" },
+  "explorer_and": { "English": "And", "Mandarin": "至", "Japanese": "および", "Malay": "Dan" },
+  "explorer_upper_bound": { "English": "Upper bound", "Mandarin": "上限值", "Japanese": "上限値", "Malay": "Had atas" },
+  "explorer_or_groups": { "English": "Alternative condition groups", "Mandarin": "替代条件组", "Japanese": "代替条件グループ", "Malay": "Kumpulan syarat alternatif" },
+  "explorer_or_groups_hint": { "English": "A row may match this block or any alternative group.", "Mandarin": "数据行可符合主条件区块或任一替代条件组。", "Japanese": "行は主条件ブロックまたはいずれかの代替グループに一致できます。", "Malay": "Sesuatu baris boleh sepadan dengan blok ini atau mana-mana kumpulan alternatif." },
+  "explorer_add_or_group": { "English": "Add alternative group", "Mandarin": "添加替代条件组", "Japanese": "代替グループを追加", "Malay": "Tambah kumpulan alternatif" },
+  "explorer_or_group_number": { "English": "Alternative group {count}", "Mandarin": "替代条件组 {count}", "Japanese": "代替グループ {count}", "Malay": "Kumpulan alternatif {count}" },
+  "explorer_remove_group": { "English": "Remove group", "Mandarin": "移除条件组", "Japanese": "グループを削除", "Malay": "Buang kumpulan" },
+  "explorer_group_predicates": { "English": "Group conditions", "Mandarin": "条件组内容", "Japanese": "グループ条件", "Malay": "Kumpulkan syarat" },
+  "explorer_no_or_groups": { "English": "No alternative groups configured.", "Mandarin": "尚未设置替代条件组。", "Japanese": "代替グループは設定されていません。", "Malay": "Tiada kumpulan alternatif dikonfigurasi." },
+  "explorer_group_by": { "English": "Group by", "Mandarin": "分组依据", "Japanese": "グループ化", "Malay": "Kumpulkan mengikut" },
+  "explorer_group_by_hint": { "English": "Choose the grouping columns for the aggregate result.", "Mandarin": "选择汇总结果的分组列。", "Japanese": "集計結果をグループ化する列を選択します。", "Malay": "Pilih lajur pengelompokan untuk hasil agregat." },
+  "explorer_aggregate_function": { "English": "Calculation", "Mandarin": "计算方式", "Japanese": "計算方法", "Malay": "Pengiraan" },
+  "explorer_aggregate_column": { "English": "Measure column", "Mandarin": "指标列", "Japanese": "集計列", "Malay": "Lajur ukuran" },
+  "explorer_count": { "English": "Count", "Mandarin": "计数", "Japanese": "件数", "Malay": "Bilangan" },
+  "explorer_sum": { "English": "Sum", "Mandarin": "总和", "Japanese": "合計", "Malay": "Jumlah" },
+  "explorer_average": { "English": "Average", "Mandarin": "平均值", "Japanese": "平均", "Malay": "Purata" },
+  "explorer_all_rows": { "English": "All rows", "Mandarin": "所有行", "Japanese": "すべての行", "Malay": "Semua baris" },
+  "explorer_select_column": { "English": "Select a column", "Mandarin": "选择一列", "Japanese": "列を選択", "Malay": "Pilih lajur" },
+  "explorer_alias": { "English": "Result label", "Mandarin": "结果名称", "Japanese": "結果ラベル", "Malay": "Label hasil" },
+  "explorer_key_columns": { "English": "Key columns", "Mandarin": "关键列", "Japanese": "キー列", "Malay": "Lajur kunci" },
+  "explorer_key_columns_hint": { "English": "Choose columns that should uniquely identify a record.", "Mandarin": "选择应能唯一识别一笔记录的列。", "Japanese": "レコードを一意に識別する列を選択します。", "Malay": "Pilih lajur yang mengenal pasti rekod secara unik." },
+  "explorer_count_alias": { "English": "Count label", "Mandarin": "计数名称", "Japanese": "件数ラベル", "Malay": "Label bilangan" },
+  "explorer_target_column": { "English": "Target column", "Mandarin": "目标列", "Japanese": "対象列", "Malay": "Lajur sasaran" },
+  "explorer_result_mode": { "English": "Result mode", "Mandarin": "结果模式", "Japanese": "結果モード", "Malay": "Mod hasil" },
+  "explorer_preview_matching_rows": { "English": "Preview matching rows", "Mandarin": "预览符合的数据行", "Japanese": "一致する行をプレビュー", "Malay": "Pratonton baris yang sepadan" },
+  "explorer_count_matching_rows": { "English": "Count matching rows", "Mandarin": "统计符合的数据行", "Japanese": "一致する行を集計", "Malay": "Kira baris yang sepadan" },
+  "explorer_operator_eq": { "English": "Equals", "Mandarin": "等于", "Japanese": "等しい", "Malay": "Sama dengan" },
+  "explorer_operator_neq": { "English": "Not equal to", "Mandarin": "不等于", "Japanese": "等しくない", "Malay": "Tidak sama dengan" },
+  "explorer_operator_contains": { "English": "Contains", "Mandarin": "包含", "Japanese": "含む", "Malay": "Mengandungi" },
+  "explorer_operator_starts_with": { "English": "Starts with", "Mandarin": "开头为", "Japanese": "次で始まる", "Malay": "Bermula dengan" },
+  "explorer_operator_ends_with": { "English": "Ends with", "Mandarin": "结尾为", "Japanese": "次で終わる", "Malay": "Berakhir dengan" },
+  "explorer_operator_gt": { "English": "Greater than", "Mandarin": "大于", "Japanese": "より大きい", "Malay": "Lebih besar daripada" },
+  "explorer_operator_gte": { "English": "Greater than or equal to", "Mandarin": "大于或等于", "Japanese": "以上", "Malay": "Lebih besar atau sama dengan" },
+  "explorer_operator_lt": { "English": "Less than", "Mandarin": "小于", "Japanese": "より小さい", "Malay": "Lebih kecil daripada" },
+  "explorer_operator_lte": { "English": "Less than or equal to", "Mandarin": "小于或等于", "Japanese": "以下", "Malay": "Lebih kecil atau sama dengan" },
+  "explorer_operator_between": { "English": "Between", "Mandarin": "介于", "Japanese": "範囲内", "Malay": "Di antara" },
+  "explorer_operator_in": { "English": "In list", "Mandarin": "在列表中", "Japanese": "リスト内", "Malay": "Dalam senarai" },
+  "explorer_operator_is_null": { "English": "Is empty", "Mandarin": "为空", "Japanese": "空である", "Malay": "Kosong" },
+  "explorer_operator_not_null": { "English": "Is not empty", "Mandarin": "不为空", "Japanese": "空ではない", "Malay": "Tidak kosong" },
+  "explorer_title": { "English": "Data explorer", "Mandarin": "数据探索", "Japanese": "データ探索", "Malay": "Penjelajah data" },
+  "explorer_title_hint": { "English": "Validate and explore the prepared dataset with bounded, read-only queries.", "Mandarin": "使用有范围限制的只读查询来验证并探索准备后的数据集。", "Japanese": "範囲を制限した読み取り専用クエリで準備済みデータを検証・探索します。", "Malay": "Sahkan dan teroka set data yang disediakan dengan pertanyaan baca sahaja yang mempunyai had." },
+  "explorer_close": { "English": "Close data explorer", "Mandarin": "关闭数据探索", "Japanese": "データ探索を閉じる", "Malay": "Tutup peneroka data" },
+  "explorer_advanced_engine_status": { "English": "Advanced engine status", "Mandarin": "高级引擎状态", "Japanese": "詳細エンジン状態", "Malay": "Status enjin lanjutan" },
+  "explorer_query_completed": { "English": "Query completed: {rows} rows in {duration}ms · data version {version}.", "Mandarin": "查询完成：{rows} 行，耗时 {duration} 毫秒 · 数据版本 {version}。", "Japanese": "クエリ完了：{rows} 行、{duration}ミリ秒 · データバージョン {version}。", "Malay": "Pertanyaan selesai: {rows} baris dalam {duration}ms · versi data {version}." },
+  "explorer_unavailable": { "English": "unavailable", "Mandarin": "不可用", "Japanese": "利用不可", "Malay": "tidak tersedia" },
+  "explorer_retry": { "English": "Retry", "Mandarin": "重试", "Japanese": "再試行", "Malay": "Cuba lagi" },
+  "explorer_current_result": { "English": "Current result", "Mandarin": "当前结果", "Japanese": "現在の結果", "Malay": "Hasil semasa" },
+  "explorer_no_query_selected": { "English": "No query selected", "Mandarin": "尚未选择查询", "Japanese": "クエリが選択されていません", "Malay": "Tiada pertanyaan dipilih" },
+  "explorer_current_result_hint": { "English": "Search and local sorting apply only to this result preview.", "Mandarin": "搜索与本地排序只影响当前结果预览。", "Japanese": "検索とローカル並べ替えは、この結果プレビューにのみ適用されます。", "Malay": "Carian dan pengisihan setempat hanya digunakan pada pratonton hasil ini." },
+  "explorer_search_result": { "English": "Search current result", "Mandarin": "搜索当前结果", "Japanese": "現在の結果を検索", "Malay": "Cari dalam hasil semasa" },
+  "explorer_search_placeholder": { "English": "Search visible columns in this result", "Mandarin": "搜索当前结果中显示的列", "Japanese": "この結果の表示列を検索", "Malay": "Cari lajur yang dipaparkan dalam hasil ini" },
+  "explorer_rows": { "English": "Rows", "Mandarin": "行数", "Japanese": "行", "Malay": "Baris" },
+  "explorer_columns": { "English": "Columns", "Mandarin": "列数", "Japanese": "列", "Malay": "Lajur" },
+  "explorer_order": { "English": "Order", "Mandarin": "排序", "Japanese": "並べ替え", "Malay": "Susunan" },
+  "explorer_local_sort": { "English": "Local sort", "Mandarin": "本地排序", "Japanese": "ローカル並べ替え", "Malay": "Pengisihan setempat" },
+  "explorer_no_sort_applied": { "English": "No sort applied", "Mandarin": "未应用排序", "Japanese": "並べ替えなし", "Malay": "Tiada pengisihan digunakan" },
+  "explorer_technical_query_details": { "English": "Technical query details", "Mandarin": "技术查询详情", "Japanese": "技術的なクエリ詳細", "Malay": "Butiran teknikal pertanyaan" },
+  "explorer_technical_details": { "English": "Technical details", "Mandarin": "技术详情", "Japanese": "技術詳細", "Malay": "Butiran teknikal" },
+  "explorer_empty_run_template": { "English": "Run a query template to populate the result grid.", "Mandarin": "运行查询模板后，结果会显示在这里。", "Japanese": "クエリテンプレートを実行すると結果がここに表示されます。", "Malay": "Jalankan templat pertanyaan untuk mengisi grid hasil." },
+  "explorer_empty_no_columns": { "English": "This result does not contain any visible columns.", "Mandarin": "此结果没有可显示的列。", "Japanese": "この結果には表示できる列がありません。", "Malay": "Hasil ini tidak mengandungi lajur yang kelihatan." },
+  "explorer_empty_no_rows": { "English": "No rows match the current search.", "Mandarin": "没有数据行符合当前搜索。", "Japanese": "現在の検索に一致する行はありません。", "Malay": "Tiada baris yang sepadan dengan carian semasa." },
+  "explorer_empty_preview_unavailable": { "English": "No row preview was saved for this query. Run a query template to inspect the current dataset.", "Mandarin": "此查询没有保存数据行预览。运行查询模板以检查当前数据集。", "Japanese": "このクエリの行プレビューは保存されていません。現在のデータセットを確認するには、クエリテンプレートを実行してください。", "Malay": "Tiada pratonton baris disimpan untuk pertanyaan ini. Jalankan templat pertanyaan untuk memeriksa set data semasa." },
+  "explorer_sidebar_hint": { "English": "Inspect the selected result, reload its template, or rerun it against the current dataset.", "Mandarin": "检查所选结果、载入其模板，或针对当前数据集重新运行。", "Japanese": "選択した結果を確認し、テンプレートの再読み込みや現在のデータでの再実行ができます。", "Malay": "Periksa hasil yang dipilih, muat semula templatnya atau jalankan semula terhadap set data semasa." },
+  "explorer_recorded": { "English": "Recorded", "Mandarin": "记录数", "Japanese": "記録数", "Malay": "Direkodkan" },
+  "explorer_file": { "English": "File", "Mandarin": "文件", "Japanese": "ファイル", "Malay": "Fail" },
+  "explorer_no_dataset": { "English": "No dataset loaded", "Mandarin": "尚未载入数据集", "Japanese": "データセット未読込", "Malay": "Tiada set data dimuatkan" },
+  "explorer_origin": { "English": "Origin", "Mandarin": "来源", "Japanese": "出所", "Malay": "Asal" },
+  "explorer_template": { "English": "Template", "Mandarin": "模板", "Japanese": "テンプレート", "Malay": "Templat" },
+  "explorer_phase": { "English": "Phase", "Mandarin": "阶段", "Japanese": "フェーズ", "Malay": "Fasa" },
+  "explorer_applied_at": { "English": "Applied at", "Mandarin": "运行时间", "Japanese": "実行時刻", "Malay": "Digunakan pada" },
+  "explorer_load_template": { "English": "Load template", "Mandarin": "载入模板", "Japanese": "テンプレートを読込", "Malay": "Muatkan templat" },
+  "explorer_rerun_query": { "English": "Rerun query", "Mandarin": "重新运行查询", "Japanese": "クエリを再実行", "Malay": "Jalankan semula pertanyaan" },
+  "explorer_query_history": { "English": "Query history", "Mandarin": "查询历史", "Japanese": "クエリ履歴", "Malay": "Sejarah pertanyaan" },
+  "explorer_query_history_hint": { "English": "Browse recent explorer, chat, and automatic analysis queries.", "Mandarin": "查看近期的数据探索、聊天和自动分析查询。", "Japanese": "最近のデータ探索、チャット、自動分析クエリを確認します。", "Malay": "Lihat pertanyaan terkini daripada Penjelajah Data, sembang dan analisis automatik." },
+  "explorer_origin_workspace": { "English": "Data Explorer", "Mandarin": "数据探索", "Japanese": "データ探索", "Malay": "Penjelajah Data" },
+  "explorer_origin_chat": { "English": "Assistant", "Mandarin": "助手", "Japanese": "アシスタント", "Malay": "Pembantu" },
+  "explorer_origin_analysis": { "English": "Automatic analysis", "Mandarin": "自动分析", "Japanese": "自動分析", "Malay": "Analisis automatik" },
+  "explorer_current_query": { "English": "Current query", "Mandarin": "当前查询", "Japanese": "現在のクエリ", "Malay": "Pertanyaan semasa" },
+  "explorer_needs_review": { "English": "Needs review", "Mandarin": "需要复核", "Japanese": "要確認", "Malay": "Perlu disemak" },
+  "explorer_preview_truncated": { "English": "Preview limited", "Mandarin": "预览已限制", "Japanese": "プレビュー制限あり", "Malay": "Pratonton dihadkan" },
+  "explorer_preview_complete": { "English": "Preview complete", "Mandarin": "预览完整", "Japanese": "プレビュー完了", "Malay": "Pratonton lengkap" },
+  "explorer_preview_unavailable": { "English": "Preview unavailable", "Mandarin": "预览不可用", "Japanese": "プレビューなし", "Malay": "Pratonton tidak tersedia" },
+  "explorer_no_history": { "English": "No query history yet. Run a template or ask the Assistant to explore this dataset.", "Mandarin": "暂无查询历史。请运行模板或让助手探索此数据集。", "Japanese": "クエリ履歴はまだありません。テンプレートを実行するか、アシスタントにデータ探索を依頼してください。", "Malay": "Belum ada sejarah pertanyaan. Jalankan templat atau minta Pembantu meneroka set data ini." },
   "executive_overview": {
     "English": "Executive Overview",
     "Mandarin": "管理层概览",
     "Spanish": "Resumen Ejecutivo",
     "Japanese": "エグゼクティブ概要",
-    "French": "Vue Exécutive"
+    "French": "Vue Exécutive",
+    "Malay": "Gambaran keseluruhan eksekutif"
   },
   "executive_overview_hint": {
     "English": "Lead metrics first, charts second.",
     "Mandarin": "先看关键指标，再进入图表。",
     "Spanish": "Primero métricas clave, después gráficos.",
     "Japanese": "まず主要指標、その後にチャート。",
-    "French": "D’abord les indicateurs clés, ensuite les graphiques."
+    "French": "D’abord les indicateurs clés, ensuite les graphiques.",
+    "Malay": "Metrik utama dahulu, kemudian carta."
   },
   "executive_kpi_view_breakdown": {
     "English": "View Breakdown",
     "Mandarin": "查看拆解",
     "Spanish": "Ver Desglose",
     "Japanese": "内訳を見る",
-    "French": "Voir Le Détail"
+    "French": "Voir Le Détail",
+    "Malay": "Lihat pecahan"
   },
   "executive_kpi_total_metric_label": {
     "English": "Total {metric}",
     "Mandarin": "总{metric}",
     "Spanish": "Total de {metric}",
     "Japanese": "{metric} 合計",
-    "French": "Total {metric}"
+    "French": "Total {metric}",
+    "Malay": "Jumlah {metric}"
   },
   "executive_kpi_top_group_label": {
     "English": "Top {group}",
     "Mandarin": "头部{group}",
     "Spanish": "{group} principal",
     "Japanese": "上位{group}",
-    "French": "{group} principal"
+    "French": "{group} principal",
+    "Malay": "{group} teratas"
   },
   "executive_kpi_group_count_label": {
     "English": "{groups}",
     "Mandarin": "{groups}",
     "Spanish": "{groups}",
     "Japanese": "{groups}",
-    "French": "{groups}"
+    "French": "{groups}",
+    "Malay": "{groups}"
   },
   "executive_kpi_inactive_label": {
     "English": "Inactive {groups}",
     "Mandarin": "停用{groups}",
     "Spanish": "{groups} inactivos",
     "Japanese": "休止中の{groups}",
-    "French": "{groups} inactifs"
+    "French": "{groups} inactifs",
+    "Malay": "{groups} tidak aktif"
   },
   "executive_kpi_top_share_label": {
     "English": "Top {count} Share",
     "Mandarin": "前 {count} 占比",
     "Spanish": "Participación Top {count}",
     "Japanese": "上位 {count} 占有率",
-    "French": "Part Des Top {count}"
+    "French": "Part Des Top {count}",
+    "Malay": "Bahagian {count} teratas"
   },
   "executive_kpi_total_detail_rows": {
     "English": "Across {rows} prepared rows.",
     "Mandarin": "覆盖 {rows} 行预处理数据。",
     "Spanish": "Abarca {rows} filas preparadas.",
     "Japanese": "前処理済み {rows} 行を対象。",
-    "French": "Couvre {rows} lignes préparées."
+    "French": "Couvre {rows} lignes préparées.",
+    "Malay": "Merentas {rows} baris yang disediakan."
   },
   "executive_kpi_total_detail_groups": {
     "English": "Across {count} {groups}.",
     "Mandarin": "覆盖 {count} 个{groups}。",
     "Spanish": "Abarca {count} {groups}.",
     "Japanese": "{groups} を {count} 件カバー。",
-    "French": "Couvre {count} {groups}."
+    "French": "Couvre {count} {groups}.",
+    "Malay": "Merentas {count} {groups}."
   },
   "executive_kpi_visible_series_scope": {
     "English": "Visible series",
@@ -28047,91 +28072,104 @@ const translations = {
     "Mandarin": "{group} 占 {metric} 的 {share}。",
     "Spanish": "{group} concentra el {share} de {metric}.",
     "Japanese": "{group} が {metric} の {share} を占めます。",
-    "French": "{group} représente {share} de {metric}."
+    "French": "{group} représente {share} de {metric}.",
+    "Malay": "{group} merangkumi {share} daripada {metric}."
   },
   "executive_kpi_top_group_detail_fallback": {
     "English": "{group} leads this view.",
     "Mandarin": "{group} 在此视图中领先。",
     "Spanish": "{group} lidera esta vista.",
     "Japanese": "{group} がこのビューをリードしています。",
-    "French": "{group} mène cette vue."
+    "French": "{group} mène cette vue.",
+    "Malay": "{group} mendahului paparan ini."
   },
   "executive_kpi_top_group_detail_share_only": {
     "English": "Holds {share} of total {metric}.",
     "Mandarin": "占{metric}总量的 {share}。",
     "Spanish": "Concentra el {share} del {metric} total.",
     "Japanese": "{metric}全体の {share} を占めます。",
-    "French": "Représente {share} du {metric} total."
+    "French": "Représente {share} du {metric} total.",
+    "Malay": "Merangkumi {share} daripada jumlah {metric}."
   },
   "executive_kpi_top_group_detail_unnamed": {
     "English": "Top entry by value in this view.",
     "Mandarin": "此视图中按数值排名第一的条目。",
     "Spanish": "Primera entrada por valor en esta vista.",
     "Japanese": "このビューで値が最も高いエントリ。",
-    "French": "Première entrée par valeur dans cette vue."
+    "French": "Première entrée par valeur dans cette vue.",
+    "Malay": "Entri dengan nilai tertinggi dalam paparan ini."
   },
   "executive_kpi_group_count_detail": {
     "English": "Distinct {groups} covered by the lead KPI chart.",
     "Mandarin": "主 KPI 图表覆盖的不同{groups}数量。",
     "Spanish": "El gráfico KPI principal cubre {groups} distintos.",
     "Japanese": "主要 KPI グラフがカバーする異なる{groups}数。",
-    "French": "Le graphique KPI principal couvre des {groups} distincts."
+    "French": "Le graphique KPI principal couvre des {groups} distincts.",
+    "Malay": "{groups} berbeza yang diliputi oleh carta KPI utama."
   },
   "executive_kpi_inactive_detail": {
     "English": "Detected from {status} values in the prepared dataset.",
     "Mandarin": "根据预处理数据中的 {status} 值识别。",
     "Spanish": "Detectado a partir de los valores de {status} en el conjunto preparado.",
     "Japanese": "前処理済みデータ内の {status} 値から検出。",
-    "French": "Détecté à partir des valeurs {status} dans le jeu préparé."
+    "French": "Détecté à partir des valeurs {status} dans le jeu préparé.",
+    "Malay": "Dikesan daripada nilai {status} dalam set data yang disediakan."
   },
   "executive_kpi_top_share_detail": {
     "English": "Share held by the leading {count} {groups}.",
     "Mandarin": "前 {count} 个{groups}持有的占比。",
     "Spanish": "Participación acumulada de los {count} {groups} líderes.",
     "Japanese": "上位 {count} 件の{groups}が占める比率。",
-    "French": "Part détenue par les {count} {groups} leaders."
+    "French": "Part détenue par les {count} {groups} leaders.",
+    "Malay": "Bahagian yang dipegang oleh {count} {groups} teratas."
   },
   "executive_kpi_delta_month": {
     "English": "vs last month",
     "Mandarin": "较上月",
     "Spanish": "vs. mes anterior",
     "Japanese": "前月比",
-    "French": "vs mois précédent"
+    "French": "vs mois précédent",
+    "Malay": "berbanding bulan lalu"
   },
   "executive_kpi_delta_day": {
     "English": "vs previous day",
     "Mandarin": "较前一日",
     "Spanish": "vs. día anterior",
     "Japanese": "前日比",
-    "French": "vs jour précédent"
+    "French": "vs jour précédent",
+    "Malay": "berbanding hari sebelumnya"
   },
   "executive_kpi_delta_distribution": {
     "English": "held by top {group}",
     "Mandarin": "头部{group}占比",
     "Spanish": "en el {group} líder",
     "Japanese": "上位{group}の占有率",
-    "French": "détenue par le {group} principal"
+    "French": "détenue par le {group} principal",
+    "Malay": "dipegang oleh {group} teratas"
   },
   "overall_insights": {
     "English": "Overall Insights",
     "Mandarin": "整体洞察",
     "Spanish": "Perspectivas Generales",
     "Japanese": "全体的な洞察",
-    "French": "Aperçus Généraux"
+    "French": "Aperçus Généraux",
+    "Malay": "Cerapan keseluruhan"
   },
   "insights_expand": {
     "English": "Show insights",
     "Mandarin": "展开洞察",
     "Spanish": "Mostrar perspectivas",
     "Japanese": "洞察を表示",
-    "French": "Afficher les aperçus"
+    "French": "Afficher les aperçus",
+    "Malay": "Tunjukkan cerapan"
   },
   "insights_collapse": {
     "English": "Hide insights",
     "Mandarin": "收起洞察",
     "Spanish": "Ocultar perspectivas",
     "Japanese": "洞察を非表示",
-    "French": "Masquer les aperçus"
+    "French": "Masquer les aperçus",
+    "Malay": "Sembunyikan cerapan"
   },
   "fallback_core_intro": {
     "English": "Fallback-only analysis run detected.",
@@ -28243,382 +28281,438 @@ const translations = {
     "Mandarin": "报表上下文",
     "Spanish": "Contexto del Informe",
     "Japanese": "レポートコンテキスト",
-    "French": "Contexte du Rapport"
+    "French": "Contexte du Rapport",
+    "Malay": "Konteks laporan"
   },
   "report_header_hint": {
     "English": "Title and parameter lines inferred from the uploaded report.",
     "Mandarin": "根据上传报表推断出的标题与参数行。",
     "Spanish": "Título y líneas de parámetros inferidos del informe cargado.",
     "Japanese": "アップロードされたレポートから推定したタイトルとパラメータ行です。",
-    "French": "Titre et lignes de paramètres déduits du rapport importé."
+    "French": "Titre et lignes de paramètres déduits du rapport importé.",
+    "Malay": "Tajuk dan baris parameter disimpulkan daripada laporan yang dimuat naik."
   },
   "report_header_parameters": {
     "English": "Parameters",
     "Mandarin": "参数",
     "Spanish": "Parámetros",
     "Japanese": "パラメータ",
-    "French": "Paramètres"
+    "French": "Paramètres",
+    "Malay": "Parameter"
   },
   "report_header_prepared_rows": {
     "English": "Prepared Rows",
     "Mandarin": "预处理行数",
     "Spanish": "Filas Preparadas",
     "Japanese": "準備済み行数",
-    "French": "Lignes Préparées"
+    "French": "Lignes Préparées",
+    "Malay": "Baris yang disediakan"
   },
   "report_header_header_depth": {
     "English": "Header Depth",
     "Mandarin": "表头层级",
     "Spanish": "Profundidad del Encabezado",
     "Japanese": "ヘッダー階層",
-    "French": "Profondeur d’En-tête"
+    "French": "Profondeur d’En-tête",
+    "Malay": "Kedalaman pengepala"
   },
   "report_header_summary_rows": {
     "English": "Summary Rows",
     "Mandarin": "汇总行数",
     "Spanish": "Filas de Resumen",
     "Japanese": "集計行数",
-    "French": "Lignes de Résumé"
+    "French": "Lignes de Résumé",
+    "Malay": "Baris ringkasan"
   },
   "report_header_low_confidence": {
     "English": "Low-confidence AI guess shown",
     "Mandarin": "当前显示低置信度 AI 猜测",
     "Spanish": "Se muestra una conjetura de IA de baja confianza",
     "Japanese": "低信頼のAI推定を表示中",
-    "French": "Estimation IA à faible confiance affichée"
+    "French": "Estimation IA à faible confiance affichée",
+    "Malay": "Anggaran AI berkeyakinan rendah dipaparkan"
   },
   "report_header_validated_fallback": {
     "English": "Validated fallback used downstream",
     "Mandarin": "下游分析仍使用已验证回退结果",
     "Spanish": "El análisis usa el respaldo validado",
     "Japanese": "下流分析では検証済みフォールバックを使用",
-    "French": "Le repli validé est utilisé pour l’analyse"
+    "French": "Le repli validé est utilisé pour l’analyse",
+    "Malay": "Paparan sandaran yang disahkan digunakan dalam langkah seterusnya"
   },
   "report_header_generated_at": {
     "English": "Generated",
     "Mandarin": "生成时间",
     "Spanish": "Generado",
     "Japanese": "生成日時",
-    "French": "Généré le"
+    "French": "Généré le",
+    "Malay": "Dijana"
   },
   "report_header_ai_badge": {
     "English": "AI Analysis",
     "Mandarin": "AI 分析",
     "Spanish": "Análisis IA",
     "Japanese": "AI 分析",
-    "French": "Analyse IA"
+    "French": "Analyse IA",
+    "Malay": "Analisis AI"
   },
   "analysis_results_placeholder": {
     "English": "Your analysis results will appear here.",
     "Mandarin": "您的分析结果将显示在这里。",
     "Spanish": "Sus resultados de análisis aparecerán aquí.",
     "Japanese": "分析結果はここに表示されます。",
-    "French": "Vos résultats d'analyse apparaîtront ici."
+    "French": "Vos résultats d'analyse apparaîtront ici.",
+    "Malay": "Hasil analisis anda akan dipaparkan di sini."
   },
   "generate_analyst_report": {
     "English": "Generate Analyst Report",
     "Mandarin": "生成分析师报告",
     "Spanish": "Generar Informe Analítico",
     "Japanese": "アナリストレポートを生成",
-    "French": "Générer le Rapport Analyste"
+    "French": "Générer le Rapport Analyste",
+    "Malay": "Jana laporan penganalisis"
   },
   "generate_analyst_report_hint": {
     "English": "Create a bounded report artifact from the verified dataset, trusted cards, and analyst synthesis.",
     "Mandarin": "基于已验证数据集、可信卡片与分析师综合结论生成有界报告产物。",
     "Spanish": "Cree un artefacto de informe acotado a partir del conjunto verificado, las tarjetas confiables y la síntesis de analistas.",
     "Japanese": "検証済みデータセット、信頼できるカード、アナリスト統合結果から境界付きレポート成果物を生成します。",
-    "French": "Créez un artefact de rapport borné à partir du jeu de données vérifié, des cartes fiables et de la synthèse des analystes."
+    "French": "Créez un artefact de rapport borné à partir du jeu de données vérifié, des cartes fiables et de la synthèse des analystes.",
+    "Malay": "Cipta laporan dengan skop yang ditetapkan daripada set data yang disahkan, kad yang dipercayai dan rumusan penganalisis."
   },
   "generate_analyst_report_running": {
     "English": "Generating Analyst Report",
     "Mandarin": "正在生成分析师报告",
     "Spanish": "Generando Informe Analítico",
     "Japanese": "アナリストレポートを生成中",
-    "French": "Génération du Rapport Analyste"
+    "French": "Génération du Rapport Analyste",
+    "Malay": "Sedang menjana laporan penganalisis"
   },
   "report_delivery_label": {
     "English": "Report Delivery",
     "Mandarin": "报告交付",
     "Spanish": "Entrega de Informe",
     "Japanese": "レポート配信",
-    "French": "Livraison du Rapport"
+    "French": "Livraison du Rapport",
+    "Malay": "Penyampaian laporan"
   },
   "report_template_label": {
     "English": "Template",
     "Mandarin": "模板",
     "Spanish": "Plantilla",
     "Japanese": "テンプレート",
-    "French": "Modèle"
+    "French": "Modèle",
+    "Malay": "Templat"
   },
   "report_template_executive_brief": {
     "English": "Executive Brief",
     "Mandarin": "高管简报",
     "Spanish": "Resumen Ejecutivo",
     "Japanese": "エグゼクティブブリーフ",
-    "French": "Note Exécutive"
+    "French": "Note Exécutive",
+    "Malay": "Ringkasan eksekutif"
   },
   "report_template_executive_brief_desc": {
     "English": "High-level summary with key findings and recommendations",
     "Mandarin": "高层摘要，包含关键发现与建议",
     "Spanish": "Resumen de alto nivel con hallazgos clave y recomendaciones",
     "Japanese": "主要な発見と提案を含む概要レポート",
-    "French": "Résumé de haut niveau avec les points clés et recommandations"
+    "French": "Résumé de haut niveau avec les points clés et recommandations",
+    "Malay": "Ringkasan aras tinggi dengan dapatan utama dan cadangan"
   },
   "report_template_management_review": {
     "English": "Management Review",
     "Mandarin": "管理审查",
     "Spanish": "Revisión Gerencial",
     "Japanese": "マネジメントレビュー",
-    "French": "Revue de Direction"
+    "French": "Revue de Direction",
+    "Malay": "Semakan pengurusan"
   },
   "report_template_management_review_desc": {
     "English": "Full evidence review with charts, KPIs, and findings",
     "Mandarin": "完整证据审查，含图表、KPI 与分析结论",
     "Spanish": "Revisión completa con gráficos, KPIs y hallazgos",
     "Japanese": "チャート・KPI・発見事項を含む完全な証拠レビュー",
-    "French": "Revue complète avec graphiques, KPI et conclusions"
+    "French": "Revue complète avec graphiques, KPI et conclusions",
+    "Malay": "Semakan bukti penuh dengan carta, KPI dan dapatan"
   },
   "report_template_audit_appendix": {
     "English": "Audit Appendix",
     "Mandarin": "审计附录",
     "Spanish": "Apéndice de Auditoría",
     "Japanese": "監査附録",
-    "French": "Annexe d'Audit"
+    "French": "Annexe d'Audit",
+    "Malay": "Lampiran audit"
   },
   "report_template_audit_appendix_desc": {
     "English": "Detailed data catalog with evidence refs and exclusions",
     "Mandarin": "详细数据目录，含证据引用与排除记录",
     "Spanish": "Catálogo detallado con referencias de evidencia y exclusiones",
     "Japanese": "証拠参照と除外記録を含む詳細データカタログ",
-    "French": "Catalogue détaillé avec références d'évidences et exclusions"
+    "French": "Catalogue détaillé avec références d'évidences et exclusions",
+    "Malay": "Katalog data terperinci dengan rujukan bukti dan pengecualian"
   },
   "report_actions_label": {
     "English": "Report Ready",
     "Mandarin": "报告就绪",
     "Spanish": "Informe Listo",
     "Japanese": "レポート完成",
-    "French": "Rapport Prêt"
+    "French": "Rapport Prêt",
+    "Malay": "Laporan sedia"
   },
   "report_open": {
     "English": "Open Report",
     "Mandarin": "打开报告",
     "Spanish": "Abrir Informe",
     "Japanese": "レポートを開く",
-    "French": "Ouvrir le Rapport"
+    "French": "Ouvrir le Rapport",
+    "Malay": "Buka laporan"
   },
   "report_export_pdf": {
     "English": "Export PDF",
     "Mandarin": "导出 PDF",
     "Spanish": "Exportar PDF",
     "Japanese": "PDF エクスポート",
-    "French": "Exporter en PDF"
+    "French": "Exporter en PDF",
+    "Malay": "Eksport PDF"
   },
   "report_blocked_title": {
     "English": "Report generation blocked",
     "Mandarin": "报告生成被阻止",
     "Spanish": "Generación de informe bloqueada",
     "Japanese": "レポート生成がブロックされました",
-    "French": "Génération du rapport bloquée"
+    "French": "Génération du rapport bloquée",
+    "Malay": "Penjanaan laporan disekat"
   },
   "report_blocked_detail": {
     "English": "{trusted} trusted cards, {excluded} excluded. Analysis cards need higher confidence to qualify.",
     "Mandarin": "{trusted} 张可信卡片，{excluded} 张已排除。分析卡片需要更高的置信度才能通过。",
     "Spanish": "{trusted} tarjetas confiables, {excluded} excluidas. Las tarjetas necesitan mayor confianza para calificar.",
     "Japanese": "信頼カード {trusted} 枚、除外 {excluded} 枚。分析カードにはより高い信頼度が必要です。",
-    "French": "{trusted} cartes fiables, {excluded} exclues. Les cartes doivent atteindre un niveau de confiance supérieur."
+    "French": "{trusted} cartes fiables, {excluded} exclues. Les cartes doivent atteindre un niveau de confiance supérieur.",
+    "Malay": "{trusted} kad dipercayai, {excluded} dikecualikan. Kad analisis memerlukan keyakinan yang lebih tinggi untuk layak."
   },
   "report_partial_hint": {
     "English": "Generated with caveated evidence — review findings carefully.",
     "Mandarin": "基于有保留意见的证据生成 — 请仔细审查结论。",
     "Spanish": "Generado con evidencia con reservas — revise los hallazgos cuidadosamente.",
     "Japanese": "注意付き証拠で生成 — 結果を慎重に確認してください。",
-    "French": "Généré avec des preuves sous réserve — examinez attentivement les résultats."
+    "French": "Généré avec des preuves sous réserve — examinez attentivement les résultats.",
+    "Malay": "Dijana dengan bukti yang mempunyai batasan — semak dapatan dengan teliti."
   },
   "report_step_collecting": {
     "English": "Collecting evidence",
     "Mandarin": "收集证据",
     "Spanish": "Recopilando evidencia",
     "Japanese": "証拠を収集中",
-    "French": "Collecte des preuves"
+    "French": "Collecte des preuves",
+    "Malay": "Mengumpul bukti"
   },
   "report_step_structuring": {
     "English": "Structuring report",
     "Mandarin": "构建报告",
     "Spanish": "Estructurando informe",
     "Japanese": "レポートを構成中",
-    "French": "Structuration du rapport"
+    "French": "Structuration du rapport",
+    "Malay": "Menyusun struktur laporan"
   },
   "report_step_rendering": {
     "English": "Rendering",
     "Mandarin": "渲染输出",
     "Spanish": "Renderizando",
     "Japanese": "レンダリング中",
-    "French": "Rendu en cours"
+    "French": "Rendu en cours",
+    "Malay": "Memaparkan"
   },
   "report_blocked_what_to_do_label": {
     "English": "What to do next",
     "Mandarin": "下一步建议",
     "Spanish": "Qué hacer a continuación",
     "Japanese": "次のステップ",
-    "French": "Prochaines étapes"
+    "French": "Prochaines étapes",
+    "Malay": "Langkah seterusnya"
   },
   "report_cancel": {
     "English": "Cancel",
     "Mandarin": "取消",
     "Spanish": "Cancelar",
     "Japanese": "キャンセル",
-    "French": "Annuler"
+    "French": "Annuler",
+    "Malay": "Batal"
   },
   "report_blocked_what_to_do": {
     "English": "Review your analysis cards and run additional AI queries to improve evidence quality before generating again.",
     "Mandarin": "请检查您的分析卡片并运行更多 AI 查询，以提升证据质量后再重新生成。",
     "Spanish": "Revise sus tarjetas de análisis y ejecute más consultas de IA para mejorar la calidad de la evidencia antes de generar de nuevo.",
     "Japanese": "分析カードを確認し、追加のAIクエリを実行して証拠の質を向上させてから再生成してください。",
-    "French": "Vérifiez vos cartes d'analyse et lancez des requêtes IA supplémentaires pour améliorer la qualité des preuves avant de régénérer."
+    "French": "Vérifiez vos cartes d'analyse et lancez des requêtes IA supplémentaires pour améliorer la qualité des preuves avant de régénérer.",
+    "Malay": "Semak kad analisis anda dan jalankan pertanyaan AI tambahan untuk meningkatkan kualiti bukti sebelum menjana semula."
   },
   "loading_table": {
     "English": "Loading table…",
-    "Mandarin": "加载表格中…"
+    "Mandarin": "加载表格中…",
+    "Japanese": "テーブルの読み込み…",
+    "Malay": "Sedang memuatkan jadual…"
   },
   "raw_data_explorer": {
     "English": "Raw Data Explorer",
     "Mandarin": "原始数据浏览器",
     "Spanish": "Explorador de Datos Crudos",
     "Japanese": "生データエクスプローラー",
-    "French": "Explorateur de Données Brutes"
+    "French": "Explorateur de Données Brutes",
+    "Malay": "Penjelajah Data Mentah"
   },
   "file_label": {
     "English": "File:",
     "Mandarin": "文件:",
     "Spanish": "Archivo:",
     "Japanese": "ファイル:",
-    "French": "Fichier:"
+    "French": "Fichier:",
+    "Malay": "Fail:"
   },
   "cleaned_data": {
     "English": "Cleaned Data",
     "Mandarin": "清洗后数据",
     "Spanish": "Datos Limpios",
     "Japanese": "クリーニング済みデータ",
-    "French": "Données Nettoyées"
+    "French": "Données Nettoyées",
+    "Malay": "Data yang dibersihkan"
   },
   "prepared_data": {
     "English": "Prepared Data",
     "Mandarin": "预处理数据",
     "Spanish": "Datos Preparados",
     "Japanese": "準備済みデータ",
-    "French": "Données Préparées"
+    "French": "Données Préparées",
+    "Malay": "Data yang disediakan"
   },
   "all_prepared_data": {
     "English": "All Prepared",
     "Mandarin": "全部预处理行",
     "Spanish": "Todo Preparado",
     "Japanese": "全準備済み行",
-    "French": "Toutes Les Lignes Préparées"
+    "French": "Toutes Les Lignes Préparées",
+    "Malay": "Semua data yang disediakan"
   },
   "original_csv": {
     "English": "Original CSV",
     "Mandarin": "原始 CSV",
     "Spanish": "CSV Original",
     "Japanese": "元の CSV",
-    "French": "CSV Original"
+    "French": "CSV Original",
+    "Malay": "CSV asal"
   },
   "showing_ai_prepared": {
     "English": "Showing AI-prepared dataset.",
     "Mandarin": "显示 AI 预处理的数据集。",
     "Spanish": "Mostrando conjunto de datos preparado por IA.",
     "Japanese": "AI が準備したデータセットを表示しています。",
-    "French": "Affichage du jeu de données préparé par l'IA."
+    "French": "Affichage du jeu de données préparé par l'IA.",
+    "Malay": "Memaparkan set data yang disediakan oleh AI."
   },
   "showing_prepared_data": {
     "English": "Showing prepared dataset.",
     "Mandarin": "显示预处理后的数据集。",
     "Spanish": "Mostrando conjunto de datos preparado.",
     "Japanese": "準備済みデータセットを表示しています。",
-    "French": "Affichage du jeu de données préparé."
+    "French": "Affichage du jeu de données préparé.",
+    "Malay": "Memaparkan set data yang disediakan."
   },
   "showing_semantic_default": {
     "English": "Showing AI semantic analysis view. Non-detail rows are hidden by default.",
     "Mandarin": "显示 AI 语义分析视图，非明细行默认隐藏。",
     "Spanish": "Mostrando la vista semántica de análisis de IA. Las filas no detalladas están ocultas por defecto.",
     "Japanese": "AI セマンティック分析ビューを表示しています。非明細行は既定で非表示です。",
-    "French": "Affichage de la vue sémantique IA. Les lignes non détaillées sont masquées par défaut."
+    "French": "Affichage de la vue sémantique IA. Les lignes non détaillées sont masquées par défaut.",
+    "Malay": "Memaparkan paparan analisis semantik AI. Baris bukan butiran disembunyikan secara lalai."
   },
   "showing_semantic_default_unavailable": {
     "English": "Analysis-safe prepared view is not ready yet. Switch to All Prepared to inspect the full prepared dataset.",
     "Mandarin": '分析安全视图尚未就绪。若要查看完整预处理数据，请切换到"全部预处理行"。',
     "Spanish": "La vista preparada segura para análisis aún no está lista. Cambia a Todo Preparado para inspeccionar el conjunto completo.",
     "Japanese": "分析安全ビューはまだ準備できていません。完全な準備済みデータセットを確認するには「全準備済み行」に切り替えてください。",
-    "French": "La vue préparée sûre pour l'analyse n'est pas encore prête. Passez à Toutes Les Lignes Préparées pour inspecter l'ensemble complet."
+    "French": "La vue préparée sûre pour l'analyse n'est pas encore prête. Passez à Toutes Les Lignes Préparées pour inspecter l'ensemble complet.",
+    "Malay": "Paparan yang disediakan dan selamat untuk analisis belum sedia. Tukar kepada Semua Data Disediakan untuk memeriksa set data penuh yang disediakan."
   },
   "showing_cleaned_prepared_fallback": {
     "English": "Showing cleaned prepared data.",
     "Mandarin": "显示已清洗的预处理数据。",
     "Spanish": "Mostrando datos preparados y limpios.",
     "Japanese": "クリーニング済み準備済みデータを表示しています。",
-    "French": "Affichage des données préparées et nettoyées."
+    "French": "Affichage des données préparées et nettoyées.",
+    "Malay": "Memaparkan data yang telah dibersihkan dan disediakan."
   },
   "showing_all_prepared_rows": {
     "English": "Showing all prepared rows, including subtotal or footer-like rows.",
     "Mandarin": "显示全部预处理行，包括小计或页脚类行。",
     "Spanish": "Mostrando todas las filas preparadas, incluidas las filas tipo subtotal o pie de página.",
     "Japanese": "小計やフッターのような行を含む、すべての準備済み行を表示しています。",
-    "French": "Affichage de toutes les lignes préparées, y compris les sous-totaux ou lignes de pied."
+    "French": "Affichage de toutes les lignes préparées, y compris les sous-totaux ou lignes de pied.",
+    "Malay": "Memaparkan semua baris yang disediakan, termasuk jumlah kecil atau baris seperti nota kaki."
   },
   "semantic_view_preparing": {
     "English": "Preparing AI semantic view...",
     "Mandarin": "正在准备 AI 语义视图...",
     "Spanish": "Preparando vista semántica de IA...",
     "Japanese": "AI セマンティックビューを準備中...",
-    "French": "Préparation de la vue sémantique IA..."
+    "French": "Préparation de la vue sémantique IA...",
+    "Malay": "Sedang menyediakan paparan semantik AI..."
   },
   "semantic_hidden_rows": {
     "English": "{count} non-detail rows hidden by default",
     "Mandarin": "默认隐藏 {count} 行非明细数据",
     "Spanish": "{count} filas no detalladas ocultas por defecto",
     "Japanese": "非明細行 {count} 件を既定で非表示",
-    "French": "{count} lignes non détaillées masquées par défaut"
+    "French": "{count} lignes non détaillées masquées par défaut",
+    "Malay": "{count} baris bukan butiran disembunyikan secara lalai"
   },
   "showing_prepared_data_schema_only": {
     "English": "Showing baseline-prepared data with AI schema interpretation only.",
     "Mandarin": "显示基础预处理数据，并仅应用 AI 的 Schema 解释。",
     "Spanish": "Mostrando datos preparados por la línea base con solo interpretación de esquema por IA.",
     "Japanese": "ベースライン準備済みデータを表示しています。AI はスキーマ解釈のみを行いました。",
-    "French": "Affichage des données préparées par la ligne de base avec uniquement une interprétation de schéma par IA."
+    "French": "Affichage des données préparées par la ligne de base avec uniquement une interprétation de schéma par IA.",
+    "Malay": "Memaparkan data yang disediakan secara asas dengan tafsiran skema AI sahaja."
   },
   "showing_prepared_data_blocked": {
     "English": "Showing baseline-prepared data. Downstream AI analysis is blocked.",
     "Mandarin": "显示基础预处理数据。下游 AI 分析已被阻止。",
     "Spanish": "Mostrando datos preparados por la línea base. El análisis de IA posterior está bloqueado.",
     "Japanese": "ベースライン準備済みデータを表示しています。下流の AI 分析はブロックされています。",
-    "French": "Affichage des données préparées par la ligne de base. L’analyse IA en aval est bloquée."
+    "French": "Affichage des données préparées par la ligne de base. L’analyse IA en aval est bloquée.",
+    "Malay": "Memaparkan data yang disediakan secara asas. Analisis AI seterusnya disekat."
   },
   "ai_cleaned": {
     "English": "AI Cleaned",
     "Mandarin": "AI 已清洗",
     "Spanish": "Limpieza IA",
     "Japanese": "AI クリーニング済み",
-    "French": "Nettoyé par IA"
+    "French": "Nettoyé par IA",
+    "Malay": "Dibersihkan oleh AI"
   },
   "proposed_schema_only": {
     "English": "No Data Edits Applied Yet",
     "Mandarin": "尚未应用数据编辑",
     "Spanish": "Aún No Se Aplicaron Ediciones De Datos",
     "Japanese": "データ編集はまだ適用されていません",
-    "French": "Aucune Modification De Données Appliquée Pour Le Moment"
+    "French": "Aucune Modification De Données Appliquée Pour Le Moment",
+    "Malay": "Belum ada suntingan data digunakan"
   },
   "cleaning_blocked": {
     "English": "Cleaning Blocked",
     "Mandarin": "清洗已阻止",
     "Spanish": "Limpieza Bloqueada",
     "Japanese": "クリーニングはブロックされました",
-    "French": "Nettoyage Bloqué"
+    "French": "Nettoyage Bloqué",
+    "Malay": "Pembersihan disekat"
   },
   "showing_raw_csv": {
     "English": "Showing raw CSV as uploaded.",
     "Mandarin": "显示上传的原始 CSV。",
     "Spanish": "Mostrando CSV crudo tal como se cargó.",
     "Japanese": "アップロードされた生の CSV を表示しています。",
-    "French": "Affichage du CSV brut tel que téléchargé."
+    "French": "Affichage du CSV brut tel que téléchargé.",
+    "Malay": "Memaparkan CSV mentah seperti yang dimuat naik."
   },
   "assistant": {
     "English": "Assistant",
@@ -28649,294 +28743,336 @@ const translations = {
     "Mandarin": "查看 AI 记忆",
     "Spanish": "Ver Memoria IA",
     "Japanese": "AI メモリを表示",
-    "French": "Voir la Mémoire IA"
+    "French": "Voir la Mémoire IA",
+    "Malay": "Lihat memori AI"
   },
   "view_agent_timeline": {
     "English": "View Agent Timeline",
     "Mandarin": "查看智能体时间轴",
     "Spanish": "Ver Línea de Tiempo del Agente",
     "Japanese": "エージェントのタイムラインを表示",
-    "French": "Voir la Chronologie de l'Agent"
+    "French": "Voir la Chronologie de l'Agent",
+    "Malay": "Lihat garis masa ejen"
   },
   "settings": {
     "English": "Settings",
     "Mandarin": "设置",
     "Spanish": "Configuración",
     "Japanese": "設定",
-    "French": "Paramètres"
+    "French": "Paramètres",
+    "Malay": "Tetapan"
   },
   "hide_panel": {
     "English": "Hide Panel",
     "Mandarin": "隐藏面板",
     "Spanish": "Ocultar Panel",
     "Japanese": "パネルを隠す",
-    "French": "Masquer le Panneau"
+    "French": "Masquer le Panneau",
+    "Malay": "Sembunyikan panel"
   },
   "send_message": {
     "English": "Send message",
     "Mandarin": "发送消息",
     "Spanish": "Enviar mensaje",
     "Japanese": "メッセージを送信",
-    "French": "Envoyer le message"
+    "French": "Envoyer le message",
+    "Malay": "Hantar mesej"
   },
   "cancel_run": {
     "English": "Cancel run",
     "Mandarin": "取消运行",
     "Spanish": "Cancelar ejecución",
     "Japanese": "実行をキャンセル",
-    "French": "Annuler l’exécution"
+    "French": "Annuler l’exécution",
+    "Malay": "Batalkan larian"
   },
   "cancelling_run": {
     "English": "Stopping...",
     "Mandarin": "正在停止...",
     "Spanish": "Deteniendo...",
     "Japanese": "停止中...",
-    "French": "Arrêt en cours..."
+    "French": "Arrêt en cours...",
+    "Malay": "Sedang berhenti..."
   },
   "chat_queue_count": {
     "English": "{count} queued",
     "Mandarin": "{count} 条排队中",
     "Spanish": "{count} en cola",
     "Japanese": "{count} 件待機中",
-    "French": "{count} en file"
+    "French": "{count} en file",
+    "Malay": "{count} dalam barisan"
   },
   "chat_send_next": {
     "English": "Send next",
     "Mandarin": "发送下一条",
     "Spanish": "Enviar siguiente",
     "Japanese": "次を送信",
-    "French": "Envoyer ensuite"
+    "French": "Envoyer ensuite",
+    "Malay": "Hantar seterusnya"
   },
   "chat_queue_active_title": {
     "English": "Current reply in progress",
     "Mandarin": "当前回复生成中",
     "Spanish": "Respuesta actual en curso",
     "Japanese": "現在の返信を生成中",
-    "French": "Réponse en cours"
+    "French": "Réponse en cours",
+    "Malay": "Balasan semasa sedang diproses"
   },
   "chat_queue_active_detail": {
     "English": "Keep typing. Your next message can be queued without interrupting this run.",
     "Mandarin": "你可以继续输入，不必打断当前运行也能把下一条先排队。",
     "Spanish": "Siga escribiendo. Su siguiente mensaje puede ponerse en cola sin interrumpir esta ejecución.",
     "Japanese": "入力を続けられます。現在の実行を中断せずに次のメッセージを待機させられます。",
-    "French": "Continuez à saisir. Votre prochain message peut être mis en file sans interrompre cette exécution."
+    "French": "Continuez à saisir. Votre prochain message peut être mis en file sans interrompre cette exécution.",
+    "Malay": "Teruskan menaip. Mesej seterusnya boleh dibariskan tanpa mengganggu larian ini."
   },
   "chat_queue_ready_title": {
     "English": "Next message ready",
     "Mandarin": "下一条消息已就绪",
     "Spanish": "Siguiente mensaje listo",
     "Japanese": "次のメッセージの準備完了",
-    "French": "Message suivant prêt"
+    "French": "Message suivant prêt",
+    "Malay": "Mesej seterusnya sedia"
   },
   "chat_queue_ready_detail": {
     "English": "Send now to queue this draft after the current reply finishes.",
     "Mandarin": "现在发送后，这条草稿会在当前回复完成后自动排到下一条。",
     "Spanish": "Envíelo ahora para poner este borrador en cola cuando termine la respuesta actual.",
     "Japanese": "今送信すると、この下書きは現在の返信が終わった後に次として待機します。",
-    "French": "Envoyez maintenant pour mettre ce brouillon en file après la réponse en cours."
+    "French": "Envoyez maintenant pour mettre ce brouillon en file après la réponse en cours.",
+    "Malay": "Hantar sekarang untuk membariskan draf ini selepas balasan semasa selesai."
   },
   "sending_message": {
     "English": "Sending message",
     "Mandarin": "正在发送消息",
     "Spanish": "Enviando mensaje",
     "Japanese": "メッセージを送信中",
-    "French": "Envoi du message"
+    "French": "Envoi du message",
+    "Malay": "Sedang menghantar mesej"
   },
   "chat_processing_title": {
     "English": "AI is working",
     "Mandarin": "AI 正在处理中",
     "Spanish": "La IA está trabajando",
     "Japanese": "AI が処理中です",
-    "French": "L’IA est en cours de traitement"
+    "French": "L’IA est en cours de traitement",
+    "Malay": "AI sedang bekerja"
   },
   "chat_processing_detail": {
     "English": "Your request is being processed now.",
     "Mandarin": "你的请求正在处理，请稍候。",
     "Spanish": "Su solicitud se está procesando ahora.",
     "Japanese": "リクエストを現在処理しています。",
-    "French": "Votre demande est en cours de traitement."
+    "French": "Votre demande est en cours de traitement.",
+    "Malay": "Permintaan anda sedang diproses."
   },
   "chat_classifying_intent": {
     "English": "Classifying your query…",
     "Mandarin": "��在分类您的查询…",
     "Spanish": "Clasificando su consulta…",
     "Japanese": "クエリを分類中…",
-    "French": "Classification de votre requête…"
+    "French": "Classification de votre requête…",
+    "Malay": "Mengelaskan pertanyaan anda…"
   },
   "chat_processing_short": {
     "English": "Working",
     "Mandarin": "处理中",
     "Spanish": "Procesando",
     "Japanese": "処理中",
-    "French": "Traitement"
+    "French": "Traitement",
+    "Malay": "Sedang bekerja"
   },
   "chat_processing_import_title": {
     "English": "Importing CSV",
     "Mandarin": "正在导入 CSV",
     "Spanish": "Importando CSV",
     "Japanese": "CSV を取り込み中",
-    "French": "Import du CSV"
+    "French": "Import du CSV",
+    "Malay": "Mengimport CSV"
   },
   "chat_processing_import_detail": {
     "English": "Reading the file, profiling columns, and preparing the first dataset snapshot.",
     "Mandarin": "正在读取文件、分析列结构，并准备第一版数据集快照。",
     "Spanish": "Leyendo el archivo, perfilando columnas y preparando la primera instantánea del conjunto de datos.",
     "Japanese": "ファイルを読み込み、列をプロファイルし、最初のデータセットスナップショットを準備しています。",
-    "French": "Lecture du fichier, profilage des colonnes et préparation du premier instantané du jeu de données."
+    "French": "Lecture du fichier, profilage des colonnes et préparation du premier instantané du jeu de données.",
+    "Malay": "Membaca fail, memprofilkan lajur dan menyediakan petikan awal set data."
   },
   "chat_processing_import_short": {
     "English": "Importing",
     "Mandarin": "导入中",
     "Spanish": "Importando",
     "Japanese": "取込中",
-    "French": "Import"
+    "French": "Import",
+    "Malay": "Mengimport"
   },
   "chat_processing_cleaning_title": {
     "English": "Cleaning dataset",
     "Mandarin": "正在清洗数据",
     "Spanish": "Limpiando el conjunto de datos",
     "Japanese": "データセットをクリーニング中",
-    "French": "Nettoyage du jeu de données"
+    "French": "Nettoyage du jeu de données",
+    "Malay": "Membersihkan set data"
   },
   "chat_processing_cleaning_detail": {
     "English": "Normalizing the CSV structure so analysis can run on clean, query-ready data.",
     "Mandarin": "正在规范化 CSV 结构，让后续分析基于干净且可查询的数据运行。",
     "Spanish": "Normalizando la estructura CSV para que el análisis se ejecute sobre datos limpios y listos para consultar.",
     "Japanese": "分析が実行できるよう、CSV 構造を整えてクエリ可能なデータにしています。",
-    "French": "Normalisation de la structure CSV pour permettre l’analyse sur des données propres et interrogeables."
+    "French": "Normalisation de la structure CSV pour permettre l’analyse sur des données propres et interrogeables.",
+    "Malay": "Menormalkan struktur CSV supaya analisis boleh dijalankan pada data bersih yang sedia untuk pertanyaan."
   },
   "chat_processing_cleaning_short": {
     "English": "Cleaning",
     "Mandarin": "清洗中",
     "Spanish": "Limpiando",
     "Japanese": "整形中",
-    "French": "Nettoyage"
+    "French": "Nettoyage",
+    "Malay": "Membersihkan"
   },
   "chat_processing_analysis_title": {
     "English": "Running analysis",
     "Mandarin": "正在运行分析",
     "Spanish": "Ejecutando análisis",
     "Japanese": "分析を実行中",
-    "French": "Analyse en cours"
+    "French": "Analyse en cours",
+    "Malay": "Menjalankan analisis"
   },
   "chat_processing_analysis_detail": {
     "English": "Generating insights, cards, and the next recommended analysis steps.",
     "Mandarin": "正在生成洞察、分析卡片和下一步建议。",
     "Spanish": "Generando hallazgos, tarjetas de análisis y los siguientes pasos recomendados.",
     "Japanese": "洞察、分析カード、次の推奨ステップを生成しています。",
-    "French": "Génération des insights, des cartes d’analyse et des prochaines étapes recommandées."
+    "French": "Génération des insights, des cartes d’analyse et des prochaines étapes recommandées.",
+    "Malay": "Menjana cerapan, kad dan langkah analisis seterusnya yang disyorkan."
   },
   "chat_processing_analysis_short": {
     "English": "Analyzing",
     "Mandarin": "分析中",
     "Spanish": "Analizando",
     "Japanese": "分析中",
-    "French": "Analyse"
+    "French": "Analyse",
+    "Malay": "Menganalisis"
   },
   "chat_processing_goal": {
     "English": "Preparing the next analysis step.",
     "Mandarin": "正在准备下一步分析。",
     "Spanish": "Preparando el siguiente paso del análisis.",
     "Japanese": "次の分析ステップを準備しています。",
-    "French": "Préparation de la prochaine étape d’analyse."
+    "French": "Préparation de la prochaine étape d’analyse.",
+    "Malay": "Menyediakan langkah analisis seterusnya."
   },
   "chat_processing_report": {
     "English": "Generating the initial report and analysis cards.",
     "Mandarin": "正在生成初始报告和分析卡片。",
     "Spanish": "Generando el informe inicial y las tarjetas de análisis.",
     "Japanese": "初期レポートと分析カードを生成しています。",
-    "French": "Génération du rapport initial et des cartes d’analyse."
+    "French": "Génération du rapport initial et des cartes d’analyse.",
+    "Malay": "Menjana laporan awal dan kad analisis."
   },
   "chat_loader_thinking": {
     "English": "Thinking",
     "Mandarin": "处理中",
     "Spanish": "Pensando",
     "Japanese": "処理中",
-    "French": "Réflexion"
+    "French": "Réflexion",
+    "Malay": "Sedang berfikir"
   },
   "thinking_activity": {
     "English": "Agent Activity",
     "Mandarin": "代理活动",
     "Spanish": "Actividad del agente",
     "Japanese": "エージェント活動",
-    "French": "Activité de l'agent"
+    "French": "Activité de l'agent",
+    "Malay": "Aktiviti ejen"
   },
   "thought_card_label": {
     "English": "Agent Thinking",
     "Mandarin": "代理思考",
     "Spanish": "Pensamiento del agente",
     "Japanese": "エージェント思考",
-    "French": "Réflexion de l'agent"
+    "French": "Réflexion de l'agent",
+    "Malay": "Pemikiran ejen"
   },
   "chat_placeholder_api_key": {
     "English": "Configure API Key in settings to start",
     "Mandarin": "请在设置中配置 API 密钥以开始",
     "Spanish": "Configure la clave API en la configuración para comenzar",
     "Japanese": "開始するには設定で API キーを構成してください",
-    "French": "Configurez la clé API dans les paramètres pour commencer"
+    "French": "Configurez la clé API dans les paramètres pour commencer",
+    "Malay": "Konfigurasikan kunci API dalam tetapan untuk bermula"
   },
   "chat_placeholder_api_key_managed": {
     "English": "AI access is managed by this app owner. Contact them to finish setup.",
     "Mandarin": "AI 访问由此应用的部署方管理。请联系部署方完成设置。",
     "Spanish": "El acceso de IA es administrado por el propietario de esta aplicación. Contáctelo para completar la configuración.",
     "Japanese": "AI アクセスはこのアプリの管理者が設定します。セットアップ完了のため管理者に連絡してください。",
-    "French": "L’accès IA est géré par le propriétaire de cette application. Contactez-le pour terminer la configuration."
+    "French": "L’accès IA est géré par le propriétaire de cette application. Contactez-le pour terminer la configuration.",
+    "Malay": "Akses AI diurus oleh pemilik aplikasi ini. Hubungi mereka untuk melengkapkan persediaan."
   },
   "api_key_required_title": {
     "English": "API Key Required",
     "Mandarin": "需要 API 密钥",
     "Spanish": "Se Requiere Clave API",
     "Japanese": "API キーが必要です",
-    "French": "Clé API Requise"
+    "French": "Clé API Requise",
+    "Malay": "Kunci API diperlukan"
   },
   "api_key_required_settings_message": {
     "English": "To unlock the AI analysis features, please add your API key in the Assistant settings panel.",
     "Mandarin": "如需启用 AI 分析功能，请在助手设置面板中添加 API 密钥。",
     "Spanish": "Para habilitar las funciones de análisis con IA, agregue su clave API en el panel de configuración del asistente.",
     "Japanese": "AI 分析機能を有効にするには、アシスタントの設定パネルで API キーを追加してください。",
-    "French": "Pour activer les fonctions d’analyse IA, ajoutez votre clé API dans le panneau de paramètres de l’assistant."
+    "French": "Pour activer les fonctions d’analyse IA, ajoutez votre clé API dans le panneau de paramètres de l’assistant.",
+    "Malay": "Untuk menggunakan ciri analisis AI, tambah kunci API anda dalam panel Tetapan Pembantu."
   },
   "api_key_required_managed_message": {
     "English": "AI analysis is not configured for this deployment. Contact the person who set up this app to provide the API key.",
     "Mandarin": "此部署尚未配置 AI 分析。请联系设置此应用的人提供 API 密钥。",
     "Spanish": "El análisis con IA no está configurado para esta implementación. Póngase en contacto con la persona que configuró esta aplicación para proporcionar la clave API.",
     "Japanese": "この環境では AI 分析が未設定です。API キーを設定するには、このアプリを構築した担当者に連络してください。",
-    "French": "L’analyse IA n’est pas configurée pour ce déploiement. Contactez la personne qui a configuré cette application pour fournir la clé API."
+    "French": "L’analyse IA n’est pas configurée pour ce déploiement. Contactez la personne qui a configuré cette application pour fournir la clé API.",
+    "Malay": "Analisis AI belum dikonfigurasi untuk pemasangan ini. Hubungi pihak yang menyediakan aplikasi ini untuk mendapatkan kunci API."
   },
   "api_key_required_modal_title": {
     "English": "API Configuration Required",
     "Mandarin": "需要配置 API",
     "Spanish": "Configuración de API Requerida",
     "Japanese": "API 設定が必要です",
-    "French": "Configuration API Requise"
+    "French": "Configuration API Requise",
+    "Malay": "Konfigurasi API diperlukan"
   },
   "api_key_required_modal_message": {
     "English": "Please contact Technical Support to configure the AI analysis service for this application.",
     "Mandarin": "请联系技术支持团队为此应用配置 AI 分析服务。",
     "Spanish": "Póngase en contacto con el Soporte Técnico para configurar el servicio de análisis de IA para esta aplicación.",
     "Japanese": "このアプリケーションの AI 分析サービスを設定するには、テクニカルサポートにお問い合わせください。",
-    "French": "Veuillez contacter le support technique pour configurer le service d'analyse IA de cette application."
+    "French": "Veuillez contacter le support technique pour configurer le service d'analyse IA de cette application.",
+    "Malay": "Sila hubungi Sokongan Teknikal untuk mengkonfigurasi perkhidmatan analisis AI bagi aplikasi ini."
   },
   "api_key_required_modal_ok": {
     "English": "OK",
     "Mandarin": "知道了",
     "Spanish": "Aceptar",
     "Japanese": "OK",
-    "French": "OK"
+    "French": "OK",
+    "Malay": "OK"
   },
   "provider_health_invalid_key": {
     "English": "API key is invalid. Please check your key in Settings.",
     "Mandarin": "API 密钥无效。请在设置中检查并更新。",
     "Spanish": "La clave API no es válida. Verifique su clave en Configuración.",
     "Japanese": "API キーが無効です。設定で確認してください。",
-    "French": "La clé API est invalide. Veuillez la vérifier dans les paramètres."
+    "French": "La clé API est invalide. Veuillez la vérifier dans les paramètres.",
+    "Malay": "Kunci API tidak sah. Sila semak kunci anda dalam Tetapan."
   },
   "provider_health_unreachable": {
     "English": "Cannot reach AI provider. Please check your network connection.",
     "Mandarin": "无法连接 AI 服务商。请检查网络连接。",
     "Spanish": "No se puede conectar con el proveedor de IA. Verifique su conexión de red.",
     "Japanese": "AI プロバイダーに接続できません。ネットワーク接続を確認してください。",
-    "French": "Impossible de joindre le fournisseur IA. Vérifiez votre connexion réseau."
+    "French": "Impossible de joindre le fournisseur IA. Vérifiez votre connexion réseau.",
+    "Malay": "Penyedia AI tidak dapat dihubungi. Sila semak sambungan rangkaian anda."
   },
   "data_privacy_note": {
     "English": "CSV processing is mainly local. Approved prompts, card samples, and query results are sent to your selected AI provider.",
@@ -29057,49 +29193,56 @@ const translations = {
     "Mandarin": "欢迎使用 AI Analysis",
     "Spanish": "Bienvenido a AI Analysis",
     "Japanese": "AI Analysis へようこそ",
-    "French": "Bienvenue dans AI Analysis"
+    "French": "Bienvenue dans AI Analysis",
+    "Malay": "Selamat datang ke Analisis AI"
   },
   "managed_reports_welcome_message": {
     "English": "Open a saved report to get started. This workspace uses prepared reports instead of manual CSV uploads.",
     "Mandarin": "请先打开一个已保存的报告开始分析。此工作区使用预先准备好的报告，不提供手动上传 CSV。",
     "Spanish": "Abra un informe guardado para comenzar. Este espacio de trabajo usa informes preparados en lugar de cargas manuales de CSV.",
     "Japanese": "開始するには保存済みレポートを開いてください。このワークスペースでは、手動の CSV アップロードではなく準備済みレポートを使用します。",
-    "French": "Ouvrez un rapport enregistré pour commencer. Cet espace de travail utilise des rapports préparés au lieu d’importations CSV manuelles."
+    "French": "Ouvrez un rapport enregistré pour commencer. Cet espace de travail utilise des rapports préparés au lieu d’importations CSV manuelles.",
+    "Malay": "Buka laporan tersimpan untuk bermula. Ruang kerja ini menggunakan laporan yang disediakan dan bukannya muat naik CSV secara manual."
   },
   "managed_reports_welcome_detail": {
     "English": "The AI agent will help you review the data, explain trends, and summarize key findings.",
     "Mandarin": "AI 助手会帮助你查看数据、解释趋势，并总结关键发现。",
     "Spanish": "El agente de IA le ayudará a revisar los datos, explicar tendencias y resumir hallazgos clave.",
     "Japanese": "AI エージェントがデータの確認、傾向の説明、重要な発見の要約を支援します。",
-    "French": "L’agent IA vous aidera à examiner les données, expliquer les tendances et résumer les points clés."
+    "French": "L’agent IA vous aidera à examiner les données, expliquer les tendances et résumer les points clés.",
+    "Malay": "Ejen AI akan membantu anda menyemak data, menerangkan trend dan meringkaskan dapatan utama."
   },
   "chat_placeholder_generating": {
     "English": "AI is generating the initial report, please wait...",
     "Mandarin": "AI 正在生成初始报告，请稍候...",
     "Spanish": "La IA está generando el informe inicial, por favor espere...",
     "Japanese": "AI が初期レポートを生成しています。お待ちください...",
-    "French": "L'IA génère le rapport initial, veuillez patienter..."
+    "French": "L'IA génère le rapport initial, veuillez patienter...",
+    "Malay": "AI sedang menjana laporan awal, sila tunggu..."
   },
   "chat_placeholder_auto_analysis": {
     "English": "Initial insights are being prepared. You can already tell the assistant what to focus on next.",
     "Mandarin": "首轮洞察正在生成。你现在就可以告诉助手接下来重点关注什么。",
     "Spanish": "Se están preparando los hallazgos iniciales. Ya puede decirle al asistente en qué enfocarse después.",
     "Japanese": "初期インサイトを準備中です。次に何へ注目すべきか、今のうちに入力できます。",
-    "French": "Les premiers insights sont en préparation. Vous pouvez déjà indiquer à l’assistant sur quoi se concentrer ensuite."
+    "French": "Les premiers insights sont en préparation. Vous pouvez déjà indiquer à l’assistant sur quoi se concentrer ensuite.",
+    "Malay": "Cerapan awal sedang disediakan. Anda sudah boleh memberitahu pembantu perkara yang perlu ditumpukan seterusnya."
   },
   "chat_placeholder_confirm_goal": {
     "English": "Please confirm an analysis goal above, or type your own...",
     "Mandarin": "请在上方确认分析目标，或输入您自己的目标...",
     "Spanish": "Por favor confirme un objetivo de análisis arriba, o escriba el suyo...",
     "Japanese": "上の分析目標を確認するか、独自の目標を入力してください...",
-    "French": "Veuillez confirmer un objectif d'analyse ci-dessus, ou tapez le vôtre..."
+    "French": "Veuillez confirmer un objectif d'analyse ci-dessus, ou tapez le vôtre...",
+    "Malay": "Sila sahkan matlamat analisis di atas atau taip matlamat anda sendiri..."
   },
   "chat_placeholder_clarification": {
     "English": "Please select an option above to continue",
     "Mandarin": "请在上方选择一个选项以继续",
     "Spanish": "Por favor seleccione una opción arriba para continuar",
     "Japanese": "続行するには上のオプションを選択してください",
-    "French": "Veuillez sélectionner une option ci-dessus pour continuer"
+    "French": "Veuillez sélectionner une option ci-dessus pour continuer",
+    "Malay": "Sila pilih pilihan di atas untuk meneruskan"
   },
   "clarification_needed_title": {
     "English": "Clarification Needed",
@@ -29162,21 +29305,24 @@ const translations = {
     "Mandarin": "输入 `confirm delete` 继续，或输入 `cancel delete` 取消",
     "Spanish": "Escriba `confirm delete` para continuar o `cancel delete` para detenerse",
     "Japanese": "`confirm delete` で続行、`cancel delete` で中止します",
-    "French": "Tapez `confirm delete` pour continuer ou `cancel delete` pour arrêter"
+    "French": "Tapez `confirm delete` pour continuer ou `cancel delete` pour arrêter",
+    "Malay": "Taip `confirm delete` untuk meneruskan atau `cancel delete` untuk berhenti"
   },
   "chat_placeholder_dashboard": {
     "English": "Request a new analysis or data transformation...",
     "Mandarin": "请求新的分析或数据转换...",
     "Spanish": "Solicite un nuevo análisis o transformación de datos...",
     "Japanese": "新しい分析またはデータ変換をリクエストしてください...",
-    "French": "Demandez une nouvelle analyse ou transformation de données..."
+    "French": "Demandez une nouvelle analyse ou transformation de données...",
+    "Malay": "Minta analisis baharu atau transformasi data..."
   },
   "chat_placeholder_auto_analysis_ready": {
     "English": "Ask a follow-up or tell the assistant what to focus on next...",
     "Mandarin": "继续追问，或告诉助手下一步重点关注什么...",
     "Spanish": "Haga una pregunta de seguimiento o diga al asistente en qué enfocarse después...",
     "Japanese": "追加で質問するか、次に何へ注目するかを指示してください...",
-    "French": "Posez une question de suivi ou dites à l’assistant sur quoi se concentrer ensuite..."
+    "French": "Posez une question de suivi ou dites à l’assistant sur quoi se concentrer ensuite...",
+    "Malay": "Tanya soalan susulan atau beritahu pembantu perkara yang perlu ditumpukan seterusnya..."
   },
   "chat_placeholder_upload": {
     "English": "Please upload a file first to start",
@@ -29239,194 +29385,222 @@ const translations = {
     "Mandarin": "例如：“按地区汇总销售额”，或“删除美国的行”",
     "Spanish": 'p. ej., "Resumir ventas por región", o "Eliminar filas para EE. UU."',
     "Japanese": "例：「地域別の売上を要約する」、または「米国の行を削除する」",
-    "French": 'par ex., "Résumer les ventes par région", ou "Supprimer les lignes pour les États-Unis"'
+    "French": 'par ex., "Résumer les ventes par région", ou "Supprimer les lignes pour les États-Unis"',
+    "Malay": "cth., “Ringkaskan jualan mengikut wilayah” atau “Buang baris untuk USA”"
   },
   "chat_focus_hint": {
     "English": "Tell the assistant what to inspect next: trends, anomalies, segments, or anything specific to your business question.",
     "Mandarin": "告诉助手下一步要看什么：趋势、异常、分群，或与你业务问题相关的任何重点。",
     "Spanish": "Indique al asistente qué revisar después: tendencias, anomalías, segmentos o cualquier punto específico de su pregunta de negocio.",
     "Japanese": "次に確認したい内容を伝えてください。傾向、異常、セグメント、または業務上の具体的な質問でも構いません。",
-    "French": "Indiquez à l’assistant ce qu’il doit examiner ensuite : tendances, anomalies, segments ou tout autre point lié à votre question métier."
+    "French": "Indiquez à l’assistant ce qu’il doit examiner ensuite : tendances, anomalies, segments ou tout autre point lié à votre question métier.",
+    "Malay": "Beritahu pembantu perkara yang perlu diperiksa seterusnya: trend, anomali, segmen atau perkara khusus tentang soalan perniagaan anda."
   },
   "upload_status_importing_title": {
     "English": "Importing data",
     "Mandarin": "正在导入数据",
     "Spanish": "Importando datos",
     "Japanese": "データを取り込み中",
-    "French": "Import des données"
+    "French": "Import des données",
+    "Malay": "Mengimport data"
   },
   "upload_status_importing_detail": {
     "English": "Reading the file and preparing the first usable dataset snapshot.",
     "Mandarin": "正在读取文件，并准备第一版可用数据快照。",
     "Spanish": "Leyendo el archivo y preparando la primera instantánea utilizable del conjunto de datos.",
     "Japanese": "ファイルを読み込み、最初に使えるデータセットのスナップショットを準備しています。",
-    "French": "Lecture du fichier et préparation du premier instantané exploitable du jeu de données."
+    "French": "Lecture du fichier et préparation du premier instantané exploitable du jeu de données.",
+    "Malay": "Membaca fail dan menyediakan petikan awal set data yang boleh digunakan."
   },
   "upload_status_preparing_title": {
     "English": "Preparing analysis",
     "Mandarin": "正在准备分析",
     "Spanish": "Preparando el análisis",
     "Japanese": "分析を準備中",
-    "French": "Préparation de l’analyse"
+    "French": "Préparation de l’analyse",
+    "Malay": "Menyediakan analisis"
   },
   "upload_status_preparing_detail": {
     "English": "Cleaning the dataset and validating the structure needed for reliable analysis.",
     "Mandarin": "正在清洗数据集，并验证后续可靠分析所需的结构。",
     "Spanish": "Limpiando el conjunto de datos y validando la estructura necesaria para un análisis fiable.",
     "Japanese": "データセットを整え、信頼できる分析に必要な構造を検証しています。",
-    "French": "Nettoyage du jeu de données et validation de la structure nécessaire à une analyse fiable."
+    "French": "Nettoyage du jeu de données et validation de la structure nécessaire à une analyse fiable.",
+    "Malay": "Membersihkan set data dan mengesahkan struktur yang diperlukan untuk analisis yang boleh dipercayai."
   },
   "upload_status_generating_title": {
     "English": "Generating insights",
     "Mandarin": "正在生成洞察",
     "Spanish": "Generando hallazgos",
     "Japanese": "インサイトを生成中",
-    "French": "Génération des insights"
+    "French": "Génération des insights",
+    "Malay": "Menjana cerapan"
   },
   "upload_status_generating_detail": {
     "English": "Building the first round of summary cards and recommended follow-up directions.",
     "Mandarin": "正在生成第一轮总结卡片和后续建议方向。",
     "Spanish": "Construyendo la primera ronda de tarjetas de resumen y direcciones de seguimiento recomendadas.",
     "Japanese": "最初の要約カードと推奨される次の分析方向を作成しています。",
-    "French": "Construction de la première série de cartes de synthèse et des pistes de suivi recommandées."
+    "French": "Construction de la première série de cartes de synthèse et des pistes de suivi recommandées.",
+    "Malay": "Membina pusingan pertama kad ringkasan dan cadangan arah susulan."
   },
   "view_technical_details": {
     "English": "View technical details",
     "Mandarin": "查看技术细节",
     "Spanish": "Ver detalles técnicos",
     "Japanese": "技術的な詳細を見る",
-    "French": "Voir les détails techniques"
+    "French": "Voir les détails techniques",
+    "Malay": "Lihat butiran teknikal"
   },
   "chat_shortcut_hint": {
     "English": "Enter to send · Shift+Enter for a new line",
     "Mandarin": "Enter 发送 · Shift+Enter 换行",
     "Spanish": "Enter para enviar · Shift+Enter para una nueva línea",
     "Japanese": "Enter で送信 · Shift+Enter で改行",
-    "French": "Entrée pour envoyer · Maj+Entrée pour une nouvelle ligne"
+    "French": "Entrée pour envoyer · Maj+Entrée pour une nouvelle ligne",
+    "Malay": "Enter untuk hantar · Shift+Enter untuk baris baharu"
   },
   "chat_queue_shortcut_hint": {
     "English": "Enter queues this next · Shift+Enter for a new line",
     "Mandarin": "Enter 把这条排到下一条 · Shift+Enter 换行",
     "Spanish": "Enter pone esto en cola · Shift+Enter para una nueva línea",
     "Japanese": "Enter で次として待機 · Shift+Enter で改行",
-    "French": "Entrée met ce message en file · Maj+Entrée pour une nouvelle ligne"
+    "French": "Entrée met ce message en file · Maj+Entrée pour une nouvelle ligne",
+    "Malay": "Enter untuk bariskan mesej seterusnya · Shift+Enter untuk baris baharu"
   },
   "chat_busy_draft_hint": {
     "English": "AI is still working. You can keep typing, then send when it finishes.",
     "Mandarin": "AI 正在处理中。你可以继续输入，等完成后再发送。",
     "Spanish": "La IA sigue trabajando. Puede seguir escribiendo y enviar cuando termine.",
     "Japanese": "AI が処理中です。入力を続けて、完了後に送信できます。",
-    "French": "L’IA est encore en cours de traitement. Vous pouvez continuer à saisir, puis envoyer une fois terminé."
+    "French": "L’IA est encore en cours de traitement. Vous pouvez continuer à saisir, puis envoyer une fois terminé.",
+    "Malay": "AI masih bekerja. Anda boleh terus menaip dan menghantar mesej apabila ia selesai."
   },
   "chat_disclaimer_verify": {
     "English": "AI output may be inaccurate. Please verify before use.",
     "Mandarin": "AI 输出可能不准确，使用前请核实。",
     "Spanish": "La salida de la IA puede ser inexacta. Verifíquela antes de usarla.",
     "Japanese": "AI の出力には不正確な場合があります。使用前に確認してください。",
-    "French": "Le contenu généré par l’IA peut être inexact. Veuillez le vérifier avant utilisation."
+    "French": "Le contenu généré par l’IA peut être inexact. Veuillez le vérifier avant utilisation.",
+    "Malay": "Hasil AI mungkin tidak tepat. Sila sahkan sebelum digunakan."
   },
   "scroll_to_latest": {
     "English": "Scroll to latest",
     "Mandarin": "滚动到最新消息",
     "Spanish": "Ir al mensaje más reciente",
     "Japanese": "最新メッセージへ移動",
-    "French": "Aller au dernier message"
+    "French": "Aller au dernier message",
+    "Malay": "Tatal ke yang terkini"
   },
   "chat_send_locked_hint": {
     "English": "You can keep typing, but sending is unavailable until the AI finishes.",
     "Mandarin": "你可以继续输入，但要等 AI 完成后才能发送。",
     "Spanish": "Puede seguir escribiendo, pero no podrá enviar hasta que la IA termine.",
     "Japanese": "入力は続けられますが、AI の処理が終わるまで送信できません。",
-    "French": "Vous pouvez continuer à saisir, mais l’envoi reste indisponible jusqu’à la fin du traitement par l’IA."
+    "French": "Vous pouvez continuer à saisir, mais l’envoi reste indisponible jusqu’à la fin du traitement par l’IA.",
+    "Malay": "Anda boleh terus menaip, tetapi mesej tidak boleh dihantar sehingga AI selesai."
   },
   "header_layers": {
     "English": "Header Layers:",
     "Mandarin": "表头层级:",
     "Spanish": "Capas de Encabezado:",
     "Japanese": "ヘッダーレイヤー:",
-    "French": "Couches d'En-tête:"
+    "French": "Couches d'En-tête:",
+    "Malay": "Lapisan pengepala:"
   },
   "summary_rows_removed": {
     "English": "Summary Rows Removed:",
     "Mandarin": "已移除汇总行:",
     "Spanish": "Filas de Resumen Eliminadas:",
     "Japanese": "削除された要約行:",
-    "French": "Lignes de Résumé Supprimées:"
+    "French": "Lignes de Résumé Supprimées:",
+    "Malay": "Baris ringkasan dibuang:"
   },
   "canonicalization_row_exclusion": {
     "English": "Report structure normalized: {totalRows} imported rows → {retainedRows} data rows. {excludedRows} non-data rows excluded (group headers, notes, subtotals). Original data is preserved and can be restored.",
     "Mandarin": "报表结构规范化：{totalRows} 行导入 → {retainedRows} 行数据。{excludedRows} 行非数据行已排除（分组标题、备注、小计等）。原始数据已保留，可随时恢复。",
-    "Japanese": "レポート構造の正規化：{totalRows}行インポート → {retainedRows}行データ。{excludedRows}行の非データ行を除外（グループヘッダー、メモ、小計）。元データは保持され、復元可能です。"
+    "Japanese": "レポート構造の正規化：{totalRows}行インポート → {retainedRows}行データ。{excludedRows}行の非データ行を除外（グループヘッダー、メモ、小計）。元データは保持され、復元可能です。",
+    "Malay": "Struktur laporan dinormalkan: {totalRows} baris diimport → {retainedRows} baris data. {excludedRows} baris bukan data dikecualikan (pengepala kumpulan, nota, jumlah kecil). Data asal dikekalkan dan boleh dipulihkan."
   },
   "hide_report_metadata": {
     "English": "Hide report metadata",
     "Mandarin": "隐藏报告元数据",
     "Spanish": "Ocultar metadatos del informe",
     "Japanese": "レポートのメタデータを隠す",
-    "French": "Masquer les métadonnées du rapport"
+    "French": "Masquer les métadonnées du rapport",
+    "Malay": "Sembunyikan metadata laporan"
   },
   "show_report_metadata": {
     "English": "Show report metadata",
     "Mandarin": "显示报告元数据",
     "Spanish": "Mostrar metadatos del informe",
     "Japanese": "レポートのメタデータを表示",
-    "French": "Afficher les métadonnées du rapport"
+    "French": "Afficher les métadonnées du rapport",
+    "Malay": "Tunjukkan metadata laporan"
   },
   "more_lines": {
     "English": "more lines",
     "Mandarin": "更多行",
     "Spanish": "más líneas",
     "Japanese": "行以上",
-    "French": "lignes supplémentaires"
+    "French": "lignes supplémentaires",
+    "Malay": "baris lagi"
   },
   "ai_filter": {
     "English": "AI Filter:",
     "Mandarin": "AI 筛选:",
     "Spanish": "Filtro IA:",
     "Japanese": "AI フィルター:",
-    "French": "Filtre IA:"
+    "French": "Filtre IA:",
+    "Malay": "Penapis AI:"
   },
   "previous_page": {
     "English": "Previous",
     "Mandarin": "上一页",
     "Spanish": "Anterior",
     "Japanese": "前へ",
-    "French": "Précédent"
+    "French": "Précédent",
+    "Malay": "Sebelumnya"
   },
   "next_page": {
     "English": "Next",
     "Mandarin": "下一页",
     "Spanish": "Siguiente",
     "Japanese": "次へ",
-    "French": "Suivant"
+    "French": "Suivant",
+    "Malay": "Seterusnya"
   },
   "page_of": {
     "English": "Page {current} of {total}",
     "Mandarin": "第 {current} 页，共 {total} 页",
     "Spanish": "Página {current} de {total}",
     "Japanese": "{total} ページ中 {current} ページ",
-    "French": "Page {current} sur {total}"
+    "French": "Page {current} sur {total}",
+    "Malay": "Halaman {current} daripada {total}"
   },
   "showing_rows": {
     "English": "Showing rows {start}-{end} of {total}",
     "Mandarin": "显示第 {start}-{end} 行，共 {total} 行",
     "Spanish": "Mostrando filas {start}-{end} de {total}",
     "Japanese": "{total} 行中 {start}-{end} 行を表示",
-    "French": "Affichage des lignes {start}-{end} sur {total}"
+    "French": "Affichage des lignes {start}-{end} sur {total}",
+    "Malay": "Memaparkan baris {start}-{end} daripada {total}"
   },
   "error_boundary_title": {
     "English": "Analysis Card Failed to Render",
     "Mandarin": "分析卡片渲染失败",
     "Spanish": "La Tarjeta de Análisis Falló al Renderizarse",
     "Japanese": "分析カードのレンダリングに失敗しました",
-    "French": "Échec du Rendu de la Carte d'Analyse"
+    "French": "Échec du Rendu de la Carte d'Analyse",
+    "Malay": "Kad analisis gagal dipaparkan"
   },
   "error_boundary_message": {
     "English": "This specific chart could not be displayed due to an unexpected error.",
     "Mandarin": "由于意外错误，无法显示此特定图表。",
     "Spanish": "Este gráfico específico no se pudo mostrar debido a un error inesperado.",
     "Japanese": "予期しないエラーのため、この特定のグラフを表示できませんでした。",
-    "French": "Ce graphique spécifique n'a pas pu être affiché en raison d'une erreur inattendue."
+    "French": "Ce graphique spécifique n'a pas pu être affiché en raison d'une erreur inattendue.",
+    "Malay": "Carta ini tidak dapat dipaparkan kerana ralat yang tidak dijangka."
   },
   "analysis_card_ai_summary": {
     "English": "AI Summary",
@@ -30012,7 +30186,7 @@ const translations = {
   },
   "spreadsheet_filter_reply_some": {
     "English": "I applied a temporary data filter in the raw data explorer using the generated filter conditions. It matched {count} {rowsLabel}.",
-    "Mandarin": "我已在原始数据浏览器中按生成的筛选条件应用临时筛选，共匹配 {count} 行。",
+    "Mandarin": "我已在原始数据浏览器中按生成的筛选条件应用临时筛选，共匹配 {count} {rowsLabel}。",
     "Malay": "Saya telah menggunakan penapis data sementara dalam penjelajah data mentah berdasarkan syarat yang dijana. Ia memadankan {count} {rowsLabel}.",
     "Japanese": "生成された条件で生データエクスプローラーに一時フィルターを適用しました。{count} {rowsLabel} が一致しました。"
   },
@@ -30024,7 +30198,7 @@ const translations = {
   },
   "spreadsheet_filter_row_some": {
     "English": "I applied a temporary data filter in the raw data explorer for rows where {column} {operator}{value}. It matched {count} {rowsLabel}.",
-    "Mandarin": "我已在原始数据浏览器中应用临时筛选，条件为 {column} {operator}{value}，共匹配 {count} 行。",
+    "Mandarin": "我已在原始数据浏览器中应用临时筛选，条件为 {column} {operator}{value}，共匹配 {count} {rowsLabel}。",
     "Malay": "Saya telah menggunakan penapis data sementara dalam penjelajah data mentah untuk baris yang {column} {operator}{value}. Ia memadankan {count} {rowsLabel}.",
     "Japanese": "{column} が {operator}{value} である行に対して生データエクスプローラーに一時フィルターを適用しました。{count} {rowsLabel} が一致しました。"
   },
@@ -30204,462 +30378,612 @@ const translations = {
   },
   "analysis_steps_panel_title": {
     "English": "Analysis Trace",
-    "Mandarin": "分析轨迹"
+    "Mandarin": "分析轨迹",
+    "Japanese": "分析履歴",
+    "Malay": "Jejak analisis"
   },
   "analysis_steps_panel_subtitle": {
     "English": "Analysis Steps",
-    "Mandarin": "分析步骤"
+    "Mandarin": "分析步骤",
+    "Japanese": "分析手順",
+    "Malay": "Langkah analisis"
   },
   "analysis_steps_panel_description": {
     "English": "The agent records structured analysis steps instead of hidden reasoning. This trace shows how it checked the dataset, rejected weak evidence, and decided whether a standard card is justified.",
-    "Mandarin": "智能体不再展示隐藏推理，而是记录结构化分析步骤。该轨迹显示了数据集检查、弱证据驳回和是否生成标准卡片的决策过程。"
+    "Mandarin": "智能体不再展示隐藏推理，而是记录结构化分析步骤。该轨迹显示了数据集检查、弱证据驳回和是否生成标准卡片的决策过程。",
+    "Japanese": "エージェントは非公開の推論の代わりに、構造化された分析手順を記録します。この履歴には、データセットの確認、弱い証拠の除外、標準カードを作成するかどうかの判断が示されます。",
+    "Malay": "Ejen merekodkan langkah analisis berstruktur tanpa memaparkan penaakulan tersembunyi. Jejak ini menunjukkan cara set data disemak, bukti lemah ditolak dan keputusan dibuat sama ada kad standard wajar dihasilkan."
   },
   "analysis_steps_panel_status": {
     "English": "Status",
-    "Mandarin": "状态"
+    "Mandarin": "状态",
+    "Japanese": "ステータス",
+    "Malay": "Status"
   },
   "analysis_steps_panel_accepted_cards": {
     "English": "Accepted cards",
-    "Mandarin": "已采纳卡片"
+    "Mandarin": "已采纳卡片",
+    "Japanese": "承認されたカード",
+    "Malay": "Kad yang diterima"
   },
   "analysis_steps_panel_step_budget": {
     "English": "Step budget",
-    "Mandarin": "步骤预算"
+    "Mandarin": "步骤预算",
+    "Japanese": "ステップ数の上限",
+    "Malay": "Had langkah"
   },
   "analysis_steps_panel_checked": {
     "English": "Checked",
-    "Mandarin": "检查"
+    "Mandarin": "检查",
+    "Japanese": "確認済み",
+    "Malay": "Disemak"
   },
   "analysis_steps_panel_result": {
     "English": "Result",
-    "Mandarin": "结果"
+    "Mandarin": "结果",
+    "Japanese": "結果",
+    "Malay": "Hasil"
   },
   "analysis_steps_panel_next": {
     "English": "Next",
-    "Mandarin": "下一步"
+    "Mandarin": "下一步",
+    "Japanese": "次",
+    "Malay": "Seterusnya"
   },
   "analysis_steps_panel_reason_codes": {
     "English": "Reason codes",
-    "Mandarin": "决策代码"
+    "Mandarin": "决策代码",
+    "Japanese": "理由コード",
+    "Malay": "Kod sebab"
   },
   "analysis_steps_panel_show_sql_preview": {
     "English": "Show SQL preview",
-    "Mandarin": "查看 SQL 预览"
+    "Mandarin": "查看 SQL 预览",
+    "Japanese": "SQLプレビューを表示",
+    "Malay": "Tunjukkan pratonton SQL"
   },
   "analysis_trace_label_observe_dataset": {
     "English": "Observe Dataset",
-    "Mandarin": "观察数据集"
+    "Mandarin": "观察数据集",
+    "Japanese": "データセットを観察",
+    "Malay": "Periksa set data"
   },
   "analysis_trace_label_build_semantic_understanding": {
     "English": "Build Semantic Understanding",
-    "Mandarin": "构建业务语义理解"
+    "Mandarin": "构建业务语义理解",
+    "Japanese": "データの意味を把握",
+    "Malay": "Bina pemahaman semantik"
   },
   "analysis_trace_label_screen_row_quality": {
     "English": "Screen Row Quality",
-    "Mandarin": "检查明细行与辅助行"
+    "Mandarin": "检查明细行与辅助行",
+    "Japanese": "行の品質を確認",
+    "Malay": "Tapis kualiti baris"
   },
   "analysis_trace_label_propose_hypotheses": {
     "English": "Propose Hypotheses",
-    "Mandarin": "提出分析假设"
+    "Mandarin": "提出分析假设",
+    "Japanese": "仮説を提案",
+    "Malay": "Cadangkan hipotesis"
   },
   "analysis_trace_label_select_hypothesis": {
     "English": "Select Hypothesis",
-    "Mandarin": "选择当前分析假设"
+    "Mandarin": "选择当前分析假设",
+    "Japanese": "仮説を選択",
+    "Malay": "Pilih hipotesis"
   },
   "analysis_trace_label_plan_probe_query": {
     "English": "Plan Evidence Query",
-    "Mandarin": "规划证据查询"
+    "Mandarin": "规划证据查询",
+    "Japanese": "証拠クエリ計画",
+    "Malay": "Rancang pertanyaan bukti"
   },
   "analysis_trace_label_execute_probe_query": {
     "English": "Execute Evidence Query",
-    "Mandarin": "执行证据查询"
+    "Mandarin": "执行证据查询",
+    "Japanese": "証拠クエリの実行",
+    "Malay": "Jalankan pertanyaan bukti"
   },
   "analysis_trace_label_evaluate_evidence": {
     "English": "Evaluate Evidence",
-    "Mandarin": "评估查询证据"
+    "Mandarin": "评估查询证据",
+    "Japanese": "証拠を評価する",
+    "Malay": "Nilai bukti"
   },
   "analysis_trace_label_refine_hypothesis": {
     "English": "Refine Hypothesis",
-    "Mandarin": "修正分析假设"
+    "Mandarin": "修正分析假设",
+    "Japanese": "仮説を改善",
+    "Malay": "Perhalus hipotesis"
   },
   "analysis_trace_label_dedupe_candidate": {
     "English": "Dedupe Candidate",
-    "Mandarin": "检查重复洞察"
+    "Mandarin": "检查重复洞察",
+    "Japanese": "候補の重複を確認",
+    "Malay": "Semak calon pendua"
   },
   "analysis_trace_label_plan_presentation": {
     "English": "Plan Presentation",
-    "Mandarin": "规划展示方式"
+    "Mandarin": "规划展示方式",
+    "Japanese": "表示方法を計画",
+    "Malay": "Rancang persembahan"
   },
   "analysis_trace_label_emit_standard_card": {
     "English": "Emit Standard Card",
-    "Mandarin": "生成标准卡片"
+    "Mandarin": "生成标准卡片",
+    "Japanese": "標準カードを作成",
+    "Malay": "Jana kad standard"
   },
   "analysis_trace_label_finalize_session": {
     "English": "Finalize Session",
-    "Mandarin": "完成分析会话"
+    "Mandarin": "完成分析会话",
+    "Japanese": "セッションを確定",
+    "Malay": "Selesaikan sesi"
   },
   "analysis_trace_label_explore_data_with_sql": {
     "English": "Explore Data With SQL",
-    "Mandarin": "用 SQL 探索数据分布"
+    "Mandarin": "用 SQL 探索数据分布",
+    "Japanese": "SQLを使用してデータを探索する",
+    "Malay": "Teroka data dengan SQL"
   },
   "analysis_trace_label_stop_session": {
     "English": "Stop Session",
-    "Mandarin": "停止分析会话"
+    "Mandarin": "停止分析会话",
+    "Japanese": "セッション終了",
+    "Malay": "Hentikan sesi"
   },
   "analysis_trace_why_observe_dataset": {
     "English": "Confirm the current dataset and objective first so analysis starts from a valid context.",
-    "Mandarin": "先确认当前数据集和分析目标，避免从错误上下文出发。"
+    "Mandarin": "先确认当前数据集和分析目标，避免从错误上下文出发。",
+    "Japanese": "現在のデータセットと目的を確認してから分析を開始します。",
+    "Malay": "Sahkan set data dan matlamat semasa dahulu supaya analisis bermula dengan konteks yang sah."
   },
   "analysis_trace_why_build_semantic_understanding": {
     "English": "Identify business grains, candidate metrics, and helper fields before aggregations.",
-    "Mandarin": "先识别业务粒度、指标和 helper 字段，避免技术字段混入结论。"
+    "Mandarin": "先识别业务粒度、指标和 helper 字段，避免技术字段混入结论。",
+    "Japanese": "集計の前に、業務上のデータ粒度、候補指標、補助項目を特定します。",
+    "Malay": "Kenal pasti aras butiran perniagaan, metrik calon dan medan sokongan sebelum pengagregatan."
   },
   "analysis_trace_why_screen_row_quality": {
     "English": "Filter non-detail rows such as subtotal or footer-like lines before further aggregation.",
-    "Mandarin": "先判断是否存在 subtotal、footer、note 等非明细行，避免污染后续聚合。"
+    "Mandarin": "先判断是否存在 subtotal、footer、note 等非明细行，避免污染后续聚合。",
+    "Japanese": "追加の集計前に、小計やフッターのような明細以外の行を除外します。",
+    "Malay": "Tapis baris bukan butiran seperti jumlah kecil atau baris nota kaki sebelum pengagregatan lanjut."
   },
   "analysis_trace_why_propose_hypotheses": {
     "English": "Create a small set of high-confidence hypotheses and validate them one by one.",
-    "Mandarin": "先提出有限个高优先级业务假设，再逐个验证。"
+    "Mandarin": "先提出有限个高优先级业务假设，再逐个验证。",
+    "Japanese": "確度の高い仮説を少数作成し、一つずつ検証します。",
+    "Malay": "Bina set kecil hipotesis berkeyakinan tinggi dan sahkan satu demi satu."
   },
   "analysis_trace_why_select_hypothesis": {
     "English": "Progress one hypothesis at a time to keep the analysis focused.",
-    "Mandarin": "一次只推进一个假设，避免并行扩散导致分析失焦。"
+    "Mandarin": "一次只推进一个假设，避免并行扩散导致分析失焦。",
+    "Japanese": "一度に一つの仮説を検証し、分析の焦点を保ちます。",
+    "Malay": "Proses satu hipotesis pada satu masa supaya analisis kekal fokus."
   },
   "analysis_trace_why_plan_probe_query": {
     "English": "Plan a narrow, evidence-first SQL query instead of drawing conclusions directly.",
-    "Mandarin": "先规划小而稳的证据查询，而不是直接做图或下结论。"
+    "Mandarin": "先规划小而稳的证据查询，而不是直接做图或下结论。",
+    "Japanese": "すぐに結論を出さず、証拠を優先した対象を絞ったSQLクエリを計画します。",
+    "Malay": "Rancang pertanyaan SQL yang khusus dan berasaskan bukti sebelum membuat kesimpulan."
   },
   "analysis_trace_why_execute_probe_query": {
     "English": "Run the planned query to verify whether data supports the current hypothesis.",
-    "Mandarin": "实际运行查询，确认这个假设是否有数据证据支持。"
+    "Mandarin": "实际运行查询，确认这个假设是否有数据证据支持。",
+    "Japanese": "計画したクエリを実行して、現在の仮説がデータで支持されているかどうかを確認します。",
+    "Malay": "Jalankan pertanyaan yang dirancang untuk mengesahkan sama ada data menyokong hipotesis semasa."
   },
   "analysis_trace_why_evaluate_evidence": {
     "English": "Validate whether evidence is strong, meaningful, and suitable to present.",
-    "Mandarin": "判断证据是否足够强、是否有业务意义，以及是否值得展示。"
+    "Mandarin": "判断证据是否足够强、是否有业务意义，以及是否值得展示。",
+    "Japanese": "証拠が十分に強く、意味があり、提示に適しているか確認します。",
+    "Malay": "Sahkan sama ada bukti kukuh, bermakna dan sesuai untuk dipaparkan."
   },
   "analysis_trace_why_refine_hypothesis": {
     "English": "Apply one controlled refinement pass when the first evidence is weak.",
-    "Mandarin": "当首轮证据不够好时，最多做一次受控修正。"
+    "Mandarin": "当首轮证据不够好时，最多做一次受控修正。",
+    "Japanese": "初回の証拠が弱い場合、範囲を限定して一度だけ改善します。",
+    "Malay": "Lakukan satu pusingan penambahbaikan terkawal apabila bukti awal lemah."
   },
   "analysis_trace_why_dedupe_candidate": {
     "English": "Prevent repeated insights or duplicate semantic outputs from being returned.",
-    "Mandarin": "避免重复查询和重复语义的卡片污染结果。"
+    "Mandarin": "避免重复查询和重复语义的卡片污染结果。",
+    "Japanese": "同じ洞察や意味的に重複する出力を返さないようにします。",
+    "Malay": "Elakkan cerapan berulang atau hasil semantik pendua daripada dikembalikan."
   },
   "analysis_trace_why_plan_presentation": {
     "English": "Only after value gates pass, determine how to present output.",
-    "Mandarin": "只有证据通过门槛后，才决定如何以标准卡片展示。"
+    "Mandarin": "只有证据通过门槛后，才决定如何以标准卡片展示。",
+    "Japanese": "価値の確認を通過してから、出力の表示方法を決めます。",
+    "Malay": "Tentukan cara memaparkan hasil hanya selepas semakan nilai lulus."
   },
   "analysis_trace_why_emit_standard_card": {
     "English": "Only generate standard cards for high-value and chart-safe evidence.",
-    "Mandarin": "只对高价值、图表安全的结果生成标准卡片。"
+    "Mandarin": "只对高价值、图表安全的结果生成标准卡片。",
+    "Japanese": "価値が高く、グラフで安全に示せる証拠についてのみ標準カードを作成します。",
+    "Malay": "Jana kad standard hanya untuk bukti bernilai tinggi yang sesuai dipaparkan sebagai carta."
   },
   "analysis_trace_why_finalize_session": {
     "English": "Aggregate this round of results and summarize status, accepted outputs, and rejections.",
-    "Mandarin": "汇总本轮分析结果、降级状态与可见轨迹。"
+    "Mandarin": "汇总本轮分析结果、降级状态与可见轨迹。",
+    "Japanese": "今回の結果を集め、状態、採用された出力、却下された出力を要約します。",
+    "Malay": "Gabungkan hasil pusingan ini dan ringkaskan status, hasil yang diterima serta yang ditolak."
   },
   "analysis_trace_why_explore_data_with_sql": {
     "English": "Run deterministic SQL queries to learn real data distributions before generating hypotheses.",
-    "Mandarin": "在生成假设前运行确定性 SQL 查询，了解真实数据分布。"
+    "Mandarin": "在生成假设前运行确定性 SQL 查询，了解真实数据分布。",
+    "Japanese": "仮説を生成する前に、決定的なSQLクエリで実際のデータ分布を確認します。",
+    "Malay": "Jalankan pertanyaan SQL deterministik untuk memahami taburan data sebenar sebelum menjana hipotesis."
   },
   "analysis_trace_why_stop_session": {
     "English": "Stop when confidence or value is insufficient to avoid noise.",
-    "Mandarin": "达到边界或没有高价值结果时，明确停止，避免继续制造噪音。"
+    "Mandarin": "达到边界或没有高价值结果时，明确停止，避免继续制造噪音。",
+    "Japanese": "信頼性や価値が不十分な場合は、ノイズを避けるために分析を停止します。",
+    "Malay": "Hentikan apabila keyakinan atau nilai tidak mencukupi untuk mengelakkan hasil yang tidak berguna."
   },
   "analysis_trace_observe_dataset_input": {
     "English": "Prepare and run {mode} analysis for the current dataset.",
-    "Mandarin": "为当前数据集准备并运行{mode}分析。"
+    "Mandarin": "为当前数据集准备并运行{mode}分析。",
+    "Japanese": "現在のデータセットに対する{mode}分析を準備して実行します。",
+    "Malay": "Sediakan dan jalankan analisis {mode} untuk set data semasa."
   },
   "analysis_trace_observe_dataset_output": {
     "English": 'Goal is "{goal}", current dataset has {rows} rows.',
-    "Mandarin": "分析目标为“{goal}”，当前数据集共 {rows} 行。"
+    "Mandarin": "分析目标为“{goal}”，当前数据集共 {rows} 行。",
+    "Japanese": '目標は "{goal}" で、現在のデータセットには {rows} 行があります。',
+    "Malay": 'Matlamat ialah "{goal}"; set data semasa mempunyai {rows} baris.'
   },
   "analysis_trace_build_semantic_understanding_input": {
     "English": "Identify business grains, candidate metrics, and helper fields.",
-    "Mandarin": "识别业务粒度、候选指标和 helper 字段。"
+    "Mandarin": "识别业务粒度、候选指标和 helper 字段。",
+    "Japanese": "業務上のデータ粒度、候補指標、補助項目を特定します。",
+    "Malay": "Kenal pasti unit perniagaan, metrik calon dan medan sokongan."
   },
   "analysis_trace_build_semantic_understanding_output": {
     "English": "business grains: {businessGrains}; helper fields: {helperDimensions}; blocked: {blockedDimensions}.",
-    "Mandarin": "业务粒度: {businessGrains}，帮助字段: {helperDimensions}，被阻止: {blockedDimensions}。"
+    "Mandarin": "业务粒度: {businessGrains}，帮助字段: {helperDimensions}，被阻止: {blockedDimensions}。",
+    "Japanese": "業務上のデータ粒度: {businessGrains}; 補助項目: {helperDimensions}; 使用不可: {blockedDimensions}。",
+    "Malay": "unit perniagaan: {businessGrains}; medan sokongan: {helperDimensions}; disekat: {blockedDimensions}."
   },
   "analysis_trace_screen_row_quality_input": {
     "English": "Check whether semantic view has non-detail rows filtered.",
-    "Mandarin": "检查语义视图是否成功过滤非明细行。"
+    "Mandarin": "检查语义视图是否成功过滤非明细行。",
+    "Japanese": "意味付けされたデータから、明細以外の行が除外されているか確認します。",
+    "Malay": "Semak sama ada baris bukan butiran ditapis daripada paparan semantik."
   },
   "analysis_trace_screen_row_quality_output": {
     "English": "detail row policy = {detailRowPolicy}; unsafe narrative = {unsafeForBusinessNarrative}.",
-    "Mandarin": "明细行策略 = {detailRowPolicy}，是否存在不安全叙事 = {unsafeForBusinessNarrative}。"
+    "Mandarin": "明细行策略 = {detailRowPolicy}，是否存在不安全叙事 = {unsafeForBusinessNarrative}。",
+    "Japanese": "明細行の方針 = {detailRowPolicy}; 業務説明に不適切 = {unsafeForBusinessNarrative}。",
+    "Malay": "dasar baris butiran = {detailRowPolicy}; naratif tidak selamat = {unsafeForBusinessNarrative}."
   },
   "analysis_trace_propose_hypotheses_input": {
     "English": "Generate a finite set of high-priority analysis hypotheses.",
-    "Mandarin": "生成有限个高优先级业务分析假设。"
+    "Mandarin": "生成有限个高优先级业务分析假设。",
+    "Japanese": "優先度の高い分析仮説を、限られた数だけ生成します。",
+    "Malay": "Jana set hipotesis analisis berkeutamaan tinggi yang terhad."
   },
   "analysis_trace_propose_hypotheses_output_success": {
     "English": "Proposed {count} hypothesis candidate(s).",
-    "Mandarin": "已提出 {count} 个假设。"
+    "Mandarin": "已提出 {count} 个假设。",
+    "Japanese": "{count}件の仮説候補を提案しました。",
+    "Malay": "{count} calon hipotesis dicadangkan."
   },
   "analysis_trace_propose_hypotheses_output_no_business_grains": {
     "English": "No safe business grain was identified, so default business hypothesis analysis was skipped.",
-    "Mandarin": "未识别到可安全支撑标准业务卡片的业务粒度，停止默认业务假设分析。"
+    "Mandarin": "未识别到可安全支撑标准业务卡片的业务粒度，停止默认业务假设分析。",
+    "Japanese": "安全なビジネス粒度が見つからなかったため、デフォルトのビジネス仮説分析はスキップされました。",
+    "Malay": "Tiada aras butiran perniagaan yang selamat dikenal pasti, jadi analisis hipotesis perniagaan lalai dilangkau."
   },
   "analysis_trace_propose_hypotheses_output_none": {
     "English": "No executable analysis hypothesis was proposed.",
-    "Mandarin": "未能提出可执行的分析假设。"
+    "Mandarin": "未能提出可执行的分析假设。",
+    "Japanese": "実行可能な分析仮説は提案されませんでした。",
+    "Malay": "Tiada hipotesis analisis yang boleh dilaksanakan dicadangkan."
   },
   "analysis_trace_select_hypothesis_input": {
     "English": "Pick the next highest-priority hypothesis and continue verification.",
-    "Mandarin": "从剩余假设中选择当前最优先的一个继续验证。"
+    "Mandarin": "从剩余假设中选择当前最优先的一个继续验证。",
+    "Japanese": "次に優先度の高い仮説を選び、検証を続けます。",
+    "Malay": "Pilih hipotesis berkeutamaan tertinggi seterusnya dan teruskan pengesahan."
   },
   "analysis_trace_select_hypothesis_output": {
     "English": "Selected hypothesis: {topic}.",
-    "Mandarin": "选中假设：“{topic}”。"
+    "Mandarin": "选中假设：“{topic}”。",
+    "Japanese": "選択された仮説: {topic}。",
+    "Malay": "Hipotesis dipilih: {topic}."
   },
   "analysis_trace_plan_probe_query_input": {
     "English": 'Plan probe query #{attempt} for topic "{topic}".',
-    "Mandarin": "为主题“{topic}”规划第{attempt}轮探针查询。"
+    "Mandarin": "为主题“{topic}”规划第{attempt}轮探针查询。",
+    "Japanese": 'テーマ "{topic}" に対する探査クエリ #{attempt} を計画します。',
+    "Malay": 'Rancang pertanyaan bukti #{attempt} untuk topik "{topic}".'
   },
   "analysis_trace_plan_probe_query_output": {
     "English": 'Generated {queryMode} query plan "{title}".',
-    "Mandarin": "已生成 {queryMode} 查询方案“{title}”。"
+    "Mandarin": "已生成 {queryMode} 查询方案“{title}”。",
+    "Japanese": '{queryMode} クエリ計画 "{title}" を生成しました。',
+    "Malay": 'Pelan pertanyaan {queryMode} "{title}" dijana.'
   },
   "analysis_trace_execute_probe_query_input": {
     "English": 'Execute evidence query "{title}".',
-    "Mandarin": "执行证据查询“{title}”。"
+    "Mandarin": "执行证据查询“{title}”。",
+    "Japanese": '証拠クエリ "{title}" を実行します。',
+    "Malay": 'Jalankan pertanyaan bukti "{title}".'
   },
   "analysis_trace_execute_probe_query_output": {
     "English": "Query returned {rows} rows and {columns} columns.",
-    "Mandarin": "查询返回 {rows} 行，{columns} 列。"
+    "Mandarin": "查询返回 {rows} 行，{columns} 列。",
+    "Japanese": "クエリは {rows} 行と {columns} 列を返しました。",
+    "Malay": "Pertanyaan mengembalikan {rows} baris dan {columns} lajur."
   },
   "analysis_trace_evaluate_evidence_input": {
     "English": 'Evaluate whether evidence query "{title}" is worth presenting.',
-    "Mandarin": "评估主题“{title}”的证据查询是否适合展示。"
+    "Mandarin": "评估主题“{title}”的证据查询是否适合展示。",
+    "Japanese": "証拠クエリ「{title}」に提示する価値があるか評価します。",
+    "Malay": 'Nilai sama ada pertanyaan bukti "{title}" wajar dipaparkan.'
   },
   "analysis_trace_evaluate_evidence_output": {
     "English": "Evidence gate decision: {decision}.",
-    "Mandarin": "证据门控决策：{decision}。"
+    "Mandarin": "证据门控决策：{decision}。",
+    "Japanese": "証拠の判定結果: {decision}。",
+    "Malay": "Keputusan tapisan bukti: {decision}."
   },
   "analysis_trace_plan_presentation_input": {
     "English": 'Choose a presentation mode for topic "{topic}" based on evidence shape.',
-    "Mandarin": "基于证据形态为主题“{topic}”选择展示方式。"
+    "Mandarin": "基于证据形态为主题“{topic}”选择展示方式。",
+    "Japanese": "証拠の形式に基づき、トピック「{topic}」の表示方法を選びます。",
+    "Malay": 'Pilih mod persembahan untuk topik "{topic}" berdasarkan bentuk bukti.'
   },
   "analysis_trace_plan_presentation_output": {
     "English": "Presentation mode = {presentationMode}{chartTypeSuffix}.",
-    "Mandarin": "展示方式 = {presentationMode}{chartTypeSuffix}。"
+    "Mandarin": "展示方式 = {presentationMode}{chartTypeSuffix}。",
+    "Japanese": "表示方法 = {presentationMode}{chartTypeSuffix}。",
+    "Malay": "Mod persembahan = {presentationMode}{chartTypeSuffix}."
   },
   "analysis_trace_emit_standard_card_input": {
     "English": 'Generate standard card for topic "{topic}".',
-    "Mandarin": "为主题“{topic}”生成标准卡片。"
+    "Mandarin": "为主题“{topic}”生成标准卡片。",
+    "Japanese": 'トピック "{topic}" の標準カードを作成します。',
+    "Malay": 'Jana kad standard untuk topik "{topic}".'
   },
   "analysis_trace_emit_standard_card_output": {
     "English": 'Created card "{title}".',
-    "Mandarin": "已创建卡片“{title}”。"
+    "Mandarin": "已创建卡片“{title}”。",
+    "Japanese": "カード「{title}」を作成しました。",
+    "Malay": 'Kad "{title}" dicipta.'
   },
   "analysis_trace_refine_hypothesis_input": {
     "English": 'First-pass evidence for topic "{topic}" is weak; running controlled refinement.',
-    "Mandarin": "对主题“{topic}”的首轮证据较弱，执行一次受控修正。"
+    "Mandarin": "对主题“{topic}”的首轮证据较弱，执行一次受控修正。",
+    "Japanese": "トピック「{topic}」の初回の証拠が弱いため、範囲を限定して改善します。",
+    "Malay": 'Bukti awal untuk topik "{topic}" lemah; menjalankan penambahbaikan terkawal.'
   },
   "analysis_trace_refine_hypothesis_output_feedback": {
     "English": "Refine with feedback: {message}.",
-    "Mandarin": "按反馈修正：{message}。"
+    "Mandarin": "按反馈修正：{message}。",
+    "Japanese": "フィードバックに基づいて改善：{message}。",
+    "Malay": "Perhalus berdasarkan maklum balas: {message}."
   },
   "analysis_trace_refine_hypothesis_output_retry": {
     "English": "Retrying evidence planning after error {errorCode}.",
-    "Mandarin": "收到错误 {errorCode} 后重试证据规划。"
+    "Mandarin": "收到错误 {errorCode} 后重试证据规划。",
+    "Japanese": "{errorCode}エラー後、証拠計画を再試行します。",
+    "Malay": "Mencuba semula perancangan bukti selepas ralat {errorCode}."
   },
   "analysis_trace_topic_failed_input": {
     "English": 'Topic "{topic}" could not complete evidence analysis.',
-    "Mandarin": "主题“{topic}”未能完成证据分析。"
+    "Mandarin": "主题“{topic}”未能完成证据分析。",
+    "Japanese": 'トピック "{topic}" での証拠分析に失敗しました。',
+    "Malay": 'Analisis bukti bagi topik "{topic}" tidak dapat diselesaikan.'
   },
   "analysis_trace_topic_failed_output": {
     "English": "Failure reason: {reason}.",
-    "Mandarin": "失败原因：{reason}。"
+    "Mandarin": "失败原因：{reason}。",
+    "Japanese": "失敗理由: {reason}。",
+    "Malay": "Sebab kegagalan: {reason}."
   },
   "analysis_trace_dedupe_candidate_input": {
     "English": 'Run deduplication for accepted result of hypothesis "{topic}".',
-    "Mandarin": "对假设“{topic}”的已接受结果做重复检查。"
+    "Mandarin": "对假设“{topic}”的已接受结果做重复检查。",
+    "Japanese": "仮説「{topic}」の採用結果について重複を確認します。",
+    "Malay": 'Jalankan semakan pendua bagi hasil hipotesis "{topic}" yang diterima.'
   },
   "analysis_trace_dedupe_candidate_output": {
     "English": 'Result for "{topic}" passed dedupe and is kept as formal output.',
-    "Mandarin": "该结果通过去重检查，保留为正式输出。"
+    "Mandarin": "“{topic}”的结果通过去重检查，保留为正式输出。",
+    "Japanese": "「{topic}」の結果は重複確認を通過し、正式な出力として保持されます。",
+    "Malay": 'Hasil bagi "{topic}" lulus semakan pendua dan dikekalkan sebagai hasil rasmi.'
   },
   "analysis_trace_finalize_session_input": {
     "English": "Finalize the analysis session and summarize accepted outputs and rejections.",
-    "Mandarin": "收束本轮分析会话，整理 accepted outputs、rejections 和 trace。"
+    "Mandarin": "收束本轮分析会话，整理 accepted outputs、rejections 和 trace。",
+    "Japanese": "分析セッションを終了し、採用された出力と却下された出力を要約します。",
+    "Malay": "Selesaikan sesi analisis dan ringkaskan hasil yang diterima serta ditolak."
   },
   "analysis_trace_finalize_session_output": {
     "English": "Accepted cards = {acceptedCards}; rejected outputs = {rejectedOutputs}; status = {status}.",
-    "Mandarin": "已采纳卡片 {acceptedCards}，被拒输出 {rejectedOutputs}，状态 {status}。"
+    "Mandarin": "已采纳卡片 {acceptedCards}，被拒输出 {rejectedOutputs}，状态 {status}。",
+    "Japanese": "採用カード = {acceptedCards}; 却下された出力 = {rejectedOutputs}; 状態 = {status}。",
+    "Malay": "Kad diterima = {acceptedCards}; hasil ditolak = {rejectedOutputs}; status = {status}."
   },
   "analysis_trace_explore_data_input": {
     "English": "Run SQL queries to learn actual data distribution before hypothesis generation.",
-    "Mandarin": "在假设生成前运行 SQL 查询，了解真实数据分布。"
+    "Mandarin": "在假设生成前运行 SQL 查询，了解真实数据分布。",
+    "Japanese": "仮説を生成する前に、SQLクエリで実際のデータ分布を確認します。",
+    "Malay": "Jalankan pertanyaan SQL untuk memahami taburan data sebenar sebelum menjana hipotesis."
   },
   "analysis_trace_explore_data_output": {
     "English": "Data distribution context collected for hypothesis generation.",
-    "Mandarin": "已收集数据分布上下文，用于假设生成。"
+    "Mandarin": "已收集数据分布上下文，用于假设生成。",
+    "Japanese": "仮説生成に必要なデータ分布の情報を収集しました。",
+    "Malay": "Konteks taburan data dikumpulkan untuk penjanaan hipotesis."
   },
   "analysis_trace_explore_data_output_skipped": {
     "English": "Exploration skipped; proceeding with column profiles only.",
-    "Mandarin": "探索步骤已跳过，仅使用列档案继续分析。"
+    "Mandarin": "探索步骤已跳过，仅使用列档案继续分析。",
+    "Japanese": "探索はスキップされ、列プロファイルのみで進みます。",
+    "Malay": "Penerokaan dilangkau; meneruskan dengan profil lajur sahaja."
   },
   // cleaningStep.kind
-  "cleaning_step_kind_inspect": { "English": "Inspect", "Mandarin": "检查" },
-  "cleaning_step_kind_edit": { "English": "Edit", "Mandarin": "编辑" },
-  "cleaning_step_kind_verify": { "English": "Verify", "Mandarin": "验证" },
-  "cleaning_step_kind_commit": { "English": "Commit", "Mandarin": "提交" },
+  "cleaning_step_kind_inspect": { "English": "Inspect", "Mandarin": "检查", "Japanese": "調査", "Malay": "Periksa" },
+  "cleaning_step_kind_edit": { "English": "Edit", "Mandarin": "编辑", "Japanese": "編集", "Malay": "Edit" },
+  "cleaning_step_kind_verify": { "English": "Verify", "Mandarin": "验证", "Japanese": "検証", "Malay": "Sahkan" },
+  "cleaning_step_kind_commit": { "English": "Commit", "Mandarin": "提交", "Japanese": "確定", "Malay": "Simpan" },
   // cleaningStep.status
-  "cleaning_step_status_done": { "English": "Done", "Mandarin": "已完成" },
-  "cleaning_step_status_warning": { "English": "Warning", "Mandarin": "警告" },
-  "cleaning_step_status_error": { "English": "Error", "Mandarin": "出错" },
-  "cleaning_step_status_in_progress": { "English": "In progress", "Mandarin": "进行中" },
-  "cleaning_step_status_blocked": { "English": "Blocked", "Mandarin": "已阻塞" },
+  "cleaning_step_status_done": { "English": "Done", "Mandarin": "已完成", "Japanese": "完了", "Malay": "Selesai" },
+  "cleaning_step_status_warning": { "English": "Warning", "Mandarin": "警告", "Japanese": "警告", "Malay": "Amaran" },
+  "cleaning_step_status_error": { "English": "Error", "Mandarin": "出错", "Japanese": "エラー", "Malay": "Ralat" },
+  "cleaning_step_status_in_progress": { "English": "In progress", "Mandarin": "进行中", "Japanese": "進行中", "Malay": "Sedang dijalankan" },
+  "cleaning_step_status_blocked": { "English": "Blocked", "Mandarin": "已阻塞", "Japanese": "ブロック", "Malay": "Disekat" },
   // mutationConfirmation
-  "mutation_confirmation_pending_delete": { "English": "Pending delete", "Mandarin": "待删除确认" },
+  "mutation_confirmation_pending_delete": { "English": "Pending delete", "Mandarin": "待删除确认", "Japanese": "削除待ち", "Malay": "Menunggu pemadaman" },
   // session.status
-  "session_status_queued": { "English": "Queued", "Mandarin": "排队中" },
-  "session_status_running": { "English": "Running", "Mandarin": "运行中" },
-  "session_status_completed": { "English": "Completed", "Mandarin": "已完成" },
-  "session_status_degraded": { "English": "Partially completed", "Mandarin": "部分完成" },
-  "session_status_failed": { "English": "Failed", "Mandarin": "已失败" },
-  "session_status_cancelled": { "English": "Cancelled", "Mandarin": "已取消" },
+  "session_status_queued": { "English": "Queued", "Mandarin": "排队中", "Japanese": "待機中", "Malay": "Dalam barisan" },
+  "session_status_running": { "English": "Running", "Mandarin": "运行中", "Japanese": "実行中", "Malay": "Sedang dijalankan" },
+  "session_status_completed": { "English": "Completed", "Mandarin": "已完成", "Japanese": "完了", "Malay": "Selesai" },
+  "session_status_degraded": { "English": "Partially completed", "Mandarin": "部分完成", "Japanese": "一部完了", "Malay": "Selesai sebahagian" },
+  "session_status_failed": { "English": "Failed", "Mandarin": "已失败", "Japanese": "失敗", "Malay": "Gagal" },
+  "session_status_cancelled": { "English": "Cancelled", "Mandarin": "已取消", "Japanese": "キャンセルされました", "Malay": "Dibatalkan" },
   // step entry status
-  "step_status_running": { "English": "Running", "Mandarin": "运行中" },
-  "step_status_succeeded": { "English": "Succeeded", "Mandarin": "已成功" },
-  "step_status_rejected": { "English": "Rejected", "Mandarin": "已拒绝" },
-  "step_status_failed": { "English": "Failed", "Mandarin": "已失败" },
-  "step_status_skipped": { "English": "Skipped", "Mandarin": "已跳过" },
+  "step_status_running": { "English": "Running", "Mandarin": "运行中", "Japanese": "実行中", "Malay": "Sedang dijalankan" },
+  "step_status_succeeded": { "English": "Succeeded", "Mandarin": "已成功", "Japanese": "成功", "Malay": "Berjaya" },
+  "step_status_rejected": { "English": "Rejected", "Mandarin": "已拒绝", "Japanese": "却下", "Malay": "Ditolak" },
+  "step_status_failed": { "English": "Failed", "Mandarin": "已失败", "Japanese": "失敗", "Malay": "Gagal" },
+  "step_status_skipped": { "English": "Skipped", "Mandarin": "已跳过", "Japanese": "スキップ", "Malay": "Dilangkau" },
   // nextDecision
-  "next_decision_build_semantic_understanding": { "English": "Understand dataset", "Mandarin": "理解数据集" },
-  "next_decision_screen_row_quality": { "English": "Check row quality", "Mandarin": "检查行质量" },
-  "next_decision_explore_data_with_sql": { "English": "Explore data", "Mandarin": "探索数据" },
-  "next_decision_propose_hypotheses": { "English": "Propose hypotheses", "Mandarin": "提出假设" },
-  "next_decision_select_hypothesis": { "English": "Select hypothesis", "Mandarin": "选取假设" },
-  "next_decision_plan_probe_query": { "English": "Plan query", "Mandarin": "规划查询" },
-  "next_decision_execute_probe_query": { "English": "Run query", "Mandarin": "执行查询" },
-  "next_decision_evaluate_evidence": { "English": "Evaluate evidence", "Mandarin": "评估证据" },
-  "next_decision_refine_query": { "English": "Refine query", "Mandarin": "优化查询" },
-  "next_decision_plan_presentation": { "English": "Plan presentation", "Mandarin": "规划呈现方式" },
-  "next_decision_promote_to_presentation": { "English": "Promote to card", "Mandarin": "生成卡片" },
-  "next_decision_reject_hypothesis": { "English": "Reject hypothesis", "Mandarin": "拒绝假设" },
-  "next_decision_dedupe_candidate": { "English": "Deduplicate result", "Mandarin": "去重结果" },
-  "next_decision_emit_standard_card": { "English": "Emit card", "Mandarin": "输出卡片" },
-  "next_decision_finalize_session": { "English": "Finalise session", "Mandarin": "完结会话" },
-  "next_decision_stop_session": { "English": "Stop session", "Mandarin": "停止会话" },
-  "next_decision_stop": { "English": "Stop", "Mandarin": "停止" },
+  "next_decision_build_semantic_understanding": { "English": "Understand dataset", "Mandarin": "理解数据集", "Japanese": "データセットを理解する", "Malay": "Fahami set data" },
+  "next_decision_screen_row_quality": { "English": "Check row quality", "Mandarin": "检查行质量", "Japanese": "行の品質を確認する", "Malay": "Semak kualiti baris" },
+  "next_decision_explore_data_with_sql": { "English": "Explore data", "Mandarin": "探索数据", "Japanese": "データを探索", "Malay": "Teroka data" },
+  "next_decision_propose_hypotheses": { "English": "Propose hypotheses", "Mandarin": "提出假设", "Japanese": "仮説を提案する", "Malay": "Cadangkan hipotesis" },
+  "next_decision_select_hypothesis": { "English": "Select hypothesis", "Mandarin": "选取假设", "Japanese": "仮説を選択する", "Malay": "Pilih hipotesis" },
+  "next_decision_plan_probe_query": { "English": "Plan query", "Mandarin": "规划查询", "Japanese": "クエリの計画", "Malay": "Rancang pertanyaan" },
+  "next_decision_execute_probe_query": { "English": "Run query", "Mandarin": "执行查询", "Japanese": "クエリを実行", "Malay": "Jalankan pertanyaan" },
+  "next_decision_evaluate_evidence": { "English": "Evaluate evidence", "Mandarin": "评估证据", "Japanese": "証拠を評価", "Malay": "Nilai bukti" },
+  "next_decision_refine_query": { "English": "Refine query", "Mandarin": "优化查询", "Japanese": "クエリを改善", "Malay": "Perhalus pertanyaan" },
+  "next_decision_plan_presentation": { "English": "Plan presentation", "Mandarin": "规划呈现方式", "Japanese": "表示方法を計画", "Malay": "Rancang paparan" },
+  "next_decision_promote_to_presentation": { "English": "Promote to card", "Mandarin": "生成卡片", "Japanese": "カードとして提示", "Malay": "Paparkan sebagai kad" },
+  "next_decision_reject_hypothesis": { "English": "Reject hypothesis", "Mandarin": "拒绝假设", "Japanese": "仮説を棄却する", "Malay": "Tolak hipotesis" },
+  "next_decision_dedupe_candidate": { "English": "Deduplicate result", "Mandarin": "去重结果", "Japanese": "結果の重複を確認", "Malay": "Semak hasil pendua" },
+  "next_decision_emit_standard_card": { "English": "Emit card", "Mandarin": "输出卡片", "Japanese": "カードを作成", "Malay": "Jana kad" },
+  "next_decision_finalize_session": { "English": "Finalise session", "Mandarin": "完结会话", "Japanese": "セッションを確定", "Malay": "Selesaikan sesi" },
+  "next_decision_stop_session": { "English": "Stop session", "Mandarin": "停止会话", "Japanese": "セッションを停止する", "Malay": "Hentikan sesi" },
+  "next_decision_stop": { "English": "Stop", "Mandarin": "停止", "Japanese": "停止する", "Malay": "Henti" },
   // AiTaskStatusBubble i18n keys
-  "ai_task_analysis_paused": { "English": "Analysis paused", "Mandarin": "分析已暂停", "Japanese": "分析一時停止" },
-  "ai_task_starting_analysis": { "English": "Starting analysis session", "Mandarin": "正在启动分析会话", "Japanese": "分析セッションを開始中" },
+  "ai_task_analysis_paused": { "English": "Analysis paused", "Mandarin": "分析已暂停", "Japanese": "分析一時停止", "Malay": "Analisis dijeda" },
+  "ai_task_starting_analysis": { "English": "Starting analysis session", "Mandarin": "正在启动分析会话", "Japanese": "分析セッションを開始中", "Malay": "Memulakan sesi analisis" },
   "ai_task_analyzing_data": { "English": "Analyzing data", "Mandarin": "正在分析数据", "Malay": "Menganalisis data", "Japanese": "データを分析中" },
-  "ai_task_starting_analysis_subtitle": { "English": "Preparing the bounded data analysis runtime", "Mandarin": "正在准备有界数据分析运行时", "Japanese": "制限付き分析ランタイムを準備中" },
-  "ai_task_verifying_hypotheses": { "English": "Verifying analysis hypotheses", "Mandarin": "正在验证分析假设", "Japanese": "分析仮説を検証中" },
-  "ai_task_verifying_hypotheses_init": { "English": "{total} hypotheses to verify", "Mandarin": "共 {total} 个假设待验证", "Japanese": "検証する仮説: {total} 件" },
-  "ai_task_verifying_hypotheses_progress": { "English": "Completed {completed} / {total} hypotheses", "Mandarin": "已完成 {completed} / {total} 个假设", "Japanese": "{completed} / {total} 件の仮説完了" },
-  "ai_task_summarizing_results": { "English": "Summarizing SQL results", "Mandarin": "正在汇总 SQL 结果", "Japanese": "SQL結果を要約中" },
-  "ai_task_summarizing_has_cards": { "English": "Building summaries for accepted standard cards", "Mandarin": "正在为已接受的标准卡片生成摘要", "Japanese": "承認済みカードの要約を作成中" },
-  "ai_task_summarizing_no_cards": { "English": "No accepted standard card was produced; preserving the analysis trace instead", "Mandarin": "未产出已接受的标准卡片；保留分析轨迹", "Japanese": "承認済みカードなし。分析トレースを保持します" },
-  "ai_task_analysis_ready": { "English": "Analysis ready", "Mandarin": "分析就绪", "Japanese": "分析完了" },
-  "ai_task_analysis_ready_caveats": { "English": "Analysis ready with caveats", "Mandarin": "分析就绪（有注意事项）", "Japanese": "分析完了（注意事項あり）" },
-  "ai_task_analysis_ready_subtitle": { "English": "{cardCount} SQL-first cards generated{traceQualifier}{rejectionQualifier}", "Mandarin": "已生成 {cardCount} 张 SQL 优先卡片{traceQualifier}{rejectionQualifier}", "Japanese": "SQLファーストカード {cardCount} 枚生成{traceQualifier}{rejectionQualifier}" },
-  "ai_task_analysis_ready_trace": { "English": "; {count} analysis step(s) recorded", "Mandarin": "；记录了 {count} 个分析步骤", "Japanese": "；分析ステップ {count} 件記録" },
-  "ai_task_analysis_ready_rejections": { "English": "; {count} low-value or duplicate output(s) were rejected", "Mandarin": "；{count} 个低价值或重复输出已被拒绝", "Japanese": "；低品質・重複 {count} 件を除外" },
-  "ai_task_analysis_ready_none_trusted": { "English": ", but none are trusted enough for a definitive answer", "Mandarin": "，但均未达到可信标准", "Japanese": "ですが信頼度が不十分です" },
-  "ai_task_analysis_ready_mixed": { "English": "; {trusted} trusted, {review} need review", "Mandarin": "；{trusted} 个可信，{review} 个需审查", "Japanese": "；信頼済み {trusted}、要確認 {review}" },
-  "ai_task_fallback_ready": { "English": "Showing simplified insights while deeper SQL analysis is unavailable", "Mandarin": "深度 SQL 分析暂不可用，显示简化洞察", "Japanese": "SQL分析が利用不可のため簡易結果を表示" },
-  "ai_auto_confirmed_structure": { "English": "AI automatically confirmed the report structure with high confidence.", "Mandarin": "AI 已自动确认报表结构（高置信度），继续分析。", "Japanese": "AIがレポート構造を高い信頼度で自動確認しました。" },
-  "ai_task_cleaning_title": { "English": "Data cleaning", "Mandarin": "数据清洗", "Japanese": "データクリーニング" },
-  "ai_task_cleaning_failed": { "English": "Cleaning failed", "Mandarin": "数据清洗失败", "Japanese": "クリーニングに失敗しました" },
-  "ai_task_pipeline_failed": { "English": "Pipeline failed", "Mandarin": "处理管道失败", "Japanese": "パイプラインに失敗しました" },
-  "ai_task_analysis_failed": { "English": "Analysis failed", "Mandarin": "分析失败", "Japanese": "分析に失敗しました" },
-  "ai_task_analysis_failed_subtitle": { "English": "Automatic analysis could not produce even the simplified fallback view", "Mandarin": "自动分析无法生成简化的备用视图", "Japanese": "自動分析でフォールバックビューも生成できませんでした" },
-  "ai_task_preparing_dataset": { "English": "Preparing dataset", "Mandarin": "正在准备数据集", "Japanese": "データセットを準備中" },
-  "ai_task_preparing_dataset_structure": { "English": "Resolving report structure", "Mandarin": "正在解析报告结构", "Japanese": "レポート構造を解析中" },
-  "ai_task_preparing_dataset_semantic": { "English": "Running semantic annotation on cleaned data", "Mandarin": "正在对清洗后的数据进行语义标注", "Japanese": "クリーンデータのセマンティック注釈を実行中" },
-  "ai_task_preparing_dataset_engine": { "English": "Refreshing analysis engine", "Mandarin": "正在刷新分析引擎", "Japanese": "分析エンジンを更新中" },
-  "ai_task_session_building_semantic": { "English": "Dataset loaded into analysis engine, building semantic understanding", "Mandarin": "数据集已加载至分析引擎，正在构建语义理解", "Japanese": "データセットを分析エンジンに読み込み、セマンティック解析を構築中" },
-  "ai_task_session_exploring_data": { "English": "Exploring data distributions with SQL", "Mandarin": "正在使用 SQL 探索数据分布", "Japanese": "SQLでデータ分布を調査中" },
-  "ai_task_session_investigation": { "English": "Running data investigation diagnostics", "Mandarin": "正在运行数据调查诊断", "Japanese": "データ調査診断を実行中" },
-  "ai_task_session_exploring_and_investigating": { "English": "Exploring data & running investigation diagnostics", "Mandarin": "正在探索数据并运行调查诊断", "Japanese": "データ探索と調査診断を同時実行中" },
-  "ai_task_session_generating_topics": { "English": "Generating analysis topics from data patterns", "Mandarin": "正在从数据模式生成分析主题", "Japanese": "データパターンから分析トピックを生成中" },
+  "ai_task_starting_analysis_subtitle": { "English": "Preparing the bounded data analysis runtime", "Mandarin": "正在准备有界数据分析运行时", "Japanese": "制限付き分析ランタイムを準備中", "Malay": "Menyediakan persekitaran analisis data dengan had yang ditetapkan" },
+  "ai_task_verifying_hypotheses": { "English": "Verifying analysis hypotheses", "Mandarin": "正在验证分析假设", "Japanese": "分析仮説を検証中", "Malay": "Mengesahkan hipotesis analisis" },
+  "ai_task_verifying_hypotheses_init": { "English": "{total} hypotheses to verify", "Mandarin": "共 {total} 个假设待验证", "Japanese": "検証する仮説: {total} 件", "Malay": "{total} hipotesis untuk disahkan" },
+  "ai_task_verifying_hypotheses_progress": { "English": "Completed {completed} / {total} hypotheses", "Mandarin": "已完成 {completed} / {total} 个假设", "Japanese": "{completed} / {total} 件の仮説完了", "Malay": "Selesai {completed} / {total} hipotesis" },
+  "ai_task_summarizing_results": { "English": "Summarizing SQL results", "Mandarin": "正在汇总 SQL 结果", "Japanese": "SQL結果を要約中", "Malay": "Meringkaskan hasil SQL" },
+  "ai_task_summarizing_has_cards": { "English": "Building summaries for accepted standard cards", "Mandarin": "正在为已接受的标准卡片生成摘要", "Japanese": "承認済みカードの要約を作成中", "Malay": "Menyediakan ringkasan untuk kad standard yang diterima" },
+  "ai_task_summarizing_no_cards": { "English": "No accepted standard card was produced; preserving the analysis trace instead", "Mandarin": "未产出已接受的标准卡片；保留分析轨迹", "Japanese": "承認済みカードなし。分析トレースを保持します", "Malay": "Tiada kad standard yang diterima dihasilkan; jejak analisis dikekalkan" },
+  "ai_task_analysis_ready": { "English": "Analysis ready", "Mandarin": "分析就绪", "Japanese": "分析完了", "Malay": "Analisis sedia" },
+  "ai_task_analysis_ready_caveats": { "English": "Analysis ready with caveats", "Mandarin": "分析就绪（有注意事项）", "Japanese": "分析完了（注意事項あり）", "Malay": "Analisis sedia dengan batasan" },
+  "ai_task_analysis_ready_subtitle": { "English": "{cardCount} SQL-first cards generated{traceQualifier}{rejectionQualifier}", "Mandarin": "已生成 {cardCount} 张 SQL 优先卡片{traceQualifier}{rejectionQualifier}", "Japanese": "SQLファーストカード {cardCount} 枚生成{traceQualifier}{rejectionQualifier}", "Malay": "{cardCount} kad berasaskan SQL dijana{traceQualifier}{rejectionQualifier}" },
+  "ai_task_analysis_ready_trace": { "English": "; {count} analysis step(s) recorded", "Mandarin": "；记录了 {count} 个分析步骤", "Japanese": "；分析ステップ {count} 件記録", "Malay": "; {count} langkah analisis direkodkan" },
+  "ai_task_analysis_ready_rejections": { "English": "; {count} low-value or duplicate output(s) were rejected", "Mandarin": "；{count} 个低价值或重复输出已被拒绝", "Japanese": "；低品質・重複 {count} 件を除外", "Malay": "; {count} hasil bernilai rendah atau pendua ditolak" },
+  "ai_task_analysis_ready_none_trusted": { "English": ", but none are trusted enough for a definitive answer", "Mandarin": "，但均未达到可信标准", "Japanese": "ですが信頼度が不十分です", "Malay": ", tetapi tiada yang cukup dipercayai untuk jawapan muktamad" },
+  "ai_task_analysis_ready_mixed": { "English": "; {trusted} trusted, {review} need review", "Mandarin": "；{trusted} 个可信，{review} 个需审查", "Japanese": "；信頼済み {trusted}、要確認 {review}", "Malay": "; {trusted} dipercayai, {review} perlu disemak" },
+  "ai_task_fallback_ready": { "English": "Showing simplified insights while deeper SQL analysis is unavailable", "Mandarin": "深度 SQL 分析暂不可用，显示简化洞察", "Japanese": "SQL分析が利用不可のため簡易結果を表示", "Malay": "Memaparkan cerapan ringkas sementara analisis SQL yang lebih mendalam tidak tersedia" },
+  "ai_auto_confirmed_structure": { "English": "AI automatically confirmed the report structure with high confidence.", "Mandarin": "AI 已自动确认报表结构（高置信度），继续分析。", "Japanese": "AIがレポート構造を高い信頼度で自動確認しました。", "Malay": "AI mengesahkan struktur laporan secara automatik dengan keyakinan tinggi." },
+  "ai_task_cleaning_title": { "English": "Data cleaning", "Mandarin": "数据清洗", "Japanese": "データクリーニング", "Malay": "Pembersihan data" },
+  "ai_task_cleaning_failed": { "English": "Cleaning failed", "Mandarin": "数据清洗失败", "Japanese": "クリーニングに失敗しました", "Malay": "Pembersihan gagal" },
+  "ai_task_pipeline_failed": { "English": "Pipeline failed", "Mandarin": "处理管道失败", "Japanese": "パイプラインに失敗しました", "Malay": "Aliran kerja gagal" },
+  "ai_task_analysis_failed": { "English": "Analysis failed", "Mandarin": "分析失败", "Japanese": "分析に失敗しました", "Malay": "Analisis gagal" },
+  "ai_task_analysis_failed_subtitle": { "English": "Automatic analysis could not produce even the simplified fallback view", "Mandarin": "自动分析无法生成简化的备用视图", "Japanese": "自動分析でフォールバックビューも生成できませんでした", "Malay": "Analisis automatik tidak dapat menghasilkan paparan sandaran ringkas sekalipun" },
+  "ai_task_preparing_dataset": { "English": "Preparing dataset", "Mandarin": "正在准备数据集", "Japanese": "データセットを準備中", "Malay": "Menyediakan set data" },
+  "ai_task_preparing_dataset_structure": { "English": "Resolving report structure", "Mandarin": "正在解析报告结构", "Japanese": "レポート構造を解析中", "Malay": "Menyelesaikan struktur laporan" },
+  "ai_task_preparing_dataset_semantic": { "English": "Running semantic annotation on cleaned data", "Mandarin": "正在对清洗后的数据进行语义标注", "Japanese": "クリーンデータのセマンティック注釈を実行中", "Malay": "Menjalankan anotasi semantik pada data yang dibersihkan" },
+  "ai_task_preparing_dataset_engine": { "English": "Refreshing analysis engine", "Mandarin": "正在刷新分析引擎", "Japanese": "分析エンジンを更新中", "Malay": "Memuat semula enjin analisis" },
+  "ai_task_session_building_semantic": { "English": "Dataset loaded into analysis engine, building semantic understanding", "Mandarin": "数据集已加载至分析引擎，正在构建语义理解", "Japanese": "データセットを分析エンジンに読み込み、セマンティック解析を構築中", "Malay": "Set data dimuatkan ke dalam enjin analisis; pemahaman semantik sedang dibina" },
+  "ai_task_session_exploring_data": { "English": "Exploring data distributions with SQL", "Mandarin": "正在使用 SQL 探索数据分布", "Japanese": "SQLでデータ分布を調査中", "Malay": "Meneroka taburan data menggunakan SQL" },
+  "ai_task_session_investigation": { "English": "Running data investigation diagnostics", "Mandarin": "正在运行数据调查诊断", "Japanese": "データ調査診断を実行中", "Malay": "Menjalankan diagnostik penyiasatan data" },
+  "ai_task_session_exploring_and_investigating": { "English": "Exploring data & running investigation diagnostics", "Mandarin": "正在探索数据并运行调查诊断", "Japanese": "データ探索と調査診断を同時実行中", "Malay": "Meneroka data dan menjalankan diagnostik penyiasatan" },
+  "ai_task_session_generating_topics": { "English": "Generating analysis topics from data patterns", "Mandarin": "正在从数据模式生成分析主题", "Japanese": "データパターンから分析トピックを生成中", "Malay": "Menjana topik analisis daripada corak data" },
   // --- Global credibility tier labels ---
-  "credibility_ready": { "English": "Results ready to use", "Mandarin": "结果可直接使用", "Japanese": "結果はそのままご利用いただけます" },
+  "credibility_ready": { "English": "Results ready to use", "Mandarin": "结果可直接使用", "Japanese": "結果はそのままご利用いただけます", "Malay": "Hasil sedia digunakan" },
   "credibility_ready_with_caveats": { "English": "Results ready with limitations", "Mandarin": "结果可用，但存在限制", "Malay": "Hasil sedia dengan batasan", "Spanish": "Resultados listos con limitaciones", "Japanese": "制限付きで結果を利用可能", "French": "Résultats prêts avec limitations" },
-  "credibility_review": { "English": "Results available — review recommended", "Mandarin": "结果可参考，建议复核", "Japanese": "結果あり — レビュー推奨" },
-  "credibility_insufficient": { "English": "Results insufficient for conclusions", "Mandarin": "结果暂不支持明确结论", "Japanese": "結論に不十分な結果" },
-  "credibility_ready_hint": { "English": "All cards passed quality checks. You can use these findings directly.", "Mandarin": "所有卡片均通过质量检查，可直接使用分析结论。", "Japanese": "全カードが品質チェックを通過。結果をそのまま使用できます。" },
+  "credibility_review": { "English": "Results available — review recommended", "Mandarin": "结果可参考，建议复核", "Japanese": "結果あり — レビュー推奨", "Malay": "Hasil tersedia — semakan disyorkan" },
+  "credibility_insufficient": { "English": "Results insufficient for conclusions", "Mandarin": "结果暂不支持明确结论", "Japanese": "結論に不十分な結果", "Malay": "Hasil tidak mencukupi untuk membuat kesimpulan" },
+  "credibility_ready_hint": { "English": "All cards passed quality checks. You can use these findings directly.", "Mandarin": "所有卡片均通过质量检查，可直接使用分析结论。", "Japanese": "全カードが品質チェックを通過。結果をそのまま使用できます。", "Malay": "Semua kad lulus semakan kualiti. Anda boleh menggunakan dapatan ini secara langsung." },
   "credibility_ready_with_caveats_hint": { "English": "All result cards passed their checks, but data-quality limitations remain. Review the warnings before using the findings.", "Mandarin": "所有结果卡片均通过检查，但数据质量仍有限制。使用结论前请先查看警告。", "Malay": "Semua kad hasil lulus semakan, tetapi batasan kualiti data masih ada. Semak amaran sebelum menggunakan dapatan.", "Spanish": "Todas las tarjetas pasaron las comprobaciones, pero persisten limitaciones de calidad de datos. Revise las advertencias antes de usar los hallazgos.", "Japanese": "すべての結果カードは検証済みですが、データ品質上の制限が残っています。結果を使用する前に警告を確認してください。", "French": "Toutes les cartes ont réussi les contrôles, mais des limites de qualité des données subsistent. Consultez les avertissements avant d’utiliser les conclusions." },
-  "credibility_review_hint": { "English": "{trusted} verified, {review} need review — start with verified cards.", "Mandarin": "{trusted} 张已验证，{review} 张待复核 — 建议优先查看已验证卡片。", "Japanese": "{trusted} 枚検証済み、{review} 枚要確認 — 検証済みカードから確認してください。" },
-  "credibility_review_hint_no_verified": { "English": "0 verified, {review} need review — review these cards and data warnings before using the findings.", "Mandarin": "0 张已验证，{review} 张待复核 — 使用结论前请先检查这些卡片和数据警告。", "Japanese": "検証済み 0 枚、要確認 {review} 枚 — 結果を使用する前にカードとデータ警告を確認してください。" },
-  "credibility_insufficient_hint": { "English": "No cards reached full confidence. Check data warnings, then try follow-up queries.", "Mandarin": "所有卡片均未达到完全可信标准。请先查看数据警告，再尝试追问。", "Japanese": "十分な信頼度のカードがありません。データ警告を確認し、追加クエリをお試しください。" },
-  "card_verdict_verified": { "English": "Verified", "Mandarin": "已验证", "Japanese": "検証済み" },
-  "card_verdict_review": { "English": "Needs review", "Mandarin": "待复核", "Japanese": "要確認" },
-  "card_verdict_weak": { "English": "Low confidence", "Mandarin": "低置信度", "Japanese": "信頼度低" },
-  "card_trust_verified": { "English": "Verified", "Mandarin": "已验证", "Japanese": "検証済み" },
-  "card_trust_caveated": { "English": "Needs review", "Mandarin": "待复核", "Japanese": "要確認" },
-  "card_trust_unverified": { "English": "Unverified", "Mandarin": "未验证", "Japanese": "未検証" },
-  "card_trust_stale": { "English": "Stale evidence", "Mandarin": "证据已过期", "Japanese": "古い証拠" },
-  "card_trust_weak": { "English": "Low confidence", "Mandarin": "低置信度", "Japanese": "信頼度低" },
-  "verdict_reason_provenance_missing": { "English": "Provenance is missing", "Mandarin": "缺少数据溯源", "Japanese": "来歴がありません" },
-  "verdict_reason_dataset_version_missing": { "English": "Dataset version is missing", "Mandarin": "缺少数据版本", "Japanese": "データ版がありません" },
-  "verdict_reason_dataset_stale": { "English": "Dataset version is stale", "Mandarin": "数据版本已过期", "Japanese": "データ版が古いです" },
-  "verdict_reason_evidence_hypothesis": { "English": "Evidence remains a hypothesis", "Mandarin": "证据仍属于假设", "Japanese": "証拠は仮説です" },
-  "verdict_reason_evidence_degraded": { "English": "Evidence is degraded", "Mandarin": "证据质量已降级", "Japanese": "証拠が劣化しています" },
-  "verdict_reason_query_trace_missing": { "English": "Query trace is missing", "Mandarin": "缺少查询轨迹", "Japanese": "クエリ履歴がありません" },
-  "verdict_reason_quality_evaluation_missing": { "English": "Quality evaluation is missing", "Mandarin": "缺少质量评估", "Japanese": "品質評価がありません" },
-  "verdict_reason_quality_caveat": { "English": "Quality review found caveats", "Mandarin": "质量评估发现注意事项", "Japanese": "品質上の注意があります" },
-  "verdict_reason_quality_weak": { "English": "Quality evidence is weak", "Mandarin": "质量证据不足", "Japanese": "品質証拠が弱いです" },
+  "credibility_review_hint": { "English": "{trusted} verified, {review} need review — start with verified cards.", "Mandarin": "{trusted} 张已验证，{review} 张待复核 — 建议优先查看已验证卡片。", "Japanese": "{trusted} 枚検証済み、{review} 枚要確認 — 検証済みカードから確認してください。", "Malay": "{trusted} disahkan, {review} perlu disemak — mulakan dengan kad yang disahkan." },
+  "credibility_review_hint_no_verified": { "English": "0 verified, {review} need review — review these cards and data warnings before using the findings.", "Mandarin": "0 张已验证，{review} 张待复核 — 使用结论前请先检查这些卡片和数据警告。", "Japanese": "検証済み 0 枚、要確認 {review} 枚 — 結果を使用する前にカードとデータ警告を確認してください。", "Malay": "0 disahkan, {review} perlu disemak — semak kad dan amaran data ini sebelum menggunakan dapatan." },
+  "credibility_insufficient_hint": { "English": "No cards reached full confidence. Check data warnings, then try follow-up queries.", "Mandarin": "所有卡片均未达到完全可信标准。请先查看数据警告，再尝试追问。", "Japanese": "十分な信頼度のカードがありません。データ警告を確認し、追加クエリをお試しください。", "Malay": "Tiada kad mencapai keyakinan penuh. Semak amaran data, kemudian cuba pertanyaan susulan." },
+  "card_verdict_verified": { "English": "Verified", "Mandarin": "已验证", "Japanese": "検証済み", "Malay": "Disahkan" },
+  "card_verdict_review": { "English": "Needs review", "Mandarin": "待复核", "Japanese": "要確認", "Malay": "Perlu disemak" },
+  "card_verdict_weak": { "English": "Low confidence", "Mandarin": "低置信度", "Japanese": "信頼度低", "Malay": "Keyakinan rendah" },
+  "card_trust_verified": { "English": "Verified", "Mandarin": "已验证", "Japanese": "検証済み", "Malay": "Disahkan" },
+  "card_trust_caveated": { "English": "Needs review", "Mandarin": "待复核", "Japanese": "要確認", "Malay": "Perlu disemak" },
+  "card_trust_unverified": { "English": "Unverified", "Mandarin": "未验证", "Japanese": "未検証", "Malay": "Belum disahkan" },
+  "card_trust_stale": { "English": "Stale evidence", "Mandarin": "证据已过期", "Japanese": "古い証拠", "Malay": "Bukti lapuk" },
+  "card_trust_weak": { "English": "Low confidence", "Mandarin": "低置信度", "Japanese": "信頼度低", "Malay": "Keyakinan rendah" },
+  "verdict_reason_provenance_missing": { "English": "Provenance is missing", "Mandarin": "缺少数据溯源", "Japanese": "来歴がありません", "Malay": "Asal-usul data tiada" },
+  "verdict_reason_dataset_version_missing": { "English": "Dataset version is missing", "Mandarin": "缺少数据版本", "Japanese": "データ版がありません", "Malay": "Versi set data tiada" },
+  "verdict_reason_dataset_stale": { "English": "Dataset version is stale", "Mandarin": "数据版本已过期", "Japanese": "データ版が古いです", "Malay": "Versi set data sudah lapuk" },
+  "verdict_reason_evidence_hypothesis": { "English": "Evidence remains a hypothesis", "Mandarin": "证据仍属于假设", "Japanese": "証拠は仮説です", "Malay": "Bukti masih berupa hipotesis" },
+  "verdict_reason_evidence_degraded": { "English": "Evidence is degraded", "Mandarin": "证据质量已降级", "Japanese": "証拠が劣化しています", "Malay": "Kualiti bukti menurun" },
+  "verdict_reason_query_trace_missing": { "English": "Query trace is missing", "Mandarin": "缺少查询轨迹", "Japanese": "クエリ履歴がありません", "Malay": "Jejak pertanyaan tiada" },
+  "verdict_reason_quality_evaluation_missing": { "English": "Quality evaluation is missing", "Mandarin": "缺少质量评估", "Japanese": "品質評価がありません", "Malay": "Penilaian kualiti tiada" },
+  "verdict_reason_quality_caveat": { "English": "Quality review found caveats", "Mandarin": "质量评估发现注意事项", "Japanese": "品質上の注意があります", "Malay": "Semakan kualiti menemui batasan" },
+  "verdict_reason_quality_weak": { "English": "Quality evidence is weak", "Mandarin": "质量证据不足", "Japanese": "品質証拠が弱いです", "Malay": "Bukti kualiti lemah" },
   // --- Verdict explainer modal ---
-  "verdict_explainer_title": { "English": "Confidence Explanation", "Mandarin": "置信度说明", "Japanese": "信頼度の説明" },
-  "verdict_explainer_click_hint": { "English": "Click for details", "Mandarin": "点击查看详情", "Japanese": "クリックで詳細表示" },
-  "verdict_explainer_reasons_label": { "English": "Detected Issues", "Mandarin": "检测到的问题", "Japanese": "検出された問題" },
-  "verdict_explainer_ai_label": { "English": "AI Explanation", "Mandarin": "AI 解读", "Japanese": "AI解説" },
-  "verdict_explainer_loading": { "English": "Generating explanation…", "Mandarin": "正在生成解读…", "Japanese": "説明を生成中…" },
-  "verdict_explainer_no_provider": { "English": "AI provider not configured. Cannot generate explanation.", "Mandarin": "未配置 AI 服务，无法生成解读。", "Japanese": "AIプロバイダーが未設定のため、説明を生成できません。" },
-  "verdict_explainer_empty_response": { "English": "AI returned an empty response. Please try again.", "Mandarin": "AI 返回了空响应，请重试。", "Japanese": "AIから空の応答が返されました。再試行してください。" },
-  "verdict_explainer_error": { "English": "Failed to generate explanation. Please try again.", "Mandarin": "生成解读失败，请重试。", "Japanese": "説明の生成に失敗しました。再試行してください。" },
-  "verdict_explainer_retry": { "English": "Retry", "Mandarin": "重试", "Japanese": "再試行" },
-  "verdict_explainer_technical_detail": { "English": "Technical Details", "Mandarin": "技术详情", "Japanese": "技術的詳細" },
-  "verdict_explainer_close": { "English": "Got it", "Mandarin": "知道了", "Japanese": "了解" },
-  "verdict_reason_helper_exposure": { "English": "Helper columns exposed", "Mandarin": "辅助列暴露", "Japanese": "ヘルパー列が露出" },
-  "verdict_reason_narrative_ineligible": { "English": "Not suitable for narrative", "Mandarin": "不适合生成叙述", "Japanese": "ナラティブに不適" },
-  "verdict_reason_low_business_confidence": { "English": "Low business meaning", "Mandarin": "业务含义不明确", "Japanese": "ビジネス意味が低い" },
-  "verdict_reason_aggregation_quality_warning": { "English": "Aggregation quality issue", "Mandarin": "聚合质量问题", "Japanese": "集計品質の問題" },
-  "verdict_reason_fallback_plan": { "English": "Using fallback plan", "Mandarin": "使用备用方案", "Japanese": "フォールバック使用" },
-  "verdict_reason_value_gate_table_only": { "English": "Table-only presentation", "Mandarin": "仅表格展示", "Japanese": "テーブルのみ表示" },
-  "verdict_reason_value_gate_reject": { "English": "Evidence quality rejected", "Mandarin": "证据质量不合格", "Japanese": "エビデンス品質却下" },
-  "verdict_reason_duplicate_semantic": { "English": "Semantic duplicate detected", "Mandarin": "语义重复", "Japanese": "意味的重複検出" },
-  "verdict_reason_unsafe_business_narrative": { "English": "Potentially misleading chart", "Mandarin": "图表可能具有误导性", "Japanese": "誤解を招く可能性" },
-  "verdict_reason_dimension_quality_warning": { "English": "Dimension quality concern", "Mandarin": "维度质量问题", "Japanese": "ディメンション品質懸念" },
-  "verdict_reason_metric_quality_warning": { "English": "Metric quality concern", "Mandarin": "指标质量问题", "Japanese": "メトリック品質懸念" },
-  "verdict_reason_unclassified_share_warning": { "English": "High unclassified data share", "Mandarin": "未分类数据占比过高", "Japanese": "未分類データの割合が高い" },
+  "verdict_explainer_title": { "English": "Confidence Explanation", "Mandarin": "置信度说明", "Japanese": "信頼度の説明", "Malay": "Penjelasan tahap keyakinan" },
+  "verdict_explainer_click_hint": { "English": "Click for details", "Mandarin": "点击查看详情", "Japanese": "クリックで詳細表示", "Malay": "Klik untuk butiran" },
+  "verdict_explainer_reasons_label": { "English": "Detected Issues", "Mandarin": "检测到的问题", "Japanese": "検出された問題", "Malay": "Isu yang dikesan" },
+  "verdict_explainer_ai_label": { "English": "AI Explanation", "Mandarin": "AI 解读", "Japanese": "AI解説", "Malay": "Penjelasan AI" },
+  "verdict_explainer_loading": { "English": "Generating explanation…", "Mandarin": "正在生成解读…", "Japanese": "説明を生成中…", "Malay": "Sedang menjana penjelasan…" },
+  "verdict_explainer_no_provider": { "English": "AI provider not configured. Cannot generate explanation.", "Mandarin": "未配置 AI 服务，无法生成解读。", "Japanese": "AIプロバイダーが未設定のため、説明を生成できません。", "Malay": "Penyedia AI belum dikonfigurasi. Penjelasan tidak dapat dijana." },
+  "verdict_explainer_empty_response": { "English": "AI returned an empty response. Please try again.", "Mandarin": "AI 返回了空响应，请重试。", "Japanese": "AIから空の応答が返されました。再試行してください。", "Malay": "AI mengembalikan respons kosong. Sila cuba lagi." },
+  "verdict_explainer_error": { "English": "Failed to generate explanation. Please try again.", "Mandarin": "生成解读失败，请重试。", "Japanese": "説明の生成に失敗しました。再試行してください。", "Malay": "Penjelasan gagal dijana. Sila cuba lagi." },
+  "verdict_explainer_retry": { "English": "Retry", "Mandarin": "重试", "Japanese": "再試行", "Malay": "Cuba lagi" },
+  "verdict_explainer_technical_detail": { "English": "Technical Details", "Mandarin": "技术详情", "Japanese": "技術的詳細", "Malay": "Butiran teknikal" },
+  "verdict_explainer_close": { "English": "Got it", "Mandarin": "知道了", "Japanese": "了解", "Malay": "Faham" },
+  "verdict_reason_helper_exposure": { "English": "Helper columns exposed", "Mandarin": "辅助列暴露", "Japanese": "ヘルパー列が露出", "Malay": "Lajur sokongan terdedah" },
+  "verdict_reason_narrative_ineligible": { "English": "Not suitable for narrative", "Mandarin": "不适合生成叙述", "Japanese": "ナラティブに不適", "Malay": "Tidak sesuai untuk huraian" },
+  "verdict_reason_low_business_confidence": { "English": "Low business meaning", "Mandarin": "业务含义不明确", "Japanese": "ビジネス意味が低い", "Malay": "Makna perniagaan kurang jelas" },
+  "verdict_reason_aggregation_quality_warning": { "English": "Aggregation quality issue", "Mandarin": "聚合质量问题", "Japanese": "集計品質の問題", "Malay": "Isu kualiti pengagregatan" },
+  "verdict_reason_fallback_plan": { "English": "Using fallback plan", "Mandarin": "使用备用方案", "Japanese": "フォールバック使用", "Malay": "Menggunakan pelan sandaran" },
+  "verdict_reason_value_gate_table_only": { "English": "Table-only presentation", "Mandarin": "仅表格展示", "Japanese": "テーブルのみ表示", "Malay": "Paparan jadual sahaja" },
+  "verdict_reason_value_gate_reject": { "English": "Evidence quality rejected", "Mandarin": "证据质量不合格", "Japanese": "エビデンス品質却下", "Malay": "Kualiti bukti tidak diterima" },
+  "verdict_reason_duplicate_semantic": { "English": "Semantic duplicate detected", "Mandarin": "语义重复", "Japanese": "意味的重複検出", "Malay": "Pendua semantik dikesan" },
+  "verdict_reason_unsafe_business_narrative": { "English": "Potentially misleading chart", "Mandarin": "图表可能具有误导性", "Japanese": "誤解を招く可能性", "Malay": "Carta mungkin mengelirukan" },
+  "verdict_reason_dimension_quality_warning": { "English": "Dimension quality concern", "Mandarin": "维度质量问题", "Japanese": "ディメンション品質懸念", "Malay": "Kebimbangan tentang kualiti dimensi" },
+  "verdict_reason_metric_quality_warning": { "English": "Metric quality concern", "Mandarin": "指标质量问题", "Japanese": "メトリック品質懸念", "Malay": "Kebimbangan tentang kualiti metrik" },
+  "verdict_reason_unclassified_share_warning": { "English": "High unclassified data share", "Mandarin": "未分类数据占比过高", "Japanese": "未分類データの割合が高い", "Malay": "Bahagian data yang tidak dikelaskan tinggi" },
   // --- Card expand/collapse ---
-  "expand_all_cards": { "English": "Expand All", "Mandarin": "全部展开", "Japanese": "すべて展開" },
-  "collapse_all_cards": { "English": "Collapse All", "Mandarin": "全部收起", "Japanese": "すべて折りたたむ" },
+  "expand_all_cards": { "English": "Expand All", "Mandarin": "全部展开", "Japanese": "すべて展開", "Malay": "Kembangkan semua" },
+  "collapse_all_cards": { "English": "Collapse All", "Mandarin": "全部收起", "Japanese": "すべて折りたたむ", "Malay": "Kuncupkan semua" },
   // --- Data quality warnings ---
-  "data_warnings_title": { "English": "Data Warnings", "Mandarin": "数据警告", "Japanese": "データ警告" },
-  "data_warnings_intake_label": { "English": "CSV Structure Warnings", "Mandarin": "CSV 结构警告", "Japanese": "CSV構造警告" },
-  "data_warnings_intake_reported": { "English": "CSV structure check found {count} issue(s) during import.", "Mandarin": "CSV 结构检查在导入时发现 {count} 个问题。", "Japanese": "CSVインポート時に {count} 件の構造問題が見つかりました。" },
-  "data_warnings_technical_toggle": { "English": "Show technical details", "Mandarin": "查看技术详情", "Japanese": "技術的詳細を表示" },
-  "data_warnings_footer": { "English": "Full diagnostics are available in the Data Preparation Workflow.", "Mandarin": "完整诊断信息可在数据准备工作流中查看。", "Japanese": "詳細な診断情報はデータ準備ワークフローで確認できます。" },
+  "data_warnings_title": { "English": "Data Warnings", "Mandarin": "数据警告", "Japanese": "データ警告", "Malay": "Amaran data" },
+  "data_warnings_intake_label": { "English": "CSV Structure Warnings", "Mandarin": "CSV 结构警告", "Japanese": "CSV構造警告", "Malay": "Amaran struktur CSV" },
+  "data_warnings_intake_reported": { "English": "CSV structure check found {count} issue(s) during import.", "Mandarin": "CSV 结构检查在导入时发现 {count} 个问题。", "Japanese": "CSVインポート時に {count} 件の構造問題が見つかりました。", "Malay": "Semakan struktur CSV menemui {count} isu semasa import." },
+  "data_warnings_technical_toggle": { "English": "Show technical details", "Mandarin": "查看技术详情", "Japanese": "技術的詳細を表示", "Malay": "Tunjukkan butiran teknikal" },
+  "data_warnings_footer": { "English": "Full diagnostics are available in the Data Preparation Workflow.", "Mandarin": "完整诊断信息可在数据准备工作流中查看。", "Japanese": "詳細な診断情報はデータ準備ワークフローで確認できます。", "Malay": "Diagnostik penuh tersedia dalam Aliran Kerja Penyediaan Data." },
   // --- Report header + data explorer ---
-  "report_header_show_details": { "English": "Show report details", "Mandarin": "查看报表详情", "Japanese": "レポート詳細を表示" },
-  "data_explorer_truncated": { "English": "Showing first {returned} rows (query matched {total}).", "Mandarin": "显示前 {returned} 行（查询匹配 {total} 行）。", "Japanese": "最初の {returned} 行を表示（クエリは {total} 件にマッチ）。" },
+  "report_header_show_details": { "English": "Show report details", "Mandarin": "查看报表详情", "Japanese": "レポート詳細を表示", "Malay": "Tunjukkan butiran laporan" },
+  "data_explorer_truncated": { "English": "Showing first {returned} rows (query matched {total}).", "Mandarin": "显示前 {returned} 行（查询匹配 {total} 行）。", "Japanese": "最初の {returned} 行を表示（クエリは {total} 件にマッチ）。", "Malay": "Memaparkan {returned} baris pertama (pertanyaan memadankan {total})." },
   // --- History panel ---
-  "history_title": { "English": "Analysis History", "Mandarin": "分析历史", "Japanese": "分析履歴" },
-  "history_close": { "English": "Close History", "Mandarin": "关闭历史", "Japanese": "履歴を閉じる" },
-  "history_storage_loading": { "English": "Reading storage…", "Mandarin": "正在读取存储…", "Japanese": "ストレージを読み込み中…" },
-  "history_storage_unavailable": { "English": "Storage is temporarily unavailable.", "Mandarin": "暂时无法读取存储。", "Japanese": "ストレージを一時的に読み取れません。" },
-  "history_storage_retry": { "English": "Retry", "Mandarin": "重试", "Japanese": "再試行" },
+  "history_title": { "English": "Analysis History", "Mandarin": "分析历史", "Japanese": "分析履歴", "Malay": "Sejarah analisis" },
+  "history_close": { "English": "Close History", "Mandarin": "关闭历史", "Japanese": "履歴を閉じる", "Malay": "Tutup sejarah" },
+  "history_storage_loading": { "English": "Reading storage…", "Mandarin": "正在读取存储…", "Japanese": "ストレージを読み込み中…", "Malay": "Sedang membaca storan…" },
+  "history_storage_unavailable": { "English": "Storage is temporarily unavailable.", "Mandarin": "暂时无法读取存储。", "Japanese": "ストレージを一時的に読み取れません。", "Malay": "Storan tidak tersedia buat sementara waktu." },
+  "history_storage_retry": { "English": "Retry", "Mandarin": "重试", "Japanese": "再試行", "Malay": "Cuba lagi" },
   "history_storage_label": { "English": "Local data", "Mandarin": "本地数据", "Malay": "Data setempat", "Japanese": "ローカルデータ" },
   "history_storage_inspect_title": { "English": "Local browser data uses {size}. View details.", "Mandarin": "浏览器本地数据占用 {size}。查看详情。", "Malay": "Data pelayar setempat menggunakan {size}. Lihat butiran.", "Japanese": "ブラウザのローカルデータは {size} を使用しています。詳細を表示。" },
-  "history_search_placeholder": { "English": "Search by title or file name...", "Mandarin": "按标题或文件名搜索…", "Japanese": "タイトルまたはファイル名で検索…" },
-  "history_empty": { "English": "No past reports found. Upload a CSV to start.", "Mandarin": "暂无历史报告。请上传 CSV 开始分析。", "Japanese": "過去のレポートがありません。CSVをアップロードして開始してください。" },
-  "history_no_results": { "English": "No reports match your search.", "Mandarin": "没有匹配的报告。", "Japanese": "検索に一致するレポートがありません。" },
-  "history_current_badge": { "English": "Current", "Mandarin": "当前", "Japanese": "現在" },
+  "history_search_placeholder": { "English": "Search by title or file name...", "Mandarin": "按标题或文件名搜索…", "Japanese": "タイトルまたはファイル名で検索…", "Malay": "Cari mengikut tajuk atau nama fail..." },
+  "history_empty": { "English": "No past reports found. Upload a CSV to start.", "Mandarin": "暂无历史报告。请上传 CSV 开始分析。", "Japanese": "過去のレポートがありません。CSVをアップロードして開始してください。", "Malay": "Tiada laporan terdahulu ditemui. Muat naik CSV untuk bermula." },
+  "history_no_results": { "English": "No reports match your search.", "Mandarin": "没有匹配的报告。", "Japanese": "検索に一致するレポートがありません。", "Malay": "Tiada laporan yang sepadan dengan carian anda." },
+  "history_current_badge": { "English": "Current", "Mandarin": "当前", "Japanese": "現在", "Malay": "Semasa" },
   "history_load_session": { "English": "Resume analysis", "Mandarin": "恢复分析", "Malay": "Sambung analisis", "Japanese": "分析を再開" },
-  "history_open_report": { "English": "Open Report", "Mandarin": "打开报告", "Japanese": "レポートを開く" },
-  "history_export_pdf": { "English": "Export PDF", "Mandarin": "导出 PDF", "Japanese": "PDFエクスポート" },
-  "history_delete": { "English": "Delete", "Mandarin": "删除", "Japanese": "削除" },
-  "history_more_actions": { "English": "More actions", "Mandarin": "更多操作", "Japanese": "その他の操作" },
+  "history_open_report": { "English": "Open Report", "Mandarin": "打开报告", "Japanese": "レポートを開く", "Malay": "Buka laporan" },
+  "history_export_pdf": { "English": "Export PDF", "Mandarin": "导出 PDF", "Japanese": "PDFエクスポート", "Malay": "Eksport PDF" },
+  "history_delete": { "English": "Delete", "Mandarin": "删除", "Japanese": "削除", "Malay": "Padam" },
+  "history_more_actions": { "English": "More actions", "Mandarin": "更多操作", "Japanese": "その他の操作", "Malay": "Tindakan lain" },
   "history_footer": {
     "English": "Your reports are saved unencrypted in this browser.",
     "Mandarin": "报告以未加密形式保存在此浏览器中。",
@@ -30667,384 +30991,430 @@ const translations = {
     "Japanese": "レポートは、このブラウザに暗号化されず保存されます。"
   },
   "history_older_versions": { "English": "+{count} previous version(s)", "Mandarin": "+{count} 个历史版本", "Malay": "+{count} versi terdahulu", "Japanese": "+{count} 件の以前のバージョン" },
-  "history_created_label": { "English": "Created", "Mandarin": "创建于", "Japanese": "作成" },
-  "history_modified_label": { "English": "Modified", "Mandarin": "修改于", "Japanese": "更新" },
-  "history_loading": { "English": "Loading...", "Mandarin": "加载中…", "Japanese": "読み込み中…" },
-  "history_sort": { "English": "Sort:", "Mandarin": "排序：", "Japanese": "並べ替え：" },
-  "history_sort_modified": { "English": "Last modified", "Mandarin": "最近修改", "Japanese": "最終更新" },
-  "history_sort_created": { "English": "Created", "Mandarin": "创建时间", "Japanese": "作成日時" },
-  "history_sort_name": { "English": "Name", "Mandarin": "名称", "Japanese": "名前" },
-  "history_clear_all_title": { "English": "Clear all history and free up storage", "Mandarin": "清除全部历史并释放存储空间", "Japanese": "すべての履歴を削除してストレージを解放" },
-  "history_clear_all": { "English": "Clear all", "Mandarin": "全部清除", "Japanese": "すべて削除" },
-  "history_clearing": { "English": "Clearing…", "Mandarin": "正在清除…", "Japanese": "削除中…" },
-  "upload_working_on_file": { "English": "Working on “{fileName}”", "Mandarin": "正在处理“{fileName}”", "Japanese": "「{fileName}」を処理中" },
+  "history_created_label": { "English": "Created", "Mandarin": "创建于", "Japanese": "作成", "Malay": "Dicipta" },
+  "history_modified_label": { "English": "Modified", "Mandarin": "修改于", "Japanese": "更新", "Malay": "Diubah suai" },
+  "history_loading": { "English": "Loading...", "Mandarin": "加载中…", "Japanese": "読み込み中…", "Malay": "Sedang memuatkan..." },
+  "history_sort": { "English": "Sort:", "Mandarin": "排序：", "Japanese": "並べ替え：", "Malay": "Isih:" },
+  "history_sort_modified": { "English": "Last modified", "Mandarin": "最近修改", "Japanese": "最終更新", "Malay": "Terakhir diubah suai" },
+  "history_sort_created": { "English": "Created", "Mandarin": "创建时间", "Japanese": "作成日時", "Malay": "Dicipta" },
+  "history_sort_name": { "English": "Name", "Mandarin": "名称", "Japanese": "名前", "Malay": "Nama" },
+  "history_clear_all_title": { "English": "Clear all history and free up storage", "Mandarin": "清除全部历史并释放存储空间", "Japanese": "すべての履歴を削除してストレージを解放", "Malay": "Kosongkan semua sejarah dan bebaskan ruang storan" },
+  "history_clear_all": { "English": "Clear all", "Mandarin": "全部清除", "Japanese": "すべて削除", "Malay": "Kosongkan semua" },
+  "history_clearing": { "English": "Clearing…", "Mandarin": "正在清除…", "Japanese": "削除中…", "Malay": "Sedang mengosongkan…" },
+  "upload_working_on_file": { "English": "Working on “{fileName}”", "Mandarin": "正在处理“{fileName}”", "Japanese": "「{fileName}」を処理中", "Malay": "Sedang memproses “{fileName}”" },
   // --- UI component labels (M5 localization) ---
-  "file_upload_title": { "English": "Upload a CSV to begin", "Mandarin": "上传 CSV 开始分析", "Japanese": "CSVをアップロードして開始" },
-  "file_upload_outcome": { "English": "We will recognize the fields, check data quality, then build an analysis you can explore by asking questions.", "Mandarin": "我们会自动识别字段、检查数据质量，然后生成可通过提问继续探索的分析。", "Japanese": "フィールドを自動認識し、データ品質を確認した後、質問しながら探索できる分析を作成します。" },
-  "file_upload_restoring_title": { "English": "Preparing AI Analysis", "Mandarin": "正在准备 AI Analysis", "Japanese": "AI Analysis を準備しています" },
-  "file_upload_restoring_detail": { "English": "Upload will be available as soon as the workspace is ready.", "Mandarin": "工作区准备完成后即可上传，请稍候。", "Japanese": "ワークスペースの準備が完了するとアップロードできます。" },
-  "file_upload_preparing_action": { "English": "Preparing upload…", "Mandarin": "正在准备上传…", "Japanese": "アップロードを準備中…" },
-  "file_upload_drag_drop": { "English": "Drag & drop your CSV file here", "Mandarin": "将 CSV 文件拖放到此处", "Japanese": "CSVファイルをここにドラッグ＆ドロップ" },
-  "file_upload_or": { "English": "or", "Mandarin": "或", "Japanese": "または" },
-  "file_upload_select": { "English": "Select a file", "Mandarin": "选择文件", "Japanese": "ファイルを選択" },
-  "file_upload_load_demo": { "English": "Load Full Raw HDB Data", "Mandarin": "加载完整原始 HDB 数据", "Japanese": "HDB全期間の生データを読み込む" },
-  "file_upload_load_demo_hint": { "English": "Stress-test with every official HDB resale record from 1990 onward. Source values are not pre-cleaned.", "Mandarin": "使用 1990 年至今的全部官方 HDB 转售记录进行压力测试；来源数据不会预先清洗。", "Japanese": "1990年以降の公式HDB中古住宅取引をすべて使用して負荷テストします。元データは事前クリーニングされません。" },
-  "file_upload_load_demo_loading": { "English": "Loading full raw data…", "Mandarin": "正在加载完整原始数据…", "Japanese": "全期間の生データを読み込み中…" },
-  "file_upload_load_demo_error": { "English": "Could not load the full raw HDB dataset. Please try again or upload your own CSV.", "Mandarin": "完整原始 HDB 数据加载失败，请重试，或改为上传自己的 CSV。", "Japanese": "HDB全期間の生データを読み込めませんでした。再試行するか、ご自身のCSVをアップロードしてください。" },
-  "file_upload_processing_error_title": { "English": "This CSV could not be imported", "Mandarin": "无法导入此 CSV", "Japanese": "このCSVを読み込めませんでした" },
-  "goal_confirm_title": { "English": "Confirm Analysis Goal", "Mandarin": "确认分析目标", "Japanese": "分析目標を確認" },
-  "goal_confirm_description": { "English": "Based on your data, I suggest we focus on one of the following goals.", "Mandarin": "根据您的数据，建议我们聚焦以下分析目标之一。", "Japanese": "データに基づき、以下の目標のいずれかに焦点を当てることをお勧めします。" },
-  "goal_confirm_recommended": { "English": "Recommended", "Mandarin": "推荐", "Japanese": "おすすめ" },
-  "goal_confirm_button": { "English": "Confirm", "Mandarin": "确认", "Japanese": "確認" },
-  "goal_confirm_use_recommended": { "English": "Use recommended goal and start analysis", "Mandarin": "使用推荐目标并开始分析", "Japanese": "推奨目標を使用して分析を開始" },
-  "goal_confirm_auto_start": { "English": "Starting automatically in {count} seconds…", "Mandarin": "{count} 秒后自动开始…", "Japanese": "{count} 秒後に自動開始します…" },
-  "goal_confirm_other_options": { "English": "Other options", "Mandarin": "其他选项", "Japanese": "その他の選択肢" },
-  "goal_confirm_custom": { "English": "Or specify your own goal", "Mandarin": "或自行指定目标", "Japanese": "または独自の目標を指定" },
-  "goal_confirm_custom_placeholder": { "English": "For example: analyze the relationship between cost and profit", "Mandarin": "例如：分析成本与利润之间的关系", "Japanese": "例：コストと利益の関係を分析する" },
-  "goal_confirm_use": { "English": "Use", "Mandarin": "使用", "Japanese": "使用" },
-  "chat_initial_analysis": { "English": "AI initial analysis", "Mandarin": "AI 初步分析", "Japanese": "AI 初期分析" },
-  "chat_executing_plan": { "English": "Executing plan", "Mandarin": "正在执行计划", "Japanese": "計画を実行中" },
-  "enhancement_title": { "English": "Card enhancement", "Mandarin": "卡片优化", "Japanese": "カード改善" },
-  "enhancement_unavailable": { "English": "This suggestion is no longer available.", "Mandarin": "此建议已不可用。", "Japanese": "この提案は利用できなくなりました。" },
-  "enhancement_proposed_column": { "English": "Proposed column", "Mandarin": "建议列", "Japanese": "提案列" },
-  "enhancement_command_hint": { "English": "You can also type “Approve {code}” or “Dismiss {code}” in the chat.", "Mandarin": "也可在聊天中输入“Approve {code}”或“Dismiss {code}”。", "Japanese": "チャットで「Approve {code}」または「Dismiss {code}」と入力することもできます。" },
-  "enhancement_info_only_hint": { "English": "This suggestion is informational and cannot be applied automatically.", "Mandarin": "此建议仅供参考，无法自动应用。", "Japanese": "この提案は参考情報であり、自動適用できません。" },
-  "enhancement_info_only": { "English": "Info only", "Mandarin": "仅供参考", "Japanese": "参考情報" },
-  "enhancement_applied": { "English": "Applied", "Mandarin": "已应用", "Japanese": "適用済み" },
-  "enhancement_applying": { "English": "Applying…", "Mandarin": "正在应用…", "Japanese": "適用中…" },
-  "enhancement_approve": { "English": "Approve", "Mandarin": "批准", "Japanese": "承認" },
-  "enhancement_dismiss": { "English": "Dismiss", "Mandarin": "忽略", "Japanese": "却下" },
-  "enhancement_status": { "English": "Status: {status}", "Mandarin": "状态：{status}", "Japanese": "状態：{status}" },
-  "enhancement_status_pending": { "English": "Pending", "Mandarin": "待处理", "Japanese": "保留中" },
-  "enhancement_status_applying": { "English": "Applying", "Mandarin": "正在应用", "Japanese": "適用中" },
-  "enhancement_status_applied": { "English": "Applied", "Mandarin": "已应用", "Japanese": "適用済み" },
-  "enhancement_status_dismissed": { "English": "Dismissed", "Mandarin": "已忽略", "Japanese": "却下済み" },
-  "enhancement_status_failed": { "English": "Failed", "Mandarin": "失败", "Japanese": "失敗" },
-  "priority_high": { "English": "High", "Mandarin": "高", "Japanese": "高" },
-  "priority_medium": { "English": "Medium", "Mandarin": "中", "Japanese": "中" },
-  "priority_low": { "English": "Low", "Mandarin": "低", "Japanese": "低" },
-  "analysis_card_visual_badge": { "English": "Visual", "Mandarin": "视觉核对", "Japanese": "視覚確認" },
-  "report_generation_progress": { "English": "Report generation progress", "Mandarin": "报告生成进度", "Japanese": "レポート生成の進捗" },
-  "chat_error": { "English": "Error", "Mandarin": "错误", "Japanese": "エラー" },
-  "chat_resolved": { "English": "Resolved", "Mandarin": "已解决", "Japanese": "解決済み" },
-  "chat_streaming": { "English": "Streaming", "Mandarin": "正在生成", "Japanese": "生成中" },
-  "chat_suggested_next_steps": { "English": "Suggested next steps", "Mandarin": "建议的下一步", "Japanese": "次のステップ候補" },
-  "chat_recommended_next_step": { "English": "Recommended next step", "Mandarin": "建议下一步", "Japanese": "おすすめの次のステップ" },
-  "chat_current_analysis": { "English": "Current analysis", "Mandarin": "当前分析", "Japanese": "現在の分析" },
-  "chat_next_step_reason_label": { "English": "Why:", "Mandarin": "原因：", "Japanese": "理由：" },
+  "file_upload_title": { "English": "Upload a CSV to begin", "Mandarin": "上传 CSV 开始分析", "Japanese": "CSVをアップロードして開始", "Malay": "Muat naik CSV untuk bermula" },
+  "file_upload_outcome": { "English": "We will recognize the fields, check data quality, then build an analysis you can explore by asking questions.", "Mandarin": "我们会自动识别字段、检查数据质量，然后生成可通过提问继续探索的分析。", "Japanese": "フィールドを自動認識し、データ品質を確認した後、質問しながら探索できる分析を作成します。", "Malay": "Kami akan mengenal pasti medan, menyemak kualiti data dan membina analisis yang boleh anda teroka melalui soalan." },
+  "file_upload_restoring_title": { "English": "Preparing AI Analysis", "Mandarin": "正在准备 AI Analysis", "Japanese": "AI Analysis を準備しています", "Malay": "Menyediakan analisis AI" },
+  "file_upload_restoring_detail": { "English": "Upload will be available as soon as the workspace is ready.", "Mandarin": "工作区准备完成后即可上传，请稍候。", "Japanese": "ワークスペースの準備が完了するとアップロードできます。", "Malay": "Muat naik akan tersedia sebaik sahaja ruang kerja sedia." },
+  "file_upload_preparing_action": { "English": "Preparing upload…", "Mandarin": "正在准备上传…", "Japanese": "アップロードを準備中…", "Malay": "Sedang menyediakan muat naik…" },
+  "file_upload_drag_drop": { "English": "Drag & drop your CSV file here", "Mandarin": "将 CSV 文件拖放到此处", "Japanese": "CSVファイルをここにドラッグ＆ドロップ", "Malay": "Seret dan lepaskan fail CSV anda di sini" },
+  "file_upload_or": { "English": "or", "Mandarin": "或", "Japanese": "または", "Malay": "atau" },
+  "file_upload_select": { "English": "Select a file", "Mandarin": "选择文件", "Japanese": "ファイルを選択", "Malay": "Pilih fail" },
+  "file_upload_load_demo": { "English": "Load Full Raw HDB Data", "Mandarin": "加载完整原始 HDB 数据", "Japanese": "HDB全期間の生データを読み込む", "Malay": "Muatkan semua data mentah HDB" },
+  "file_upload_load_demo_hint": { "English": "Stress-test with every official HDB resale record from 1990 onward. Source values are not pre-cleaned.", "Mandarin": "使用 1990 年至今的全部官方 HDB 转售记录进行压力测试；来源数据不会预先清洗。", "Japanese": "1990年以降の公式HDB中古住宅取引をすべて使用して負荷テストします。元データは事前クリーニングされません。", "Malay": "Uji dengan semua rekod jualan semula HDB rasmi sejak 1990. Nilai sumber belum dibersihkan." },
+  "file_upload_load_demo_loading": { "English": "Loading full raw data…", "Mandarin": "正在加载完整原始数据…", "Japanese": "全期間の生データを読み込み中…", "Malay": "Sedang memuatkan semua data mentah…" },
+  "file_upload_load_demo_error": { "English": "Could not load the full raw HDB dataset. Please try again or upload your own CSV.", "Mandarin": "完整原始 HDB 数据加载失败，请重试，或改为上传自己的 CSV。", "Japanese": "HDB全期間の生データを読み込めませんでした。再試行するか、ご自身のCSVをアップロードしてください。", "Malay": "Set data mentah HDB yang lengkap tidak dapat dimuatkan. Sila cuba lagi atau muat naik CSV anda sendiri." },
+  "file_upload_processing_error_title": { "English": "This CSV could not be imported", "Mandarin": "无法导入此 CSV", "Japanese": "このCSVを読み込めませんでした", "Malay": "CSV ini tidak dapat diimport" },
+  "goal_confirm_title": { "English": "Confirm Analysis Goal", "Mandarin": "确认分析目标", "Japanese": "分析目標を確認", "Malay": "Sahkan matlamat analisis" },
+  "goal_confirm_description": { "English": "Based on your data, I suggest we focus on one of the following goals.", "Mandarin": "根据您的数据，建议我们聚焦以下分析目标之一。", "Japanese": "データに基づき、以下の目標のいずれかに焦点を当てることをお勧めします。", "Malay": "Berdasarkan data anda, saya cadangkan kita menumpukan pada salah satu matlamat berikut." },
+  "goal_confirm_recommended": { "English": "Recommended", "Mandarin": "推荐", "Japanese": "おすすめ", "Malay": "Disyorkan" },
+  "goal_confirm_button": { "English": "Confirm", "Mandarin": "确认", "Japanese": "確認", "Malay": "Sahkan" },
+  "goal_confirm_use_recommended": { "English": "Use recommended goal and start analysis", "Mandarin": "使用推荐目标并开始分析", "Japanese": "推奨目標を使用して分析を開始", "Malay": "Gunakan matlamat yang disyorkan dan mulakan analisis" },
+  "goal_confirm_auto_start": { "English": "Starting automatically in {count} seconds…", "Mandarin": "{count} 秒后自动开始…", "Japanese": "{count} 秒後に自動開始します…", "Malay": "Bermula secara automatik dalam {count} saat…" },
+  "goal_confirm_other_options": { "English": "Other options", "Mandarin": "其他选项", "Japanese": "その他の選択肢", "Malay": "Pilihan lain" },
+  "goal_confirm_custom": { "English": "Or specify your own goal", "Mandarin": "或自行指定目标", "Japanese": "または独自の目標を指定", "Malay": "Atau nyatakan matlamat anda sendiri" },
+  "goal_confirm_custom_placeholder": { "English": "For example: analyze the relationship between cost and profit", "Mandarin": "例如：分析成本与利润之间的关系", "Japanese": "例：コストと利益の関係を分析する", "Malay": "Contohnya: analisis hubungan antara kos dan keuntungan" },
+  "goal_confirm_use": { "English": "Use", "Mandarin": "使用", "Japanese": "使用", "Malay": "Gunakan" },
+  "chat_initial_analysis": { "English": "AI initial analysis", "Mandarin": "AI 初步分析", "Japanese": "AI 初期分析", "Malay": "Analisis awal AI" },
+  "chat_executing_plan": { "English": "Executing plan", "Mandarin": "正在执行计划", "Japanese": "計画を実行中", "Malay": "Melaksanakan pelan" },
+  "enhancement_title": { "English": "Card enhancement", "Mandarin": "卡片优化", "Japanese": "カード改善", "Malay": "Penambahbaikan kad" },
+  "enhancement_unavailable": { "English": "This suggestion is no longer available.", "Mandarin": "此建议已不可用。", "Japanese": "この提案は利用できなくなりました。", "Malay": "Cadangan ini tidak lagi tersedia." },
+  "enhancement_proposed_column": { "English": "Proposed column", "Mandarin": "建议列", "Japanese": "提案列", "Malay": "Lajur yang dicadangkan" },
+  "enhancement_command_hint": { "English": "You can also type “Approve {code}” or “Dismiss {code}” in the chat.", "Mandarin": "也可在聊天中输入“Approve {code}”或“Dismiss {code}”。", "Japanese": "チャットで「Approve {code}」または「Dismiss {code}」と入力することもできます。", "Malay": "Anda juga boleh menaip “Approve {code}” atau “Dismiss {code}” dalam sembang." },
+  "enhancement_info_only_hint": { "English": "This suggestion is informational and cannot be applied automatically.", "Mandarin": "此建议仅供参考，无法自动应用。", "Japanese": "この提案は参考情報であり、自動適用できません。", "Malay": "Cadangan ini hanya untuk makluman dan tidak boleh digunakan secara automatik." },
+  "enhancement_info_only": { "English": "Info only", "Mandarin": "仅供参考", "Japanese": "参考情報", "Malay": "Maklumat sahaja" },
+  "enhancement_applied": { "English": "Applied", "Mandarin": "已应用", "Japanese": "適用済み", "Malay": "Digunakan" },
+  "enhancement_applying": { "English": "Applying…", "Mandarin": "正在应用…", "Japanese": "適用中…", "Malay": "Sedang digunakan…" },
+  "enhancement_approve": { "English": "Approve", "Mandarin": "批准", "Japanese": "承認", "Malay": "Luluskan" },
+  "enhancement_dismiss": { "English": "Dismiss", "Mandarin": "忽略", "Japanese": "却下", "Malay": "Ketepikan" },
+  "enhancement_status": { "English": "Status: {status}", "Mandarin": "状态：{status}", "Japanese": "状態：{status}", "Malay": "Status: {status}" },
+  "enhancement_status_pending": { "English": "Pending", "Mandarin": "待处理", "Japanese": "保留中", "Malay": "Menunggu" },
+  "enhancement_status_applying": { "English": "Applying", "Mandarin": "正在应用", "Japanese": "適用中", "Malay": "Sedang digunakan" },
+  "enhancement_status_applied": { "English": "Applied", "Mandarin": "已应用", "Japanese": "適用済み", "Malay": "Digunakan" },
+  "enhancement_status_dismissed": { "English": "Dismissed", "Mandarin": "已忽略", "Japanese": "却下済み", "Malay": "Diketepikan" },
+  "enhancement_status_failed": { "English": "Failed", "Mandarin": "失败", "Japanese": "失敗", "Malay": "Gagal" },
+  "priority_high": { "English": "High", "Mandarin": "高", "Japanese": "高", "Malay": "Tinggi" },
+  "priority_medium": { "English": "Medium", "Mandarin": "中", "Japanese": "中", "Malay": "Sederhana" },
+  "priority_low": { "English": "Low", "Mandarin": "低", "Japanese": "低", "Malay": "Rendah" },
+  "analysis_card_visual_badge": { "English": "Visual", "Mandarin": "视觉核对", "Japanese": "視覚確認", "Malay": "Visual" },
+  "report_generation_progress": { "English": "Report generation progress", "Mandarin": "报告生成进度", "Japanese": "レポート生成の進捗", "Malay": "Kemajuan penjanaan laporan" },
+  "chat_error": { "English": "Error", "Mandarin": "错误", "Japanese": "エラー", "Malay": "Ralat" },
+  "chat_resolved": { "English": "Resolved", "Mandarin": "已解决", "Japanese": "解決済み", "Malay": "Selesai" },
+  "chat_streaming": { "English": "Streaming", "Mandarin": "正在生成", "Japanese": "生成中", "Malay": "Sedang menstrim" },
+  "chat_suggested_next_steps": { "English": "Suggested next steps", "Mandarin": "建议的下一步", "Japanese": "次のステップ候補", "Malay": "Langkah seterusnya yang dicadangkan" },
+  "chat_recommended_next_step": { "English": "Recommended next step", "Mandarin": "建议下一步", "Japanese": "おすすめの次のステップ", "Malay": "Langkah seterusnya yang disyorkan" },
+  "chat_current_analysis": { "English": "Current analysis", "Mandarin": "当前分析", "Japanese": "現在の分析", "Malay": "Analisis semasa" },
+  "chat_next_step_reason_label": { "English": "Why:", "Mandarin": "原因：", "Japanese": "理由：", "Malay": "Sebab:" },
   "chat_next_step_reason": {
     "English": "This is the most direct follow-up to the current result and its remaining uncertainty.",
     "Mandarin": "这是针对当前结果及其剩余不确定性最直接的后续分析。",
-    "Japanese": "現在の結果と残る不確実性を確認するための、最も直接的なフォローアップです。"
+    "Japanese": "現在の結果と残る不確実性を確認するための、最も直接的なフォローアップです。",
+    "Malay": "Ini susulan paling langsung berdasarkan hasil semasa dan ketidakpastian yang masih ada."
   },
-  "chat_next_step_outcome_label": { "English": "Expected outcome:", "Mandarin": "预期结果：", "Japanese": "期待される結果：" },
+  "chat_next_step_outcome_label": { "English": "Expected outcome:", "Mandarin": "预期结果：", "Japanese": "期待される結果：", "Malay": "Hasil yang dijangka:" },
   "chat_next_step_outcome": {
     "English": "A focused answer or evidence card linked to this dataset.",
     "Mandarin": "得到与此数据集关联的聚焦答案或证据卡片。",
-    "Japanese": "このデータセットに紐づく、焦点を絞った回答またはエビデンスカード。"
+    "Japanese": "このデータセットに紐づく、焦点を絞った回答またはエビデンスカード。",
+    "Malay": "Jawapan terfokus atau kad bukti yang dipautkan kepada set data ini."
   },
-  "analysis_results_view_label": { "English": "Results view", "Mandarin": "结果视图", "Japanese": "結果ビュー" },
-  "analysis_results_simple_view": { "English": "Simple view", "Mandarin": "简洁视图", "Japanese": "シンプル表示" },
-  "analysis_results_explore_view": { "English": "Explore in depth", "Mandarin": "深入探索", "Japanese": "詳しく探索" },
+  "analysis_results_view_label": { "English": "Results view", "Mandarin": "结果视图", "Japanese": "結果ビュー", "Malay": "Paparan hasil" },
+  "analysis_results_simple_view": { "English": "Simple view", "Mandarin": "简洁视图", "Japanese": "シンプル表示", "Malay": "Paparan ringkas" },
+  "analysis_results_explore_view": { "English": "Explore in depth", "Mandarin": "深入探索", "Japanese": "詳しく探索", "Malay": "Teroka secara mendalam" },
   "analysis_results_simple_view_hint": {
     "English": "Conclusion, critical warnings, key charts, and one clear next action.",
     "Mandarin": "显示结论、关键警告、重点图表和一个明确的下一步。",
-    "Japanese": "結論、重要な警告、主要グラフ、明確な次のアクションを表示します。"
+    "Japanese": "結論、重要な警告、主要グラフ、明確な次のアクションを表示します。",
+    "Malay": "Kesimpulan, amaran penting, carta utama dan satu tindakan seterusnya yang jelas."
   },
   "analysis_results_explore_view_hint": {
     "English": "All cards, evidence, controls, data details, and report actions.",
     "Mandarin": "显示全部卡片、证据、控制项、数据详情和报告操作。",
-    "Japanese": "すべてのカード、根拠、操作、データ詳細、レポート操作を表示します。"
+    "Japanese": "すべてのカード、根拠、操作、データ詳細、レポート操作を表示します。",
+    "Malay": "Semua kad, bukti, kawalan, butiran data dan tindakan laporan."
   },
   "large_dataset_mode_title": {
     "English": "Full dataset loaded in read-only mode",
     "Mandarin": "完整数据已以只读模式载入",
-    "Japanese": "全データを読み取り専用モードで読み込みました"
+    "Japanese": "全データを読み取り専用モードで読み込みました",
+    "Malay": "Set data penuh dimuatkan dalam mod baca sahaja"
   },
   "large_dataset_mode_body": {
     "English": "Queries use all {totalRows} original rows. Data preview and quality profiling use a {sampleRows}-row sample. No cleaning is applied, and the file must be re-imported after refresh.",
     "Mandarin": "查询会使用全部 {totalRows} 行原始数据；数据预览与质量分析使用 {sampleRows} 行样本。系统不会清洗原始数据，刷新页面后需要重新导入文件。",
-    "Japanese": "クエリは元の全 {totalRows} 行を使用します。データプレビューと品質プロファイルは {sampleRows} 行のサンプルを使用します。クリーニングは行われず、再読み込み後はファイルの再インポートが必要です。"
+    "Japanese": "クエリは元の全 {totalRows} 行を使用します。データプレビューと品質プロファイルは {sampleRows} 行のサンプルを使用します。クリーニングは行われず、再読み込み後はファイルの再インポートが必要です。",
+    "Malay": "Pertanyaan menggunakan semua {totalRows} baris asal. Pratonton data dan pemprofilan kualiti menggunakan sampel {sampleRows} baris. Tiada pembersihan dilakukan dan fail perlu diimport semula selepas muat semula halaman."
   },
-  "analysis_results_next_step_title": { "English": "Recommended next step", "Mandarin": "建议下一步", "Japanese": "おすすめの次のステップ" },
+  "analysis_results_next_step_title": { "English": "Recommended next step", "Mandarin": "建议下一步", "Japanese": "おすすめの次のステップ", "Malay": "Langkah seterusnya yang disyorkan" },
   "analysis_results_next_step_reason_ready": {
     "English": "The key results are ready. Open the detailed view when you need to verify or adjust the analysis.",
     "Mandarin": "关键结果已准备好；需要核对或调整分析时，可进入深入视图。",
-    "Japanese": "主要な結果は準備できました。検証や調整が必要な場合は詳細ビューを開いてください。"
+    "Japanese": "主要な結果は準備できました。検証や調整が必要な場合は詳細ビューを開いてください。",
+    "Malay": "Hasil utama sudah sedia. Buka paparan terperinci apabila anda perlu mengesahkan atau melaraskan analisis."
   },
   "analysis_results_next_step_reason_ready_report": {
     "English": "The key results are ready to package into a traceable analyst report.",
     "Mandarin": "关键结果已准备好，可整理为一份可追溯的分析报告。",
-    "Japanese": "主要な結果を、追跡可能なアナリストレポートにまとめる準備ができました。"
+    "Japanese": "主要な結果を、追跡可能なアナリストレポートにまとめる準備ができました。",
+    "Malay": "Hasil utama sedia untuk disusun menjadi laporan penganalisis yang boleh dijejak."
   },
   "analysis_results_next_step_reason_degraded": {
     "English": "This analysis has limitations. Review the evidence and data-quality details before using the result.",
     "Mandarin": "此分析存在限制；使用结果前，请先核对证据和数据质量详情。",
-    "Japanese": "この分析には制限があります。結果を使用する前に、根拠とデータ品質の詳細を確認してください。"
+    "Japanese": "この分析には制限があります。結果を使用する前に、根拠とデータ品質の詳細を確認してください。",
+    "Malay": "Analisis ini mempunyai batasan. Semak bukti dan butiran kualiti data sebelum menggunakan hasilnya."
   },
   "analysis_results_next_step_reason_degraded_report": {
     "English": "This analysis has limitations. The report will preserve the visible evidence and quality caveats.",
     "Mandarin": "此分析存在限制；生成的报告会保留可见证据与数据质量说明。",
-    "Japanese": "この分析には制限があります。レポートには、確認可能な根拠と品質上の注意点が保持されます。"
+    "Japanese": "この分析には制限があります。レポートには、確認可能な根拠と品質上の注意点が保持されます。",
+    "Malay": "Analisis ini mempunyai batasan. Laporan akan mengekalkan bukti yang dipaparkan dan peringatan kualiti."
   },
   "analysis_results_next_step_reason_no_cards": {
     "English": "No reliable chart was produced. Open the detailed view to understand what limited the analysis.",
     "Mandarin": "本次没有生成可靠图表；请进入深入视图，了解分析受限的原因。",
-    "Japanese": "信頼できるグラフは生成されませんでした。詳細ビューで分析が制限された理由を確認してください。"
+    "Japanese": "信頼できるグラフは生成されませんでした。詳細ビューで分析が制限された理由を確認してください。",
+    "Malay": "Tiada carta yang boleh dipercayai dihasilkan. Buka paparan terperinci untuk memahami batasan analisis."
   },
   "analysis_results_next_step_reason_repair": {
     "English": "No business conclusion passed all evidence checks, so the app has not marked this analysis complete.",
     "Mandarin": "目前没有业务结论通过全部证据检查，因此系统不会把本次分析标记为完成。",
-    "Japanese": "すべての根拠チェックを通過したビジネス結論がないため、この分析は完了として扱われません。"
+    "Japanese": "すべての根拠チェックを通過したビジネス結論がないため、この分析は完了として扱われません。",
+    "Malay": "Tiada kesimpulan perniagaan yang lulus semua semakan bukti, jadi aplikasi belum menandakan analisis ini selesai."
   },
   "analysis_results_next_step_reason_structure": {
     "English": "The data structure check needs your review before analysis can continue.",
     "Mandarin": "数据结构检查需要你确认，分析才能继续。",
-    "Japanese": "分析を続ける前にデータ構造の確認が必要です。"
+    "Japanese": "分析を続ける前にデータ構造の確認が必要です。",
+    "Malay": "Semakan struktur data memerlukan penelitian anda sebelum analisis boleh diteruskan."
   },
   "analysis_results_next_step_reason_provider": {
     "English": "The selected AI provider did not complete this analysis. Your imported data is still available.",
     "Mandarin": "所选 AI provider 未能完成分析；已导入的数据仍可使用。",
-    "Japanese": "選択した AI プロバイダーが分析を完了できませんでした。取り込んだデータは保持されています。"
+    "Japanese": "選択した AI プロバイダーが分析を完了できませんでした。取り込んだデータは保持されています。",
+    "Malay": "Penyedia AI yang dipilih tidak menyelesaikan analisis ini. Data yang anda import masih tersedia."
   },
   "analysis_results_next_step_outcome": {
     "English": "Expected outcome: traceable evidence, adjustable chart settings, and the underlying aggregate data.",
     "Mandarin": "预期结果：可追溯证据、可调整的图表设置和底层聚合数据。",
-    "Japanese": "期待される結果：追跡可能な根拠、調整可能なグラフ設定、基礎となる集計データ。"
+    "Japanese": "期待される結果：追跡可能な根拠、調整可能なグラフ設定、基礎となる集計データ。",
+    "Malay": "Hasil yang dijangka: bukti yang boleh dijejak, tetapan carta yang boleh dilaraskan dan data agregat asas."
   },
   "analysis_results_next_step_outcome_report": {
     "English": "Expected outcome: a shareable report with conclusions, evidence scope, and stated limitations.",
     "Mandarin": "预期结果：获得一份可分享的报告，包含结论、证据范围与明确限制。",
-    "Japanese": "期待される結果：結論、根拠の範囲、明示された制限を含む共有可能なレポート。"
+    "Japanese": "期待される結果：結論、根拠の範囲、明示された制限を含む共有可能なレポート。",
+    "Malay": "Hasil yang dijangka: laporan yang boleh dikongsi dengan kesimpulan, skop bukti dan batasan yang dinyatakan."
   },
   "analysis_results_next_step_outcome_no_cards": {
     "English": "Expected outcome: data-quality findings and the analysis trace needed to refine the next run.",
     "Mandarin": "预期结果：查看数据质量发现和分析轨迹，以便改进下一次分析。",
-    "Japanese": "期待される結果：次の分析を改善するためのデータ品質の所見と分析履歴を確認できます。"
+    "Japanese": "期待される結果：次の分析を改善するためのデータ品質の所見と分析履歴を確認できます。",
+    "Malay": "Hasil yang dijangka: dapatan kualiti data dan jejak analisis untuk menambah baik larian seterusnya."
   },
   "analysis_results_next_step_outcome_repair": {
     "English": "Expected outcome: confirm the data boundary and field roles, rerun validation, then generate new evidence from the corrected dataset.",
     "Mandarin": "预期结果：确认数据边界与字段角色，重新验证后，再根据修正的数据集生成新证据。",
-    "Japanese": "期待される結果：データ境界とフィールド役割を確認し、再検証後に修正済みデータから新しい根拠を生成します。"
+    "Japanese": "期待される結果：データ境界とフィールド役割を確認し、再検証後に修正済みデータから新しい根拠を生成します。",
+    "Malay": "Hasil yang dijangka: sahkan sempadan data dan peranan medan, jalankan semula pengesahan, kemudian jana bukti baharu daripada set data yang dibetulkan."
   },
   "analysis_results_next_step_outcome_provider": {
     "English": "Retry with this provider or choose another provider in Settings.",
     "Mandarin": "可重试当前 provider，或在 Settings 中选择其他 provider。",
-    "Japanese": "現在のプロバイダーで再試行するか、設定で別のプロバイダーを選んでください。"
+    "Japanese": "現在のプロバイダーで再試行するか、設定で別のプロバイダーを選んでください。",
+    "Malay": "Cuba lagi dengan penyedia ini atau pilih penyedia lain dalam Tetapan."
   },
   "analysis_results_next_step_outcome_evidence": {
     "English": "Review the analysis evidence and reasons, then retry if needed.",
     "Mandarin": "请查看分析证据及原因，必要时重试。",
-    "Japanese": "分析の根拠と理由を確認し、必要に応じて再試行してください。"
+    "Japanese": "分析の根拠と理由を確認し、必要に応じて再試行してください。",
+    "Malay": "Semak bukti dan sebab analisis, kemudian cuba lagi jika perlu."
   },
   "analysis_results_repair_action": {
     "English": "Review and repair data structure",
     "Mandarin": "检查并修复数据结构",
-    "Japanese": "データ構造を確認・修正"
+    "Japanese": "データ構造を確認・修正",
+    "Malay": "Semak dan baiki struktur data"
   },
   "analysis_results_retry_action": {
     "English": "Retry analysis",
     "Mandarin": "重试分析",
-    "Japanese": "分析を再試行"
+    "Japanese": "分析を再試行",
+    "Malay": "Cuba analisis lagi"
   },
   "analysis_results_change_provider_action": {
     "English": "Change provider",
     "Mandarin": "更换 provider",
-    "Japanese": "プロバイダーを変更"
+    "Japanese": "プロバイダーを変更",
+    "Malay": "Tukar penyedia"
   },
   "analysis_results_review_evidence_action": {
     "English": "Review analysis evidence",
     "Mandarin": "查看分析证据",
-    "Japanese": "分析の根拠を確認"
+    "Japanese": "分析の根拠を確認",
+    "Malay": "Semak bukti analisis"
   },
-  "chat_copy": { "English": "Copy", "Mandarin": "复制", "Japanese": "コピー" },
-  "chat_copied": { "English": "Copied", "Mandarin": "已复制", "Japanese": "コピーしました" },
-  "mutation_review_filter": { "English": "Review delete filter and preview", "Mandarin": "检查删除筛选与预览", "Japanese": "削除フィルターとプレビューを確認" },
-  "mutation_generated_filter": { "English": "Generated filter", "Mandarin": "生成的筛选条件", "Japanese": "生成されたフィルター" },
-  "mutation_preview_rows": { "English": "Preview rows", "Mandarin": "预览数据行", "Japanese": "行をプレビュー" },
-  "technical_detail": { "English": "Technical detail", "Mandarin": "技术详情", "Japanese": "技術詳細" },
-  "technical_action_taken": { "English": "Action taken:", "Mandarin": "已采取操作：", "Japanese": "実行した操作：" },
-  "technical_data_safety": { "English": "Data safety:", "Mandarin": "数据安全：", "Japanese": "データ安全性：" },
-  "technical_next_state": { "English": "Next state:", "Mandarin": "下一状态：", "Japanese": "次の状態：" },
-  "task_error_details": { "English": "Technical error details", "Mandarin": "技术错误详情", "Japanese": "技術的なエラー詳細" },
-  "table_no_data": { "English": "No data to display.", "Mandarin": "没有可显示的数据。", "Japanese": "表示するデータがありません。" },
-  "spreadsheet_search_placeholder": { "English": "Search table or ask AI (e.g., 'show rows where column_3 > 100')", "Mandarin": "搜索表格或询问 AI（例如：'显示 column_3 > 100 的行'）", "Japanese": "テーブル検索またはAIに質問（例：'column_3 > 100の行を表示'）" },
-  "spreadsheet_ask_ai": { "English": "Ask AI", "Mandarin": "询问 AI", "Japanese": "AIに質問" },
-  "card_controls_hide_table": { "English": "Hide Full Data Table", "Mandarin": "隐藏完整数据表", "Japanese": "データテーブルを非表示" },
-  "card_controls_show_table": { "English": "Show Full Data Table", "Mandarin": "显示完整数据表", "Japanese": "データテーブルを表示" },
-  "card_controls_chart_type": { "English": "Chart type", "Mandarin": "图表类型", "Japanese": "グラフの種類" },
-  "card_controls_pivot_chart": { "English": "Pivot chart", "Mandarin": "透视图", "Japanese": "ピボットチャート" },
+  "chat_copy": { "English": "Copy", "Mandarin": "复制", "Japanese": "コピー", "Malay": "Salin" },
+  "chat_copied": { "English": "Copied", "Mandarin": "已复制", "Japanese": "コピーしました", "Malay": "Disalin" },
+  "mutation_review_filter": { "English": "Review delete filter and preview", "Mandarin": "检查删除筛选与预览", "Japanese": "削除フィルターとプレビューを確認", "Malay": "Semak penapis pemadaman dan pratonton" },
+  "mutation_generated_filter": { "English": "Generated filter", "Mandarin": "生成的筛选条件", "Japanese": "生成されたフィルター", "Malay": "Penapis yang dijana" },
+  "mutation_preview_rows": { "English": "Preview rows", "Mandarin": "预览数据行", "Japanese": "行をプレビュー", "Malay": "Pratonton baris" },
+  "technical_detail": { "English": "Technical detail", "Mandarin": "技术详情", "Japanese": "技術詳細", "Malay": "Butiran teknikal" },
+  "technical_action_taken": { "English": "Action taken:", "Mandarin": "已采取操作：", "Japanese": "実行した操作：", "Malay": "Tindakan yang diambil:" },
+  "technical_data_safety": { "English": "Data safety:", "Mandarin": "数据安全：", "Japanese": "データ安全性：", "Malay": "Keselamatan data:" },
+  "technical_next_state": { "English": "Next state:", "Mandarin": "下一状态：", "Japanese": "次の状態：", "Malay": "Keadaan seterusnya:" },
+  "task_error_details": { "English": "Technical error details", "Mandarin": "技术错误详情", "Japanese": "技術的なエラー詳細", "Malay": "Butiran ralat teknikal" },
+  "table_no_data": { "English": "No data to display.", "Mandarin": "没有可显示的数据。", "Japanese": "表示するデータがありません。", "Malay": "Tiada data untuk dipaparkan." },
+  "spreadsheet_search_placeholder": { "English": "Search table or ask AI (e.g., 'show rows where column_3 > 100')", "Mandarin": "搜索表格或询问 AI（例如：'显示 column_3 > 100 的行'）", "Japanese": "テーブル検索またはAIに質問（例：'column_3 > 100の行を表示'）", "Malay": "Cari dalam jadual atau tanya AI (cth., 'tunjukkan baris dengan column_3 > 100')" },
+  "spreadsheet_ask_ai": { "English": "Ask AI", "Mandarin": "询问 AI", "Japanese": "AIに質問", "Malay": "Tanya AI" },
+  "card_controls_hide_table": { "English": "Hide Full Data Table", "Mandarin": "隐藏完整数据表", "Japanese": "データテーブルを非表示", "Malay": "Sembunyikan jadual data penuh" },
+  "card_controls_show_table": { "English": "Show Full Data Table", "Mandarin": "显示完整数据表", "Japanese": "データテーブルを表示", "Malay": "Tunjukkan jadual data penuh" },
+  "card_controls_chart_type": { "English": "Chart type", "Mandarin": "图表类型", "Japanese": "グラフの種類", "Malay": "Jenis carta" },
+  "card_controls_pivot_chart": { "English": "Pivot chart", "Mandarin": "透视图", "Japanese": "ピボットチャート", "Malay": "Carta pivot" },
   "markdown_insights_pending": {
     "English": "Overall insights will appear here once ready.",
     "Mandarin": "整体洞察准备好后会显示在这里。",
-    "Japanese": "全体的なインサイトは準備ができ次第ここに表示されます。"
+    "Japanese": "全体的なインサイトは準備ができ次第ここに表示されます。",
+    "Malay": "Cerapan keseluruhan akan dipaparkan di sini apabila sedia."
   },
   "spreadsheet_showing_data_preview": {
     "English": "Showing a data preview",
     "Mandarin": "正在显示数据预览",
-    "Japanese": "データプレビューを表示しています"
+    "Japanese": "データプレビューを表示しています",
+    "Malay": "Memaparkan pratonton data"
   },
   "spreadsheet_showing_analysis_result": {
     "English": "Showing an analysis result",
     "Mandarin": "正在显示分析结果",
-    "Japanese": "分析結果を表示しています"
+    "Japanese": "分析結果を表示しています",
+    "Malay": "Memaparkan hasil analisis"
   },
   "spreadsheet_data_preview": {
     "English": "Data preview",
     "Mandarin": "数据预览",
-    "Japanese": "データプレビュー"
+    "Japanese": "データプレビュー",
+    "Malay": "Pratonton data"
   },
   "spreadsheet_analysis_result": {
     "English": "Analysis result",
     "Mandarin": "分析结果",
-    "Japanese": "分析結果"
+    "Japanese": "分析結果",
+    "Malay": "Hasil analisis"
   },
   "spreadsheet_preview_rows": {
     "English": "Showing {count} preview row(s).",
     "Mandarin": "正在显示 {count} 行预览。",
-    "Japanese": "{count} 行のプレビューを表示しています。"
+    "Japanese": "{count} 行のプレビューを表示しています。",
+    "Malay": "Memaparkan {count} baris pratonton."
   },
   "spreadsheet_matched_rows": {
     "English": "Showing {returned} of {total} matched rows.",
     "Mandarin": "正在显示 {total} 行匹配结果中的 {returned} 行。",
-    "Japanese": "{total} 件の一致結果のうち {returned} 件を表示しています。"
+    "Japanese": "{total} 件の一致結果のうち {returned} 件を表示しています。",
+    "Malay": "Memaparkan {returned} daripada {total} baris yang sepadan."
   },
   "spreadsheet_clear_result": {
     "English": "Clear analysis result",
     "Mandarin": "清除分析结果",
-    "Japanese": "分析結果をクリア"
+    "Japanese": "分析結果をクリア",
+    "Malay": "Kosongkan hasil analisis"
   },
   "spreadsheet_clear_filter": {
     "English": "Clear filter",
     "Mandarin": "清除筛选",
-    "Japanese": "フィルターをクリア"
+    "Japanese": "フィルターをクリア",
+    "Malay": "Kosongkan penapis"
   },
   "technical_details": {
     "English": "Technical details",
     "Mandarin": "技术详情",
-    "Japanese": "技術詳細"
+    "Japanese": "技術詳細",
+    "Malay": "Butiran teknikal"
   },
-  "card_controls_show_label": { "English": "Show", "Mandarin": "显示", "Japanese": "表示" },
-  "card_controls_all": { "English": "All", "Mandarin": "全部", "Japanese": "すべて" },
-  "card_controls_top_n": { "English": "Top {n}", "Mandarin": "前 {n}", "Japanese": "トップ {n}" },
-  "card_controls_hide_others": { "English": 'Hide "Others"', "Mandarin": '隐藏"其他"', "Japanese": "「その他」を非表示" },
-  "card_others": { "English": "Others", "Mandarin": "其他", "Japanese": "その他" },
-  "card_controls_show_columns": { "English": "Show columns", "Mandarin": "显示列", "Japanese": "列を表示" },
-  "card_controls_hide_column_others": { "English": 'Hide column "Others"', "Mandarin": '隐藏"其他"列', "Japanese": "「その他」列を非表示" },
-  "card_controls_hide_zero_rows": { "English": "Hide zero rows in chart", "Mandarin": "隐藏图表中的零值行", "Japanese": "チャートのゼロ行を非表示" },
-  "card_controls_labels": { "English": "Labels", "Mandarin": "标签", "Japanese": "ラベル" },
-  "card_controls_visible_categories": { "English": "Visible categories", "Mandarin": "显示类别", "Japanese": "表示カテゴリ" },
-  "card_controls_visible_pivot_columns": { "English": "Visible pivot columns", "Mandarin": "显示透视列", "Japanese": "表示するピボット列" },
-  "card_current": { "English": "Current", "Mandarin": "当前", "Japanese": "現在" },
-  "card_export": { "English": "Export", "Mandarin": "导出", "Japanese": "エクスポート" },
-  "card_export_title": { "English": "Export chart or data", "Mandarin": "导出图表或数据", "Japanese": "チャートまたはデータをエクスポート" },
-  "card_more_actions": { "English": "More actions", "Mandarin": "更多操作", "Japanese": "その他の操作" },
-  "card_delete": { "English": "Delete card", "Mandarin": "删除卡片", "Japanese": "カードを削除" },
-  "card_fallback_view": { "English": "Simplified view", "Mandarin": "简化视图", "Japanese": "簡易表示" },
-  "card_fallback_view_hint": { "English": "The original chart could not be created, so this safe simplified view is shown instead.", "Mandarin": "原图表无法建立，因此改为显示安全的简化视图。", "Japanese": "元のチャートを作成できなかったため、安全な簡易表示に切り替えました。" },
-  "card_table_first_hint": { "English": "The result is shown as a table first because the grouped result is not strong enough for a default chart.", "Mandarin": "分组结果的可靠度不足以默认显示图表，因此先以表格呈现。", "Japanese": "グループ化結果は既定のチャートに十分な強さがないため、まず表で表示します。" },
-  "card_filter_active": { "English": "Filter active:", "Mandarin": "筛选已启用：", "Japanese": "フィルター適用中：" },
-  "card_filter_description": { "English": "Showing rows where “{column}” is “{values}”. Ask the Assistant to clear the filter to remove it.", "Mandarin": "正在显示“{column}”为“{values}”的数据行。可让助手清除筛选。", "Japanese": "「{column}」が「{values}」の行を表示しています。解除するにはアシスタントにフィルターのクリアを依頼してください。" },
-  "card_pivot_summary_table": { "English": "Pivot summary table", "Mandarin": "透视汇总表", "Japanese": "ピボット集計表" },
-  "card_analysis_table": { "English": "Analysis table", "Mandarin": "分析表", "Japanese": "分析表" },
-  "card_series_legend": { "English": "Series legend", "Mandarin": "系列图例", "Japanese": "系列凡例" },
-  "card_series_legend_hint": { "English": "Series in the current stacked chart, sorted by contribution.", "Mandarin": "当前堆叠图中的系列，按贡献排序。", "Japanese": "現在の積み上げチャートの系列を寄与度順に表示します。" },
-  "card_reset_hidden_series": { "English": "Reset hidden series", "Mandarin": "重置隐藏系列", "Japanese": "非表示系列をリセット" },
-  "card_collapse_legend": { "English": "Collapse legend", "Mandarin": "收起图例", "Japanese": "凡例を折りたたむ" },
-  "card_show_all_legend_items": { "English": "Show all {count} items", "Mandarin": "显示全部 {count} 项", "Japanese": "全 {count} 件を表示" },
-  "card_search_legend": { "English": "Search legend items", "Mandarin": "搜索图例项目", "Japanese": "凡例項目を検索" },
-  "card_no_legend_matches": { "English": "No legend items match this filter.", "Mandarin": "没有图例项目符合此筛选。", "Japanese": "このフィルターに一致する凡例項目はありません。" },
-  "card_legend_total": { "English": "Total row value in this chart view:", "Mandarin": "当前图表视图的行总值：", "Japanese": "現在のチャート表示における行合計：" },
-  "card_toggle_legend_item": { "English": "Click to {action} “{label}”", "Mandarin": "点击以{action}“{label}”", "Japanese": "クリックして「{label}」を{action}" },
-  "card_action_show": { "English": "show", "Mandarin": "显示", "Japanese": "表示" },
-  "card_action_hide": { "English": "hide", "Mandarin": "隐藏", "Japanese": "非表示" },
-  "card_selection_count": { "English": "Viewing {count} selected {item}.", "Mandarin": "正在查看所选的 {count} 个项目。", "Japanese": "選択した {count} 件を表示中です。" },
-  "card_selection_item": { "English": "item", "Mandarin": "项目", "Japanese": "項目" },
-  "card_selection_items": { "English": "items", "Mandarin": "项目", "Japanese": "項目" },
-  "card_clear_selection": { "English": "Clear selection", "Mandarin": "清除选择", "Japanese": "選択を解除" },
-  "card_reset_zoom": { "English": "Reset zoom", "Mandarin": "重置缩放", "Japanese": "ズームをリセット" },
-  "chart_type_bar": { "English": "Bar", "Mandarin": "柱状图", "Japanese": "棒グラフ" },
-  "chart_type_horizontal_bar": { "English": "Horizontal bar", "Mandarin": "横向条形图", "Japanese": "横棒グラフ" },
-  "chart_type_line": { "English": "Line", "Mandarin": "折线图", "Japanese": "折れ線グラフ" },
-  "chart_type_multi_line": { "English": "Multi-line", "Mandarin": "多折线图", "Japanese": "複数折れ線グラフ" },
-  "chart_type_area": { "English": "Area", "Mandarin": "面积图", "Japanese": "面グラフ" },
-  "chart_type_pie": { "English": "Pie", "Mandarin": "饼图", "Japanese": "円グラフ" },
-  "chart_type_doughnut": { "English": "Doughnut", "Mandarin": "环形图", "Japanese": "ドーナツグラフ" },
-  "chart_type_polar_area": { "English": "Polar area", "Mandarin": "极区图", "Japanese": "ポーラーエリア" },
-  "chart_type_scatter": { "English": "Scatter", "Mandarin": "散点图", "Japanese": "散布図" },
-  "chart_type_combo": { "English": "Combo", "Mandarin": "组合图", "Japanese": "複合グラフ" },
-  "chart_type_radar": { "English": "Radar", "Mandarin": "雷达图", "Japanese": "レーダーチャート" },
-  "chart_type_bubble": { "English": "Bubble", "Mandarin": "气泡图", "Japanese": "バブルチャート" },
-  "chart_type_stacked_bar": { "English": "Stacked bar", "Mandarin": "堆叠条形图", "Japanese": "積み上げ横棒グラフ" },
-  "chart_type_stacked_column": { "English": "Stacked column", "Mandarin": "堆叠柱状图", "Japanese": "積み上げ縦棒グラフ" },
-  "tabulator_empty_state": { "English": "No data matches your search.", "Mandarin": "没有匹配搜索的数据。", "Japanese": "検索に一致するデータがありません。" },
+  "card_controls_show_label": { "English": "Show", "Mandarin": "显示", "Japanese": "表示", "Malay": "Tunjukkan" },
+  "card_controls_all": { "English": "All", "Mandarin": "全部", "Japanese": "すべて", "Malay": "Semua" },
+  "card_controls_top_n": { "English": "Top {n}", "Mandarin": "前 {n}", "Japanese": "トップ {n}", "Malay": "{n} teratas" },
+  "card_controls_hide_others": { "English": 'Hide "Others"', "Mandarin": '隐藏"其他"', "Japanese": "「その他」を非表示", "Malay": 'Sembunyikan "Lain-lain"' },
+  "card_others": { "English": "Others", "Mandarin": "其他", "Japanese": "その他", "Malay": "Lain-lain" },
+  "card_controls_show_columns": { "English": "Show columns", "Mandarin": "显示列", "Japanese": "列を表示", "Malay": "Tunjukkan lajur" },
+  "card_controls_hide_column_others": { "English": 'Hide column "Others"', "Mandarin": '隐藏"其他"列', "Japanese": "「その他」列を非表示", "Malay": 'Sembunyikan lajur "Lain-lain"' },
+  "card_controls_hide_zero_rows": { "English": "Hide zero rows in chart", "Mandarin": "隐藏图表中的零值行", "Japanese": "チャートのゼロ行を非表示", "Malay": "Sembunyikan baris bernilai sifar dalam carta" },
+  "card_controls_labels": { "English": "Labels", "Mandarin": "标签", "Japanese": "ラベル", "Malay": "Label" },
+  "card_controls_visible_categories": { "English": "Visible categories", "Mandarin": "显示类别", "Japanese": "表示カテゴリ", "Malay": "Kategori yang dipaparkan" },
+  "card_controls_visible_pivot_columns": { "English": "Visible pivot columns", "Mandarin": "显示透视列", "Japanese": "表示するピボット列", "Malay": "Lajur pivot yang dipaparkan" },
+  "card_current": { "English": "Current", "Mandarin": "当前", "Japanese": "現在", "Malay": "Semasa" },
+  "card_export": { "English": "Export", "Mandarin": "导出", "Japanese": "エクスポート", "Malay": "Eksport" },
+  "card_export_title": { "English": "Export chart or data", "Mandarin": "导出图表或数据", "Japanese": "チャートまたはデータをエクスポート", "Malay": "Eksport carta atau data" },
+  "card_more_actions": { "English": "More actions", "Mandarin": "更多操作", "Japanese": "その他の操作", "Malay": "Tindakan lain" },
+  "card_delete": { "English": "Delete card", "Mandarin": "删除卡片", "Japanese": "カードを削除", "Malay": "Padam kad" },
+  "card_fallback_view": { "English": "Simplified view", "Mandarin": "简化视图", "Japanese": "簡易表示", "Malay": "Paparan ringkas" },
+  "card_fallback_view_hint": { "English": "The original chart could not be created, so this safe simplified view is shown instead.", "Mandarin": "原图表无法建立，因此改为显示安全的简化视图。", "Japanese": "元のチャートを作成できなかったため、安全な簡易表示に切り替えました。", "Malay": "Carta asal tidak dapat dicipta, jadi paparan ringkas yang selamat ini ditunjukkan sebagai ganti." },
+  "card_table_first_hint": { "English": "The result is shown as a table first because the grouped result is not strong enough for a default chart.", "Mandarin": "分组结果的可靠度不足以默认显示图表，因此先以表格呈现。", "Japanese": "グループ化結果は既定のチャートに十分な強さがないため、まず表で表示します。", "Malay": "Hasil ditunjukkan sebagai jadual dahulu kerana hasil berkumpulan tidak cukup kukuh untuk carta lalai." },
+  "card_filter_active": { "English": "Filter active:", "Mandarin": "筛选已启用：", "Japanese": "フィルター適用中：", "Malay": "Penapis aktif:" },
+  "card_filter_description": { "English": "Showing rows where “{column}” is “{values}”. Ask the Assistant to clear the filter to remove it.", "Mandarin": "正在显示“{column}”为“{values}”的数据行。可让助手清除筛选。", "Japanese": "「{column}」が「{values}」の行を表示しています。解除するにはアシスタントにフィルターのクリアを依頼してください。", "Malay": "Memaparkan baris dengan “{column}” bersamaan “{values}”. Minta Pembantu mengosongkan penapis untuk membuangnya." },
+  "card_pivot_summary_table": { "English": "Pivot summary table", "Mandarin": "透视汇总表", "Japanese": "ピボット集計表", "Malay": "Jadual ringkasan pivot" },
+  "card_analysis_table": { "English": "Analysis table", "Mandarin": "分析表", "Japanese": "分析表", "Malay": "Jadual analisis" },
+  "card_series_legend": { "English": "Series legend", "Mandarin": "系列图例", "Japanese": "系列凡例", "Malay": "Petunjuk siri" },
+  "card_series_legend_hint": { "English": "Series in the current stacked chart, sorted by contribution.", "Mandarin": "当前堆叠图中的系列，按贡献排序。", "Japanese": "現在の積み上げチャートの系列を寄与度順に表示します。", "Malay": "Siri dalam carta bertindan semasa, disusun mengikut sumbangan." },
+  "card_reset_hidden_series": { "English": "Reset hidden series", "Mandarin": "重置隐藏系列", "Japanese": "非表示系列をリセット", "Malay": "Tetapkan semula siri tersembunyi" },
+  "card_collapse_legend": { "English": "Collapse legend", "Mandarin": "收起图例", "Japanese": "凡例を折りたたむ", "Malay": "Kuncupkan petunjuk" },
+  "card_show_all_legend_items": { "English": "Show all {count} items", "Mandarin": "显示全部 {count} 项", "Japanese": "全 {count} 件を表示", "Malay": "Tunjukkan semua {count} item" },
+  "card_search_legend": { "English": "Search legend items", "Mandarin": "搜索图例项目", "Japanese": "凡例項目を検索", "Malay": "Cari item petunjuk" },
+  "card_no_legend_matches": { "English": "No legend items match this filter.", "Mandarin": "没有图例项目符合此筛选。", "Japanese": "このフィルターに一致する凡例項目はありません。", "Malay": "Tiada item petunjuk yang sepadan dengan penapis ini." },
+  "card_legend_total": { "English": "Total row value in this chart view:", "Mandarin": "当前图表视图的行总值：", "Japanese": "現在のチャート表示における行合計：", "Malay": "Jumlah nilai baris dalam paparan carta ini:" },
+  "card_toggle_legend_item": { "English": "Click to {action} “{label}”", "Mandarin": "点击以{action}“{label}”", "Japanese": "クリックして「{label}」を{action}", "Malay": "Klik untuk {action} “{label}”" },
+  "card_action_show": { "English": "show", "Mandarin": "显示", "Japanese": "表示", "Malay": "tunjukkan" },
+  "card_action_hide": { "English": "hide", "Mandarin": "隐藏", "Japanese": "非表示", "Malay": "sembunyikan" },
+  "card_selection_count": { "English": "Viewing {count} selected {item}.", "Mandarin": "正在查看所选的 {count} 个{item}。", "Japanese": "選択した {count} 件の{item}を表示中です。", "Malay": "Melihat {count} {item} yang dipilih." },
+  "card_selection_item": { "English": "item", "Mandarin": "项目", "Japanese": "項目", "Malay": "item" },
+  "card_selection_items": { "English": "items", "Mandarin": "项目", "Japanese": "項目", "Malay": "item" },
+  "card_clear_selection": { "English": "Clear selection", "Mandarin": "清除选择", "Japanese": "選択を解除", "Malay": "Kosongkan pilihan" },
+  "card_reset_zoom": { "English": "Reset zoom", "Mandarin": "重置缩放", "Japanese": "ズームをリセット", "Malay": "Tetapkan semula zum" },
+  "chart_type_bar": { "English": "Bar", "Mandarin": "柱状图", "Japanese": "棒グラフ", "Malay": "Bar" },
+  "chart_type_horizontal_bar": { "English": "Horizontal bar", "Mandarin": "横向条形图", "Japanese": "横棒グラフ", "Malay": "Bar mendatar" },
+  "chart_type_line": { "English": "Line", "Mandarin": "折线图", "Japanese": "折れ線グラフ", "Malay": "Garis" },
+  "chart_type_multi_line": { "English": "Multi-line", "Mandarin": "多折线图", "Japanese": "複数折れ線グラフ", "Malay": "Berbilang garis" },
+  "chart_type_area": { "English": "Area", "Mandarin": "面积图", "Japanese": "面グラフ", "Malay": "Kawasan" },
+  "chart_type_pie": { "English": "Pie", "Mandarin": "饼图", "Japanese": "円グラフ", "Malay": "Pai" },
+  "chart_type_doughnut": { "English": "Doughnut", "Mandarin": "环形图", "Japanese": "ドーナツグラフ", "Malay": "Donat" },
+  "chart_type_polar_area": { "English": "Polar area", "Mandarin": "极区图", "Japanese": "ポーラーエリア", "Malay": "Kawasan kutub" },
+  "chart_type_scatter": { "English": "Scatter", "Mandarin": "散点图", "Japanese": "散布図", "Malay": "Serakan" },
+  "chart_type_combo": { "English": "Combo", "Mandarin": "组合图", "Japanese": "複合グラフ", "Malay": "Gabungan" },
+  "chart_type_radar": { "English": "Radar", "Mandarin": "雷达图", "Japanese": "レーダーチャート", "Malay": "Radar" },
+  "chart_type_bubble": { "English": "Bubble", "Mandarin": "气泡图", "Japanese": "バブルチャート", "Malay": "Gelembung" },
+  "chart_type_stacked_bar": { "English": "Stacked bar", "Mandarin": "堆叠条形图", "Japanese": "積み上げ横棒グラフ", "Malay": "Bar bertindan" },
+  "chart_type_stacked_column": { "English": "Stacked column", "Mandarin": "堆叠柱状图", "Japanese": "積み上げ縦棒グラフ", "Malay": "Lajur bertindan" },
+  "tabulator_empty_state": { "English": "No data matches your search.", "Mandarin": "没有匹配搜索的数据。", "Japanese": "検索に一致するデータがありません。", "Malay": "Tiada data yang sepadan dengan carian anda." },
   "tabulator_blank_value": { "English": "(blank)", "Mandarin": "（空白）", "Malay": "(kosong)", "Spanish": "(vacío)", "Japanese": "（空白）", "French": "(vide)" },
   // --- Chat orchestrator: data analysis session messages ---
   "chat_analysis_session_success": {
     "English": 'Done — generated {count} analysis card(s) for: "{goal}".',
     "Mandarin": "已完成 —— 针对「{goal}」生成了 {count} 张分析卡。",
-    "Japanese": "完了 — 「{goal}」に対して {count} 枚の分析カードを生成しました。"
+    "Japanese": "完了 — 「{goal}」に対して {count} 枚の分析カードを生成しました。",
+    "Malay": "Selesai — {count} kad analisis dijana untuk: “{goal}”."
   },
   "chat_analysis_session_no_cards": {
     "English": 'Analyzed "{goal}", but no evidence was strong enough to generate analysis cards. Try rephrasing or choosing different columns.',
     "Mandarin": "已分析「{goal}」，但当前没有足够强的证据生成分析卡。可以尝试换个说法或选择不同的列。",
-    "Japanese": "「{goal}」を分析しましたが、分析カードを生成するのに十分な証拠がありませんでした。別の表現や列をお試しください。"
+    "Japanese": "「{goal}」を分析しましたが、分析カードを生成するのに十分な証拠がありませんでした。別の表現や列をお試しください。",
+    "Malay": "“{goal}” telah dianalisis, tetapi tiada bukti yang cukup kukuh untuk menjana kad analisis. Cuba ungkapkan semula soalan atau pilih lajur lain."
   },
   "chat_analysis_session_error": {
     "English": "Unable to complete this data analysis session: {error}",
     "Mandarin": "无法完成这轮数据分析：{error}",
-    "Japanese": "このデータ分析セッションを完了できませんでした：{error}"
+    "Japanese": "このデータ分析セッションを完了できませんでした：{error}",
+    "Malay": "Sesi analisis data ini tidak dapat diselesaikan: {error}"
   },
   "proactive_insight_title": {
     "English": "AI Insight (data-inferred)",
     "Mandarin": "AI 洞察（基于数据推断）",
-    "Japanese": "AI インサイト（データ推論）"
+    "Japanese": "AI インサイト（データ推論）",
+    "Malay": "Cerapan AI (disimpulkan daripada data)"
   },
   "chat_show_related_card": {
     "English": "Show Related Card",
     "Mandarin": "查看相关卡片",
-    "Japanese": "関連カードを表示"
+    "Japanese": "関連カードを表示",
+    "Malay": "Tunjukkan kad berkaitan"
   },
   "chat_query_technical_details": {
     "English": "Technical details",
     "Mandarin": "技术详情",
-    "Japanese": "技術詳細"
+    "Japanese": "技術詳細",
+    "Malay": "Butiran teknikal"
   },
   "chat_agent_turn_error": {
     "English": "I encountered an issue processing your request. Please try again or rephrase your question.",
     "Mandarin": "目前遇到处理问题，请稍后再试或换个方式提问。",
-    "Japanese": "リクエストの処理中に問題が発生しました。もう一度お試しいただくか、別の表現でご質問ください。"
+    "Japanese": "リクエストの処理中に問題が発生しました。もう一度お試しいただくか、別の表現でご質問ください。",
+    "Malay": "Saya menghadapi masalah semasa memproses permintaan anda. Sila cuba lagi atau ungkapkan semula soalan anda."
   },
   "chat_clarification_resume_error": {
     "English": "I encountered an issue resuming after your clarification. Please try your question again.",
     "Mandarin": "在处理您的回复时遇到了问题，请重新提问。",
-    "Japanese": "明確化後の再開中に問題が発生しました。もう一度ご質問ください。"
+    "Japanese": "明確化後の再開中に問題が発生しました。もう一度ご質問ください。",
+    "Malay": "Saya menghadapi masalah untuk meneruskan selepas penjelasan anda. Sila cuba tanya semula."
   },
   // --- File processor: data import messages ---
   "profiling_fallback_warning": {
     "English": "Data profiling encountered an issue and used a lightweight fallback. Some column type hints may be approximate. Analysis will continue normally.",
     "Mandarin": "数据分析工具暂时无法运行，已使用轻量级分析替代。部分列类型可能不精确，但分析仍可正常进行。",
-    "Japanese": "データプロファイリングで問題が発生し、軽量フォールバックを使用しました。一部の列タイプのヒントが近似値になる場合があります。分析は通常通り続行されます。"
+    "Japanese": "データプロファイリングで問題が発生し、軽量フォールバックを使用しました。一部の列タイプのヒントが近似値になる場合があります。分析は通常通り続行されます。",
+    "Malay": "Pemprofilan data menghadapi masalah dan menggunakan kaedah sandaran yang ringan. Sesetengah petunjuk jenis lajur mungkin anggaran. Analisis akan diteruskan seperti biasa."
   },
   "file_processor_quality_warning_fallback": {
     "English": "The imported data has quality warnings. The AI cleaning pipeline will address them in the next steps.",
     "Mandarin": "导入的数据存在质量警告，AI 清洗程序会在后续流程中继续处理。",
-    "Japanese": "インポートされたデータに品質警告があります。AIクリーニングパイプラインが次のステップで対処します。"
+    "Japanese": "インポートされたデータに品質警告があります。AIクリーニングパイプラインが次のステップで対処します。",
+    "Malay": "Data yang diimport mempunyai amaran kualiti. Aliran kerja pembersihan AI akan menanganinya dalam langkah seterusnya."
   },
   "file_processor_plan_explanation": {
     "English": "The AI cleaning pipeline has been initialized. cleaned.csv is currently a writable copy of raw.csv. Whether structural adjustments are needed will be decided by the AI cleaning pipeline.",
     "Mandarin": "AI 清洗程序已初始化。cleaned.csv 目前是 raw.csv 的可写副本，后续是否需要结构调整将由 AI 清洗程序决定。",
-    "Japanese": "AIクリーニングパイプラインが初期化されました。cleaned.csv は現在 raw.csv の書き込み可能なコピーです。構造調整が必要かどうかはAIクリーニングパイプラインが判断します。"
+    "Japanese": "AIクリーニングパイプラインが初期化されました。cleaned.csv は現在 raw.csv の書き込み可能なコピーです。構造調整が必要かどうかはAIクリーニングパイプラインが判断します。",
+    "Malay": "Aliran kerja pembersihan AI telah dimulakan. cleaned.csv kini merupakan salinan raw.csv yang boleh diubah. Keperluan pelarasan struktur akan ditentukan oleh aliran kerja pembersihan AI."
   },
   "file_processor_dataset_ready": {
     "English": "raw.csv and cleaned.csv are ready. Subsequent cleaning decisions will be generated and executed by the AI cleaning pipeline.",
     "Mandarin": "raw.csv 与 cleaned.csv 已准备就绪，后续清洗决策将由 AI 清洗程序生成并执行。",
-    "Japanese": "raw.csv と cleaned.csv の準備が完了しました。以降のクリーニング判断はAIクリーニングパイプラインが生成・実行します。"
+    "Japanese": "raw.csv と cleaned.csv の準備が完了しました。以降のクリーニング判断はAIクリーニングパイプラインが生成・実行します。",
+    "Malay": "raw.csv dan cleaned.csv sudah sedia. Keputusan pembersihan seterusnya akan dijana dan dijalankan oleh aliran kerja pembersihan AI."
   },
   "file_too_large": {
     "English": "This file exceeds the {deviceClass} limit of {maxMb}MB. Choose a smaller CSV.",
     "Mandarin": "此文件超过 {deviceClass} 设备的 {maxMb}MB 上限，请选择较小的 CSV。",
-    "Malay": "Fail terlalu besar. Sila muat naik fail yang lebih kecil daripada {maxMb}MB.",
+    "Malay": "Fail ini melebihi had {maxMb}MB untuk peranti {deviceClass}. Sila pilih fail CSV yang lebih kecil.",
     "Japanese": "このファイルは {deviceClass} の上限 {maxMb}MB を超えています。より小さい CSV を選択してください。"
   },
   "file_too_many_rows": {
@@ -31093,890 +31463,1065 @@ const translations = {
   "skill_correlation_complete": {
     "English": "Completed {analysisType} analysis: the correlation coefficient between {columnA} and {columnB} is {correlation}, strength is {strength}, regression slope is {slope}.",
     "Mandarin": "已完成{analysisType}分析：{columnA} 与 {columnB} 的相关系数为 {correlation}，强度为 {strength}，回归斜率为 {slope}。",
-    "Japanese": "{analysisType}分析が完了しました：{columnA} と {columnB} の相関係数は {correlation}、強度は {strength}、回帰勾配は {slope} です。"
+    "Japanese": "{analysisType}分析が完了しました：{columnA} と {columnB} の相関係数は {correlation}、強度は {strength}、回帰勾配は {slope} です。",
+    "Malay": "Analisis {analysisType} selesai: pekali korelasi antara {columnA} dan {columnB} ialah {correlation}, kekuatannya {strength}, dan kecerunan regresinya {slope}."
   },
   "skill_correlation_type_regression": {
     "English": "simple regression",
     "Mandarin": "简单回归",
-    "Japanese": "単純回帰"
+    "Japanese": "単純回帰",
+    "Malay": "regresi ringkas"
   },
   "skill_correlation_type_correlation": {
     "English": "correlation",
     "Mandarin": "相关性",
-    "Japanese": "相関"
+    "Japanese": "相関",
+    "Malay": "korelasi"
   },
   "skill_distribution_complete": {
     "English": "Completed distribution analysis: {column} has mean {mean}, median {median}, and standard deviation {stddev}.",
     "Mandarin": "已完成分布分析：{column} 的平均值为 {mean}，中位数为 {median}，标准差为 {stddev}。",
-    "Japanese": "分布分析が完了しました：{column} の平均値は {mean}、中央値は {median}、標準偏差は {stddev} です。"
+    "Japanese": "分布分析が完了しました：{column} の平均値は {mean}、中央値は {median}、標準偏差は {stddev} です。",
+    "Malay": "Analisis taburan selesai: {column} mempunyai min {mean}, median {median} dan sisihan piawai {stddev}."
   },
   "skill_outlier_complete": {
     "English": "Completed outlier scan: {column} has {count} significant outlier(s) at threshold |z| >= 2.5.",
     "Mandarin": "已完成异常值扫描：{column} 共识别到 {count} 个显著异常值，阈值为 |z| >= 2.5。",
-    "Japanese": "外れ値スキャンが完了しました：{column} で {count} 個の有意な外れ値を検出しました（閾値 |z| >= 2.5）。"
+    "Japanese": "外れ値スキャンが完了しました：{column} で {count} 個の有意な外れ値を検出しました（閾値 |z| >= 2.5）。",
+    "Malay": "Imbasan pencilan selesai: {column} mempunyai {count} pencilan ketara pada ambang |z| >= 2.5."
   },
   "skill_trend_complete": {
     "English": "Completed trend analysis: generated a time series trend chart based on {count} time buckets.",
     "Mandarin": "已完成趋势分析：基于 {count} 个时间桶生成了时间序列趋势图。",
-    "Japanese": "トレンド分析が完了しました：{count} 個の時間バケットに基づいて時系列トレンドチャートを生成しました。"
+    "Japanese": "トレンド分析が完了しました：{count} 個の時間バケットに基づいて時系列トレンドチャートを生成しました。",
+    "Malay": "Analisis trend selesai: carta trend siri masa dijana berdasarkan {count} sela masa."
   },
   "skill_pivot_complete": {
     "English": "Generated pivot matrix: summarized by {rows} with {columnCount} column group(s).",
     "Mandarin": "已生成透视矩阵：按 {rows} 汇总，并输出 {columnCount} 个列分组。",
-    "Japanese": "ピボットマトリクスを生成しました：{rows} で集計し、{columnCount} 個の列グループを出力しました。"
+    "Japanese": "ピボットマトリクスを生成しました：{rows} で集計し、{columnCount} 個の列グループを出力しました。",
+    "Malay": "Matriks pivot dijana: diringkaskan mengikut {rows} dengan {columnCount} kumpulan lajur."
   },
   "skill_period_compare_complete": {
     "English": "Completed period comparison: {current} vs {previous}, total variance is {variance}, variance rate is {variancePct}.",
     "Mandarin": "已完成周期对比：{current} 相比 {previous} 的总差异为 {variance}，差异率为 {variancePct}。",
-    "Japanese": "期間比較が完了しました：{current} 対 {previous}、総差異は {variance}、差異率は {variancePct} です。"
+    "Japanese": "期間比較が完了しました：{current} 対 {previous}、総差異は {variance}、差異率は {variancePct} です。",
+    "Malay": "Perbandingan tempoh selesai: {current} berbanding {previous}, jumlah perbezaan ialah {variance} dan kadar perbezaan ialah {variancePct}."
   },
   "skill_cohort_complete": {
     "English": "Completed {label} analysis: generated {count} cohort(s) with periods 0 to {maxPeriods}.",
     "Mandarin": "已完成 {label} 分析：共生成 {count} 个 cohort，并输出 0 到 {maxPeriods} 期的矩阵结果。",
-    "Japanese": "{label}分析が完了しました：{count} 個のコホートを生成し、0 から {maxPeriods} 期までのマトリクス結果を出力しました。"
+    "Japanese": "{label}分析が完了しました：{count} 個のコホートを生成し、0 から {maxPeriods} 期までのマトリクス結果を出力しました。",
+    "Malay": "Analisis {label} selesai: {count} kohort dijana untuk tempoh 0 hingga {maxPeriods}."
   },
   "skill_root_cause_complete": {
     "English": "Completed root-cause breakdown: {current} vs {previous}, total change is {variance}, with key contributing dimensions listed.",
     "Mandarin": "已完成根因拆解：{current} 相比 {previous} 的总变化为 {variance}，并列出主要贡献维度。",
-    "Japanese": "根本原因分析が完了しました：{current} 対 {previous}、総変化量は {variance}、主要な寄与次元を列挙しました。"
+    "Japanese": "根本原因分析が完了しました：{current} 対 {previous}、総変化量は {variance}、主要な寄与次元を列挙しました。",
+    "Malay": "Pecahan punca utama selesai: {current} berbanding {previous}, jumlah perubahan ialah {variance}, dengan dimensi penyumbang utama disenaraikan."
   },
   // --- Global async error boundary (App shell level) ---
   "global_error_toast_message": {
     "English": "The system encountered an unexpected error. Your data is safe — you can dismiss this notice and continue, or start a new session.",
     "Mandarin": '系统遇到了一个意外错误，您的数据仍然安全。您可以忽略此提示继续使用，或点击"重新开始"清空当前会话。',
-    "Japanese": "システムで予期しないエラーが発生しました。データは安全です。このメッセージを閉じて続行するか、新しいセッションを開始してください。"
+    "Japanese": "システムで予期しないエラーが発生しました。データは安全です。このメッセージを閉じて続行するか、新しいセッションを開始してください。",
+    "Malay": "Sistem menghadapi ralat yang tidak dijangka. Data anda selamat — anda boleh mengetepikan notis ini dan meneruskan, atau memulakan sesi baharu."
   },
   "global_error_restart_button": {
     "English": "Start Over",
     "Mandarin": "重新开始",
-    "Japanese": "最初からやり直す"
+    "Japanese": "最初からやり直す",
+    "Malay": "Mula semula"
   },
   "global_error_dismiss_button": {
     "English": "Dismiss",
     "Mandarin": "关闭",
-    "Japanese": "閉じる"
+    "Japanese": "閉じる",
+    "Malay": "Ketepikan"
   },
   "error_detail_show": {
     "English": "▸ Show Details",
     "Mandarin": "▸ 查看详情",
-    "Japanese": "▸ 詳細を表示"
+    "Japanese": "▸ 詳細を表示",
+    "Malay": "▸ Tunjukkan butiran"
   },
   "error_detail_hide": {
     "English": "▾ Hide Details",
     "Mandarin": "▾ 隐藏详情",
-    "Japanese": "▾ 詳細を隠す"
+    "Japanese": "▾ 詳細を隠す",
+    "Malay": "▾ Sembunyikan butiran"
   },
   // --- Report Boundary Confirm Modal ---
   "boundary_confirm_title": {
     "English": "Confirm Report Structure Boundary",
     "Mandarin": "确认报表结构边界",
-    "Japanese": "レポート構造境界の確認"
+    "Japanese": "レポート構造境界の確認",
+    "Malay": "Sahkan sempadan struktur laporan"
   },
   "boundary_confirm_description": {
     "English": "A complex report structure was detected (multi-layer headers or column-width drift). Please confirm the ranges below before continuing analysis.",
     "Mandarin": "系统检测到复杂报表结构（多层表头或列宽漂移），请确认以下范围后继续分析。",
-    "Japanese": "複雑なレポート構造（複数ヘッダー層または列幅ドリフト）が検出されました。分析を続行する前に以下の範囲を確認してください。"
+    "Japanese": "複雑なレポート構造（複数ヘッダー層または列幅ドリフト）が検出されました。分析を続行する前に以下の範囲を確認してください。",
+    "Malay": "Struktur laporan yang kompleks dikesan (pengepala berlapis atau perubahan lebar lajur). Sila sahkan julat di bawah sebelum meneruskan analisis."
   },
   "boundary_confirm_header_depth": {
     "English": "Header Layers",
     "Mandarin": "表头层数",
-    "Japanese": "ヘッダー層数"
+    "Japanese": "ヘッダー層数",
+    "Malay": "Lapisan pengepala"
   },
   "boundary_confirm_header_depth_unit": {
     "English": "{count} layer(s)",
     "Mandarin": "{count} 层",
-    "Japanese": "{count} 層"
+    "Japanese": "{count} 層",
+    "Malay": "{count} lapisan"
   },
   "boundary_confirm_header_rows_label": {
     "English": "Row {rows}",
     "Mandarin": "第 {rows} 行",
-    "Japanese": "第 {rows} 行"
+    "Japanese": "第 {rows} 行",
+    "Malay": "Baris {rows}"
   },
   "boundary_confirm_data_rows": {
     "English": "Data Rows",
     "Mandarin": "数据行数",
-    "Japanese": "データ行数"
+    "Japanese": "データ行数",
+    "Malay": "Baris data"
   },
   "boundary_confirm_data_rows_from": {
     "English": "from row {row}",
     "Mandarin": "从第 {row} 行开始",
-    "Japanese": "第 {row} 行から"
+    "Japanese": "第 {row} 行から",
+    "Malay": "dari baris {row}"
   },
   "boundary_confirm_summary_rows": {
     "English": "Summary Rows",
     "Mandarin": "汇总行",
-    "Japanese": "集計行"
+    "Japanese": "集計行",
+    "Malay": "Baris ringkasan"
   },
   "boundary_confirm_summary_rows_from": {
     "English": "from row {row}",
     "Mandarin": "从第 {row} 行",
-    "Japanese": "第 {row} 行から"
+    "Japanese": "第 {row} 行から",
+    "Malay": "dari baris {row}"
   },
   "boundary_confirm_no_summary": {
     "English": "None detected",
     "Mandarin": "未检测到",
-    "Japanese": "未検出"
+    "Japanese": "未検出",
+    "Malay": "Tiada yang dikesan"
   },
   "boundary_confirm_body_start_label": {
     "English": "Data start row",
     "Mandarin": "数据起始行",
-    "Japanese": "データ開始行"
+    "Japanese": "データ開始行",
+    "Malay": "Baris permulaan data"
   },
   "boundary_confirm_body_start_hint": {
     "English": "(counted from 1)",
     "Mandarin": "（从 1 计数）",
-    "Japanese": "（1 起算）"
+    "Japanese": "（1 起算）",
+    "Malay": "(dikira bermula dari 1)"
   },
   "boundary_confirm_summary_start_label": {
     "English": "Summary start row",
     "Mandarin": "汇总起始行",
-    "Japanese": "集計開始行"
+    "Japanese": "集計開始行",
+    "Malay": "Baris permulaan ringkasan"
   },
   "boundary_confirm_summary_start_hint": {
     "English": "(leave blank if none)",
     "Mandarin": "（留空表示无）",
-    "Japanese": "（なければ空欄）"
+    "Japanese": "（なければ空欄）",
+    "Malay": "(biarkan kosong jika tiada)"
   },
   "boundary_confirm_preview_label": {
     "English": "Data Preview",
     "Mandarin": "数据预览",
-    "Japanese": "データプレビュー"
+    "Japanese": "データプレビュー",
+    "Malay": "Pratonton data"
   },
   "boundary_confirm_role_header": {
     "English": "Header",
     "Mandarin": "表头",
-    "Japanese": "ヘッダー"
+    "Japanese": "ヘッダー",
+    "Malay": "Pengepala"
   },
   "boundary_confirm_role_summary": {
     "English": "Summary",
     "Mandarin": "汇总",
-    "Japanese": "集計"
+    "Japanese": "集計",
+    "Malay": "Ringkasan"
   },
   "boundary_confirm_role_data": {
     "English": "Data",
     "Mandarin": "数据",
-    "Japanese": "データ"
+    "Japanese": "データ",
+    "Malay": "Data"
   },
   "boundary_confirm_cancel": {
     "English": "Cancel",
     "Mandarin": "取消",
-    "Japanese": "キャンセル"
+    "Japanese": "キャンセル",
+    "Malay": "Batal"
   },
   "boundary_confirm_button": {
     "English": "Confirm & Start Analysis",
     "Mandarin": "确认并开始分析",
-    "Japanese": "確認して分析開始"
+    "Japanese": "確認して分析開始",
+    "Malay": "Sahkan dan mulakan analisis"
   },
   "boundary_confirm_processing": {
     "English": "Processing…",
     "Mandarin": "处理中…",
-    "Japanese": "処理中…"
+    "Japanese": "処理中…",
+    "Malay": "Sedang memproses…"
   },
   "boundary_confirm_auto_confirm_label": {
     "English": "Auto-confirm after 10 s",
     "Mandarin": "10 秒后自动确认",
-    "Japanese": "10 秒後に自動確認"
+    "Japanese": "10 秒後に自動確認",
+    "Malay": "Sahkan secara automatik selepas 10 saat"
   },
   "boundary_confirm_cancel_hint": {
     "English": "Cancel will skip analysis — your file stays loaded but no report will be generated.",
     "Mandarin": "取消将跳过分析——文件仍保留但不会生成报告。",
-    "Japanese": "キャンセルすると分析がスキップされます。ファイルは読み込み済みですがレポートは生成されません。"
+    "Japanese": "キャンセルすると分析がスキップされます。ファイルは読み込み済みですがレポートは生成されません。",
+    "Malay": "Membatalkan akan melangkau analisis — fail anda kekal dimuatkan tetapi tiada laporan akan dijana."
   },
   "guided_repair_title": {
     "English": "Review and repair data structure",
     "Mandarin": "检查并修复数据结构",
-    "Japanese": "データ構造を確認・修正"
+    "Japanese": "データ構造を確認・修正",
+    "Malay": "Semak dan baiki struktur data"
   },
   "guided_repair_description": {
     "English": "Confirm the data rows and field roles before the app reruns validation and analysis.",
     "Mandarin": "确认数据行范围与字段角色后，系统会重新验证并分析。",
-    "Japanese": "データ行の範囲とフィールド役割を確認すると、検証と分析が再実行されます。"
+    "Japanese": "データ行の範囲とフィールド役割を確認すると、検証と分析が再実行されます。",
+    "Malay": "Sahkan baris data dan peranan medan sebelum aplikasi menjalankan semula pengesahan dan analisis."
   },
   "guided_repair_safety_summary": {
     "English": "Why your review is needed",
     "Mandarin": "为什么需要你的确认",
-    "Japanese": "確認が必要な理由"
+    "Japanese": "確認が必要な理由",
+    "Malay": "Mengapa semakan anda diperlukan"
   },
   "guided_repair_detected": {
     "English": "What was detected",
     "Mandarin": "系统检测到什么",
-    "Japanese": "検出された内容"
+    "Japanese": "検出された内容",
+    "Malay": "Perkara yang dikesan"
   },
   "guided_repair_why_blocked": {
     "English": "Why continuing is unsafe",
     "Mandarin": "为什么继续分析不安全",
-    "Japanese": "続行が安全でない理由"
+    "Japanese": "続行が安全でない理由",
+    "Malay": "Mengapa meneruskan tidak selamat"
   },
   "guided_repair_default_block_reason": {
     "English": "The current structure has not produced a business conclusion that passes every evidence check.",
     "Mandarin": "当前数据结构尚未产生通过全部证据检查的业务结论。",
-    "Japanese": "現在のデータ構造では、すべての根拠チェックを通過するビジネス結論を生成できていません。"
+    "Japanese": "現在のデータ構造では、すべての根拠チェックを通過するビジネス結論を生成できていません。",
+    "Malay": "Struktur semasa belum menghasilkan kesimpulan perniagaan yang lulus semua semakan bukti."
   },
   "guided_repair_attempted": {
     "English": "What the app tried",
     "Mandarin": "系统已经尝试什么",
-    "Japanese": "アプリが試行した内容"
+    "Japanese": "アプリが試行した内容",
+    "Malay": "Perkara yang dicuba oleh aplikasi"
   },
   "guided_repair_attempt_count": {
     "English": "Ran {count} governed cleaning and verification attempt(s).",
     "Mandarin": "已运行 {count} 次受治理的清洗与验证。",
-    "Japanese": "管理されたクリーニングと検証を {count} 回実行しました。"
+    "Japanese": "管理されたクリーニングと検証を {count} 回実行しました。",
+    "Malay": "{count} percubaan pembersihan dan pengesahan terkawal telah dijalankan."
   },
   "guided_repair_inspection_only": {
     "English": "Inspected the source structure without changing the original CSV.",
     "Mandarin": "已检查源文件结构，且未修改原始 CSV。",
-    "Japanese": "元の CSV を変更せずにソース構造を検査しました。"
+    "Japanese": "元の CSV を変更せずにソース構造を検査しました。",
+    "Malay": "Struktur sumber diperiksa tanpa mengubah CSV asal."
   },
   "guided_repair_required": {
     "English": "What you need to do",
     "Mandarin": "你需要做什么",
-    "Japanese": "必要な操作"
+    "Japanese": "必要な操作",
+    "Malay": "Perkara yang perlu anda lakukan"
   },
   "guided_repair_required_action": {
     "English": "Check the proposed data boundary and correct any field roles, then run validation again.",
     "Mandarin": "检查建议的数据边界并修正字段角色，然后重新运行验证。",
-    "Japanese": "提案されたデータ境界とフィールド役割を修正し、検証を再実行してください。"
+    "Japanese": "提案されたデータ境界とフィールド役割を修正し、検証を再実行してください。",
+    "Malay": "Semak sempadan data yang dicadangkan dan betulkan peranan medan jika perlu, kemudian jalankan semula pengesahan."
   },
   "guided_repair_field_roles": {
     "English": "Field roles",
     "Mandarin": "字段角色",
-    "Japanese": "フィールド役割"
+    "Japanese": "フィールド役割",
+    "Malay": "Peranan medan"
   },
   "guided_repair_field_roles_hint": {
     "English": "Correct roles that would otherwise create misleading groupings or totals. Detected data types remain visible for reference.",
     "Mandarin": "修正可能导致错误分组或合计的字段角色；检测到的数据类型会保留供参考。",
-    "Japanese": "誤解を招くグループ化や合計を防ぐために役割を修正できます。検出されたデータ型も参照できます。"
+    "Japanese": "誤解を招くグループ化や合計を防ぐために役割を修正できます。検出されたデータ型も参照できます。",
+    "Malay": "Betulkan peranan yang boleh menyebabkan pengelompokan atau jumlah yang mengelirukan. Jenis data yang dikesan kekal kelihatan sebagai rujukan."
   },
   "guided_repair_field_role_label": {
     "English": "Business role for {column}",
     "Mandarin": "{column} 的业务角色",
-    "Japanese": "{column} のビジネス役割"
+    "Japanese": "{column} のビジネス役割",
+    "Malay": "Peranan perniagaan bagi {column}"
   },
   // --- Data Provenance Modal ---
   "provenance_title": {
     "English": "Data Provenance",
     "Mandarin": "数据溯源",
-    "Japanese": "データの出所"
+    "Japanese": "データの出所",
+    "Malay": "Asal-usul data"
   },
   "provenance_close": {
     "English": "Close data provenance",
     "Mandarin": "关闭数据溯源",
-    "Japanese": "データの出所を閉じる"
+    "Japanese": "データの出所を閉じる",
+    "Malay": "Tutup asal-usul data"
   },
   "provenance_prev": {
     "English": "Previous",
     "Mandarin": "上一步",
-    "Japanese": "前へ"
+    "Japanese": "前へ",
+    "Malay": "Sebelumnya"
   },
   "provenance_next": {
     "English": "Next",
     "Mandarin": "下一步",
-    "Japanese": "次へ"
+    "Japanese": "次へ",
+    "Malay": "Seterusnya"
   },
   "provenance_step_indicator": {
     "English": "Step {current} / {total}",
     "Mandarin": "第 {current} 步 / 共 {total} 步",
-    "Japanese": "ステップ {current} / {total}"
+    "Japanese": "ステップ {current} / {total}",
+    "Malay": "Langkah {current} / {total}"
   },
   "provenance_step1_title": {
     "English": "Original CSV Data",
     "Mandarin": "原始 CSV 数据",
-    "Japanese": "元の CSV データ"
+    "Japanese": "元の CSV データ",
+    "Malay": "Data CSV asal"
   },
   "provenance_step1_summary": {
     "English": "{rows} rows × {cols} columns | Header at row {header}",
     "Mandarin": "{rows} 行 × {cols} 列 | 表头在第 {header} 行",
-    "Japanese": "{rows} 行 × {cols} 列 | ヘッダー行: {header}"
+    "Japanese": "{rows} 行 × {cols} 列 | ヘッダー行: {header}",
+    "Malay": "{rows} baris × {cols} lajur | Pengepala pada baris {header}"
   },
   "provenance_step2_title": {
     "English": "After Cleaning",
     "Mandarin": "清理后数据",
-    "Japanese": "クリーニング後"
+    "Japanese": "クリーニング後",
+    "Malay": "Selepas pembersihan"
   },
   "provenance_step2_ops": {
     "English": "{count} cleaning operations applied",
     "Mandarin": "执行了 {count} 个清理操作",
-    "Japanese": "{count} 件のクリーニング操作を適用"
+    "Japanese": "{count} 件のクリーニング操作を適用",
+    "Malay": "{count} operasi pembersihan digunakan"
   },
   "provenance_step2_summary": {
     "English": "{rows} rows × {cols} columns after cleaning",
     "Mandarin": "清理后 {rows} 行 × {cols} 列",
-    "Japanese": "クリーニング後 {rows} 行 × {cols} 列"
+    "Japanese": "クリーニング後 {rows} 行 × {cols} 列",
+    "Malay": "{rows} baris × {cols} lajur selepas pembersihan"
   },
   "provenance_step2_delta": {
     "English": "{delta} rows removed",
     "Mandarin": "减少 {delta} 行",
-    "Japanese": "{delta} 行を削除"
+    "Japanese": "{delta} 行を削除",
+    "Malay": "{delta} baris dibuang"
   },
   "provenance_step2_delta_added": {
     "English": "{delta} rows added",
     "Mandarin": "增加 {delta} 行",
-    "Japanese": "{delta} 行を追加"
+    "Japanese": "{delta} 行を追加",
+    "Malay": "{delta} baris ditambah"
   },
   "provenance_step2_no_ops": {
     "English": "No cleaning operations — data used as-is",
     "Mandarin": "无清理操作——数据直接使用",
-    "Japanese": "クリーニング操作なし — データをそのまま使用"
+    "Japanese": "クリーニング操作なし — データをそのまま使用",
+    "Malay": "Tiada operasi pembersihan — data digunakan tanpa perubahan"
   },
   "provenance_step3_title": {
     "English": "Analysis Query Result",
     "Mandarin": "分析查询结果",
-    "Japanese": "分析クエリ結果"
+    "Japanese": "分析クエリ結果",
+    "Malay": "Hasil pertanyaan analisis"
   },
   "provenance_step3_logic": {
     "English": '{agg}({value}) grouped by "{group}"',
     "Mandarin": '按 "{group}" 分组，{agg}({value})',
-    "Japanese": '"{group}" でグループ化, {agg}({value})'
+    "Japanese": '"{group}" でグループ化, {agg}({value})',
+    "Malay": '{agg}({value}) dikumpulkan mengikut "{group}"'
   },
   "provenance_step3_logic_no_group": {
     "English": "{agg}({value})",
     "Mandarin": "{agg}({value})",
-    "Japanese": "{agg}({value})"
+    "Japanese": "{agg}({value})",
+    "Malay": "{agg}({value})"
   },
   "provenance_step3_logic_detail": {
     "English": "Detail rows (no aggregation)",
     "Mandarin": "明细数据（无聚合）",
-    "Japanese": "明細データ（集計なし）"
+    "Japanese": "明細データ（集計なし）",
+    "Malay": "Baris butiran (tanpa pengagregatan)"
   },
   "provenance_step3_filter": {
     "English": "Filter: {filter}",
     "Mandarin": "筛选条件: {filter}",
-    "Japanese": "フィルター: {filter}"
+    "Japanese": "フィルター: {filter}",
+    "Malay": "Penapis: {filter}"
   },
   "provenance_step3_topn": {
     "English": "Top {n} (descending)",
     "Mandarin": "取前 {n} 名（降序）",
-    "Japanese": "上位 {n} 件（降順）"
+    "Japanese": "上位 {n} 件（降順）",
+    "Malay": "{n} teratas (menurun)"
   },
   "provenance_step4_title": {
     "English": "Verification",
     "Mandarin": "验算",
-    "Japanese": "検証"
+    "Japanese": "検証",
+    "Malay": "Pengesahan"
   },
   "provenance_step4_total": {
     "English": "Total {column}: {value}",
     "Mandarin": "{column} 合计: {value}",
-    "Japanese": "{column} 合計: {value}"
+    "Japanese": "{column} 合計: {value}",
+    "Malay": "Jumlah {column}: {value}"
   },
   "provenance_step4_avg": {
     "English": "Average {column}: {value}",
     "Mandarin": "{column} 平均值: {value}",
-    "Japanese": "{column} 平均: {value}"
+    "Japanese": "{column} 平均: {value}",
+    "Malay": "Purata {column}: {value}"
   },
   "provenance_step4_count": {
     "English": "Total count: {value}",
     "Mandarin": "总计数: {value}",
-    "Japanese": "合計カウント: {value}"
+    "Japanese": "合計カウント: {value}",
+    "Malay": "Jumlah bilangan: {value}"
   },
   "provenance_step4_row_count": {
     "English": "{count} result rows",
     "Mandarin": "{count} 行结果",
-    "Japanese": "{count} 行の結果"
+    "Japanese": "{count} 行の結果",
+    "Malay": "{count} baris hasil"
   },
   "provenance_step4_excel_hint": {
     "English": 'Excel: filter "{group}" column, {agg} "{value}" column, total should = {total}',
     "Mandarin": 'Excel 验证：筛选 "{group}" 列，对 "{value}" 列 {agg}，总计应 = {total}',
-    "Japanese": 'Excel: "{group}" 列をフィルター、"{value}" 列を {agg}、合計は {total} になるはず'
+    "Japanese": 'Excel: "{group}" 列をフィルター、"{value}" 列を {agg}、合計は {total} になるはず',
+    "Malay": 'Excel: tapis lajur "{group}", {agg} lajur "{value}", jumlah sepatutnya = {total}'
   },
   "provenance_step4_excel_hint_simple": {
     "English": 'Excel: {agg} the "{value}" column, total should = {total}',
     "Mandarin": 'Excel 验证：对 "{value}" 列 {agg}，总计应 = {total}',
-    "Japanese": 'Excel: "{value}" 列を {agg}、合計は {total} になるはず'
+    "Japanese": 'Excel: "{value}" 列を {agg}、合計は {total} になるはず',
+    "Malay": 'Excel: {agg} lajur "{value}", jumlah sepatutnya = {total}'
   },
   "provenance_op_drop_rows_by_index": {
     "English": "Remove rows by index",
     "Mandarin": "按行号删除行",
-    "Japanese": "インデックスで行を削除"
+    "Japanese": "インデックスで行を削除",
+    "Malay": "Buang baris mengikut indeks"
   },
   "provenance_op_drop_rows_by_condition": {
     "English": "Remove rows by condition",
     "Mandarin": "按条件删除行",
-    "Japanese": "条件で行を削除"
+    "Japanese": "条件で行を削除",
+    "Malay": "Buang baris mengikut syarat"
   },
   "provenance_op_drop_blank_rows": {
     "English": "Remove blank rows",
     "Mandarin": "删除空白行",
-    "Japanese": "空白行を削除"
+    "Japanese": "空白行を削除",
+    "Malay": "Buang baris kosong"
   },
   "provenance_op_promote_header_row": {
     "English": "Promote header row",
     "Mandarin": "提升表头行",
-    "Japanese": "ヘッダー行を昇格"
+    "Japanese": "ヘッダー行を昇格",
+    "Malay": "Jadikan baris sebagai pengepala"
   },
   "provenance_op_rename_columns": {
     "English": "Rename columns",
     "Mandarin": "重命名列",
-    "Japanese": "列名を変更"
+    "Japanese": "列名を変更",
+    "Malay": "Namakan semula lajur"
   },
   "provenance_op_drop_columns": {
     "English": "Remove columns",
     "Mandarin": "删除列",
-    "Japanese": "列を削除"
+    "Japanese": "列を削除",
+    "Malay": "Buang lajur"
   },
   "provenance_op_trim_whitespace": {
     "English": "Trim whitespace",
     "Mandarin": "去除空格",
-    "Japanese": "空白をトリミング"
+    "Japanese": "空白をトリミング",
+    "Malay": "Buang ruang kosong berlebihan"
   },
   "provenance_op_normalize_empty_values": {
     "English": "Normalize empty values",
     "Mandarin": "标准化空值",
-    "Japanese": "空の値を正規化"
+    "Japanese": "空の値を正規化",
+    "Malay": "Normalkan nilai kosong"
   },
   "provenance_op_replace_values": {
     "English": "Replace values",
     "Mandarin": "替换数值",
-    "Japanese": "値を置換"
+    "Japanese": "値を置換",
+    "Malay": "Gantikan nilai"
   },
   "provenance_op_cast_column": {
     "English": "Convert column type",
     "Mandarin": "转换列类型",
-    "Japanese": "列の型を変換"
+    "Japanese": "列の型を変換",
+    "Malay": "Tukar jenis lajur"
   },
   "provenance_op_fill_missing": {
     "English": "Fill missing values",
     "Mandarin": "填充缺失值",
-    "Japanese": "欠損値を補完"
+    "Japanese": "欠損値を補完",
+    "Malay": "Isi nilai yang tiada"
   },
   "provenance_op_dedupe_rows": {
     "English": "Deduplicate rows",
     "Mandarin": "去重",
-    "Japanese": "重複行を削除"
+    "Japanese": "重複行を削除",
+    "Malay": "Buang baris pendua"
   },
   "provenance_op_filter_rows": {
     "English": "Filter rows",
     "Mandarin": "筛选行",
-    "Japanese": "行をフィルター"
+    "Japanese": "行をフィルター",
+    "Malay": "Tapis baris"
   },
   "provenance_op_derive_column": {
     "English": "Derive new column",
     "Mandarin": "派生新列",
-    "Japanese": "新しい列を導出"
+    "Japanese": "新しい列を導出",
+    "Malay": "Terbitkan lajur baharu"
   },
   "provenance_op_derive_metric_by_label": {
     "English": "Derive metric by label",
     "Mandarin": "按标签派生指标",
-    "Japanese": "ラベルでメトリクスを導出"
+    "Japanese": "ラベルでメトリクスを導出",
+    "Malay": "Terbitkan metrik mengikut label"
   },
   "provenance_op_annotate_hierarchy": {
     "English": "Annotate hierarchy",
     "Mandarin": "标注层级结构",
-    "Japanese": "階層構造を注釈"
+    "Japanese": "階層構造を注釈",
+    "Malay": "Anotasikan hierarki"
   },
   "provenance_op_split_column": {
     "English": "Split column",
     "Mandarin": "拆分列",
-    "Japanese": "列を分割"
+    "Japanese": "列を分割",
+    "Malay": "Pisahkan lajur"
   },
   "provenance_op_unpivot_columns": {
     "English": "Unpivot columns",
     "Mandarin": "逆透视列",
-    "Japanese": "列のピボット解除"
+    "Japanese": "列のピボット解除",
+    "Malay": "Nyahpivot lajur"
   },
   // --- Data Provenance Modal: Interactive query controls ---
   "provenance_step3_group_by_label": {
     "English": "Group By",
     "Mandarin": "分组列",
-    "Japanese": "グループ化"
+    "Japanese": "グループ化",
+    "Malay": "Kumpulkan mengikut"
   },
   "provenance_step3_agg_label": {
     "English": "Aggregation",
     "Mandarin": "聚合方式",
-    "Japanese": "集計方法"
+    "Japanese": "集計方法",
+    "Malay": "Pengagregatan"
   },
   "provenance_step3_value_label": {
     "English": "Value Column",
     "Mandarin": "数值列",
-    "Japanese": "値列"
+    "Japanese": "値列",
+    "Malay": "Lajur nilai"
   },
   "provenance_step3_no_numeric_cols": {
     "English": "No numeric columns available",
     "Mandarin": "没有可用的数值列",
-    "Japanese": "利用可能な数値列がありません"
+    "Japanese": "利用可能な数値列がありません",
+    "Malay": "Tiada lajur angka tersedia"
   },
   "provenance_step3_total_label": {
     "English": "Total",
     "Mandarin": "合计",
-    "Japanese": "合計"
+    "Japanese": "合計",
+    "Malay": "Jumlah"
   },
   "provenance_step3_try_excel": {
     "English": "Try in Excel: {hint}",
     "Mandarin": "Excel 验证：{hint}",
-    "Japanese": "Excel で検証：{hint}"
+    "Japanese": "Excel で検証：{hint}",
+    "Malay": "Cuba dalam Excel: {hint}"
   },
   "provenance_step3_card_query": {
     "English": "Card's original query",
     "Mandarin": "卡片原始查询",
-    "Japanese": "カードの元のクエリ"
+    "Japanese": "カードの元のクエリ",
+    "Malay": "Pertanyaan asal kad"
   },
   "provenance_step3_custom_query": {
     "English": "Custom query",
     "Mandarin": "自定义查询",
-    "Japanese": "カスタムクエリ"
+    "Japanese": "カスタムクエリ",
+    "Malay": "Pertanyaan tersuai"
   },
   "provenance_view_data": {
     "English": "View Data",
     "Mandarin": "查看数据",
-    "Japanese": "データ表示"
+    "Japanese": "データ表示",
+    "Malay": "Lihat data"
   },
   "provenance_view_group_by": {
     "English": "Group By Test",
     "Mandarin": "分组测试",
-    "Japanese": "グループ化テスト"
+    "Japanese": "グループ化テスト",
+    "Malay": "Uji pengelompokan"
   },
   "provenance_pivot_by_label": {
     "English": "Pivot By (optional)",
     "Mandarin": "交叉列（可选）",
-    "Japanese": "ピボット列（任意）"
+    "Japanese": "ピボット列（任意）",
+    "Malay": "Pivot mengikut (pilihan)"
   },
   "provenance_pivot_none": {
     "English": "— (none)",
     "Mandarin": "—（无）",
-    "Japanese": "—（なし）"
+    "Japanese": "—（なし）",
+    "Malay": "— (tiada)"
   },
   "provenance_pivot_excel_hint": {
     "English": "Excel: create Pivot Table — Rows={group}, Columns={pivot}, Values={agg}({value})",
     "Mandarin": "Excel 验证：建立数据透视表 — 行={group}，列={pivot}，值={agg}({value})",
-    "Japanese": "Excel: ピボットテーブル作成 — 行={group}、列={pivot}、値={agg}({value})"
+    "Japanese": "Excel: ピボットテーブル作成 — 行={group}、列={pivot}、値={agg}({value})",
+    "Malay": "Excel: cipta Jadual Pivot — Baris={group}, Lajur={pivot}, Nilai={agg}({value})"
   },
   "groupby_create_card": {
     "English": "Create Card",
     "Mandarin": "生成卡片",
-    "Japanese": "カード作成"
+    "Japanese": "カード作成",
+    "Malay": "Cipta kad"
   },
   "export_png_chart": {
     "English": "PNG — Chart only",
     "Mandarin": "PNG — 仅图表",
-    "Japanese": "PNG — チャートのみ"
+    "Japanese": "PNG — チャートのみ",
+    "Malay": "PNG — Carta sahaja"
   },
   "export_png_chart_desc": {
     "English": "Chart and summary without data table",
     "Mandarin": "图表与摘要，不含数据表",
-    "Japanese": "チャートとサマリー（データ表なし）"
+    "Japanese": "チャートとサマリー（データ表なし）",
+    "Malay": "Carta dan ringkasan tanpa jadual data"
   },
   "export_png_full": {
     "English": "PNG — Full card",
     "Mandarin": "PNG — 完整卡片",
-    "Japanese": "PNG — フルカード"
+    "Japanese": "PNG — フルカード",
+    "Malay": "PNG — Kad penuh"
   },
   "export_png_full_desc": {
     "English": "Chart, summary, and data table",
     "Mandarin": "图表、摘要及数据表",
-    "Japanese": "チャート、サマリー、データ表"
+    "Japanese": "チャート、サマリー、データ表",
+    "Malay": "Carta, ringkasan dan jadual data"
   },
   "export_csv": {
     "English": "CSV table data",
     "Mandarin": "CSV 表格数据",
-    "Japanese": "CSV テーブルデータ"
+    "Japanese": "CSV テーブルデータ",
+    "Malay": "Data jadual CSV"
   },
   "export_csv_desc": {
     "English": "Current visible rows",
     "Mandarin": "当前可见行",
-    "Japanese": "現在表示中の行"
+    "Japanese": "現在表示中の行",
+    "Malay": "Baris yang sedang dipaparkan"
   },
   "export_html": {
     "English": "HTML card snapshot",
     "Mandarin": "HTML 卡片快照",
-    "Japanese": "HTML カードスナップショット"
+    "Japanese": "HTML カードスナップショット",
+    "Malay": "Petikan kad HTML"
   },
   "export_html_desc": {
     "English": "Card plus summary",
     "Mandarin": "卡片与摘要",
-    "Japanese": "カードとサマリー"
+    "Japanese": "カードとサマリー",
+    "Malay": "Kad bersama ringkasan"
   },
   // ── Cleaning pipeline messages (autonomousCleaningPipeline.ts) ──
   "cleaning_ai_gen_failed_summary": {
     "English": "AI cleaning plan generation failed. The system will switch to a safe deterministic cleaning strategy.",
     "Mandarin": "AI 清洗方案生成失败，系统将改用安全的确定性清洗方案继续处理。",
-    "Japanese": "AIクリーニングプラン生成に失敗しました。安全な確定的クリーニング方式に切り替えます。"
+    "Japanese": "AIクリーニングプラン生成に失敗しました。安全な確定的クリーニング方式に切り替えます。",
+    "Malay": "Penjanaan pelan pembersihan AI gagal. Sistem akan beralih kepada strategi pembersihan deterministik yang selamat."
   },
   "cleaning_ai_gen_failed_action": {
     "English": "This round will skip AI generation and directly execute the verified deterministic cleaning candidate.",
     "Mandarin": "本轮会跳过 AI 生成步骤，直接执行已验证的确定性清洗候选。",
-    "Japanese": "今回のラウンドではAI生成をスキップし、検証済みの確定的クリーニング候補を直接実行します。"
+    "Japanese": "今回のラウンドではAI生成をスキップし、検証済みの確定的クリーニング候補を直接実行します。",
+    "Malay": "Pusingan ini akan melangkau penjanaan AI dan terus menjalankan calon pembersihan deterministik yang telah disahkan."
   },
   "cleaning_snapshot_preserved": {
     "English": "The current stable snapshot has been preserved. No data was lost.",
     "Mandarin": "当前稳定快照已保留，未丢失数据。",
-    "Japanese": "現在の安定スナップショットは保持されています。データの損失はありません。"
+    "Japanese": "現在の安定スナップショットは保持されています。データの損失はありません。",
+    "Malay": "Petikan stabil semasa telah dikekalkan. Tiada data hilang."
   },
   "cleaning_will_continue_analysis": {
     "English": "If deterministic cleaning succeeds, the system will proceed to automatic analysis.",
     "Mandarin": "如果确定性清洗成功，系统会继续自动分析。",
-    "Japanese": "確定的クリーニングが成功した場合、システムは自動分析を続行します。"
+    "Japanese": "確定的クリーニングが成功した場合、システムは自動分析を続行します。",
+    "Malay": "Jika pembersihan deterministik berjaya, sistem akan meneruskan analisis automatik."
   },
   "cleaning_ai_gen_failed_progress": {
     "English": "AI cleaning plan generation failed. Switched to safe deterministic cleaning strategy.",
     "Mandarin": "AI 清洗方案生成失败，系统已切换到安全的确定性清洗方案。",
-    "Japanese": "AIクリーニングプラン生成に失敗しました。安全な確定的クリーニング方式に切り替えました。"
+    "Japanese": "AIクリーニングプラン生成に失敗しました。安全な確定的クリーニング方式に切り替えました。",
+    "Malay": "Penjanaan pelan pembersihan AI gagal. Beralih kepada strategi pembersihan deterministik yang selamat."
   },
   "cleaning_switched_deterministic": {
     "English": "The system has switched to a safe deterministic cleaning strategy.",
     "Mandarin": "系统已切换到安全的确定性清洗方案。",
-    "Japanese": "システムは安全な確定的クリーニング方式に切り替えました。"
+    "Japanese": "システムは安全な確定的クリーニング方式に切り替えました。",
+    "Malay": "Sistem telah beralih kepada strategi pembersihan deterministik yang selamat."
   },
   "cleaning_continue_safe_ai": {
     "English": "The system will continue executing the current safely-runnable AI cleaning plan.",
     "Mandarin": "系统将继续执行当前可安全运行的 AI 清洗方案。",
-    "Japanese": "システムは現在安全に実行可能なAIクリーニングプランを続行します。"
+    "Japanese": "システムは現在安全に実行可能なAIクリーニングプランを続行します。",
+    "Malay": "Sistem akan terus menjalankan pelan pembersihan AI semasa yang selamat untuk dilaksanakan."
   },
   "cleaning_round_success_next": {
     "English": "If this round of cleaning succeeds, the system will proceed to automatic analysis.",
     "Mandarin": "若本轮清洗成功，系统会继续自动分析。",
-    "Japanese": "今回のクリーニングが成功した場合、システムは自動分析を続行します。"
+    "Japanese": "今回のクリーニングが成功した場合、システムは自動分析を続行します。",
+    "Malay": "Jika pembersihan pusingan ini berjaya, sistem akan meneruskan analisis automatik."
   },
   "cleaning_reconciliation_failed_summary": {
     "English": "The current cleaning plan did not pass strict numeric reconciliation. The system will use a safer recovery path in the next round.",
     "Mandarin": "当前清洗方案未通过严格数值对账，系统将改用下一轮更安全的恢复路径。",
-    "Japanese": "現在のクリーニングプランは厳密な数値照合に合格しませんでした。次のラウンドでより安全な回復パスを使用します。"
+    "Japanese": "現在のクリーニングプランは厳密な数値照合に合格しませんでした。次のラウンドでより安全な回復パスを使用します。",
+    "Malay": "Pelan pembersihan semasa tidak lulus penyelarasan angka yang ketat. Sistem akan menggunakan laluan pemulihan yang lebih selamat dalam pusingan seterusnya."
   },
   "cleaning_round_not_committed": {
     "English": "This round's result will not be committed as the final stable data.",
     "Mandarin": "本轮结果不会作为最终稳定数据提交。",
-    "Japanese": "今回の結果は最終安定データとしてコミットされません。"
+    "Japanese": "今回の結果は最終安定データとしてコミットされません。",
+    "Malay": "Hasil pusingan ini tidak akan disimpan sebagai data stabil akhir."
   },
   "cleaning_will_retry_then_analyze": {
     "English": "The system will continue attempting repairs before proceeding to automatic analysis.",
     "Mandarin": "系统会继续尝试修复后再进入自动分析。",
-    "Japanese": "システムは自動分析に進む前に修復を続行します。"
+    "Japanese": "システムは自動分析に進む前に修復を続行します。",
+    "Malay": "Sistem akan terus mencuba pembaikan sebelum meneruskan analisis automatik."
   },
   "cleaning_noise_residual_summary": {
     "English": "The current cleaning result still retains too many report noise rows. The system will continue with a safer correction method.",
     "Mandarin": "当前清洗结果仍保留过多报表噪音行，系统会继续用更安全的方式修正。",
-    "Japanese": "現在のクリーニング結果にはまだ多くのノイズ行が残っています。より安全な方法で修正を続けます。"
+    "Japanese": "現在のクリーニング結果にはまだ多くのノイズ行が残っています。より安全な方法で修正を続けます。",
+    "Malay": "Hasil pembersihan semasa masih mengandungi terlalu banyak baris hingar laporan. Sistem akan meneruskan dengan kaedah pembetulan yang lebih selamat."
   },
   "cleaning_round_kept_intermediate": {
     "English": "This round's candidate result has been kept as an intermediate snapshot for the next round of recovery.",
     "Mandarin": "本轮候选结果已保留为中间快照，用于下一轮恢复。",
-    "Japanese": "今回の候補結果は次のラウンドの回復用に中間スナップショットとして保持されました。"
+    "Japanese": "今回の候補結果は次のラウンドの回復用に中間スナップショットとして保持されました。",
+    "Malay": "Hasil calon pusingan ini dikekalkan sebagai petikan sementara untuk pemulihan pusingan seterusnya."
   },
   "cleaning_original_and_snapshot_safe": {
     "English": "Both the original data and the previous stable snapshot have been preserved.",
     "Mandarin": "原始数据与上一份稳定快照都未丢失。",
-    "Japanese": "元データと前回の安定スナップショットは両方とも保持されています。"
+    "Japanese": "元データと前回の安定スナップショットは両方とも保持されています。",
+    "Malay": "Data asal dan petikan stabil sebelumnya telah dikekalkan."
   },
   "cleaning_will_continue_then_analyze": {
     "English": "The system will continue automatic cleaning and proceed to analysis once successful.",
     "Mandarin": "系统将继续自动清洗，成功后再进入分析。",
-    "Japanese": "システムは自動クリーニングを続行し、成功後に分析を開始します。"
+    "Japanese": "システムは自動クリーニングを続行し、成功後に分析を開始します。",
+    "Malay": "Sistem akan meneruskan pembersihan automatik dan memulakan analisis setelah berjaya."
   },
   "cleaning_structural_verification_failed": {
     "English": "The current cleaning result did not pass structural verification. The system will abandon this path and switch to a safer recovery plan.",
     "Mandarin": "当前清洗结果没有通过结构验证，系统会放弃这条路径并切换到更安全的恢复方案。",
-    "Japanese": "現在のクリーニング結果は構造検証に合格しませんでした。このパスを放棄し、より安全な回復プランに切り替えます。"
+    "Japanese": "現在のクリーニング結果は構造検証に合格しませんでした。このパスを放棄し、より安全な回復プランに切り替えます。",
+    "Malay": "Hasil pembersihan semasa tidak lulus pengesahan struktur. Sistem akan meninggalkan laluan ini dan beralih kepada pelan pemulihan yang lebih selamat."
   },
   "cleaning_shape_verification_failed": {
     "English": "The current cleaning result did not pass final shape verification. The system will continue attempting repairs.",
     "Mandarin": "当前清洗结果未通过最终形状验证，系统将继续尝试修复。",
-    "Japanese": "現在のクリーニング結果は最終形状検証に合格しませんでした。修復を続行します。"
+    "Japanese": "現在のクリーニング結果は最終形状検証に合格しませんでした。修復を続行します。",
+    "Malay": "Hasil pembersihan semasa tidak lulus pengesahan bentuk akhir. Sistem akan terus mencuba pembaikan."
   },
   "cleaning_round_intermediate_only": {
     "English": "This round's result is only an intermediate candidate and will not be committed as the final stable result.",
     "Mandarin": "本轮结果仅作为中间候选，不会直接作为最终稳定结果提交。",
-    "Japanese": "今回の結果は中間候補のみであり、最終安定結果として直接コミットされません。"
+    "Japanese": "今回の結果は中間候補のみであり、最終安定結果として直接コミットされません。",
+    "Malay": "Hasil pusingan ini hanyalah calon sementara dan tidak akan disimpan sebagai hasil stabil akhir."
   },
   "cleaning_will_auto_recover": {
     "English": "The system will continue automatic recovery and proceed to analysis once successful.",
     "Mandarin": "系统会继续自动恢复，成功后再进入分析。",
-    "Japanese": "システムは自動回復を続行し、成功後に分析を開始します。"
+    "Japanese": "システムは自動回復を続行し、成功後に分析を開始します。",
+    "Malay": "Sistem akan meneruskan pemulihan automatik dan memulakan analisis setelah berjaya."
   },
   "cleaning_safe_mode_activated": {
     "English": "The system has automatically switched to safe cleaning mode and will continue analysis based on the stable result.",
     "Mandarin": "系统已自动切换到安全清洗模式，并将基于该稳定结果继续分析。",
-    "Japanese": "システムは安全クリーニングモードに自動切替し、安定した結果に基づいて分析を続行します。"
+    "Japanese": "システムは安全クリーニングモードに自動切替し、安定した結果に基づいて分析を続行します。",
+    "Malay": "Sistem telah beralih secara automatik kepada mod pembersihan selamat dan akan meneruskan analisis berdasarkan hasil stabil."
   },
   "cleaning_safe_strategy_used": {
     "English": "This round used the recovered safe strategy as the final cleaning result.",
     "Mandarin": "本轮已使用恢复后的安全策略作为最终清洗结果。",
-    "Japanese": "今回は回復した安全な戦略を最終クリーニング結果として使用しました。"
+    "Japanese": "今回は回復した安全な戦略を最終クリーニング結果として使用しました。",
+    "Malay": "Pusingan ini menggunakan strategi selamat yang dipulihkan sebagai hasil pembersihan akhir."
   },
   "cleaning_analysis_labeled_safe_mode": {
     "English": "The system will continue automatic analysis and label results as coming from safe cleaning mode.",
     "Mandarin": "系统将继续自动分析，并标注结果来自安全清洗模式。",
-    "Japanese": "システムは自動分析を続行し、結果が安全クリーニングモードからのものであることをラベル付けします。"
+    "Japanese": "システムは自動分析を続行し、結果が安全クリーニングモードからのものであることをラベル付けします。",
+    "Malay": "Sistem akan meneruskan analisis automatik dan melabel hasil sebagai berasal daripada mod pembersihan selamat."
   },
   "cleaning_partial_noise_ok": {
     "English": "The system could not fully remove all noise rows, but the current data is stable enough to proceed with automatic analysis.",
     "Mandarin": "系统无法完全移除所有噪音行，但当前数据已经足够稳定，可继续自动分析。",
-    "Japanese": "システムはすべてのノイズ行を完全に除去できませんでしたが、現在のデータは自動分析を続行するのに十分安定しています。"
+    "Japanese": "システムはすべてのノイズ行を完全に除去できませんでしたが、現在のデータは自動分析を続行するのに十分安定しています。",
+    "Malay": "Sistem tidak dapat membuang semua baris hingar sepenuhnya, tetapi data semasa cukup stabil untuk meneruskan analisis automatik."
   },
   "cleaning_keep_snapshot_exclude_noise": {
     "English": "The system will keep the current stable snapshot and exclude remaining noise rows during analysis.",
     "Mandarin": "系统将保留当前稳定快照，并在分析时排除剩余噪音行。",
-    "Japanese": "システムは現在の安定スナップショットを保持し、分析時に残りのノイズ行を除外します。"
+    "Japanese": "システムは現在の安定スナップショットを保持し、分析時に残りのノイズ行を除外します。",
+    "Malay": "Sistem akan mengekalkan petikan stabil semasa dan mengecualikan baki baris hingar semasa analisis."
   },
   "cleaning_original_snapshot_both_safe": {
     "English": "Both original data and stable snapshot have been preserved. No data was lost.",
     "Mandarin": "原始数据与稳定快照都已保留，未丢失数据。",
-    "Japanese": "元データと安定スナップショットは両方とも保持されています。データの損失はありません。"
+    "Japanese": "元データと安定スナップショットは両方とも保持されています。データの損失はありません。",
+    "Malay": "Data asal dan petikan stabil telah dikekalkan. Tiada data hilang."
   },
   "cleaning_terminal_failure_summary": {
     "English": "The system could not find a safe cleaning result to commit and has stopped automatic cleaning.",
     "Mandarin": "系统未能找到可安全提交的清洗结果，因此已停止自动清洗。",
-    "Japanese": "システムはコミットできる安全なクリーニング結果を見つけられず、自動クリーニングを停止しました。"
+    "Japanese": "システムはコミットできる安全なクリーニング結果を見つけられず、自動クリーニングを停止しました。",
+    "Malay": "Sistem tidak dapat mencari hasil pembersihan yang selamat untuk disimpan dan telah menghentikan pembersihan automatik."
   },
   "cleaning_terminal_failure_action": {
     "English": "The system has preserved the previous stable snapshot and stopped attempting unsafe cleaning strategies.",
     "Mandarin": "系统已保留上一份稳定快照，并停止继续尝试不安全的清洗策略。",
-    "Japanese": "システムは前回の安定スナップショットを保持し、安全でないクリーニング戦略の試行を停止しました。"
+    "Japanese": "システムは前回の安定スナップショットを保持し、安全でないクリーニング戦略の試行を停止しました。",
+    "Malay": "Sistem mengekalkan petikan stabil sebelumnya dan menghentikan percubaan strategi pembersihan yang tidak selamat."
   },
   "cleaning_terminal_failure_data_safety": {
     "English": "Both original data and stable snapshot have not been lost.",
     "Mandarin": "原始数据和稳定快照都未丢失。",
-    "Japanese": "元データと安定スナップショットは失われていません。"
+    "Japanese": "元データと安定スナップショットは失われていません。",
+    "Malay": "Data asal dan petikan stabil tidak hilang."
   },
   "cleaning_terminal_failure_next": {
     "English": "You can continue using the current stable data, retry AI cleaning, or review technical details.",
     "Mandarin": "你可以继续使用当前稳定数据、重新尝试 AI 清洗，或查看技术细节。",
-    "Japanese": "現在の安定データを使用し続けるか、AIクリーニングを再試行するか、技術的な詳細を確認できます。"
+    "Japanese": "現在の安定データを使用し続けるか、AIクリーニングを再試行するか、技術的な詳細を確認できます。",
+    "Malay": "Anda boleh terus menggunakan data stabil semasa, mencuba pembersihan AI sekali lagi atau menyemak butiran teknikal."
   },
   // ── Cleaning pipeline persistence messages ──
   "cleaning_persist_safe_mode_summary": {
     "English": "The system has switched to safe cleaning mode and will continue automatic analysis based on the current stable result.",
     "Mandarin": "系统已切换到安全清洗模式，并将基于当前稳定结果继续自动分析。",
-    "Japanese": "システムは安全クリーニングモードに切り替え、現在の安定した結果に基づいて自動分析を続行します。"
+    "Japanese": "システムは安全クリーニングモードに切り替え、現在の安定した結果に基づいて自動分析を続行します。",
+    "Malay": "Sistem telah beralih kepada mod pembersihan selamat dan akan meneruskan analisis automatik berdasarkan hasil stabil semasa."
   },
   "cleaning_persist_snapshot_input": {
     "English": "The current stable snapshot will be used as input for subsequent automatic analysis.",
     "Mandarin": "当前稳定快照会作为后续自动分析的输入。",
-    "Japanese": "現在の安定スナップショットが後続の自動分析の入力として使用されます。"
+    "Japanese": "現在の安定スナップショットが後続の自動分析の入力として使用されます。",
+    "Malay": "Petikan stabil semasa akan digunakan sebagai input untuk analisis automatik seterusnya."
   },
   "cleaning_persist_labeled_safe": {
     "English": "Subsequent analysis results will be labeled as based on safe cleaning mode.",
     "Mandarin": "后续分析结果会标注为基于安全清洗模式。",
-    "Japanese": "後続の分析結果は安全クリーニングモードに基づくものとしてラベル付けされます。"
+    "Japanese": "後続の分析結果は安全クリーニングモードに基づくものとしてラベル付けされます。",
+    "Malay": "Hasil analisis seterusnya akan dilabel sebagai berasaskan mod pembersihan selamat."
   },
   "cleaning_persist_safe_completed_chat": {
     "English": "AI cleaning completed in safe mode: the system preserved the current stable snapshot with {rowCount} rows and will continue automatic analysis.",
     "Mandarin": "AI 清洗已在安全模式下完成：系统保留了当前稳定快照，共 {rowCount} 行，并将继续自动分析。",
-    "Japanese": "AIクリーニングがセーフモードで完了しました：システムは現在の安定スナップショット（{rowCount} 行）を保持し、自動分析を続行します。"
+    "Japanese": "AIクリーニングがセーフモードで完了しました：システムは現在の安定スナップショット（{rowCount} 行）を保持し、自動分析を続行します。",
+    "Malay": "Pembersihan AI selesai dalam mod selamat: sistem mengekalkan petikan stabil semasa yang mengandungi {rowCount} baris dan akan meneruskan analisis automatik."
   },
   // ── Cleaning strategy recovery messages ──
   "cleaning_hierarchy_mismatch_summary": {
     "English": "The system attempted to preserve structure as a hierarchical report with subtotals, but the current preparation data no longer meets hierarchy annotation conditions.",
     "Mandarin": "系统尝试按带小计层级的报表来保留结构，但当前准备数据已经不满足层级注释条件。",
-    "Japanese": "システムは小計を含む階層レポートとして構造を保持しようとしましたが、現在のデータは階層アノテーション条件を満たしていません。"
+    "Japanese": "システムは小計を含む階層レポートとして構造を保持しようとしましたが、現在のデータは階層アノテーション条件を満たしていません。",
+    "Malay": "Sistem cuba mengekalkan struktur sebagai laporan berhierarki dengan jumlah kecil, tetapi data penyediaan semasa tidak lagi memenuhi syarat anotasi hierarki."
   },
   "cleaning_hierarchy_mismatch_action": {
     "English": "The system has skipped this hierarchy strategy and will proceed with a safer cleaning candidate.",
     "Mandarin": "系统已跳过该层级策略，并改用更安全的清洗候选继续处理。",
-    "Japanese": "システムはこの階層戦略をスキップし、より安全なクリーニング候補で処理を続行します。"
+    "Japanese": "システムはこの階層戦略をスキップし、より安全なクリーニング候補で処理を続行します。",
+    "Malay": "Sistem melangkau strategi hierarki ini dan akan meneruskan dengan calon pembersihan yang lebih selamat."
   },
   "cleaning_hierarchy_mismatch_safety": {
     "English": "The current stable snapshot has been preserved. No data was lost.",
     "Mandarin": "当前稳定快照已保留，未丢失数据。",
-    "Japanese": "現在の安定スナップショットは保持されています。データの損失はありません。"
+    "Japanese": "現在の安定スナップショットは保持されています。データの損失はありません。",
+    "Malay": "Petikan stabil semasa telah dikekalkan. Tiada data hilang."
   },
   "cleaning_hierarchy_mismatch_next": {
     "English": "If safe cleaning succeeds, the system will proceed to automatic analysis; otherwise it will display a comprehensible failure explanation.",
     "Mandarin": "如果安全清洗成功，系统会继续自动分析；否则会展示可理解的失败说明。",
-    "Japanese": "安全なクリーニングが成功した場合、システムは自動分析を続行します。そうでない場合は理解可能な失敗の説明を表示します。"
+    "Japanese": "安全なクリーニングが成功した場合、システムは自動分析を続行します。そうでない場合は理解可能な失敗の説明を表示します。",
+    "Malay": "Jika pembersihan selamat berjaya, sistem akan meneruskan analisis automatik; jika tidak, penjelasan kegagalan yang mudah difahami akan dipaparkan."
   },
   // ── Data restore messages (dataSlice.ts) ──
   "data_restore_unavailable": {
     "English": "Cannot restore original data: original data is unavailable.",
     "Mandarin": "无法恢复原始数据：原始数据不可用。",
-    "Japanese": "元データを復元できません：元データが利用できません。"
+    "Japanese": "元データを復元できません：元データが利用できません。",
+    "Malay": "Data asal tidak dapat dipulihkan: data asal tidak tersedia."
   },
   "data_restore_explanation": {
     "English": "Original data has been restored. cleaned.csv has been reset to a copy of the originally imported data.",
     "Mandarin": "已恢复原始数据。cleaned.csv 已重置为原始导入数据的副本。",
-    "Japanese": "元データが復元されました。cleaned.csv は元のインポートデータのコピーにリセットされました。"
+    "Japanese": "元データが復元されました。cleaned.csv は元のインポートデータのコピーにリセットされました。",
+    "Malay": "Data asal telah dipulihkan. cleaned.csv telah ditetapkan semula sebagai salinan data yang mula-mula diimport."
   },
   "data_restore_success": {
     "English": "Original data has been restored.",
     "Mandarin": "已恢复原始数据。",
-    "Japanese": "元データが復元されました。"
+    "Japanese": "元データが復元されました。",
+    "Malay": "Data asal telah dipulihkan."
   },
   // ── Column annotation popover ──
   "column_annotation_role_unspecified": {
     "English": "-- Unspecified --",
     "Mandarin": "-- 未指定 --",
-    "Japanese": "-- 未指定 --"
+    "Japanese": "-- 未指定 --",
+    "Malay": "-- Tidak dinyatakan --"
   },
   "column_annotation_role_dimension": {
     "English": "Dimension",
     "Mandarin": "维度 (Dimension)",
-    "Japanese": "ディメンション (Dimension)"
+    "Japanese": "ディメンション (Dimension)",
+    "Malay": "Dimensi"
   },
   "column_annotation_role_metric": {
     "English": "Metric",
     "Mandarin": "指标 (Metric)",
-    "Japanese": "メトリック (Metric)"
+    "Japanese": "メトリック (Metric)",
+    "Malay": "Metrik"
   },
   "column_annotation_role_identifier": {
     "English": "Identifier",
     "Mandarin": "标识符 (Identifier)",
-    "Japanese": "識別子 (Identifier)"
+    "Japanese": "識別子 (Identifier)",
+    "Malay": "Pengecam"
   },
   "column_annotation_role_helper": {
     "English": "Helper column",
     "Mandarin": "辅助列 (Helper)",
-    "Japanese": "ヘルパー列 (Helper)"
+    "Japanese": "ヘルパー列 (Helper)",
+    "Malay": "Lajur sokongan"
   },
   "column_annotation_label_business_tag": {
     "English": "Business label",
     "Mandarin": "业务标签",
-    "Japanese": "ビジネスラベル"
+    "Japanese": "ビジネスラベル",
+    "Malay": "Label perniagaan"
   },
   "column_annotation_label_description": {
     "English": "Description",
     "Mandarin": "描述",
-    "Japanese": "説明"
+    "Japanese": "説明",
+    "Malay": "Penerangan"
   },
   "column_annotation_description_placeholder": {
     "English": "e.g., unique customer code",
     "Mandarin": "例如：客户唯一编码",
-    "Japanese": "例：顧客固有コード"
+    "Japanese": "例：顧客固有コード",
+    "Malay": "cth., kod pelanggan unik"
   },
   "column_annotation_label_business_role": {
     "English": "Business role",
     "Mandarin": "业务角色",
-    "Japanese": "ビジネスロール"
+    "Japanese": "ビジネスロール",
+    "Malay": "Peranan perniagaan"
   },
   "column_annotation_remove": {
     "English": "Remove annotation",
     "Mandarin": "删除标注",
-    "Japanese": "アノテーションを削除"
+    "Japanese": "アノテーションを削除",
+    "Malay": "Buang anotasi"
   },
   "column_annotation_cancel": {
     "English": "Cancel",
     "Mandarin": "取消",
-    "Japanese": "キャンセル"
+    "Japanese": "キャンセル",
+    "Malay": "Batal"
   },
   "column_annotation_save": {
     "English": "Save",
     "Mandarin": "保存",
-    "Japanese": "保存"
+    "Japanese": "保存",
+    "Malay": "Simpan"
   },
   // ── Data preparation workflow ──
   "data_preparation_revert_title": {
     "English": "Revert to original data before cleaning",
     "Mandarin": "恢复到清洗前的原始数据",
-    "Japanese": "クリーニング前の元データに戻す"
+    "Japanese": "クリーニング前の元データに戻す",
+    "Malay": "Kembali kepada data asal sebelum pembersihan"
   },
   "data_preparation_revert_button": {
     "English": "Revert to original",
     "Mandarin": "恢复原始数据",
-    "Japanese": "元データに戻す"
+    "Japanese": "元データに戻す",
+    "Malay": "Kembali kepada data asal"
   },
   // ── Export messages ──
   "export_format_failed": {
     "English": "Export {format} failed",
     "Mandarin": "导出{format}失败",
-    "Japanese": "{format}のエクスポートに失敗しました"
+    "Japanese": "{format}のエクスポートに失敗しました",
+    "Malay": "Eksport {format} gagal"
   },
   // ── Table sort ──
   "table_sort_column": {
     "English": "Sort: {column}",
     "Mandarin": "排序: {column}",
-    "Japanese": "ソート: {column}"
+    "Japanese": "ソート: {column}",
+    "Malay": "Isih: {column}"
   },
   // ── Goal proposer ──
   "goal_history_preference": {
     "English": "Based on historical preferences",
     "Mandarin": "📊 基于历史偏好",
-    "Japanese": "📊 履歴の好みに基づく"
+    "Japanese": "📊 履歴の好みに基づく",
+    "Malay": "Berdasarkan pilihan terdahulu"
   },
   // ── History panel: session switch confirmation ──
   "history_switch_session": { "English": "Switch Session", "Mandarin": "切换会话", "Malay": "Tukar Sesi", "Japanese": "セッション切替" },
@@ -89788,7 +90333,7 @@ const executeInitialAnalysisStageTool = async (params) => {
     params.args
   );
 };
-const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-BSJBenX0.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
+const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-CnoDWOhp.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values$1 = {
   "google-generative-ai": /* @__PURE__ */ JSON.parse('{"deep-research-max-preview-04-2026":{"id":"deep-research-max-preview-04-2026","name":"Deep Research Max Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"deep-research-preview-04-2026":{"id":"deep-research-preview-04-2026","name":"Deep Research Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-computer-use-preview-10-2025":{"id":"gemini-2.5-computer-use-preview-10-2025","name":"Gemini 2.5 Computer Use Preview 10-2025","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash":{"id":"gemini-2.5-flash","name":"Gemini 2.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash-lite":{"id":"gemini-2.5-flash-lite","name":"Gemini 2.5 Flash-Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.01,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-pro":{"id":"gemini-2.5-pro","name":"Gemini 2.5 Pro","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3-flash-preview":{"id":"gemini-3-flash-preview","name":"Gemini 3 Flash Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.5,"output":3,"cacheRead":0.05,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite":{"id":"gemini-3.1-flash-lite","name":"Gemini 3.1 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-image":{"id":"gemini-3.1-flash-lite-image","name":"Nano Banana 2 Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":null,"medium":null,"high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":65536,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-preview":{"id":"gemini-3.1-flash-lite-preview","name":"Gemini 3.1 Flash Lite Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-live-preview":{"id":"gemini-3.1-flash-live-preview","name":"Gemini 3.1 Flash Live Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview":{"id":"gemini-3.1-pro-preview","name":"Gemini 3.1 Pro Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview-customtools":{"id":"gemini-3.1-pro-preview-customtools","name":"Gemini 3.1 Pro Preview Custom Tools","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash":{"id":"gemini-3.5-flash","name":"Gemini 3.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash-lite":{"id":"gemini-3.5-flash-lite","name":"Gemini 3.5 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.6-flash":{"id":"gemini-3.6-flash","name":"Gemini 3.6 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.7-flash":{"id":"gemini-3.7-flash","name":"Gemini 3.7 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.8-flash":{"id":"gemini-3.8-flash","name":"Gemini 3.8 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-latest":{"id":"gemini-flash-latest","name":"Gemini Flash Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-lite-latest":{"id":"gemini-flash-lite-latest","name":"Gemini Flash-Lite Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-26b-a4b-it":{"id":"gemma-4-26b-a4b-it","name":"Gemma 4 26B A4B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-31b-it":{"id":"gemma-4-31b-it","name":"Gemma 4 31B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -89806,7 +90351,7 @@ function googleProvider() {
     api: googleGenerativeAIApi()
   });
 }
-const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-CMko2kpd.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
+const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-CLo0WVDz.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values = {
   "openai-responses": /* @__PURE__ */ JSON.parse('{"gpt-4":{"id":"gpt-4","name":"GPT-4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text"],"cost":{"input":30,"output":60,"cacheRead":0,"cacheWrite":0},"contextWindow":8192,"maxTokens":8192,"compat":{"supportsStrictMode":true}},"gpt-4-turbo":{"id":"gpt-4-turbo","name":"GPT-4 Turbo","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":10,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1":{"id":"gpt-4.1","name":"GPT-4.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-mini":{"id":"gpt-4.1-mini","name":"GPT-4.1 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.4,"output":1.6,"cacheRead":0.1,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-nano":{"id":"gpt-4.1-nano","name":"GPT-4.1 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o":{"id":"gpt-4o","name":"GPT-4o","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-05-13":{"id":"gpt-4o-2024-05-13","name":"GPT-4o (2024-05-13)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":5,"output":15,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-08-06":{"id":"gpt-4o-2024-08-06","name":"GPT-4o (2024-08-06)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-11-20":{"id":"gpt-4o-2024-11-20","name":"GPT-4o (2024-11-20)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.15,"output":0.6,"cacheRead":0.075,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5":{"id":"gpt-5","name":"GPT-5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-chat-latest":{"id":"gpt-5-chat-latest","name":"GPT-5 Chat Latest","api":"openai-responses","baseUrl":"https://api.openai.com/v1","provider":"openai","reasoning":false,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-mini":{"id":"gpt-5-mini","name":"GPT-5 Mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.25,"output":2,"cacheRead":0.025,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-nano":{"id":"gpt-5-nano","name":"GPT-5 Nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.05,"output":0.4,"cacheRead":0.005,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-pro":{"id":"gpt-5-pro","name":"GPT-5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":120,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":null,"high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.1":{"id":"gpt-5.1","name":"GPT-5.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2":{"id":"gpt-5.2","name":"GPT-5.2","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-chat-latest":{"id":"gpt-5.2-chat-latest","name":"GPT-5.2 Chat","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":null,"xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-pro":{"id":"gpt-5.2-pro","name":"GPT-5.2 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":21,"output":168,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-chat-latest":{"id":"gpt-5.3-chat-latest","name":"GPT-5.3 Chat (latest)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"xhigh":"xhigh"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex":{"id":"gpt-5.3-codex","name":"GPT-5.3 Codex","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex-spark":{"id":"gpt-5.3-codex-spark","name":"GPT-5.3 Codex Spark","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4":{"id":"gpt-5.4","name":"GPT-5.4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2.5,"output":15,"cacheRead":0.25,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":5,"output":22.5,"cacheRead":0.5,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-mini":{"id":"gpt-5.4-mini","name":"GPT-5.4 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0.075,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-nano":{"id":"gpt-5.4-nano","name":"GPT-5.4 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.25,"cacheRead":0.02,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-pro":{"id":"gpt-5.4-pro","name":"GPT-5.4 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5":{"id":"gpt-5.5","name":"GPT-5.5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":5,"output":30,"cacheRead":0.5,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":10,"output":45,"cacheRead":1,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5-pro":{"id":"gpt-5.5-pro","name":"GPT-5.5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-luna":{"id":"gpt-5.6-luna","name":"GPT-5.6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.2,"cacheRead":0.02,"cacheWrite":0.25,"tiers":[{"inputTokensAbove":272000,"input":0.4,"output":1.8,"cacheRead":0.04,"cacheWrite":0.5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-sol":{"id":"gpt-5.6-sol","name":"GPT-5.6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":20,"cacheRead":0.4,"cacheWrite":5,"tiers":[{"inputTokensAbove":272000,"input":8,"output":30,"cacheRead":0.8,"cacheWrite":10}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-terra":{"id":"gpt-5.6-terra","name":"GPT-5.6 Terra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":18,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-astra":{"id":"gpt-6-astra","name":"GPT-6 Astra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":10,"output":50,"cacheRead":1,"cacheWrite":12.5,"tiers":[{"inputTokensAbove":272000,"input":20,"output":75,"cacheRead":2,"cacheWrite":25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-luna":{"id":"gpt-6-luna","name":"GPT-6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"inputTokensAbove":272000,"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-sol":{"id":"gpt-6-sol","name":"GPT-6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":10,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":15,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-realtime-2.1":{"id":"gpt-realtime-2.1","name":"GPT-Realtime-2.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":24,"cacheRead":0.4,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1":{"id":"o1","name":"o1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":60,"cacheRead":7.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1-pro":{"id":"o1-pro","name":"o1-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":150,"output":600,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3":{"id":"o3","name":"o3","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3-mini":{"id":"o3-mini","name":"o3-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.55,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true}},"o3-pro":{"id":"o3-pro","name":"o3-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":20,"output":80,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o4-mini":{"id":"o4-mini","name":"o4-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.275,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
