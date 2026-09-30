@@ -2,10 +2,10 @@
  * Intent Classification Harness — structured types.
  *
  * Follows the harness engineering pattern:
- *   investigate (classify message) → structured findings → routing directive.
+ *   investigate (classify message) → structured findings → Pi request context.
  *
- * Replaces hardcoded regex routing with AI-assisted intent classification
- * that produces a deterministic routing directive for the chat orchestrator.
+ * AI-assisted intent classification describes the request for the chat
+ * orchestrator, which passes every eligible follow-up to Pi.
  */
 
 // --- Intent categories ---
@@ -14,7 +14,7 @@
  * The set of recognised chat intent categories.
  *
  * - `batch_analysis`:  Open-ended exploration ("analyse this data", "show insights").
- *                      Routes to runDataAnalysisSession().
+ *                      Describes an open-ended Pi follow-up request.
  * - `precise_card`:    Specific card request with explicit columns/aggregation/grouping.
  *                      Routes to the Pi follow-up runtime so the AI executes the user's exact spec.
  * - `data_query`:      Row-level lookup / filter ("show rows where X = Y").
@@ -210,13 +210,9 @@ export interface GroundingResult {
     groundingSummary: string;
 }
 
-// --- Routing directive ---
-
-export type ChatRoutingTarget = 'data_analysis_session' | 'agent_turn';
+// --- Intent directive ---
 
 export interface ChatRoutingDirective {
-    /** Where the message should be routed. */
-    target: ChatRoutingTarget;
     /** The findings that produced this directive. */
     findings: IntentClassificationFindings;
     /** Rich query understanding artifact (when available). */

@@ -5,14 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
     isProviderConfiguredMock,
     runPiFollowUpTurnMock,
-    runDataAnalysisSessionMock,
     classifyChatIntentMock,
     tryHandlePendingMutationConfirmationMock,
     classifyRowDeleteIntentMock,
 } = vi.hoisted(() => ({
     isProviderConfiguredMock: vi.fn(),
     runPiFollowUpTurnMock: vi.fn(),
-    runDataAnalysisSessionMock: vi.fn(),
     classifyChatIntentMock: vi.fn(),
     tryHandlePendingMutationConfirmationMock: vi.fn(),
     classifyRowDeleteIntentMock: vi.fn(),
@@ -26,10 +24,6 @@ vi.mock('../services/ai/providerConfig', () => ({
 
 vi.mock('../services/agent/runtime/pi/piFollowUpRuntimeService', () => ({
     runPiFollowUpTurn: runPiFollowUpTurnMock,
-}));
-
-vi.mock('../services/agent/runtime/dataAnalysisSessionRunner', () => ({
-    runDataAnalysisSession: runDataAnalysisSessionMock,
 }));
 
 vi.mock('../services/agent/runtime/intentClassifier', () => ({
@@ -52,8 +46,7 @@ describe('chatOrchestrator explicit follow-up handling', () => {
         tryHandlePendingMutationConfirmationMock.mockResolvedValue(false);
         classifyRowDeleteIntentMock.mockReturnValue({ kind: 'unsupported' });
         runPiFollowUpTurnMock.mockResolvedValue(undefined);
-        runDataAnalysisSessionMock.mockResolvedValue({ acceptedCardCount: 1, session: { acceptedOutputs: [] } });
-        classifyChatIntentMock.mockResolvedValue({ target: 'agent_turn', findings: { intent: 'conversation', classifiedBy: 'deterministic', confidence: 'high' } });
+        classifyChatIntentMock.mockResolvedValue({ findings: { intent: 'conversation', classifiedBy: 'deterministic', confidence: 'high' } });
     });
 
     it('treats a short follow-up as a new raw message even after a blocked run', async () => {
@@ -122,9 +115,9 @@ describe('chatOrchestrator explicit follow-up handling', () => {
         );
     });
 
-    it('routes explicit dataset-analysis requests into the shared analysis session engine', async () => {
+    it('routes open-ended dataset-analysis requests through Pi', async () => {
         const { orchestrateChatResponse } = await import('../services/agent/orchestration/chatOrchestrator');
-        classifyChatIntentMock.mockResolvedValue({ target: 'data_analysis_session', findings: { intent: 'batch_analysis', classifiedBy: 'deterministic', confidence: 'high' } });
+        classifyChatIntentMock.mockResolvedValue({ findings: { intent: 'batch_analysis', classifiedBy: 'ai', confidence: 'high' } });
 
         const state = {
             settings: { provider: 'openai' },
@@ -148,11 +141,12 @@ describe('chatOrchestrator explicit follow-up handling', () => {
 
         await orchestrateChatResponse('analyze this dataset and show key insights', store as never);
 
-        expect(runDataAnalysisSessionMock).toHaveBeenCalledWith(expect.objectContaining({
-            origin: 'chat_follow_up',
-            goal: 'analyze this dataset and show key insights',
-        }));
-        expect(runPiFollowUpTurnMock).not.toHaveBeenCalled();
-        expect(state.chatHistory.at(-1)?.text).toContain('1 analysis card');
+        expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                message: 'analyze this dataset and show key insights',
+                intentFindings: expect.objectContaining({ intent: 'batch_analysis' }),
+            }),
+            store,
+        );
     });
 });

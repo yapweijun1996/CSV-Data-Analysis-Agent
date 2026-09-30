@@ -8,7 +8,6 @@ import { getTranslation } from '../../../utils/localization';
 import { formatUserError } from '../../../utils/userErrorMessage';
 import { emitSilentFailure } from '../monitoring/silentFailureTracker';
 import { resolveEffectivePendingClarification } from '../runtime/runtimeClarification';
-import { runDataAnalysisSession } from '../runtime/dataAnalysisSessionRunner';
 import { classifyChatIntent } from '../runtime/intentClassifier';
 import { resolveGrounding } from '../runtime/runtimeGrounding';
 import { getKnownColumnAliases, resolveColumnReference } from '../../data/columnRegistry';
@@ -246,57 +245,7 @@ export const orchestrateChatResponse = async (message: string, store: StoreApi) 
         Boolean(getState().csvData),
         columnSummary,
     );
-    console.log(`${LOG_PREFIX} Routing: ${routingDirective.target} (intent=${routingDirective.findings.intent}, by=${routingDirective.findings.classifiedBy}, confidence=${routingDirective.findings.confidence}${routingDirective.artifact ? ', artifact=' + routingDirective.artifact.taskSignal : ''})`);
-
-    if (routingDirective.target === 'data_analysis_session') {
-        setState({ isBusy: true, pendingClarification: null });
-        try {
-            const result = await runDataAnalysisSession({
-                origin: 'chat_follow_up',
-                goal: message,
-                store,
-                dataForAnalysis: getState().csvData,
-            });
-            const language = getState().settings.language;
-            const goalLabel = message.length > 120 ? message.slice(0, 117) + '…' : message;
-            const summaryText = result.acceptedCardCount > 0
-                ? getTranslation('chat_analysis_session_success', language, { count: result.acceptedCardCount, goal: goalLabel })
-                : getTranslation('chat_analysis_session_no_cards', language, { goal: goalLabel });
-            // Link the newest accepted card so the chat bubble shows a
-            // clickable "Show Card" button for quick navigation.
-            const newestCardId = result.session.acceptedOutputs.length > 0
-                ? result.session.acceptedOutputs[result.session.acceptedOutputs.length - 1].cardId
-                : undefined;
-            setState(prev => ({
-                chatHistory: [
-                    ...prev.chatHistory,
-                    createChatMessage({
-                        sender: 'ai',
-                        text: summaryText,
-                        timestamp: new Date(),
-                        type: 'ai_message',
-                        cardId: newestCardId,
-                    }),
-                ],
-            }));
-        } catch (error) {
-            setState(prev => ({
-                chatHistory: [
-                    ...prev.chatHistory,
-                    createChatMessage({
-                        sender: 'ai',
-                        text: getTranslation('chat_analysis_session_error', getState().settings.language, { error: error instanceof Error ? error.message : String(error) }),
-                        timestamp: new Date(),
-                        type: 'ai_message',
-                        isError: true,
-                    }),
-                ],
-            }));
-        } finally {
-            setState({ isBusy: false, aiTaskStatus: null });
-        }
-        return;
-    }
+    console.log(`${LOG_PREFIX} Pi follow-up (intent=${routingDirective.findings.intent}, by=${routingDirective.findings.classifiedBy}, confidence=${routingDirective.findings.confidence}${routingDirective.artifact ? ', artifact=' + routingDirective.artifact.taskSignal : ''})`);
 
     // AGENT-102: Resolve follow-up references against runtime state
     const groundingResult = routingDirective.artifact?.needsGrounding

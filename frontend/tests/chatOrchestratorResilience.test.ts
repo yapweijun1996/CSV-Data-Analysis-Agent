@@ -127,7 +127,7 @@ describe('chatOrchestrator resilience — Pi follow-up guard (P0)', () => {
         vi.spyOn(console, 'error').mockImplementation(() => undefined);
         vi.spyOn(console, 'log').mockImplementation(() => undefined);
         isProviderConfiguredMock.mockReturnValue(true);
-        classifyChatIntentMock.mockResolvedValue({ target: 'agent_turn', findings: { intent: 'conversation', classifiedBy: 'deterministic', confidence: 'high' } });
+        classifyChatIntentMock.mockResolvedValue({ findings: { intent: 'conversation', classifiedBy: 'deterministic', confidence: 'high' } });
         tryHandlePendingMutationConfirmationMock.mockResolvedValue(false);
         classifyRowDeleteIntentMock.mockReturnValue({ kind: 'unsupported' });
     });
