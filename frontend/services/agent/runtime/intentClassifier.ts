@@ -2,18 +2,18 @@
  * Intent Classification Harness — AI-first.
  *
  * Every user message is classified by the AI model (simpleModel).
- * No hardcoded regex routing decisions — the AI is the authority.
+ * No hardcoded regex intent decisions — the AI describes the request.
  *
  * Harness pattern:
  *   Phase 1 — AI classification (simpleModel, lightweight call)
  *   Phase 2 — Structured signal extraction (enrich findings for downstream)
- *   Phase 3 — Produce routing directive + query understanding artifact
+ *   Phase 3 — Produce intent findings + query understanding artifact
  *
  * AGENT-101: The rich classifier produces a QueryUnderstandingArtifact
  * that the contract builder consumes directly, eliminating regex re-derivation.
  *
  * Fallback: if AI is unavailable (no API key, timeout, error),
- * route conservatively to agent_turn (let the runtime loop decide).
+ * leave the findings uncertain for the Pi runtime.
  */
 
 import { generateText, streamText } from 'ai';
@@ -441,29 +441,26 @@ const buildUncertainFindings = (
     };
 };
 
-// ─── Phase 3: Produce routing directive ────────────────────────────────
+// ─── Phase 3: Produce intent directive ─────────────────────────────────
 
 const buildDirective = (
     findings: IntentClassificationFindings,
     artifact?: QueryUnderstandingArtifact,
 ): ChatRoutingDirective => {
-    const target = findings.intent === 'batch_analysis'
-        ? 'data_analysis_session' as const
-        : 'agent_turn' as const;
-    return { target, findings, artifact };
+    return { findings, artifact };
 };
 
 // ─── Public API ────────────────────────────────────────────────────────
 
 /**
- * Classify a chat message and produce a routing directive with
+ * Classify a chat message and produce Pi request context with
  * a rich QueryUnderstandingArtifact (AGENT-101).
  *
  * AI-first: every message is classified by the simpleModel.
  * The artifact carries taskSignal + expectedOutput so the contract builder
  * can consume them directly without regex re-derivation.
  *
- * If AI is unavailable, falls back conservatively to agent_turn with no artifact.
+ * If AI is unavailable, returns uncertain findings with no artifact.
  */
 export const classifyChatIntent = async (
     message: string,
@@ -472,7 +469,7 @@ export const classifyChatIntent = async (
     columnSummary?: string,
     abortSignal?: AbortSignal,
 ): Promise<ChatRoutingDirective> => {
-    // No dataset → always agent_turn (nothing to analyse)
+    // No dataset → conversation findings (nothing to analyse)
     if (!hasDataset) {
         return buildDirective({
             intent: 'conversation',
@@ -481,7 +478,7 @@ export const classifyChatIntent = async (
             hasAggregationFunction: false,
             hasGroupingDirective: false,
             hasFilterCondition: false,
-            reason: 'No dataset loaded — cannot route to analysis',
+            reason: 'No dataset loaded — analysis is unavailable',
             classifiedBy: 'deterministic',
         });
     }
@@ -494,8 +491,8 @@ export const classifyChatIntent = async (
     }
 
     // Fallback: AI unavailable — return uncertain findings (BUG-RUNTIME-201)
-    // so downstream can use dataset/query context to resolve routing.
-    // Never route to batch_analysis without AI confirmation.
+    // so downstream can use dataset/query context to interpret the request.
+    // Do not infer batch_analysis without AI confirmation.
     const fallback = buildUncertainFindings(message, 'none', 'ai_unavailable');
     console.log(`${LOG_PREFIX} Fallback: ${fallback.reason}`);
     return buildDirective(fallback);

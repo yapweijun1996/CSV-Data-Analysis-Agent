@@ -3684,25 +3684,6 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
     'tabulator_empty_state': { 'English': 'No data matches your search.', 'Mandarin': '没有匹配搜索的数据。', 'Japanese': '検索に一致するデータがありません。', 'Malay': 'Tiada data yang sepadan dengan carian anda.' },
     'tabulator_blank_value': { 'English': '(blank)', 'Mandarin': '（空白）', 'Malay': '(kosong)', 'Spanish': '(vacío)', 'Japanese': '（空白）', 'French': '(vide)' },
 
-    // --- Chat orchestrator: data analysis session messages ---
-    'chat_analysis_session_success': {
-        'English': 'Done — generated {count} analysis card(s) for: "{goal}".',
-        'Mandarin': '已完成 —— 针对「{goal}」生成了 {count} 张分析卡。',
-        'Japanese': '完了 — 「{goal}」に対して {count} 枚の分析カードを生成しました。',
-        'Malay': 'Selesai — {count} kad analisis dijana untuk: “{goal}”.',
-    },
-    'chat_analysis_session_no_cards': {
-        'English': 'Analyzed "{goal}", but no evidence was strong enough to generate analysis cards. Try rephrasing or choosing different columns.',
-        'Mandarin': '已分析「{goal}」，但当前没有足够强的证据生成分析卡。可以尝试换个说法或选择不同的列。',
-        'Japanese': '「{goal}」を分析しましたが、分析カードを生成するのに十分な証拠がありませんでした。別の表現や列をお試しください。',
-        'Malay': '“{goal}” telah dianalisis, tetapi tiada bukti yang cukup kukuh untuk menjana kad analisis. Cuba ungkapkan semula soalan atau pilih lajur lain.',
-    },
-    'chat_analysis_session_error': {
-        'English': 'Unable to complete this data analysis session: {error}',
-        'Mandarin': '无法完成这轮数据分析：{error}',
-        'Japanese': 'このデータ分析セッションを完了できませんでした：{error}',
-        'Malay': 'Sesi analisis data ini tidak dapat diselesaikan: {error}',
-    },
     'proactive_insight_title': {
         'English': 'AI Insight (data-inferred)',
         'Mandarin': 'AI 洞察（基于数据推断）',
