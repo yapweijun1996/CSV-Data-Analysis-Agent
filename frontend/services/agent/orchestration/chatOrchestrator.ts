@@ -174,7 +174,7 @@ export const orchestrateChatResponse = async (message: string, store: StoreApi) 
     const health = await validateProviderHealth(settings);
     if (health.status !== 'healthy') {
         const healthMessages: Record<string, string> = {
-            not_configured: 'Cloud AI is disabled. API Key not provided.',
+            not_configured: getTranslation('provider_health_not_configured', settings.language),
             invalid_key: getTranslation('provider_health_invalid_key', settings.language),
             unreachable: getTranslation('provider_health_unreachable', settings.language),
         };

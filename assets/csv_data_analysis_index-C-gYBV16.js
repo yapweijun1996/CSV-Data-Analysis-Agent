@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_ChatPanel-ChqLfOJm.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_vendor-state-CMf1uPe1.js","./csv_data_analysis_MarkdownRenderer-B0cl_IQW.js","./csv_data_analysis_vendor-ui-BoCHqsEI.js","./csv_data_analysis_IconInsights-C-7nPICp.js","./csv_data_analysis_IconSettings-FS0PVK9T.js","./csv_data_analysis_IconMemory-Cs1fVUAV.js","./csv_data_analysis_IconAi-DV4Egu6s.js","./csv_data_analysis_AnalysisPanel-rgfW9D_y.js","./csv_data_analysis_exportUtils-DfKSpD2m.js","./csv_data_analysis_IconClose-DoCpdGZg.js","./csv_data_analysis_TabulatorTable-D78MwQ0x.js","./csv_data_analysis_CleaningRunBanner-BrgUdYgE.js","./csv_data_analysis_AiTaskStatusBubble-R4JAWDOr.js","./csv_data_analysis_IconSearch-j9OYkQx7.js","./csv_data_analysis_SpreadsheetPanel-DJkxGYPt.js","./csv_data_analysis_SettingsModal-Dh21sGqy.js","./csv_data_analysis_HistoryPanel-Bcaer_0n.js","./csv_data_analysis_MemoryPanel-Be317Oz9.js","./csv_data_analysis_AgentMonitorModal-C-zv8d-c.js","./csv_data_analysis_AgentActivityView-DETkyE7b.js","./csv_data_analysis_DatabaseModal-DyQn_4lU.js","./csv_data_analysis_WorkspaceModal-kFD7UAtw.js","./csv_data_analysis_DataPreparationWorkflowModal-BSgidO3a.js","./csv_data_analysis_copyText-Di0nQNpb.js","./csv_data_analysis_DebugLogsModal-D3ENPpjA.js","./csv_data_analysis_ReportBoundaryConfirmModal-Bj2EMU-m.js","./csv_data_analysis_ApiKeyRequiredModal-C7GXj3Zk.js","./csv_data_analysis_CloudAiConsentModal-C9oMwS59.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_ChatPanel-D8rmyy1r.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_vendor-state-CMf1uPe1.js","./csv_data_analysis_MarkdownRenderer-Cji0Va5e.js","./csv_data_analysis_vendor-ui-BoCHqsEI.js","./csv_data_analysis_IconInsights-C-7nPICp.js","./csv_data_analysis_IconSettings-FS0PVK9T.js","./csv_data_analysis_IconMemory-Cs1fVUAV.js","./csv_data_analysis_IconAi-DV4Egu6s.js","./csv_data_analysis_AnalysisPanel-_yg6-YOD.js","./csv_data_analysis_exportUtils-DfKSpD2m.js","./csv_data_analysis_IconClose-DoCpdGZg.js","./csv_data_analysis_TabulatorTable-iIg0MjHY.js","./csv_data_analysis_CleaningRunBanner-XZDUHWPo.js","./csv_data_analysis_AiTaskStatusBubble-NLclSJT7.js","./csv_data_analysis_IconSearch-j9OYkQx7.js","./csv_data_analysis_SpreadsheetPanel-CnJGZIrf.js","./csv_data_analysis_SettingsModal-Dc-DyAqZ.js","./csv_data_analysis_HistoryPanel-CewfT0-6.js","./csv_data_analysis_MemoryPanel-CR2z-m50.js","./csv_data_analysis_AgentMonitorModal-BN3NVv32.js","./csv_data_analysis_AgentActivityView-X386L7DN.js","./csv_data_analysis_DatabaseModal-ywoBJHM9.js","./csv_data_analysis_WorkspaceModal-bUWRS7mk.js","./csv_data_analysis_DataPreparationWorkflowModal-C4n8o_H6.js","./csv_data_analysis_copyText-Di0nQNpb.js","./csv_data_analysis_DebugLogsModal-Bu9vyowM.js","./csv_data_analysis_ReportBoundaryConfirmModal-CCZ2ClO_.js","./csv_data_analysis_ApiKeyRequiredModal-M85bf-60.js","./csv_data_analysis_CloudAiConsentModal-BuvDT2zt.js"])))=>i.map(i=>d[i]);
 import { r as reactDomExports, j as jsxRuntimeExports, a as reactExports, W as We, R as ReactDOM } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { b as buildCloudAiConsentKey, s as shouldAllowAgentThinkingSurface, a as shouldAllowLongTermMemorySurface, c as shouldAllowLogsSurface, d as shouldAllowWorkflowSurface, e as shouldAllowWorkspaceSurface, f as shouldAllowDatabaseSurface, g as shouldAllowSettingsSurface, h as grantCloudAiConsent, i as getDefaultSettings, _ as __vitePreload, n as normalizeRuntimeAccessControlSettings, j as normalizeAppLanguage, k as saveSettings, l as createId, m as disposeDuckDbQueryEngine, o as getReport, C as CURRENT_SESSION_KEY, v as vectorStore, p as deleteReport, q as createIdleDuckDbSessionStatus, r as saveReport, t as deleteOriginalData, u as parseReportArtifactManifest, w as loadReportArtifactHtml, x as printReportArtifact, y as openReportArtifact, z as purgeAllStorage, A as normalizeRestoredAppState, B as resolveReportMemoryScope, D as hydrateLatestReportWorkspaceFiles, E as normalizeRestoredGoalState, F as restoreAgentActivityHistory, G as normalizeSavedReportPendingMemoryDocuments, H as normalizeSavedAgentMemoryRuns, I as normalizeSavedAgentMemoryRun, J as normalizeSavedReportMemoryDocuments, K as appendUnfinishedCleaningNotice, L as getReportsList, M as createChatMessage, N as navigateToCard, O as buildColumnRegistry, P as duckDbWorkerClient, Q as DUCKDB_INIT_TIMEOUT_MS, R as profileDataWithWorker, S as createBindingDuckDbSessionStatus, T as getOriginalData, U as getTranslation, V as getAllowedColumns, W as createProgressMessage, X as trimProgressMessages, Y as isDuckDbSessionStatusEqual, Z as primeDuckDbDataset, $ as createDuckDbSessionStatusFromBinding, a0 as captureHistoryAnalysisSnapshot, a1 as getRestoredHistoryAnalysisState, a2 as buildEffectiveColumnRegistryFromState, a3 as createWorkerDiagnosticsTelemetryReporter, a4 as parseCardMentions, a5 as buildCorrelationFields, a6 as toSerializable, a7 as normalizeAgentActivityEvent, a8 as LATEST_REPORT_MANIFEST_PATH, a9 as hasOpenableLatestReport, aa as getCurrentAnalysisDatasetVersion, ab as LATEST_REPORT_HTML_PATH, ac as generateAnalystReportArtifacts, ad as saveReportArtifacts, ae as buildPersistedReportRecord, af as isRuntimeAbortError, ag as recordLocalDiagnosticBestEffort, ah as projectToolLogToActivity, ai as projectRuntimeEventToActivity, aj as getSettings, ak as configureCloudAiConsentRuntime, al as configureLocalDiagnosticContext, am as shouldShowNewSessionButton, an as shouldShowHistoryButton, ao as shouldShowDatabaseButton, ap as shouldShowWorkflowButton, aq as shouldShowLogsButton, ar as shouldShowChangeGoalButton, as as shouldShowAssistantToggleButton, at as buildPersistedAppStateSignature, au as checkStorageHealth, av as persistCurrentAppSessionSnapshot, aw as APP_HEADER_HIDE_FOR_CARD_NAVIGATION_EVENT, ax as shouldShowAgentThinkingModal, ay as shouldShowLongTermMemory, az as formatUserError } from "./csv_data_analysis_app-agent-3P1qcDku.js";
+import { b as buildCloudAiConsentKey, s as shouldAllowAgentThinkingSurface, a as shouldAllowLongTermMemorySurface, c as shouldAllowLogsSurface, d as shouldAllowWorkflowSurface, e as shouldAllowWorkspaceSurface, f as shouldAllowDatabaseSurface, g as shouldAllowSettingsSurface, h as grantCloudAiConsent, i as getDefaultSettings, _ as __vitePreload, n as normalizeRuntimeAccessControlSettings, j as normalizeAppLanguage, k as saveSettings, l as createId, m as disposeDuckDbQueryEngine, o as getReport, C as CURRENT_SESSION_KEY, v as vectorStore, p as deleteReport, q as createIdleDuckDbSessionStatus, r as saveReport, t as deleteOriginalData, u as parseReportArtifactManifest, w as loadReportArtifactHtml, x as printReportArtifact, y as openReportArtifact, z as purgeAllStorage, A as normalizeRestoredAppState, B as resolveReportMemoryScope, D as hydrateLatestReportWorkspaceFiles, E as normalizeRestoredGoalState, F as restoreAgentActivityHistory, G as normalizeSavedReportPendingMemoryDocuments, H as normalizeSavedAgentMemoryRuns, I as normalizeSavedAgentMemoryRun, J as normalizeSavedReportMemoryDocuments, K as appendUnfinishedCleaningNotice, L as getReportsList, M as createChatMessage, N as navigateToCard, O as buildColumnRegistry, P as duckDbWorkerClient, Q as DUCKDB_INIT_TIMEOUT_MS, R as profileDataWithWorker, S as createBindingDuckDbSessionStatus, T as getOriginalData, U as getTranslation, V as getAllowedColumns, W as createProgressMessage, X as trimProgressMessages, Y as isDuckDbSessionStatusEqual, Z as primeDuckDbDataset, $ as createDuckDbSessionStatusFromBinding, a0 as captureHistoryAnalysisSnapshot, a1 as getRestoredHistoryAnalysisState, a2 as buildEffectiveColumnRegistryFromState, a3 as createWorkerDiagnosticsTelemetryReporter, a4 as parseCardMentions, a5 as buildCorrelationFields, a6 as toSerializable, a7 as normalizeAgentActivityEvent, a8 as LATEST_REPORT_MANIFEST_PATH, a9 as hasOpenableLatestReport, aa as getCurrentAnalysisDatasetVersion, ab as LATEST_REPORT_HTML_PATH, ac as generateAnalystReportArtifacts, ad as saveReportArtifacts, ae as buildPersistedReportRecord, af as isRuntimeAbortError, ag as recordLocalDiagnosticBestEffort, ah as projectToolLogToActivity, ai as projectRuntimeEventToActivity, aj as getSettings, ak as configureCloudAiConsentRuntime, al as configureLocalDiagnosticContext, am as shouldShowNewSessionButton, an as shouldShowHistoryButton, ao as shouldShowDatabaseButton, ap as shouldShowWorkflowButton, aq as shouldShowLogsButton, ar as shouldShowChangeGoalButton, as as shouldShowAssistantToggleButton, at as buildPersistedAppStateSignature, au as checkStorageHealth, av as persistCurrentAppSessionSnapshot, aw as APP_HEADER_HIDE_FOR_CARD_NAVIGATION_EVENT, ax as shouldShowAgentThinkingModal, ay as shouldShowLongTermMemory, az as formatUserError } from "./csv_data_analysis_app-agent-DzjR5-oT.js";
 import { c as createWithEqualityFn, s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
@@ -169,7 +169,7 @@ const createSettingsSlice = (set, get) => ({
   isApiKeySet: false,
   handleSaveSettings: async (newSettings) => {
     if (!_isProviderConfigured$1) {
-      const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+      const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       _isProviderConfigured$1 = mod.isProviderConfigured;
     }
     const normalizedSettings = {
@@ -179,7 +179,7 @@ const createSettingsSlice = (set, get) => ({
     };
     const previousSettings = get().settings;
     set({ settings: normalizedSettings, isApiKeySet: _isProviderConfigured$1(normalizedSettings) });
-    const providerConfig = await __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+    const providerConfig = await __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     const connectionChanged = previousSettings.provider !== normalizedSettings.provider || previousSettings.simpleModel !== normalizedSettings.simpleModel || providerConfig.resolveProviderApiKey(previousSettings) !== providerConfig.resolveProviderApiKey(normalizedSettings);
     if (connectionChanged) {
       providerConfig.invalidateProviderHealthCache();
@@ -216,14 +216,14 @@ const writeTabSessionId = (sessionId) => {
 const createAndStoreTabSessionId = () => writeTabSessionId(generateSessionId());
 const discardPiSessionCheckpoint = async (sessionId) => {
   const { discardPiInitialAnalysisCheckpoint } = await __vitePreload(async () => {
-    const { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cH);
+    const { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cH);
     return { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 };
   }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
   discardPiInitialAnalysisCheckpoint(sessionId);
 };
 const purgeInactivePiCheckpoints = async (activeSessionId) => {
   const { purgePiInitialAnalysisCheckpoints } = await __vitePreload(async () => {
-    const { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cH);
+    const { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cH);
     return { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 };
   }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
   purgePiInitialAnalysisCheckpoints([activeSessionId]);
@@ -253,8 +253,8 @@ const createHistorySlice = (set, get) => ({
     get().addProgress(`Loading report ${id}...`);
     const [report, { normalizeDataPreparationPlan }, { updateCleaningRun }] = await Promise.all([
       getReport(id),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     if (report) {
       await discardPiSessionCheckpoint(get().sessionId);
@@ -345,7 +345,7 @@ const createHistorySlice = (set, get) => ({
           }
         })();
       } else {
-        void __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+        void __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
           (m) => m.rebuildVectorMemoryFromState({ getState: get, setState: set }, {
             reset: true,
             includeDatasetDocs: true,
@@ -434,11 +434,11 @@ const createHistorySlice = (set, get) => ({
       await vectorStore.clear();
       await deleteReport(CURRENT_SESSION_KEY);
       void __vitePreload(async () => {
-        const { removeOpfsDatasetSession } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.ct);
+        const { removeOpfsDatasetSession } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.ct);
         return { removeOpfsDatasetSession };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ removeOpfsDatasetSession }) => removeOpfsDatasetSession(get().sessionId)).catch((error) => console.warn("[History] Could not clear temporary OPFS data.", error));
       void __vitePreload(async () => {
-        const { clearSandboxTableRows } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cA);
+        const { clearSandboxTableRows } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cA);
         return { clearSandboxTableRows };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ clearSandboxTableRows }) => {
         var _a;
@@ -660,7 +660,7 @@ const createCardSlice = (set, get) => ({
     const card = get().analysisCards.find((item) => item.id === cardId);
     if (!card) return;
     invalidateChart(cardId);
-    void __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+    void __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
       (m) => m.removeCardMemoryDocument({ getState: get, setState: set }, cardId)
     );
     (_b = (_a = get()).addProgress) == null ? void 0 : _b.call(_a, `Removed card "${card.plan.title}".`);
@@ -770,7 +770,7 @@ const createCardSlice = (set, get) => ({
       }
     });
     if (didUpdate) {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.upsertCardMemoryDocument({ getState: get, setState: set }, cardId)
       );
     }
@@ -834,8 +834,8 @@ const createDataSlice = (set, get) => {
         { buildPersistedReportRecord: buildPersistedReportRecord2 },
         { CURRENT_SESSION_KEY: CURRENT_SESSION_KEY2, saveReport: saveReport2 }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cs), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cs), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const currentReport = buildPersistedReportRecord2(state2, {
         id: state2.sessionId,
@@ -858,8 +858,8 @@ const createDataSlice = (set, get) => {
   };
   const getDuckDbRefreshHelpers = async () => {
     duckDbRefreshHelpersPromise ?? (duckDbRefreshHelpersPromise = Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]).then(([
       { getPreferredAnalysisDataset },
       { resolveDatasetBindingTarget, isDuckDbSessionCurrentForDataset }
@@ -970,9 +970,9 @@ const createDataSlice = (set, get) => {
       { getPreferredAnalysisDataset },
       { buildSemanticDatasetVersion }
     ] = await Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cC), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cC), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     const state2 = get();
     const artifacts = await resolveReportStructureArtifactsWithProposal({
@@ -1019,7 +1019,7 @@ const createDataSlice = (set, get) => {
       currentView: "file_upload"
     }));
     const { orchestrateFileUpload } = await __vitePreload(async () => {
-      const { orchestrateFileUpload: orchestrateFileUpload2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cJ);
+      const { orchestrateFileUpload: orchestrateFileUpload2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cJ);
       return { orchestrateFileUpload: orchestrateFileUpload2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     try {
@@ -1059,14 +1059,14 @@ const createDataSlice = (set, get) => {
     },
     handleInitialAnalysis: async (dataForAnalysis, goal, options) => {
       const { handleInitialAnalysis } = await __vitePreload(async () => {
-        const { handleInitialAnalysis: handleInitialAnalysis2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cK);
+        const { handleInitialAnalysis: handleInitialAnalysis2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cK);
         return { handleInitialAnalysis: handleInitialAnalysis2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       return handleInitialAnalysis(dataForAnalysis, goal, storeApi, options);
     },
     proposeAnalysisGoals: async (dataForAnalysis) => {
       const { proposeAnalysisGoals: proposeGoals } = await __vitePreload(async () => {
-        const { proposeAnalysisGoals: proposeGoals2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cL);
+        const { proposeAnalysisGoals: proposeGoals2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cL);
         return { proposeAnalysisGoals: proposeGoals2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       return proposeGoals(dataForAnalysis, storeApi);
@@ -1104,14 +1104,14 @@ const createDataSlice = (set, get) => {
     },
     regenerateAnalyses: async (newData) => {
       const { regenerateAnalysesWithNewData } = await __vitePreload(async () => {
-        const { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cM);
+        const { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cM);
         return { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await regenerateAnalysesWithNewData(newData, storeApi);
     },
     reproposeAnalysisGoals: async () => {
       const { reproposeAnalysisGoals: reproposeGoalsService } = await __vitePreload(async () => {
-        const { reproposeAnalysisGoals: reproposeGoalsService2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cM);
+        const { reproposeAnalysisGoals: reproposeGoalsService2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cM);
         return { reproposeAnalysisGoals: reproposeGoalsService2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       reproposeGoalsService(storeApi);
@@ -1123,10 +1123,10 @@ const createDataSlice = (set, get) => {
         { resolveAnalysisDatasetProfiles },
         { annotateDatasetSemantics }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cN), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cN), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const targetDataset = dataset ?? getPreferredAnalysisDataset(get());
       if (!targetDataset) {
@@ -1262,10 +1262,10 @@ const createDataSlice = (set, get) => {
         { compileWorkspaceDataQuery },
         { executeStructuredDataQuery }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cO), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cE), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cO), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cE), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const resolveCurrentWorkspaceTarget = () => {
         const currentState = get();
@@ -1366,10 +1366,10 @@ const createDataSlice = (set, get) => {
         { getPreferredAnalysisDataset },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       updateAgentTaskStatus(storeApi, {
         status: "thinking",
@@ -1435,8 +1435,8 @@ const createDataSlice = (set, get) => {
         { createCleaningRun },
         { WORKSPACE_DATASET_CLEAN_CSV, WORKSPACE_DATASET_RAW_CSV, buildWorkspaceCsv }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const sessionId = get().sessionId;
       let originalData = sessionId ? await getOriginalData(sessionId) : null;
@@ -1503,12 +1503,12 @@ const createDataSlice = (set, get) => {
         { getPreferredAnalysisDataset },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const rawCsvData = get().rawCsvData;
       if (!rawCsvData) {
@@ -1630,9 +1630,9 @@ const createDataSlice = (set, get) => {
         { resolveAnalysisDatasetProfiles },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       await rebuildStructureArtifacts(boundary);
       get().setIsReportBoundaryConfirmModalOpen(false);
@@ -1696,7 +1696,7 @@ const createDataSlice = (set, get) => {
           })
         };
       });
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.upsertColumnAnnotationDoc(storeApi, annotation)
       );
     },
@@ -1717,7 +1717,7 @@ const createDataSlice = (set, get) => {
           })
         };
       });
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.removeColumnAnnotationDoc(storeApi, columnName)
       );
     }
@@ -1744,7 +1744,7 @@ const createChatSlice = (set, get) => {
       ]
     }));
     void __vitePreload(async () => {
-      const { upsertAcceptedDecisionDoc } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cx);
+      const { upsertAcceptedDecisionDoc } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cx);
       return { upsertAcceptedDecisionDoc };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ upsertAcceptedDecisionDoc }) => upsertAcceptedDecisionDoc(storeApi, entry)).catch((error) => {
       console.warn(`${LOG_PREFIX} Failed to retain accepted decision (non-blocking):`, error);
@@ -1757,7 +1757,7 @@ const createChatSlice = (set, get) => {
     isRefreshingContext = true;
     try {
       const { shouldRefreshContextualSummary, generateContextualSummary, markContextualSummaryRefreshed } = await __vitePreload(async () => {
-        const { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cw);
+        const { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cw);
         return { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const state2 = get();
@@ -1850,7 +1850,7 @@ const createChatSlice = (set, get) => {
     set({ isBusy: true, chatLifecycleState: "running", pendingClarification: null });
     try {
       const { handleAiAction } = await __vitePreload(async () => {
-        const { handleAiAction: handleAiAction2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cG);
+        const { handleAiAction: handleAiAction2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cG);
         return { handleAiAction: handleAiAction2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const result = await handleAiAction(action, storeApi, { spreadsheetFilterOrigin: origin });
@@ -1876,7 +1876,7 @@ const createChatSlice = (set, get) => {
   const ensureProviderHealthy = async () => {
     const settings = get().settings;
     if (_isProviderConfigured && !_isProviderConfigured(settings)) {
-      const message2 = shouldAllowSettingsSurface() ? "API Key is not set." : getTranslation("api_key_required_managed_message", settings.language);
+      const message2 = shouldAllowSettingsSurface() ? getTranslation("provider_health_not_configured", settings.language) : getTranslation("api_key_required_managed_message", settings.language);
       if (shouldAllowSettingsSurface()) {
         get().addProgress(message2, "error");
         get().setIsSettingsModalOpen(true);
@@ -1888,13 +1888,13 @@ const createChatSlice = (set, get) => {
     }
     if (!_isProviderConfigured) return false;
     const { validateProviderHealth } = await __vitePreload(async () => {
-      const { validateProviderHealth: validateProviderHealth2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cp);
+      const { validateProviderHealth: validateProviderHealth2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cp);
       return { validateProviderHealth: validateProviderHealth2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     const health = await validateProviderHealth(settings);
     if (health.status === "healthy") return true;
     const errorMessages = {
-      not_configured: "API Key is not set.",
+      not_configured: getTranslation("provider_health_not_configured", settings.language),
       invalid_key: getTranslation("provider_health_invalid_key", settings.language),
       unreachable: getTranslation("provider_health_unreachable", settings.language)
     };
@@ -1924,7 +1924,7 @@ const createChatSlice = (set, get) => {
     }
     try {
       const { orchestrateChatResponse } = await __vitePreload(async () => {
-        const { orchestrateChatResponse: orchestrateChatResponse2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cP);
+        const { orchestrateChatResponse: orchestrateChatResponse2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cP);
         return { orchestrateChatResponse: orchestrateChatResponse2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await orchestrateChatResponse(message, storeApi);
@@ -1975,7 +1975,7 @@ const createChatSlice = (set, get) => {
     clearStreamingMessage: () => set({ streamingMessage: null }),
     confirmGoal: async (goalTitle) => {
       const { confirmAnalysisGoal } = await __vitePreload(async () => {
-        const { confirmAnalysisGoal: confirmAnalysisGoal2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cM);
+        const { confirmAnalysisGoal: confirmAnalysisGoal2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cM);
         return { confirmAnalysisGoal: confirmAnalysisGoal2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await confirmAnalysisGoal(goalTitle, storeApi);
@@ -1990,9 +1990,9 @@ const createChatSlice = (set, get) => {
       }
       if (!_resolveEffectivePendingClarification || !_isProviderConfigured) {
         const [clarificationMod, providerMod] = await Promise.all([
-          __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-          __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-          __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cP), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+          __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+          __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+          __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cP), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
         ]);
         _resolveEffectivePendingClarification = clarificationMod.resolveEffectivePendingClarification;
         _isProviderConfigured = providerMod.isProviderConfigured;
@@ -2014,11 +2014,11 @@ const createChatSlice = (set, get) => {
           pendingClarificationInStore: Boolean(get().pendingClarification)
         });
         const { buildClarificationFollowUpPrompt, handleClarificationResponse: processClarificationResponse } = await __vitePreload(async () => {
-          const { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cF);
+          const { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cF);
           return { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 };
         }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async (clarMod) => {
           const { handleClarificationResponse: procClarResp } = await __vitePreload(async () => {
-            const { handleClarificationResponse: procClarResp2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cP);
+            const { handleClarificationResponse: procClarResp2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cP);
             return { handleClarificationResponse: procClarResp2 };
           }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
           return { ...clarMod, handleClarificationResponse: procClarResp };
@@ -2090,7 +2090,7 @@ const createChatSlice = (set, get) => {
       });
       try {
         if (!_resolveEffectivePendingClarification) {
-          const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+          const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
           _resolveEffectivePendingClarification = mod.resolveEffectivePendingClarification;
         }
         const pendingClarification = getEffectivePendingClarification();
@@ -2098,7 +2098,7 @@ const createChatSlice = (set, get) => {
           storeResolvedClarification(pendingClarification, userChoice.value || userChoice.label);
         }
         const { handleClarificationResponse: processClarificationResponse } = await __vitePreload(async () => {
-          const { handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cP);
+          const { handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cP);
           return { handleClarificationResponse: processClarificationResponse2 };
         }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
         await processClarificationResponse(userChoice, storeApi);
@@ -2719,8 +2719,8 @@ const createAgentSlice = (set, get) => ({
       return;
     }
     const [{ abortRuntimeTurn }, { buildRuntimeContractDetail }] = await Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.co), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cq), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.co), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cq), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     set({ cancelRequestedTurnId: activeTurn.turnId });
     abortRuntimeTurn(activeTurn.turnId);
@@ -2743,7 +2743,7 @@ const createAgentSlice = (set, get) => ({
     const researchRun = get().activeAnalysisSession;
     if (!researchRun || researchRun.status !== "running") return;
     const { requestDataResearchCancellation } = await __vitePreload(async () => {
-      const { requestDataResearchCancellation: requestDataResearchCancellation2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cv);
+      const { requestDataResearchCancellation: requestDataResearchCancellation2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cv);
       return { requestDataResearchCancellation: requestDataResearchCancellation2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     requestDataResearchCancellation(researchRun.runId);
@@ -2816,7 +2816,7 @@ const createAgentSlice = (set, get) => ({
     set({ isCardReviewInProgress: true });
     try {
       const { generateCardEnhancementSuggestions } = await __vitePreload(async () => {
-        const { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cQ);
+        const { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cQ);
         return { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const cardContext = analysisCards.map((card) => ({
@@ -3196,9 +3196,9 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
       { updateCleaningRun }
     ] = await Promise.all([
       getSettings(),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     const persistedSettings = {
       ...rawPersistedSettings,
@@ -3215,11 +3215,11 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
     }
     set({ sessionId: activeSessionId });
     void __vitePreload(async () => {
-      const { cleanupStaleOpfsSessions } = await import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.ct);
+      const { cleanupStaleOpfsSessions } = await import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.ct);
       return { cleanupStaleOpfsSessions };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ cleanupStaleOpfsSessions }) => cleanupStaleOpfsSessions([activeSessionId])).catch((error) => console.warn("[Init] Could not clean abandoned OPFS imports.", error));
     if (typeof indexedDB !== "undefined") {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then((storage) => "pruneExpiredLocalDiagnostics" in storage && typeof storage.pruneExpiredLocalDiagnostics === "function" ? storage.pruneExpiredLocalDiagnostics() : 0).catch((error) => console.warn("[Init] Could not prune expired local diagnostics.", error));
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then((storage) => "pruneExpiredLocalDiagnostics" in storage && typeof storage.pruneExpiredLocalDiagnostics === "function" ? storage.pruneExpiredLocalDiagnostics() : 0).catch((error) => console.warn("[Init] Could not prune expired local diagnostics.", error));
     }
     try {
       const idbStart = performance.now();
@@ -3355,7 +3355,7 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
             set({ vectorMemoryState: "queued" });
             get().addProgress("Restored AI long-term memory from local storage.");
           } else {
-            void __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+            void __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
               (m) => m.rebuildVectorMemoryFromState({ getState: get, setState: set }, {
                 reset: true,
                 includeDatasetDocs: true,
@@ -3383,7 +3383,7 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
       set({ isAppInitializing: false });
     }
     if (get().csvData) {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-3P1qcDku.js").then((n) => n.cH), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async ({ recoverPiInitialAnalysisIfNeeded }) => {
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-DzjR5-oT.js").then((n) => n.cH), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async ({ recoverPiInitialAnalysisIfNeeded }) => {
         await recoverPiInitialAnalysisIfNeeded(store);
       }).catch((error) => {
         get().addProgress(
@@ -4830,20 +4830,20 @@ const PwaStatusBanner = () => {
     )
   ] });
 };
-const ChatPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ChatPanel-ChqLfOJm.js"), true ? __vite__mapDeps([5,0,1,2,3,4,6,7,8,9,10,11,12,13]) : void 0, import.meta.url).then((m) => ({ default: m.ChatPanel })));
-const AnalysisPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AnalysisPanel-rgfW9D_y.js"), true ? __vite__mapDeps([14,6,7,10,8,9,0,1,2,3,4,15,16,17,18,19,20,11]) : void 0, import.meta.url).then((m) => ({ default: m.AnalysisPanel })));
-const SpreadsheetPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SpreadsheetPanel-DJkxGYPt.js"), true ? __vite__mapDeps([21,6,17,9,0,1,2,3,4,16,13,20,7,18,10]) : void 0, import.meta.url).then((m) => ({ default: m.SpreadsheetPanel })));
-const SettingsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SettingsModal-Dh21sGqy.js"), true ? __vite__mapDeps([22,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.SettingsModal })));
-const HistoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_HistoryPanel-Bcaer_0n.js"), true ? __vite__mapDeps([23,6,7,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.HistoryPanel })));
-const MemoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_MemoryPanel-Be317Oz9.js"), true ? __vite__mapDeps([24,6,0,1,2,3,4,16,12,7]) : void 0, import.meta.url).then((module) => ({ default: module.MemoryPanel })));
-const AgentMonitorModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AgentMonitorModal-C-zv8d-c.js"), true ? __vite__mapDeps([25,6,7,16,19,20,11,0,1,2,3,4,26]) : void 0, import.meta.url).then((module) => ({ default: module.AgentMonitorModal })));
-const DatabaseModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DatabaseModal-DyQn_4lU.js"), true ? __vite__mapDeps([27,6,7,17,9,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.DatabaseModal })));
-const WorkspaceModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_WorkspaceModal-kFD7UAtw.js"), true ? __vite__mapDeps([28,0,1,2,3,4,6,7,16]) : void 0, import.meta.url).then((module) => ({ default: module.WorkspaceModal })));
-const DataPreparationWorkflowModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DataPreparationWorkflowModal-BSgidO3a.js"), true ? __vite__mapDeps([29,6,7,0,1,2,3,4,30,16,26,15]) : void 0, import.meta.url).then((module) => ({ default: module.DataPreparationWorkflowModal })));
-const DebugLogsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DebugLogsModal-D3ENPpjA.js"), true ? __vite__mapDeps([31,6,7,0,1,2,3,4,30,16]) : void 0, import.meta.url).then((module) => ({ default: module.DebugLogsModal })));
-const ReportBoundaryConfirmModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ReportBoundaryConfirmModal-Bj2EMU-m.js"), true ? __vite__mapDeps([32,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ReportBoundaryConfirmModal })));
-const ApiKeyRequiredModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ApiKeyRequiredModal-C7GXj3Zk.js"), true ? __vite__mapDeps([33,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ApiKeyRequiredModal })));
-const CloudAiConsentModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_CloudAiConsentModal-C9oMwS59.js"), true ? __vite__mapDeps([34,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.CloudAiConsentModal })));
+const ChatPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ChatPanel-D8rmyy1r.js"), true ? __vite__mapDeps([5,0,1,2,3,4,6,7,8,9,10,11,12,13]) : void 0, import.meta.url).then((m) => ({ default: m.ChatPanel })));
+const AnalysisPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AnalysisPanel-_yg6-YOD.js"), true ? __vite__mapDeps([14,6,7,10,8,9,0,1,2,3,4,15,16,17,18,19,20,11]) : void 0, import.meta.url).then((m) => ({ default: m.AnalysisPanel })));
+const SpreadsheetPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SpreadsheetPanel-CnJGZIrf.js"), true ? __vite__mapDeps([21,6,17,9,0,1,2,3,4,16,13,20,7,18,10]) : void 0, import.meta.url).then((m) => ({ default: m.SpreadsheetPanel })));
+const SettingsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SettingsModal-Dc-DyAqZ.js"), true ? __vite__mapDeps([22,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.SettingsModal })));
+const HistoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_HistoryPanel-CewfT0-6.js"), true ? __vite__mapDeps([23,6,7,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.HistoryPanel })));
+const MemoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_MemoryPanel-CR2z-m50.js"), true ? __vite__mapDeps([24,6,0,1,2,3,4,16,12,7]) : void 0, import.meta.url).then((module) => ({ default: module.MemoryPanel })));
+const AgentMonitorModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AgentMonitorModal-BN3NVv32.js"), true ? __vite__mapDeps([25,6,7,16,19,20,11,0,1,2,3,4,26]) : void 0, import.meta.url).then((module) => ({ default: module.AgentMonitorModal })));
+const DatabaseModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DatabaseModal-ywoBJHM9.js"), true ? __vite__mapDeps([27,6,7,17,9,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.DatabaseModal })));
+const WorkspaceModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_WorkspaceModal-bUWRS7mk.js"), true ? __vite__mapDeps([28,0,1,2,3,4,6,7,16]) : void 0, import.meta.url).then((module) => ({ default: module.WorkspaceModal })));
+const DataPreparationWorkflowModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DataPreparationWorkflowModal-C4n8o_H6.js"), true ? __vite__mapDeps([29,6,7,0,1,2,3,4,30,16,26,15]) : void 0, import.meta.url).then((module) => ({ default: module.DataPreparationWorkflowModal })));
+const DebugLogsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DebugLogsModal-Bu9vyowM.js"), true ? __vite__mapDeps([31,6,7,0,1,2,3,4,30,16]) : void 0, import.meta.url).then((module) => ({ default: module.DebugLogsModal })));
+const ReportBoundaryConfirmModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ReportBoundaryConfirmModal-CCZ2ClO_.js"), true ? __vite__mapDeps([32,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ReportBoundaryConfirmModal })));
+const ApiKeyRequiredModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ApiKeyRequiredModal-M85bf-60.js"), true ? __vite__mapDeps([33,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ApiKeyRequiredModal })));
+const CloudAiConsentModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_CloudAiConsentModal-BuvDT2zt.js"), true ? __vite__mapDeps([34,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.CloudAiConsentModal })));
 const SpreadsheetPanelGate = We.memo(({ isVisible }) => {
   const isPipelineActive = useAppStore((state2) => {
     const task = state2.aiTaskStatus;

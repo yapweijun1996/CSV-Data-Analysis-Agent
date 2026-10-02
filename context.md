@@ -463,3 +463,4 @@
 - **Intent classifier** (`intentClassifier.ts`): timeouts are detected with `isProviderTimeoutError` (the real message is "timed out", not "timeout"), and the classification stream has its own `AbortController` so an idle timeout cancels the SSE stream.
 - **Column summary** (`chatOrchestrator.ts`): names/tokens of 1–2 characters now need whole-token matches, so `ID`/`NO` no longer match "provide"/"know" and crowd out relevant columns.
 - **Checks**: TypeScript, lint, full suite (369 files / 3,455 tests) passed; 3 regression tests added. `npm run publish:root` regenerated the root deployment. Not pushed; Pages workflow not dispatched.
+- **Follow-up**: the `not_configured` provider-health message (chat orchestrator and chat slice) now uses the localized key `provider_health_not_configured` (English/Mandarin/Japanese/Malay/Spanish/French) instead of hardcoded English; root deployment regenerated.

@@ -1390,6 +1390,14 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'French': 'OK',
         'Malay': 'OK',
     },
+    'provider_health_not_configured': {
+        'English': 'API Key is not set.',
+        'Mandarin': '尚未设置 API 密钥。',
+        'Spanish': 'La clave API no está configurada.',
+        'Japanese': 'API キーが設定されていません。',
+        'French': 'La clé API n\'est pas définie.',
+        'Malay': 'Kunci API belum ditetapkan.',
+    },
     'provider_health_invalid_key': {
         'English': 'API key is invalid. Please check your key in Settings.',
         'Mandarin': 'API 密钥无效。请在设置中检查并更新。',

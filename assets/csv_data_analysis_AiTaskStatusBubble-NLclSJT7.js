@@ -1,8 +1,8 @@
 import { j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { I as IconSearch } from "./csv_data_analysis_IconSearch-j9OYkQx7.js";
 import { a as IconSettings, I as IconThinking } from "./csv_data_analysis_IconSettings-FS0PVK9T.js";
-import { u as useAppStore, a as IconWarning } from "./csv_data_analysis_index-Do_MhI9g.js";
-import { U as getTranslation } from "./csv_data_analysis_app-agent-3P1qcDku.js";
+import { u as useAppStore, a as IconWarning } from "./csv_data_analysis_index-C-gYBV16.js";
+import { U as getTranslation } from "./csv_data_analysis_app-agent-DzjR5-oT.js";
 const IconCheck = (props) => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "http://www.w3.org/2000/svg", className: "h-3 w-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", ...props, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "3", d: "M5 13l4 4L19 7" }) });
 const IconWrapper = ({ children, colorClass }) => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`, children });
 const ThinkingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-blue-100 text-blue-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconThinking, { className: "h-5 w-5" }) });

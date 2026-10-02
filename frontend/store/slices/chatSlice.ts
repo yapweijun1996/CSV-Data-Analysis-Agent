@@ -206,7 +206,7 @@ export const createChatSlice: StateCreator<AppStore, [], [], IChatSlice> = (set,
         // Fast sync path: if lazy cache is loaded and key is empty, fail immediately.
         if (_isProviderConfigured && !_isProviderConfigured(settings)) {
             const message = shouldAllowSettingsSurface()
-                ? 'API Key is not set.'
+                ? getTranslation('provider_health_not_configured', settings.language)
                 : getTranslation('api_key_required_managed_message', settings.language);
             if (shouldAllowSettingsSurface()) {
                 get().addProgress(message, 'error');
@@ -225,7 +225,7 @@ export const createChatSlice: StateCreator<AppStore, [], [], IChatSlice> = (set,
         if (health.status === 'healthy') return true;
 
         const errorMessages: Record<string, string> = {
-            not_configured: 'API Key is not set.',
+            not_configured: getTranslation('provider_health_not_configured', settings.language),
             invalid_key: getTranslation('provider_health_invalid_key', settings.language),
             unreachable: getTranslation('provider_health_unreachable', settings.language),
         };
