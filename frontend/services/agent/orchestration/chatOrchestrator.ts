@@ -48,11 +48,16 @@ export const buildColumnSummaryForClassifier = (
         const nameLower = col.name.toLowerCase();
         const knownAliases = getKnownColumnAliases(col.name);
         // Exact substring match (handles multi-word column names like "BU NAME")
-        const exactMatch = messageLower.includes(nameLower);
+        const exactMatch = nameLower.length > 2
+            ? messageLower.includes(nameLower)
+            : messageTokens.includes(nameLower);
         const aliasMatch = knownAliases.some(alias => messageLower.includes(alias.toLowerCase()));
         // Token overlap: any word in the column name appears in the message
         const nameTokens = nameLower.split(/[\s_-]+/).filter(t => t.length > 1);
-        const tokenOverlap = nameTokens.some(nt => messageTokens.some(mt => mt.includes(nt) || nt.includes(mt)));
+        // Substring overlap only for tokens of 3+ chars; 2-char tokens such as
+        // "id" or "no" would otherwise match ordinary words ("provide", "know").
+        const tokenOverlap = nameTokens.some(nt => messageTokens.some(mt =>
+            mt === nt || (nt.length > 2 && mt.length > 2 && (mt.includes(nt) || nt.includes(mt)))));
         const matched = exactMatch || aliasMatch || tokenOverlap;
         return { col, index, matched };
     });

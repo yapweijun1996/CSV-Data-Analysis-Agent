@@ -32,12 +32,19 @@ export const createSettingsSlice: StateCreator<AppStore, [], [], ISettingsSlice>
             language: normalizeAppLanguage(newSettings.language),
             runtimeAccessControl: normalizeRuntimeAccessControlSettings(newSettings.runtimeAccessControl),
         };
+        const previousSettings = get().settings;
         set({ settings: normalizedSettings, isApiKeySet: _isProviderConfigured(normalizedSettings) });
 
         // Invalidate provider health cache so the next API call re-validates
-        // with the new key/provider settings.
-        const { invalidateProviderHealthCache } = await import('../../services/ai/providerConfig');
-        invalidateProviderHealthCache();
+        // with the new key/provider settings. Unrelated saves (for example the
+        // report template) keep the cached result and avoid an extra LLM call.
+        const providerConfig = await import('../../services/ai/providerConfig');
+        const connectionChanged = previousSettings.provider !== normalizedSettings.provider
+            || previousSettings.simpleModel !== normalizedSettings.simpleModel
+            || providerConfig.resolveProviderApiKey(previousSettings) !== providerConfig.resolveProviderApiKey(normalizedSettings);
+        if (connectionChanged) {
+            providerConfig.invalidateProviderHealthCache();
+        }
 
         void saveSettings(normalizedSettings).catch(error => {
             const message = error instanceof Error ? error.message : String(error);

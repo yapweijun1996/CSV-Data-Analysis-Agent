@@ -31,7 +31,7 @@ import type {
     QueryComparisonScope,
 } from './intentClassificationTypes';
 import { LOG_PREFIX, INTENT_AI_TIMEOUT_MS, projectToIntentFindings } from './intentClassificationTypes';
-import { raceWithActivityTimeout } from '../../ai/providerActivityGuards';
+import { isProviderTimeoutError, raceWithActivityTimeout } from '../../ai/providerActivityGuards';
 import { buildIntentClassificationPrompt, buildQueryUnderstandingPrompt } from '../../prompts/intentClassificationPrompts';
 import { isValidTaskSignal, isValidExpectedOutput } from './queryUnderstandingResolver';
 
@@ -265,13 +265,19 @@ const classifyWithAiRich = async (
         // a fixed-deadline timeout.  Falls back to generateText for providers
         // where streaming adds no benefit (same 8 s idle budget).
         const callModel = async (m: unknown): Promise<Awaited<ReturnType<typeof generateText>>> => {
+            // Own controller so an idle timeout also cancels the SSE stream
+            // instead of leaving it to consume tokens in the background.
+            const controller = new AbortController();
+            const onExternalAbort = () => controller.abort();
+            abortSignal?.addEventListener('abort', onExternalAbort, { once: true });
+            if (abortSignal?.aborted) controller.abort();
             const stream = streamText({
                 model: m as LanguageModel,
                 messages: [
                     { role: 'system', content: prompt.system },
                     { role: 'user', content: prompt.user },
                 ],
-                abortSignal,
+                abortSignal: controller.signal,
             });
             const { promise, signalActivity } = raceWithActivityTimeout(
                 (async () => {
@@ -291,7 +297,12 @@ const classifyWithAiRich = async (
                 })(),
                 INTENT_AI_TIMEOUT_MS,
             );
-            return promise;
+            return promise
+                .catch(error => {
+                    controller.abort();
+                    throw error;
+                })
+                .finally(() => abortSignal?.removeEventListener('abort', onExternalAbort));
         };
 
         let result: Awaited<ReturnType<typeof generateText>>;
@@ -362,7 +373,7 @@ const classifyWithAiRich = async (
         const msg = error instanceof Error ? error.message : String(error);
         console.warn(`${LOG_PREFIX} AI classification failed: ${msg}`);
         const reason: IntentClassificationFindings['uncertaintyReason'] =
-            msg.includes('timeout') ? 'timeout' : 'ai_error';
+            isProviderTimeoutError(error) || msg.toLowerCase().includes('timed out') ? 'timeout' : 'ai_error';
         return { findings: buildUncertainFindings(message, 'unknown', reason) };
     }
 };

@@ -233,6 +233,37 @@ describe('validateProviderHealth', () => {
     });
 });
 
+describe('validateProviderHealth stale-result guard', () => {
+    beforeEach(() => {
+        invalidateProviderHealthCache();
+        mockGenerateText.mockReset();
+    });
+
+    it('does not cache a result from a check that was in flight during invalidation', async () => {
+        let rejectOld!: (error: Error) => void;
+        mockGenerateText.mockImplementationOnce(() => new Promise((_, reject) => { rejectOld = reject; }));
+        const oldCheck = validateProviderHealth(makeSettings({ geminiApiKey: 'old-key' }));
+
+        // User saves a new key while the old check is still pending.
+        invalidateProviderHealthCache();
+        rejectOld(new Error('401 unauthorized'));
+        expect((await oldCheck).status).toBe('invalid_key');
+
+        mockGenerateText.mockResolvedValueOnce({ text: 'OK' });
+        const fresh = await validateProviderHealth(makeSettings({ geminiApiKey: 'new-key' }));
+        expect(fresh.status).toBe('healthy');
+        expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    });
+
+    it('re-validates when the API key changes without an explicit invalidation', async () => {
+        mockGenerateText.mockResolvedValueOnce({ text: 'OK' });
+        await validateProviderHealth(makeSettings({ geminiApiKey: 'key-a' }));
+        mockGenerateText.mockRejectedValueOnce(new Error('403 forbidden'));
+        const result = await validateProviderHealth(makeSettings({ geminiApiKey: 'key-b' }));
+        expect(result.status).toBe('invalid_key');
+    });
+});
+
 describe('isProviderConfigured', () => {
     it('returns true when key is present', () => {
         expect(isProviderConfigured(makeSettings())).toBe(true);

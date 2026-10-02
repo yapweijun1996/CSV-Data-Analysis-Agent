@@ -22,4 +22,15 @@ describe('chatOrchestrator query-aware column summary', () => {
 
         expect(summary).toMatch(/^CCY \(categorical; aliases: currency, currency code\), Bal Amount/);
     });
+
+    it('does not match short column tokens against unrelated substrings', () => {
+        const profiles: ColumnProfile[] = [
+            { name: 'ID', type: 'categorical' },
+            { name: 'Revenue', type: 'currency' },
+        ];
+
+        const summary = buildColumnSummaryForClassifier('Please provide the revenue trend', profiles);
+
+        expect(summary).toMatch(/^Revenue \(/);
+    });
 });

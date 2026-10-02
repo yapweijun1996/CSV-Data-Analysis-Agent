@@ -293,9 +293,17 @@ const HEALTHY_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 const FAILURE_TTL_MS = 30 * 1000;       // 30 seconds
 
 let _cachedHealthResult: ProviderHealthResult | null = null;
+let _cachedHealthFingerprint = '';
+// Bumped on every invalidation so a check that was in flight with old
+// settings cannot write its stale result back into the cache.
+let _healthCacheGeneration = 0;
+
+const healthFingerprint = (settings: Settings): string =>
+    [settings.provider, settings.simpleModel, resolveProviderApiKey(settings)].join('\u0000');
 
 export function invalidateProviderHealthCache(): void {
     _cachedHealthResult = null;
+    _healthCacheGeneration += 1;
 }
 
 /**
@@ -310,7 +318,8 @@ export async function validateProviderHealth(
         return { status: 'not_configured', checkedAt: new Date().toISOString() };
     }
 
-    if (_cachedHealthResult) {
+    const fingerprint = healthFingerprint(settings);
+    if (_cachedHealthResult && _cachedHealthFingerprint === fingerprint) {
         const age = Date.now() - new Date(_cachedHealthResult.checkedAt).getTime();
         const ttl = _cachedHealthResult.status === 'healthy' ? HEALTHY_TTL_MS : FAILURE_TTL_MS;
         if (age < ttl) return _cachedHealthResult;
@@ -318,6 +327,9 @@ export async function validateProviderHealth(
 
     const testModelId = settings.simpleModel;
     const now = new Date().toISOString();
+    const generation = _healthCacheGeneration;
+    let result: ProviderHealthResult;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
     try {
         const { model } = createProviderModel(settings, testModelId);
@@ -330,10 +342,10 @@ export async function validateProviderHealth(
             maxRetries: 1,
         });
         const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Health check timed out')), HEALTH_CHECK_TIMEOUT_MS),
+            timeoutHandle = setTimeout(() => reject(new Error('Health check timed out')), HEALTH_CHECK_TIMEOUT_MS),
         );
         await Promise.race([healthPromise, timeoutPromise]);
-        _cachedHealthResult = { status: 'healthy', checkedAt: now, testedModel: testModelId };
+        result = { status: 'healthy', checkedAt: now, testedModel: testModelId };
     } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
         // Inline permanent-error check to avoid circular dependency with transientRetry.ts.
@@ -342,8 +354,14 @@ export async function validateProviderHealth(
         const isPermanent = ['401', '403', 'invalid_api_key', 'permission_denied',
             'authentication', 'unauthorized', 'forbidden'].some(p => lower.includes(p));
         const status: ProviderHealthStatus = isPermanent ? 'invalid_key' : 'unreachable';
-        _cachedHealthResult = { status, checkedAt: now, errorDetail: detail, testedModel: testModelId };
+        result = { status, checkedAt: now, errorDetail: detail, testedModel: testModelId };
+    } finally {
+        clearTimeout(timeoutHandle);
     }
 
-    return _cachedHealthResult!;
+    if (generation === _healthCacheGeneration) {
+        _cachedHealthResult = result;
+        _cachedHealthFingerprint = fingerprint;
+    }
+    return result;
 }
