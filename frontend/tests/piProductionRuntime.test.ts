@@ -221,6 +221,51 @@ describe('Pi production runtime', () => {
         }));
     });
 
+    it('keeps a saved card as completed when the turn fails after card creation', async () => {
+        const store = createStore();
+        const plan = {
+            title: 'Average Amount by Town',
+            description: 'Average amount per town.',
+            chartType: 'bar',
+            groupByColumn: 'Town',
+            valueColumn: 'Amount',
+            aggregation: 'avg',
+        };
+        actionMock.mockImplementationOnce(async () => {
+            store.setState({
+                analysisCards: [{ id: 'created-card', plan, aggregatedData: [{ Town: 'A', Amount: 10 }] }],
+                // Changing the dataset after the card exists makes the post-run version check throw.
+                csvData: { fileName: 'sample.csv', data: [{ Town: 'B', Amount: 99 }, { Town: 'C', Amount: 1 }] },
+            });
+            return { status: 'success', message: 'Created analysis card.', artifacts: { createdCardId: 'created-card' } };
+        });
+        const stream: StreamFn = model => {
+            const output = createAssistantMessageEventStream();
+            const message: AssistantMessage = {
+                role: 'assistant',
+                content: [{ type: 'toolCall', id: 'create-card-1', name: 'analysis_create_plan', arguments: { plan } }],
+                api: model.api, provider: model.provider, model: model.id,
+                usage, stopReason: 'toolUse', timestamp: Date.now(),
+            };
+            output.push({ type: 'start', partial: message });
+            output.push({ type: 'done', reason: 'toolUse', message });
+            return output;
+        };
+        const result = await runPiFollowUpTurn({
+            message: 'Add a dashboard card by Town.',
+            intentFindings: { intent: 'precise_card' } as never,
+        }, store as never, stream);
+
+        expect(result.status).toBe('completed');
+        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
+            outcome: expect.objectContaining({
+                outcomeKind: 'accepted',
+                retryable: false,
+                assistantCardId: 'created-card',
+            }),
+        }));
+    });
+
     it('stops a proposed mutation at the app approval boundary', async () => {
         const args = {
             explanation: 'Normalize region labels.',

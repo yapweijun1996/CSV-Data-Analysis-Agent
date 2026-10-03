@@ -1,6 +1,6 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { T as TabulatorFull } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
-import { U as getTranslation, aM as formatAnalysisMeasureValue } from "./csv_data_analysis_app-agent-DzjR5-oT.js";
+import { U as getTranslation, aM as formatAnalysisMeasureValue } from "./csv_data_analysis_app-agent-Cwfn9ci3.js";
 const TABULATOR_EVENT_TARGET_LOOKUP_WARNING = "Event Target Lookup Error - The row this cell is attached to cannot be found, has the table been reinitialized without being destroyed first?";
 let applied$1 = false;
 function applyTabulatorInteractionGuard() {

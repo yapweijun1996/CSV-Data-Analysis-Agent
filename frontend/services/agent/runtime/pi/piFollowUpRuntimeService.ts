@@ -1,5 +1,5 @@
 import { Agent, type AgentEvent, type StreamFn } from '@earendil-works/pi-agent-core';
-import type { ClarificationRequest } from '../../../../types';
+import type { AnalysisCardData, ClarificationRequest } from '../../../../types';
 import { createChatMessage } from '../../../../utils/messageState';
 import { resolveDisplayPlanLabels } from '../../../dashboard/displayLabelContext';
 import { validateDataMutatePayload } from '../../execution/dataMutateContract';
@@ -60,6 +60,12 @@ const readAssistantText = (event: AgentEvent): string => {
         .filter(part => part.type === 'text')
         .map(part => part.text)
         .join('\n');
+};
+
+const describeCreatedCard = (card: AnalysisCardData): string => {
+    const title = resolveDisplayPlanLabels(card.plan).title;
+    const rowCount = card.aggregatedData.length;
+    return `Created dashboard card "${title}" with ${rowCount} result row${rowCount === 1 ? '' : 's'}.`;
 };
 
 export const runPiFollowUpTurn = async (
@@ -198,9 +204,7 @@ export const runPiFollowUpTurn = async (
             status = 'failed';
         } else if (createdCard) {
             store.getState().setResultsViewMode?.('explore');
-            const title = resolveDisplayPlanLabels(createdCard.plan).title;
-            const rowCount = createdCard.aggregatedData.length;
-            text = `Created dashboard card "${title}" with ${rowCount} result row${rowCount === 1 ? '' : 's'}.`;
+            text = describeCreatedCard(createdCard);
             status = 'completed';
         } else {
             const last = [...agent.state.messages].reverse().find(message => message.role === 'assistant');
@@ -226,9 +230,19 @@ export const runPiFollowUpTurn = async (
         }
     } catch (error) {
         status = controller.signal.aborted ? 'cancelled' : 'failed';
-        text = status === 'cancelled'
-            ? 'The request was cancelled.'
-            : `Pi could not complete this request: ${sanitizeError(error)}`;
+        // A card that already reached the dashboard must not be reported as a
+        // failure: the retry action would create a duplicate.
+        const savedCard = status === 'failed' && createdCardId
+            ? store.getState().analysisCards.find(card => card.id === createdCardId)
+            : null;
+        if (savedCard) {
+            text = `${describeCreatedCard(savedCard)} Pi then stopped early: ${sanitizeError(error)}`;
+            status = 'completed';
+        } else {
+            text = status === 'cancelled'
+                ? 'The request was cancelled.'
+                : `Pi could not complete this request: ${sanitizeError(error)}`;
+        }
     } finally {
         activeAgents.delete(turn.turnId);
         clearRuntimeTurnAbortController(turn.turnId);

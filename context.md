@@ -464,3 +464,8 @@
 - **Column summary** (`chatOrchestrator.ts`): names/tokens of 1–2 characters now need whole-token matches, so `ID`/`NO` no longer match "provide"/"know" and crowd out relevant columns.
 - **Checks**: TypeScript, lint, full suite (369 files / 3,455 tests) passed; 3 regression tests added. `npm run publish:root` regenerated the root deployment. Not pushed; Pages workflow not dispatched.
 - **Follow-up**: the `not_configured` provider-health message (chat orchestrator and chat slice) now uses the localized key `provider_health_not_configured` (English/Mandarin/Japanese/Malay/Spanish/French) instead of hardcoded English; root deployment regenerated.
+
+## 2026-10-03 Pi follow-up: saved card no longer reported as failure
+
+- `runPiFollowUpTurn` (`frontend/services/agent/runtime/pi/piFollowUpRuntimeService.ts`): when a card was already saved and the turn then fails (provider error, dataset version change), the outcome is now `completed` with the card linked and `retryable: false`, instead of `failed`/`retryable`, which showed no card and let Retry create a duplicate. Regression test added in `tests/piProductionRuntime.test.ts` (verified to fail before the fix). Full suite 369 files / 3,456 tests, TypeScript and lint passed; root deployment regenerated.
+- **Still open (not fixed)**: Gate 1 from 2026-09-29 (batch-analysis follow-ups now yield at most one card via Pi, while `8762e96` is already merged to main) needs a product decision: restore the batch runner or let Pi create multiple cards. Context compaction (`piContextCompaction.ts`) re-summarizes on every provider turn when the compacted history is still over the trigger.
