@@ -3,7 +3,8 @@ import { createAssistantMessageEventStream, type AssistantMessage } from '@earen
 import type { StreamFn } from '@earendil-works/pi-agent-core';
 import { resolvePiModel, resolvePiThinkingLevel } from '../services/agent/runtime/pi/piProvider';
 
-const { persistMock, memoryMock, consentMock, finalizeMock, stageMock, actionMock } = vi.hoisted(() => ({
+const { persistMock, memoryMock, consentMock, finalizeMock, stageMock, actionMock, gateMock } = vi.hoisted(() => ({
+    gateMock: vi.fn(),
     persistMock: vi.fn(async () => true),
     memoryMock: vi.fn(async () => []),
     consentMock: vi.fn(async () => undefined),
@@ -26,6 +27,9 @@ vi.mock('../services/agent/runtime/runtimeFinalize', () => ({
 }));
 vi.mock('../services/agent/runtime/pi/initialAnalysisStageTools', () => ({
     executeInitialAnalysisStageTool: stageMock,
+}));
+vi.mock('../services/agent/runtime/pi/piCardEvidenceGate', () => ({
+    gatePiCreatedCards: gateMock,
 }));
 vi.mock('../services/agent/actionHandler', () => ({
     handleAiAction: actionMock,
@@ -110,7 +114,10 @@ const createStore = () => {
 };
 
 describe('Pi production runtime', () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+        gateMock.mockReturnValue({ rejected: [], tableOnlyIds: [] });
+    });
 
     it('uses the app-selected OpenAI, Google, and shared gateway models', () => {
         const settings = createStore().getState().settings;
@@ -264,6 +271,84 @@ describe('Pi production runtime', () => {
             outcome: expect.objectContaining({ outcomeKind: 'accepted', assistantCardId: 'batch-card-2' }),
         }));
         actionMock.mockReset();
+    });
+
+    it('reports batch cards removed by the evidence gate and keeps the survivors', async () => {
+        const store = createStore();
+        const makePlan = (title: string) => ({
+            title, description: title, chartType: 'bar', groupByColumn: 'Town', valueColumn: 'Amount', aggregation: 'sum',
+        });
+        const plans = [makePlan('Amount by Town'), makePlan('Amount by Town again'), makePlan('Amount by Flat')];
+        let created = 0;
+        actionMock.mockImplementation(async () => {
+            const index = created;
+            created += 1;
+            store.setState((prev: any) => ({ analysisCards: [...prev.analysisCards, {
+                id: `gate-card-${index}`, plan: plans[index], aggregatedData: [{ Town: 'A', Amount: 10 }],
+            }] }));
+            return { status: 'success', message: 'Created analysis card.', artifacts: { createdCardId: `gate-card-${index}` } };
+        });
+        gateMock.mockImplementation((_store: unknown, ids: string[]) => {
+            store.setState((prev: any) => ({ analysisCards: prev.analysisCards.filter((card: any) => card.id !== 'gate-card-1') }));
+            return {
+                rejected: ids.includes('gate-card-1')
+                    ? [{ cardId: 'gate-card-1', title: 'Amount by Town again', detail: 'duplicate_semantic' }] : [],
+                tableOnlyIds: ['gate-card-0'],
+            };
+        });
+        const stream: StreamFn = model => {
+            const output = createAssistantMessageEventStream();
+            const message: AssistantMessage = {
+                role: 'assistant',
+                content: plans.map((plan, index) => ({
+                    type: 'toolCall' as const, id: `create-card-${index}`, name: 'analysis_create_plan', arguments: { plan },
+                })),
+                api: model.api, provider: model.provider, model: model.id,
+                usage, stopReason: 'toolUse', timestamp: Date.now(),
+            };
+            output.push({ type: 'start', partial: message });
+            output.push({ type: 'done', reason: 'toolUse', message });
+            return output;
+        };
+        const result = await runPiFollowUpTurn({
+            message: 'Analyze this dataset from several angles.',
+            intentFindings: { intent: 'batch_analysis' } as never,
+        }, store as never, stream);
+
+        expect(result.status).toBe('completed');
+        expect(result.text).toContain('table presentation only');
+        expect(result.text).toContain('"Amount by Town again": duplicate_semantic');
+        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
+            outcome: expect.objectContaining({ assistantCardId: 'gate-card-2' }),
+        }));
+        actionMock.mockReset();
+    });
+
+    it('does not apply the evidence gate to an explicit card request', async () => {
+        const store = createStore();
+        const plan = { title: 'T', description: 'T', chartType: 'bar', groupByColumn: 'Town', valueColumn: 'Amount', aggregation: 'sum' };
+        actionMock.mockImplementationOnce(async () => {
+            store.setState({ analysisCards: [{ id: 'explicit-card', plan, aggregatedData: [{ Town: 'A', Amount: 1 }] }] });
+            return { status: 'success', message: 'ok', artifacts: { createdCardId: 'explicit-card' } };
+        });
+        const stream: StreamFn = model => {
+            const output = createAssistantMessageEventStream();
+            const message: AssistantMessage = {
+                role: 'assistant',
+                content: [{ type: 'toolCall', id: 'c1', name: 'analysis_create_plan', arguments: { plan } }],
+                api: model.api, provider: model.provider, model: model.id,
+                usage, stopReason: 'toolUse', timestamp: Date.now(),
+            };
+            output.push({ type: 'start', partial: message });
+            output.push({ type: 'done', reason: 'toolUse', message });
+            return output;
+        };
+        await runPiFollowUpTurn({
+            message: 'Add a dashboard card by Town.',
+            intentFindings: { intent: 'precise_card' } as never,
+        }, store as never, stream);
+
+        expect(gateMock).not.toHaveBeenCalled();
     });
 
     it('accepts a text answer for batch analysis when Pi finds no card worth saving', async () => {

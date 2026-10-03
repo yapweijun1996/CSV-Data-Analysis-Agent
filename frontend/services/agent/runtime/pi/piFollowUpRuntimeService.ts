@@ -25,6 +25,7 @@ import {
     markTurnWaitingForClarification,
 } from '../runtimeState';
 import { createPiAppTools } from './piAppTools';
+import { gatePiCreatedCards, type PiCardGateRejection } from './piCardEvidenceGate';
 import { createPiFollowUpSystemPrompt } from './piContext';
 import { createPiCompactionTelemetry, createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
 import {
@@ -106,16 +107,20 @@ const findSavedCards = (store: StoreApi, cardIds: string[]): AnalysisCardData[] 
     return cardIds.flatMap(id => cards.find(card => card.id === id) ?? []);
 };
 
-const describeCreatedCards = (cards: AnalysisCardData[]): string => {
+const describeCreatedCards = (cards: AnalysisCardData[], tableOnlyIds: ReadonlySet<string>): string => {
     const describe = (card: AnalysisCardData) => {
         const title = resolveDisplayPlanLabels(card.plan).title;
         const rowCount = card.aggregatedData.length;
-        return `"${title}" with ${rowCount} result row${rowCount === 1 ? '' : 's'}`;
+        const tableNote = tableOnlyIds.has(card.id) ? ' (evidence supports table presentation only)' : '';
+        return `"${title}" with ${rowCount} result row${rowCount === 1 ? '' : 's'}${tableNote}`;
     };
     return cards.length === 1
         ? `Created dashboard card ${describe(cards[0])}.`
         : `Created ${cards.length} dashboard cards:\n${cards.map(card => `- ${describe(card)}`).join('\n')}`;
 };
+
+const describeRejectedCards = (rejections: PiCardGateRejection[]): string =>
+    `${rejections.length} candidate card${rejections.length === 1 ? ' was' : 's were'} removed because the evidence check rejected ${rejections.length === 1 ? 'it' : 'them'}:\n${rejections.map(item => `- "${item.title}": ${item.detail}`).join('\n')}`;
 
 export const runPiFollowUpTurn = async (
     request: PiFollowUpRequest,
@@ -140,7 +145,23 @@ export const runPiFollowUpTurn = async (
     let pendingMutation: Record<string, unknown> | null = null;
     let pendingClarification: ClarificationRequest | null = null;
     let providerTurns = 0;
-    const createdCardIds: string[] = [];
+    let createdCardIds: string[] = [];
+    const gatedCardIds = new Set<string>();
+    const tableOnlyCardIds = new Set<string>();
+    const gateRejections: PiCardGateRejection[] = [];
+    // Open-ended analysis is the only route held to the evidence value gate;
+    // explicit card requests keep the user's exact specification.
+    const settleCreatedCards = () => {
+        if (!isBatchAnalysis) return;
+        const pending = createdCardIds.filter(id => !gatedCardIds.has(id));
+        if (pending.length === 0) return;
+        pending.forEach(id => gatedCardIds.add(id));
+        const gate = gatePiCreatedCards(store, pending);
+        gate.tableOnlyIds.forEach(id => tableOnlyCardIds.add(id));
+        gateRejections.push(...gate.rejected);
+        const rejectedIds = new Set(gate.rejected.map(item => item.cardId));
+        createdCardIds = createdCardIds.filter(id => !rejectedIds.has(id));
+    };
     let failureClass: 'provider' | 'tool_execution' = 'provider';
     const isBatchAnalysis = request.intentFindings?.intent === 'batch_analysis';
     const allowCardCreation = request.queryUnderstandingArtifact?.expectedOutput === 'chart_card'
@@ -218,6 +239,7 @@ export const runPiFollowUpTurn = async (
             throw new Error('The dataset changed during this turn. Start a new request.');
         }
         if (agent.state.errorMessage) throw new Error(agent.state.errorMessage);
+        settleCreatedCards();
         if (pendingMutation) {
             const review = JSON.stringify(pendingMutation, null, 2);
             pendingClarification = {
@@ -251,13 +273,17 @@ export const runPiFollowUpTurn = async (
             text = pendingClarification.question;
         } else {
         const createdCards = findSavedCards(store, createdCardIds);
+        const gateNote = gateRejections.length > 0 ? `\n${describeRejectedCards(gateRejections)}` : '';
         if (allowCardCreation && !isBatchAnalysis && createdCards.length === 0) {
             failureClass = 'tool_execution';
             text = 'Pi could not add the requested dashboard card. The query result was not saved as a card. Please retry or review the analysis data.';
             status = 'failed';
         } else if (createdCards.length > 0) {
             store.getState().setResultsViewMode?.('explore');
-            text = describeCreatedCards(createdCards);
+            text = `${describeCreatedCards(createdCards, tableOnlyCardIds)}${gateNote}`;
+            status = 'completed';
+        } else if (gateRejections.length > 0) {
+            text = describeRejectedCards(gateRejections);
             status = 'completed';
         } else {
             const last = [...agent.state.messages].reverse().find(message => message.role === 'assistant');
@@ -285,9 +311,10 @@ export const runPiFollowUpTurn = async (
         status = controller.signal.aborted ? 'cancelled' : 'failed';
         // A card that already reached the dashboard must not be reported as a
         // failure: the retry action would create a duplicate.
+        if (status === 'failed') settleCreatedCards();
         const savedCards = status === 'failed' ? findSavedCards(store, createdCardIds) : [];
         if (savedCards.length > 0) {
-            text = `${describeCreatedCards(savedCards)} Pi then stopped early: ${sanitizeError(error)}`;
+            text = `${describeCreatedCards(savedCards, tableOnlyCardIds)} Pi then stopped early: ${sanitizeError(error)}`;
             status = 'completed';
         } else {
             text = status === 'cancelled'
