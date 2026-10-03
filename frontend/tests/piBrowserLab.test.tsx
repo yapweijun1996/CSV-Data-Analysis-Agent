@@ -50,7 +50,12 @@ describe('Pi Browser Lab', () => {
         expect(screen.getByRole('dialog', { name: 'Pi Browser Lab' })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: 'Run mock tool cycle' }));
 
-        await waitFor(() => expect(screen.getByLabelText('Pi answer').textContent).toContain('metric_sum'));
+        // The dialog dynamically imports the Pi agent on click; a cold module load under
+        // CPU contention can exceed testing-library's default 1s waitFor timeout.
+        await waitFor(
+            () => expect(screen.getByLabelText('Pi answer').textContent).toContain('metric_sum'),
+            { timeout: 10_000 },
+        );
         expect(executeManagedDataQueryMock).toHaveBeenCalledOnce();
         expect(screen.queryByRole('alert')).toBeNull();
     });
