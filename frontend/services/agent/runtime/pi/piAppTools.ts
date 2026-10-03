@@ -15,9 +15,10 @@ const MAX_TOOL_RESULT_CHARS = 6_000;
 export const createPiAppTools = (
     store: StoreApi,
     datasetVersion: string | null,
-    options: { allowCardCreation?: boolean; onCardCreated?: (cardId: string) => void } = {},
+    options: { allowCardCreation?: boolean; maxToolCalls?: number; onCardCreated?: (cardId: string) => void } = {},
 ): AgentTool[] => {
     let calls = 0;
+    const maxToolCalls = options.maxToolCalls ?? PI_MAX_TOOL_CALLS_PER_TURN;
     const state = store.getState();
     const dataset = getPreferredAnalysisDataset(state);
     const columnNames = dataset
@@ -46,8 +47,8 @@ export const createPiAppTools = (
             if (getCurrentAnalysisDatasetVersion(store.getState()) !== datasetVersion) {
                 throw new Error('The dataset changed during this turn. Start a new request.');
             }
-            if (calls >= PI_MAX_TOOL_CALLS_PER_TURN) {
-                throw new Error(`The limit of ${PI_MAX_TOOL_CALLS_PER_TURN} app tools was reached.`);
+            if (calls >= maxToolCalls) {
+                throw new Error(`The limit of ${maxToolCalls} app tools was reached.`);
             }
             calls += 1;
             const result = await handleAiAction({

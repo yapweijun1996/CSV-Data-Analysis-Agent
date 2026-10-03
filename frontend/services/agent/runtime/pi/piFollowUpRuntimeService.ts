@@ -62,10 +62,26 @@ const readAssistantText = (event: AgentEvent): string => {
         .join('\n');
 };
 
-const describeCreatedCard = (card: AnalysisCardData): string => {
-    const title = resolveDisplayPlanLabels(card.plan).title;
-    const rowCount = card.aggregatedData.length;
-    return `Created dashboard card "${title}" with ${rowCount} result row${rowCount === 1 ? '' : 's'}.`;
+/** Open-ended analysis requests may create several cards; explicit card requests create one. */
+const BATCH_ANALYSIS_CARD_TARGET = 3;
+const BATCH_ANALYSIS_MAX_TOOL_CALLS = 8;
+const BATCH_ANALYSIS_MAX_PROVIDER_TURNS = 10;
+const DEFAULT_MAX_PROVIDER_TURNS = 6;
+
+const findSavedCards = (store: StoreApi, cardIds: string[]): AnalysisCardData[] => {
+    const cards = store.getState().analysisCards;
+    return cardIds.flatMap(id => cards.find(card => card.id === id) ?? []);
+};
+
+const describeCreatedCards = (cards: AnalysisCardData[]): string => {
+    const describe = (card: AnalysisCardData) => {
+        const title = resolveDisplayPlanLabels(card.plan).title;
+        const rowCount = card.aggregatedData.length;
+        return `"${title}" with ${rowCount} result row${rowCount === 1 ? '' : 's'}`;
+    };
+    return cards.length === 1
+        ? `Created dashboard card ${describe(cards[0])}.`
+        : `Created ${cards.length} dashboard cards:\n${cards.map(card => `- ${describe(card)}`).join('\n')}`;
 };
 
 export const runPiFollowUpTurn = async (
@@ -91,10 +107,14 @@ export const runPiFollowUpTurn = async (
     let pendingMutation: Record<string, unknown> | null = null;
     let pendingClarification: ClarificationRequest | null = null;
     let providerTurns = 0;
-    let createdCardId: string | null = null;
+    const createdCardIds: string[] = [];
     let failureClass: 'provider' | 'tool_execution' = 'provider';
+    const isBatchAnalysis = request.intentFindings?.intent === 'batch_analysis';
     const allowCardCreation = request.queryUnderstandingArtifact?.expectedOutput === 'chart_card'
-        || request.intentFindings?.intent === 'precise_card';
+        || request.intentFindings?.intent === 'precise_card'
+        || isBatchAnalysis;
+    const cardTarget = isBatchAnalysis ? BATCH_ANALYSIS_CARD_TARGET : 1;
+    const maxProviderTurns = isBatchAnalysis ? BATCH_ANALYSIS_MAX_PROVIDER_TURNS : DEFAULT_MAX_PROVIDER_TURNS;
     try {
         await persistCurrentAppSessionSnapshot(state);
         if (!streamOverride) await ensureCloudAiConsent(state.settings.provider);
@@ -103,6 +123,7 @@ export const runPiFollowUpTurn = async (
         const prompt = createPiFollowUpSystemPrompt(store.getState(), appMemory, {
             ...request,
             allowCardCreation,
+            cardTarget,
         });
         agent = new Agent({
             initialState: {
@@ -111,7 +132,8 @@ export const runPiFollowUpTurn = async (
                 thinkingLevel: resolvePiThinkingLevel(state.settings),
                 tools: createPiAppTools(store, datasetVersion, {
                     allowCardCreation,
-                    onCardCreated: cardId => { createdCardId = cardId; },
+                    ...(isBatchAnalysis ? { maxToolCalls: BATCH_ANALYSIS_MAX_TOOL_CALLS } : {}),
+                    onCardCreated: cardId => { createdCardIds.push(cardId); },
                 }),
             },
             streamFn: streamOverride ?? createPiProviderStream(state.settings),
@@ -119,7 +141,7 @@ export const runPiFollowUpTurn = async (
             toolExecution: 'sequential',
             finishTurn: () => {
                 providerTurns += 1;
-                return pendingMutation || createdCardId || providerTurns >= 6
+                return pendingMutation || createdCardIds.length >= cardTarget || providerTurns >= maxProviderTurns
                     ? { action: 'end' } : undefined;
             },
             beforeToolCall: async ({ toolCall, args }) => {
@@ -195,16 +217,14 @@ export const runPiFollowUpTurn = async (
             status = 'blocked';
             text = pendingClarification.question;
         } else {
-        const createdCard = createdCardId
-            ? store.getState().analysisCards.find(card => card.id === createdCardId)
-            : null;
-        if (allowCardCreation && !createdCard) {
+        const createdCards = findSavedCards(store, createdCardIds);
+        if (allowCardCreation && !isBatchAnalysis && createdCards.length === 0) {
             failureClass = 'tool_execution';
             text = 'Pi could not add the requested dashboard card. The query result was not saved as a card. Please retry or review the analysis data.';
             status = 'failed';
-        } else if (createdCard) {
+        } else if (createdCards.length > 0) {
             store.getState().setResultsViewMode?.('explore');
-            text = describeCreatedCard(createdCard);
+            text = describeCreatedCards(createdCards);
             status = 'completed';
         } else {
             const last = [...agent.state.messages].reverse().find(message => message.role === 'assistant');
@@ -232,11 +252,9 @@ export const runPiFollowUpTurn = async (
         status = controller.signal.aborted ? 'cancelled' : 'failed';
         // A card that already reached the dashboard must not be reported as a
         // failure: the retry action would create a duplicate.
-        const savedCard = status === 'failed' && createdCardId
-            ? store.getState().analysisCards.find(card => card.id === createdCardId)
-            : null;
-        if (savedCard) {
-            text = `${describeCreatedCard(savedCard)} Pi then stopped early: ${sanitizeError(error)}`;
+        const savedCards = status === 'failed' ? findSavedCards(store, createdCardIds) : [];
+        if (savedCards.length > 0) {
+            text = `${describeCreatedCards(savedCards)} Pi then stopped early: ${sanitizeError(error)}`;
             status = 'completed';
         } else {
             text = status === 'cancelled'
@@ -281,7 +299,7 @@ export const runPiFollowUpTurn = async (
                 eventDetail: { runtimeOwner: 'pi' },
                 assistantMessage: status === 'cancelled' || status === 'blocked' ? null : text,
                 assistantMessageIsError: status === 'failed',
-                assistantCardId: status === 'completed' ? createdCardId : null,
+                assistantCardId: status === 'completed' ? (createdCardIds[createdCardIds.length - 1] ?? null) : null,
             },
         });
         if (status === 'blocked') store.setState({ isBusy: false, chatLifecycleState: 'blocked' });

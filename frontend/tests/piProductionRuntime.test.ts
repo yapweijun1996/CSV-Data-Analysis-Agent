@@ -221,6 +221,60 @@ describe('Pi production runtime', () => {
         }));
     });
 
+    it('creates several distinct cards for an open-ended batch analysis request', async () => {
+        const store = createStore();
+        const makePlan = (title: string, groupByColumn: string) => ({
+            title, description: title, chartType: 'bar', groupByColumn, valueColumn: 'Amount', aggregation: 'sum',
+        });
+        const plans = [makePlan('Amount by Town', 'Town'), makePlan('Amount by Flat', 'Flat'), makePlan('Amount by Year', 'Year')];
+        let created = 0;
+        actionMock.mockImplementation(async () => {
+            const index = created;
+            created += 1;
+            store.setState((prev: any) => ({ analysisCards: [...prev.analysisCards, {
+                id: `batch-card-${index}`, plan: plans[index], aggregatedData: [{ Town: 'A', Amount: 10 }],
+            }] }));
+            return { status: 'success', message: 'Created analysis card.', artifacts: { createdCardId: `batch-card-${index}` } };
+        });
+        const stream: StreamFn = model => {
+            const output = createAssistantMessageEventStream();
+            const message: AssistantMessage = {
+                role: 'assistant',
+                content: plans.map((plan, index) => ({
+                    type: 'toolCall' as const, id: `create-card-${index}`, name: 'analysis_create_plan', arguments: { plan },
+                })),
+                api: model.api, provider: model.provider, model: model.id,
+                usage, stopReason: 'toolUse', timestamp: Date.now(),
+            };
+            output.push({ type: 'start', partial: message });
+            output.push({ type: 'done', reason: 'toolUse', message });
+            return output;
+        };
+        const result = await runPiFollowUpTurn({
+            message: 'Analyze this dataset from several angles.',
+            intentFindings: { intent: 'batch_analysis' } as never,
+        }, store as never, stream);
+
+        expect(result.status).toBe('completed');
+        expect(result.text).toContain('Created 3 dashboard cards');
+        expect(actionMock).toHaveBeenCalledTimes(3);
+        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
+            outcome: expect.objectContaining({ outcomeKind: 'accepted', assistantCardId: 'batch-card-2' }),
+        }));
+        actionMock.mockReset();
+    });
+
+    it('accepts a text answer for batch analysis when Pi finds no card worth saving', async () => {
+        const store = createStore();
+        const result = await runPiFollowUpTurn({
+            message: 'Analyze this dataset from several angles.',
+            intentFindings: { intent: 'batch_analysis' } as never,
+        }, store as never, answerStream('The data has a single row, so no angle is meaningful.'));
+
+        expect(result).toMatchObject({ status: 'completed' });
+        expect(actionMock).not.toHaveBeenCalled();
+    });
+
     it('keeps a saved card as completed when the turn fails after card creation', async () => {
         const store = createStore();
         const plan = {

@@ -88,10 +88,13 @@ const buildSystemPrompt = (
     language: ReturnType<StoreApi['getState']>['settings']['language'],
     compactedContext: string,
     allowCardCreation: boolean,
+    cardTarget: number,
 ): string => [
     'You are the follow-up data-analysis assistant embedded in the current app.',
     `Always answer in ${language}.`,
-    allowCardCreation
+    allowCardCreation && cardTarget > 1
+        ? `Use the host-provided session context and app actions as the source of truth. The user asked for an open-ended analysis: create up to ${cardTarget} dashboard cards with analysis_create_plan, each covering a clearly different angle (different grouping or measure) and avoiding cards that duplicate the visible card evidence. Prefer SQL-first plans for a file-backed dataset. Stop after ${cardTarget} cards. Never claim a card was saved unless that tool succeeds.`
+        : allowCardCreation
         ? 'Use the host-provided session context and app actions as the source of truth. The user requested a new dashboard card: use analysis_create_plan to create it, preferably with a SQL-first plan for a file-backed dataset. Query results in chat alone do not fulfill this request. Never claim a card was saved unless that tool succeeds.'
         : 'Use the host-provided session context and read-only app actions as the source of truth.',
     'Trust card evidence only according to its explicit verified, caveated, unverified, stale, or weak label.',
@@ -137,6 +140,7 @@ export const createPiFollowUpSystemPrompt = (
         queryUnderstandingArtifact?: QueryUnderstandingArtifact;
         groundingResult?: GroundingResult;
         allowCardCreation?: boolean;
+        cardTarget?: number;
     } = {},
 ): string => {
     const fileName = state.csvData?.fileName || 'Current dataset';
@@ -168,7 +172,7 @@ export const createPiFollowUpSystemPrompt = (
     ].filter(Boolean).join('\n\n'), MAX_CONTEXT_CHARS);
 
     return [
-        buildSystemPrompt(state.settings.language, compactedContext, requestContext.allowCardCreation ?? false),
+        buildSystemPrompt(state.settings.language, compactedContext, requestContext.allowCardCreation ?? false, requestContext.cardTarget ?? 1),
         `Current goal: ${state.confirmedAnalysisGoal ?? 'Answer the current follow-up accurately.'}`,
         `Recent turns:\n${formatRecentTurns(state)}`,
     ].join('\n\n');
