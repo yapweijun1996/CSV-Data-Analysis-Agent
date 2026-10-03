@@ -3,11 +3,13 @@ import { googleProvider } from '@earendil-works/pi-ai/providers/google';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import type { StreamFn } from '@earendil-works/pi-agent-core';
 import type { Settings } from '../../../../types';
+import { emitSilentFailure } from '../../monitoring/silentFailureTracker';
+import type { StoreApi } from '../../types';
 import { PROVIDER_CONTEXT_WINDOW_CAP } from '../../../../config/agentDefaults';
 import { DEFAULT_GATEWAY_BASE_URL } from '../../../../config/defaultGatewayConfig';
 import { fetchDefaultGateway, fetchWithoutForbiddenUserAgent } from '../../../ai/browserProviderFetch';
 import { resolveProviderApiKey, resolveProviderModelId } from '../../../ai/providerConfig';
-import { createPiProviderContextCompactor } from './piContextCompaction';
+import { createPiProviderContextCompactor, type PiCompactionDegradation } from './piContextCompaction';
 
 const models = createModels();
 models.setProvider(openaiProvider());
@@ -50,7 +52,10 @@ export const createPiProviderStream = (settings: Settings): StreamFn => {
     });
 };
 
-export const createPiProviderContextTransform = (settings: Settings) => {
+export const createPiProviderContextTransform = (
+    settings: Settings,
+    onDegraded?: (degradation: PiCompactionDegradation) => void,
+) => {
     const apiKey = resolveProviderApiKey(settings);
     if (!apiKey.trim()) throw new Error('The selected AI provider has no API key.');
     return createPiProviderContextCompactor(
@@ -58,5 +63,16 @@ export const createPiProviderContextTransform = (settings: Settings) => {
         models,
         apiKey,
         settings.provider === 'default' ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent,
+        onDegraded,
     );
 };
+
+/** Surface degraded context compaction as a silent-failure runtime event. */
+export const createPiCompactionTelemetry = (store: StoreApi) =>
+    ({ reason, error, estimatedTokens }: PiCompactionDegradation): void =>
+        emitSilentFailure(store, error, {
+            component: 'PiContextCompaction',
+            recoveryAction: `uncompacted_history_used:${reason}`,
+            userNotified: false,
+            detail: { reason, estimatedTokens },
+        });

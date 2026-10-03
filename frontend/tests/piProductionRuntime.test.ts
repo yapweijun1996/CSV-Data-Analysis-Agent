@@ -258,6 +258,8 @@ describe('Pi production runtime', () => {
         expect(result.status).toBe('completed');
         expect(result.text).toContain('Created 3 dashboard cards');
         expect(actionMock).toHaveBeenCalledTimes(3);
+        expect(store.getState().analysisCards.map((card: any) => card.autoAnalysisEvaluation?.source))
+            .toEqual(Array(3).fill('auto_analysis_evaluator_v1'));
         expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
             outcome: expect.objectContaining({ outcomeKind: 'accepted', assistantCardId: 'batch-card-2' }),
         }));

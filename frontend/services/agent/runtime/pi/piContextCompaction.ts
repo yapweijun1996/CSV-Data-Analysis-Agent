@@ -10,6 +10,15 @@ import {
 
 type SummarizeHistory = (messages: AgentMessage[], signal?: AbortSignal) => Promise<string>;
 
+/** Reported when compaction was needed but could not shrink the history. */
+export interface PiCompactionDegradation {
+    reason: 'summary_failed' | 'summary_unusable' | 'compaction_ineffective';
+    error: unknown;
+    estimatedTokens: number;
+}
+
+type OnCompactionDegraded = (degradation: PiCompactionDegradation) => void;
+
 const estimateVisibleTokens = (value: unknown): number => {
     const serialized = JSON.stringify(value);
     let nonAsciiUnits = 0;
@@ -28,6 +37,7 @@ const projectedTokens = (messages: AgentMessage[], hasSummary: boolean): number 
 export const createPiContextCompactor = (
     contextWindow: number,
     summarize: SummarizeHistory,
+    onDegraded?: OnCompactionDegraded,
 ) => {
     if (!Number.isFinite(contextWindow) || contextWindow <= 0) {
         throw new Error('Pi requires a known context window for automatic compaction.');
@@ -36,6 +46,22 @@ export const createPiContextCompactor = (
     let summary = '';
     let summarizedThrough = 1;
     let summaryTimestamp = 0;
+    // After a failed or ineffective attempt, retrying on every provider turn only
+    // repeats a slow summary call. Wait until the history has grown noticeably.
+    let retryAboveTokens = 0;
+    const retryGrowthTokens = Math.floor(contextWindow * 0.05);
+    const degrade = (
+        reason: PiCompactionDegradation['reason'],
+        error: unknown,
+        estimatedTokens: number,
+    ) => {
+        retryAboveTokens = estimatedTokens + retryGrowthTokens;
+        try {
+            onDegraded?.({ reason, error, estimatedTokens });
+        } catch {
+            // Telemetry must never break the Pi turn.
+        }
+    };
 
     return async (messages: AgentMessage[], signal?: AbortSignal): Promise<AgentMessage[]> => {
         if (messages[0]?.role !== 'system') return messages;
@@ -50,7 +76,7 @@ export const createPiContextCompactor = (
             ...messages.slice(summarizedThrough),
         ];
         const estimated = projectedTokens(projected, Boolean(summary));
-        if (estimated < triggerTokens) return projected;
+        if (estimated < triggerTokens || estimated <= retryAboveTokens) return projected;
 
         let cut = projected.length;
         let recentTokens = 0;
@@ -68,7 +94,11 @@ export const createPiContextCompactor = (
 
         try {
             const nextSummary = (await summarize(projected.slice(1, cut), signal)).trim();
-            if (!nextSummary || nextSummary.length > 20_000 || signal?.aborted) return projected;
+            if (signal?.aborted) return projected;
+            if (!nextSummary || nextSummary.length > 20_000) {
+                degrade('summary_unusable', new Error(nextSummary ? 'Pi summary exceeded the size limit.' : 'Pi summary was empty.'), estimated);
+                return projected;
+            }
             const nextSummarizedThrough = summarizedThrough + cut - 1 - (summary ? 1 : 0);
             const nextTimestamp = Date.now();
             const compacted: AgentMessage[] = [
@@ -76,13 +106,18 @@ export const createPiContextCompactor = (
                 { role: 'user', content: [{ type: 'text', text: `Earlier conversation summary:\n${nextSummary}` }], timestamp: nextTimestamp },
                 ...messages.slice(nextSummarizedThrough),
             ];
-            if (projectedTokens(compacted, true) >= triggerTokens) return projected;
+            if (projectedTokens(compacted, true) >= triggerTokens) {
+                degrade('compaction_ineffective', new Error('Compaction did not bring the history under the trigger.'), estimated);
+                return projected;
+            }
+            retryAboveTokens = 0;
             summary = nextSummary;
             summarizedThrough = nextSummarizedThrough;
             summaryTimestamp = nextTimestamp;
             return compacted;
-        } catch {
+        } catch (error) {
             // Pi's transformContext contract requires a safe fallback on summary failure.
+            if (!signal?.aborted) degrade('summary_failed', error, estimated);
             return projected;
         }
     };
@@ -93,6 +128,7 @@ export const createPiProviderContextCompactor = (
     models: Models,
     apiKey: string,
     providerFetch: typeof fetch,
+    onDegraded?: OnCompactionDegraded,
 ) => createPiContextCompactor(model.contextWindow, async (messages, signal) => {
     const history = serializeConversation(convertToLlm(messages));
     const response = await models.completeSimple(model, {
@@ -113,4 +149,4 @@ export const createPiProviderContextCompactor = (
         throw new Error('Pi context summarization failed.');
     }
     return contentText(response.content);
-});
+}, onDegraded);

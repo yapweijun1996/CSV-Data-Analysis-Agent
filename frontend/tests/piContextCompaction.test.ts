@@ -53,6 +53,46 @@ describe('Pi automatic context compaction', () => {
         expect(summarize).toHaveBeenCalledOnce();
     });
 
+    const toolPair = (resultChars: number) => [
+        {
+            role: 'assistant', content: [{ type: 'toolCall', id: 'call-1', name: 'query', arguments: {} }],
+            stopReason: 'toolUse', timestamp: 2,
+        } as AgentMessage,
+        {
+            role: 'toolResult', toolCallId: 'call-1', toolName: 'query',
+            content: [{ type: 'text', text: 'R'.repeat(resultChars) }], timestamp: 3,
+        } as AgentMessage,
+    ];
+
+    it('reports a failed summary once and does not retry until the history grows', async () => {
+        const summarize = vi.fn(async () => { throw new Error('summary provider down'); });
+        const onDegraded = vi.fn();
+        const compact = createPiContextCompactor(200_000, summarize, onDegraded);
+        const messages = [system, user('A'.repeat(500_000)), ...toolPair(80_000)];
+
+        expect(await compact(messages)).toEqual(messages);
+        expect(await compact(messages)).toEqual(messages);
+        expect(summarize).toHaveBeenCalledOnce();
+        expect(onDegraded).toHaveBeenCalledOnce();
+        expect(onDegraded).toHaveBeenCalledWith(expect.objectContaining({ reason: 'summary_failed' }));
+
+        await compact([...messages, user('B'.repeat(150_000))]);
+        expect(summarize).toHaveBeenCalledTimes(2);
+        expect(onDegraded).toHaveBeenCalledTimes(2);
+    });
+
+    it('reports a summary that cannot bring the history under the trigger', async () => {
+        const summarize = vi.fn(async () => 'Short summary.');
+        const onDegraded = vi.fn();
+        const compact = createPiContextCompactor(200_000, summarize, onDegraded);
+        const messages = [system, user('A'.repeat(500_000)), ...toolPair(900_000)];
+
+        expect(await compact(messages)).toEqual(messages);
+        expect(await compact(messages)).toEqual(messages);
+        expect(summarize).toHaveBeenCalledOnce();
+        expect(onDegraded).toHaveBeenCalledWith(expect.objectContaining({ reason: 'compaction_ineffective' }));
+    });
+
     it('preserves a single oversized current turn when there is no safe history to summarize', async () => {
         const summarize = vi.fn(async () => 'summary');
         const compact = createPiContextCompactor(200_000, summarize);

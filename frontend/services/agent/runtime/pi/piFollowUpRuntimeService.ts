@@ -1,6 +1,8 @@
 import { Agent, type AgentEvent, type StreamFn } from '@earendil-works/pi-agent-core';
 import type { AnalysisCardData, ClarificationRequest } from '../../../../types';
 import { createChatMessage } from '../../../../utils/messageState';
+import { attachAutoAnalysisEvaluationToCards } from '../../autoAnalysisEvaluation';
+import { emitSilentFailure } from '../../monitoring/silentFailureTracker';
 import { resolveDisplayPlanLabels } from '../../../dashboard/displayLabelContext';
 import { validateDataMutatePayload } from '../../execution/dataMutateContract';
 import { isDestructiveRowDeleteAction } from '../../execution/destructiveRowDelete';
@@ -24,7 +26,7 @@ import {
 } from '../runtimeState';
 import { createPiAppTools } from './piAppTools';
 import { createPiFollowUpSystemPrompt } from './piContext';
-import { createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
+import { createPiCompactionTelemetry, createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
 import {
     buildGroundedCompleteQueryReply,
     buildGroundedDerivedCostPerResultReply,
@@ -67,6 +69,37 @@ const BATCH_ANALYSIS_CARD_TARGET = 3;
 const BATCH_ANALYSIS_MAX_TOOL_CALLS = 8;
 const BATCH_ANALYSIS_MAX_PROVIDER_TURNS = 10;
 const DEFAULT_MAX_PROVIDER_TURNS = 6;
+
+/**
+ * Pi-created cards start without a persisted quality verdict, so the trust
+ * model would label every one of them unverified. Evaluate them against the
+ * full card set (as the initial-analysis lifecycle owner does) and persist the
+ * verdict on the new cards only; existing cards keep their stored verdicts.
+ */
+const attachEvidenceVerdicts = (store: StoreApi, cardIds: string[]): void => {
+    if (cardIds.length === 0) return;
+    try {
+        store.setState(state => {
+            const evaluated = new Map(
+                attachAutoAnalysisEvaluationToCards(state.analysisCards, {
+                    columnProfiles: state.columnProfiles,
+                }).map(card => [card.id, card]),
+            );
+            return {
+                analysisCards: state.analysisCards.map(card =>
+                    cardIds.includes(card.id) ? evaluated.get(card.id) ?? card : card),
+            };
+        });
+    } catch (error) {
+        // The card stays visible and is labelled unverified; the failure is only telemetry.
+        emitSilentFailure(store, error, {
+            component: 'PiFollowUpRuntime',
+            recoveryAction: 'card_left_unverified',
+            userNotified: false,
+            detail: { cardIds },
+        });
+    }
+};
 
 const findSavedCards = (store: StoreApi, cardIds: string[]): AnalysisCardData[] => {
     const cards = store.getState().analysisCards;
@@ -137,7 +170,7 @@ export const runPiFollowUpTurn = async (
                 }),
             },
             streamFn: streamOverride ?? createPiProviderStream(state.settings),
-            transformContext: createPiProviderContextTransform(state.settings),
+            transformContext: createPiProviderContextTransform(state.settings, createPiCompactionTelemetry(store)),
             toolExecution: 'sequential',
             finishTurn: () => {
                 providerTurns += 1;
@@ -262,6 +295,7 @@ export const runPiFollowUpTurn = async (
                 : `Pi could not complete this request: ${sanitizeError(error)}`;
         }
     } finally {
+        attachEvidenceVerdicts(store, createdCardIds);
         activeAgents.delete(turn.turnId);
         clearRuntimeTurnAbortController(turn.turnId);
         store.getState().clearActiveTurnCancellation?.();
