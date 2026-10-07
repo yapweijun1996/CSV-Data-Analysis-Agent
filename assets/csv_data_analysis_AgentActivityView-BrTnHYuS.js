@@ -1,5 +1,5 @@
 import { a as reactExports, j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { c3 as selectReportScopedActivity } from "./csv_data_analysis_app-agent-BwnqQ6dC.js";
+import { c3 as selectReportScopedActivity } from "./csv_data_analysis_app-agent-BNFX3cUk.js";
 const lifecycleClasses = {
   queued: "border-slate-200 bg-slate-100 text-slate-700",
   running: "border-blue-200 bg-blue-100 text-blue-800",

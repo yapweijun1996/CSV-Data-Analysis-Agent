@@ -207,6 +207,7 @@ export const createAnalysisTopicsPrompt = (contextText: string, goal: string | n
     ${contextText}
 
     Based on this, generate a list of concise analysis topics.
+    - List the topics from most to least useful for a decision-maker; the order is kept. Prefer a measure that matches what the column means (for example a typical price, not a sum of prices).
     - Good examples: "Sum of Revenue by Product Category", "Count of Orders per Month", "Relationship between Unit Cost and Profit".
     - Bad examples: "Chart of the data", "Analyze everything", "Make a pie chart".
 
