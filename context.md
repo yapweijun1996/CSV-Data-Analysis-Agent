@@ -513,3 +513,9 @@
 - **UI**: `PwaUpdateButton` in the header shows `v1.0.0 · <build>` (from the worker's `GET_VERSION`), then Checking / Up to date / Updating / Check failed; disabled offline. New `pwa_check_*` translations in four languages.
 - **Limits**: auto-apply reloads the page when idle, so unsaved in-memory state outside the busy signals can be lost; a loaded dataset is not treated as busy. The service worker itself is unchanged. GitHub Pages ignores `_headers`, so no-cache for `service-worker.js` relies on `updateViaCache: 'none'`. Not verified in a real browser against a published update.
 - **Checks**: typecheck, lint, full suite (344 files / 2,829 tests) passed. Root deployment regenerated.
+
+## 2026-10-07 Demo gateway rejects replayed reasoning `content`
+
+- **Live finding**: after the Demo-session build shipped, the Pi agent's second request failed with `400 DEMO_FIELD_DISABLED: content is not allowed in reasoning items`. Pi replays each stored reasoning item verbatim (`JSON.parse(block.thinkingSignature)`), including streamed `content` and `status`.
+- **Fix**: `sanitizeReasoningInput` in `browserProviderFetch.ts` reduces reasoning input items to `type`, `id`, `summary` and `encrypted_content` at the final request boundary (the same place `max_output_tokens` is stripped). Covered by a boundary test.
+- **Still unverified against the live gateway**: other replayed item shapes (assistant `message` items with `status`/`id`/`annotations`, `function_call` `id`, array-valued `function_call_output.output`) may trigger further `DEMO_FIELD_DISABLED` / `DEMO_INPUT_INVALID` errors. Fix them one by one from the reported `error.code`, or ask the gateway operator for the exact accepted item schema.
