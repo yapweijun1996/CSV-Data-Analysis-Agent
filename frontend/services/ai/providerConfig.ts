@@ -14,7 +14,7 @@ import {
 } from '../../config/agentDefaults';
 import { DEFAULT_FALLBACK_MODEL, FALLBACK_MODEL_CHAIN } from '../../config/modelDefaults';
 import { getForceFallbackModel } from '../../config/runtimeConfig';
-import { DEFAULT_GATEWAY_BASE_URL, DEFAULT_GATEWAY_MODEL, resolveDefaultGatewayApiKey } from '../../config/defaultGatewayConfig';
+import { DEFAULT_GATEWAY_API_KEY_PLACEHOLDER, DEFAULT_GATEWAY_BASE_URL, DEFAULT_GATEWAY_MODEL } from '../../config/defaultGatewayConfig';
 import { ensureCloudAiConsent } from '../privacy/cloudAiConsent';
 import { waitForCloudAiConnectivity } from '../pwa/networkAvailability';
 import { fetchDefaultGateway, fetchWithoutForbiddenUserAgent } from './browserProviderFetch';
@@ -35,11 +35,11 @@ export interface ProviderModelOptions {
 }
 
 export const resolveProviderApiKey = (settings: Settings): string => {
-    if (settings.provider === 'default') return resolveDefaultGatewayApiKey();
+    if (settings.provider === 'default') return DEFAULT_GATEWAY_API_KEY_PLACEHOLDER;
     return settings.provider === 'google' ? settings.geminiApiKey : settings.openAIApiKey;
 };
 
-// The 'default' provider uses the maintainer's shared gateway key — always
+// The 'default' provider opens its own short-lived demo session — always
 // available, no BYOK step required from the end user.
 export const isProviderConfigured = (settings: Settings): boolean =>
     settings.provider === 'default' || Boolean(resolveProviderApiKey(settings).trim());

@@ -1,3 +1,9 @@
+import {
+    getDemoGatewaySession,
+    invalidateDemoGatewaySession,
+    readGatewayErrorBody,
+} from './demoGatewaySession';
+
 /**
  * Normalizes browser provider requests across Chromium and WebKit.
  *
@@ -20,7 +26,34 @@ export const fetchWithoutForbiddenUserAgent: typeof fetch = (
     });
 };
 
-/** Enforce the demo gateway's request contract at the final browser boundary. */
+const SESSION_LIMIT_MESSAGE = 'demo session request limit reached';
+
+const sendWithSession = async (request: Request, body: Record<string, unknown>) => {
+    const session = await getDemoGatewaySession();
+    const headers = new Headers(request.headers);
+    headers.set('Authorization', `Bearer ${session.token}`);
+    const response = await fetchWithoutForbiddenUserAgent(new Request(request, {
+        headers,
+        // The wire model is the alias the session was issued for.
+        body: JSON.stringify({ ...body, model: session.model }),
+    }));
+    return { response, token: session.token };
+};
+
+/** True when the gateway says this session is expired or has spent its request cap. */
+const isRefreshableRejection = async (response: Response): Promise<boolean> => {
+    if (response.status === 401) return true;
+    if (response.status !== 429) return false;
+    const { message } = await readGatewayErrorBody(response);
+    return Boolean(message?.toLowerCase().includes(SESSION_LIMIT_MESSAGE));
+};
+
+/**
+ * Enforce the demo gateway's request contract at the final browser boundary:
+ * no max_output_tokens, a short-lived dmo_ bearer token, and the session's
+ * model alias. An expired or exhausted session is refreshed once and the same
+ * request is replayed.
+ */
 export const fetchDefaultGateway: typeof fetch = async (input, init) => {
     const request = new Request(input, init);
     if (request.method.toUpperCase() !== 'POST') {
@@ -39,7 +72,10 @@ export const fetchDefaultGateway: typeof fetch = async (input, init) => {
 
     const body = { ...payload as Record<string, unknown> };
     delete body.max_output_tokens;
-    return fetchWithoutForbiddenUserAgent(new Request(request, {
-        body: JSON.stringify(body),
-    }));
+
+    const first = await sendWithSession(request.clone(), body);
+    if (!await isRefreshableRejection(first.response)) return first.response;
+
+    invalidateDemoGatewaySession(first.token);
+    return (await sendWithSession(request, body)).response;
 };

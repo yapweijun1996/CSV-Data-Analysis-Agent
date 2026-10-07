@@ -16,6 +16,7 @@ const STRING_REDACTIONS: Array<[RegExp, string]> = [
     [/\bBearer\s+[A-Za-z0-9._~+\/-]+=*/gi, `Bearer ${REDACTED}`],
     [/\bAIza[0-9A-Za-z_-]{20,}\b/g, REDACTED],
     [/\bsk-[A-Za-z0-9_-]{16,}\b/g, REDACTED],
+    [/\bdmo_[A-Za-z0-9._-]+/g, REDACTED],
     [/((?:api[_-]?key|token|secret|password)\s*[=:]\s*)[^\s,;]+/gi, `$1${REDACTED}`],
 ];
 

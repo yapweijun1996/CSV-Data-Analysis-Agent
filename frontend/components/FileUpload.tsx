@@ -152,12 +152,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
                         {busyCard.detail}
                     </p>
                     <div className="mt-6 flex items-center justify-between gap-3">
-                        <p className="text-xs text-slate-500">{getTranslation('data_privacy_note', language)}</p>
+                        <p className="min-w-0 flex-1 text-xs text-slate-500">{getTranslation('data_privacy_note', language)}</p>
                         {canOpenLogs && (
                             <button
                                 type="button"
                                 onClick={openDebugLogs}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                                className="shrink-0 whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                             >
                                 {getTranslation('view_technical_details', language)}
                             </button>

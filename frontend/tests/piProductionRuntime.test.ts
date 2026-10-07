@@ -126,7 +126,7 @@ describe('Pi production runtime', () => {
         expect(resolvePiThinkingLevel(settings)).toBe('medium');
         expect(resolvePiModel({ ...settings, provider: 'google', complexModel: 'gemini-2.5-flash' }).provider).toBe('google');
         const gatewayModel = resolvePiModel({ ...settings, provider: 'default' });
-        expect(gatewayModel.baseUrl).toBe('https://gpt.yapweijun1996.com/v1');
+        expect(gatewayModel.baseUrl).toBe('https://gpt.yapweijun1996.com/demo/v1');
         expect(gatewayModel.contextWindow).toBe(200_000);
         expect(gatewayModel.compat).toMatchObject({ supportsMaxOutputTokens: false });
         expect(resolvePiModel(settings).compat).not.toMatchObject({ supportsMaxOutputTokens: false });

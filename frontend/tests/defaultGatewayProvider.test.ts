@@ -34,7 +34,7 @@ const {
     resolveProviderModelId,
     createProviderModel,
 } = await import('../services/ai/providerConfig');
-const { DEFAULT_GATEWAY_MODEL, DEFAULT_GATEWAY_BASE_URL, resolveDefaultGatewayApiKey } = await import('../config/defaultGatewayConfig');
+const { DEFAULT_GATEWAY_MODEL, DEFAULT_GATEWAY_BASE_URL, DEFAULT_GATEWAY_API_KEY_PLACEHOLDER } = await import('../config/defaultGatewayConfig');
 
 const makeSettings = (overrides: Partial<Settings> = {}): Settings => ({
     provider: 'default',
@@ -65,9 +65,10 @@ describe('default gateway provider', () => {
         expect(isProviderConfigured(makeSettings())).toBe(true);
     });
 
-    it('resolves the bundled gateway key regardless of stored user keys', () => {
+    it('uses a non-secret placeholder key regardless of stored user keys', () => {
         const settings = makeSettings({ geminiApiKey: 'unrelated', openAIApiKey: 'unrelated' });
-        expect(resolveProviderApiKey(settings)).toBe(resolveDefaultGatewayApiKey());
+        expect(resolveProviderApiKey(settings)).toBe(DEFAULT_GATEWAY_API_KEY_PLACEHOLDER);
+        expect(DEFAULT_GATEWAY_API_KEY_PLACEHOLDER).not.toMatch(/^(gw_|sk-|dmo_)/);
     });
 
     it('forces the model to the fixed gateway model, ignoring stored/override model IDs', () => {
@@ -80,7 +81,7 @@ describe('default gateway provider', () => {
         expect(createOpenAIMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 baseURL: DEFAULT_GATEWAY_BASE_URL,
-                apiKey: resolveDefaultGatewayApiKey(),
+                apiKey: DEFAULT_GATEWAY_API_KEY_PLACEHOLDER,
                 fetch: expect.any(Function),
             }),
         );
