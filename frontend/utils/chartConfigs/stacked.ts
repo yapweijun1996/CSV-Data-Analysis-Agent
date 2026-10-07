@@ -1,6 +1,6 @@
 import { ChartConfigProps } from './types';
 import { BORDER_COLORS, COLORS, getCommonOptions, getPivotTooltipCallbacks } from './common';
-import { formatAnalysisValue, getBarChartReadabilityHints, normalizeCategoryLabel } from '../analysisCardPresentation';
+import { formatAnalysisValue, formatAxisValue, getBarChartReadabilityHints, normalizeCategoryLabel } from '../analysisCardPresentation';
 import { PIVOT_FOLDED_OTHERS_KEY } from '../pivotMatrixCharting';
 
 const DEFAULT_PIVOT_GROUP_KEY = 'row_label';
@@ -77,7 +77,7 @@ export const createStackedChartConfig = ({ chartType, data, plan, selectedIndice
                         stacked: true,
                         ticks: {
                             color: '#64748b',
-                            callback: (value: number | string) => formatAnalysisValue(Number(value)),
+                            callback: (value: number | string) => formatAxisValue(Number(value)),
                         },
                         grid: { color: '#e2e8f0' },
                     },
@@ -103,7 +103,7 @@ export const createStackedChartConfig = ({ chartType, data, plan, selectedIndice
                         stacked: true,
                         ticks: {
                             color: '#64748b',
-                            callback: (value: number | string) => formatAnalysisValue(Number(value)),
+                            callback: (value: number | string) => formatAxisValue(Number(value)),
                         },
                         grid: { color: '#e2e8f0' },
                     },

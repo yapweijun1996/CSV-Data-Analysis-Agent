@@ -196,7 +196,7 @@ describe('buildExecutiveKpis', () => {
 
         expect(kpis[0]).toMatchObject({
             label: 'Top 2 Blocks · Total Resale Price',
-            value: '33,000,000',
+            value: '33M',
             detail: 'Across 2 Blocks.',
             scope: {
                 kind: 'top_n',

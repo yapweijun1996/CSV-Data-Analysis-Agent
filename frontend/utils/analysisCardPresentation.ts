@@ -1,3 +1,4 @@
+import { compactIfLarge } from './compactNumber';
 import type { AnalysisPlan, CsvCellValue, CsvRow } from '../types';
 import { buildColumnDisplayLabels, resolvePlanGroupLabel, resolvePlanMetricLabel } from '../services/dashboard/businessLabelResolver';
 import { formatTemporalDisplayValue, isTemporalDisplayColumn } from './temporalDisplay';
@@ -61,6 +62,15 @@ export const formatAnalysisValue = (value: CsvCellValue, maximumFractionDigits =
         minimumFractionDigits: hasFraction ? 0 : 0,
         maximumFractionDigits: hasFraction ? maximumFractionDigits : 0,
     });
+};
+
+/** Chart axis labels: large values are abbreviated (80B, 20M) so ticks stay short. */
+export const AXIS_COMPACT_MIN_ABS = 10_000;
+
+export const formatAxisValue = (value: CsvCellValue): string => {
+    const numericValue = coerceNumericValue(value);
+    return (numericValue === null ? null : compactIfLarge(numericValue, AXIS_COMPACT_MIN_ABS))
+        ?? formatAnalysisValue(value);
 };
 
 /**

@@ -1,6 +1,6 @@
 import { ChartConfigProps } from './types';
 import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getPivotTooltipCallbacks } from './common';
-import { formatAnalysisValue, normalizeCategoryLabel } from '../analysisCardPresentation';
+import { formatAnalysisValue, formatAxisValue, normalizeCategoryLabel } from '../analysisCardPresentation';
 import { parseNumericValue } from '../dataHelpers';
 
 export const createHorizontalBarChartConfig = ({ data, plan, selectedIndices, onElementClick, disableAnimation, showDataLabels }: ChartConfigProps): any => {
@@ -42,7 +42,7 @@ export const createHorizontalBarChartConfig = ({ data, plan, selectedIndices, on
                 x: {
                     ticks: {
                         color: '#64748b',
-                        callback: (value: number | string) => formatAnalysisValue(Number(value)),
+                        callback: (value: number | string) => formatAxisValue(Number(value)),
                     },
                     grid: { color: '#e2e8f0' },
                 },

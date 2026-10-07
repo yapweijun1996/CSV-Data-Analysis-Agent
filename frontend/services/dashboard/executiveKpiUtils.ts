@@ -1,3 +1,4 @@
+import { compactIfLarge } from '../../utils/compactNumber';
 import type { ColumnProfile, CsvRow } from '../../types';
 import { robustParseFloat } from '../data/dataProfiler';
 
@@ -85,6 +86,8 @@ export const getRowValue = (row: CsvRow, columnName: string | undefined): CsvRow
 
 export const toNumericValue = (value: CsvRow[string]): number | null => robustParseFloat(value);
 
+const KPI_COMPACT_MIN_ABS = 1_000_000;
+
 export const formatMetricValue = (value: number, columnName: string | undefined, columnProfiles: ColumnProfile[]): string => {
     const profile = getColumnProfile(columnProfiles, columnName);
     const normalizedName = (columnName ?? '').toLowerCase();
@@ -95,7 +98,8 @@ export const formatMetricValue = (value: number, columnName: string | undefined,
         return `${percentValue.toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
     }
 
-    return value.toLocaleString(undefined, { maximumFractionDigits });
+    // Headline tiles abbreviate millions and above; the cards below keep exact values.
+    return compactIfLarge(value, KPI_COMPACT_MIN_ABS) ?? value.toLocaleString(undefined, { maximumFractionDigits });
 };
 
 export const formatShareValue = (ratio: number): string =>
@@ -108,5 +112,10 @@ export const buildMetricLabel = (columnName: string | undefined): string => {
     return toDisplayLabel(columnName, 'Metric');
 };
 
-export const buildTotalMetricLabel = (metricLabel: string): string =>
-    TOTAL_PREFIX_PATTERN.test(metricLabel) ? metricLabel : `Total ${metricLabel}`;
+// "Sum Resale Price" reads as "Total Sum Resale Price" otherwise.
+const SUM_PREFIX_PATTERN = /^sum\s+(?:of\s+)?/i;
+
+export const buildTotalMetricLabel = (metricLabel: string): string => {
+    if (TOTAL_PREFIX_PATTERN.test(metricLabel)) return metricLabel;
+    return `Total ${metricLabel.replace(SUM_PREFIX_PATTERN, '')}`;
+};
