@@ -4,7 +4,9 @@ import { useAppStore } from '../store/useAppStore';
 import { IconApiKeyRequired } from '../icons/IconApiKeyRequired';
 import { IconFileUpload } from '../icons/IconFileUpload';
 import { IconLoadingSpinner } from '../icons/IconLoadingSpinner';
+import { ImportProgressCard } from './ImportProgressCard';
 import { shouldAllowLogsSurface, shouldAllowSettingsSurface, shouldShowNewSessionButton } from '../config/runtimeConfig';
+import { getCloudAiProviderLabel } from '../utils/cloudAiProviderLabel';
 import { getTranslation } from '../utils/localization';
 
 interface FileUploadProps {
@@ -23,6 +25,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
         fileName,
         language,
         cleaningRunStatus,
+        provider,
     } = useAppStore(state => ({
         handleFileUpload: state.handleFileUpload,
         isBusy: state.isBusy,
@@ -34,6 +37,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
         fileName: state.csvData?.fileName ?? null,
         language: state.settings.language,
         cleaningRunStatus: state.cleaningRun?.status ?? null,
+        provider: state.settings.provider,
     }), shallow);
     const openDebugLogs = useCallback(() => setIsDebugLogsModalOpen(true), [setIsDebugLogsModalOpen]);
 
@@ -134,37 +138,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
 
     if (isBusy && fileName) {
         const busyCard = resolveBusyCard();
+        const analysing = Boolean(aiTaskStatus && aiTaskStatus.status !== 'done' && aiTaskStatus.status !== 'error')
+            || cleaningRunStatus === 'running';
         return (
-            <div className="flex h-full items-center justify-center">
-                <div className={`w-full max-w-2xl rounded-card border p-6 shadow-sm ${
-                    busyCard.tone === 'error'
-                        ? 'border-red-200 bg-red-50'
-                        : 'border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50'
-                }`}>
-                    <div className="flex items-center text-slate-900">
-                        <IconLoadingSpinner className="mr-3 h-6 w-6" />
-                        <div>
-                            <h3 className="text-xl font-semibold">{busyCard.title}</h3>
-                            <p className="mt-1 text-sm text-slate-600">{getTranslation('upload_working_on_file', language, { fileName })}</p>
-                        </div>
-                    </div>
-                    <p className={`mt-5 text-sm leading-6 ${busyCard.tone === 'error' ? 'text-red-700' : 'text-slate-600'}`}>
-                        {busyCard.detail}
-                    </p>
-                    <div className="mt-6 flex items-center justify-between gap-3">
-                        <p className="min-w-0 flex-1 text-xs text-slate-500">{getTranslation('data_privacy_note', language)}</p>
-                        {canOpenLogs && (
-                            <button
-                                type="button"
-                                onClick={openDebugLogs}
-                                className="shrink-0 whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                            >
-                                {getTranslation('view_technical_details', language)}
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
+            <ImportProgressCard
+                language={language}
+                fileName={fileName}
+                title={busyCard.title}
+                detail={busyCard.detail}
+                tone={busyCard.tone}
+                stage={analysing ? 'analyse' : 'parse'}
+                providerLabel={getCloudAiProviderLabel(provider, language)}
+                onOpenLogs={canOpenLogs ? openDebugLogs : undefined}
+            />
         );
     }
 

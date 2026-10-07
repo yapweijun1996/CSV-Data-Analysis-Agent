@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchDefaultGateway } from '../services/ai/browserProviderFetch';
+import { fetchDefaultGateway, resetDemoGatewayRequestLimiterForTests } from '../services/ai/browserProviderFetch';
 import { resetDemoGatewaySessionForTests } from '../services/ai/demoGatewaySession';
 
 const sessionResponse = (token: string, model = 'demo-openai-mini') =>
@@ -11,6 +11,7 @@ describe('default gateway browser fetch', () => {
     beforeEach(() => {
         vi.stubEnv('VITE_DEFAULT_GATEWAY_PROJECT_ID', 'test-project');
         resetDemoGatewaySessionForTests();
+        resetDemoGatewayRequestLimiterForTests();
     });
     afterEach(() => {
         vi.unstubAllGlobals();
@@ -95,6 +96,84 @@ describe('default gateway browser fetch', () => {
 
         expect(response.status).toBe(200);
         expect(seenTokens).toEqual(['Bearer dmo_token_1', 'Bearer dmo_token_2']);
+    });
+
+    it('refreshes on the DEMO_SESSION_REQUEST_LIMIT code', async () => {
+        let sessions = 0;
+        let calls = 0;
+        vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
+            if (isSessionCall(input)) return sessionResponse(`dmo_token_${++sessions}`);
+            calls += 1;
+            return calls === 1
+                ? new Response(JSON.stringify({ error: { code: 'DEMO_SESSION_REQUEST_LIMIT', message: 'limit' } }), { status: 429 })
+                : new Response('{}', { status: 200 });
+        }));
+
+        const response = await fetchDefaultGateway('https://example.invalid/demo/v1/responses', {
+            method: 'POST', body: JSON.stringify({ input: 'x' }),
+        });
+        expect(response.status).toBe(200);
+        expect(sessions).toBe(2);
+    });
+
+    it('waits and retries on DEMO_SESSION_CONCURRENCY_LIMIT without opening a new session', async () => {
+        vi.useFakeTimers();
+        let sessions = 0;
+        let calls = 0;
+        vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
+            if (isSessionCall(input)) return sessionResponse(`dmo_token_${++sessions}`);
+            calls += 1;
+            return calls === 1
+                ? new Response(JSON.stringify({ error: { code: 'DEMO_SESSION_CONCURRENCY_LIMIT' } }), { status: 429 })
+                : new Response('{}', { status: 200 });
+        }));
+
+        const pending = fetchDefaultGateway('https://example.invalid/demo/v1/responses', {
+            method: 'POST', body: JSON.stringify({ input: 'x' }),
+        });
+        await vi.advanceTimersByTimeAsync(500);
+        const response = await pending;
+        vi.useRealTimers();
+
+        expect(response.status).toBe(200);
+        expect(calls).toBe(2);
+        expect(sessions).toBe(1);
+    });
+
+    it('never has more than two requests in flight', async () => {
+        let inFlight = 0;
+        let peak = 0;
+        vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
+            if (isSessionCall(input)) return sessionResponse('dmo_token_a');
+            inFlight += 1;
+            peak = Math.max(peak, inFlight);
+            await new Promise(resolve => setTimeout(resolve, 10));
+            inFlight -= 1;
+            return new Response('{}', { status: 200 });
+        }));
+
+        const responses = await Promise.all(Array.from({ length: 5 }, (_, index) =>
+            fetchDefaultGateway('https://example.invalid/demo/v1/responses', {
+                method: 'POST', body: JSON.stringify({ input: `q${index}` }),
+            }).then(response => response.text())));
+
+        expect(responses).toHaveLength(5);
+        expect(peak).toBeLessThanOrEqual(2);
+    });
+
+    it('does not send top_p', async () => {
+        let sent: Record<string, unknown> = {};
+        vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
+            if (isSessionCall(input)) return sessionResponse('dmo_token_a');
+            sent = await (input as Request).json();
+            return new Response('{}', { status: 200 });
+        }));
+
+        await (await fetchDefaultGateway('https://example.invalid/demo/v1/responses', {
+            method: 'POST', body: JSON.stringify({ input: 'x', top_p: 0.9, temperature: 1 }),
+        })).text();
+        expect(sent).not.toHaveProperty('top_p');
+        expect(sent).toHaveProperty('temperature', 1);
     });
 
     it('refreshes after the session request cap but not after other 429s', async () => {

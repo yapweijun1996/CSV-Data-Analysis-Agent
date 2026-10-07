@@ -2,19 +2,8 @@ import React, { useCallback, useState } from 'react';
 import { shallow } from 'zustand/shallow';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 import { useAppStore } from '../../store/useAppStore';
-import type { AppLanguage, CloudAiProvider } from '../../types';
+import { getCloudAiProviderLabel } from '../../utils/cloudAiProviderLabel';
 import { getTranslation } from '../../utils/localization';
-
-const getProviderLabel = (
-    provider: CloudAiProvider,
-    language: AppLanguage,
-): string => {
-    if (provider === 'default') {
-        return getTranslation('cloud_ai_provider_default', language);
-    }
-    if (provider === 'google') return 'Google Gemini';
-    return 'OpenAI';
-};
 
 export const CloudAiConsentModal: React.FC = () => {
     const {
@@ -46,7 +35,7 @@ export const CloudAiConsentModal: React.FC = () => {
         }
     };
 
-    const providerLabel = getProviderLabel(request.provider, language);
+    const providerLabel = getCloudAiProviderLabel(request.provider, language);
     const sensitiveWarning = request.sensitiveDataWarning ?? null;
     const disclosures = [
         ['cloud_ai_consent_sent_title', 'cloud_ai_consent_sent_detail'],
