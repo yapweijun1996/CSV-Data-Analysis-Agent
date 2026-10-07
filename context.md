@@ -497,3 +497,11 @@
 ## 2026-10-07 Import card "View technical details" button layout
 
 - `FileUpload.tsx` (importing state): the button wrapped to three lines and was squeezed into an oval beside the privacy note. The button is now `shrink-0 whitespace-nowrap` and the note takes `min-w-0 flex-1`, so the label stays on one line. Layout-only change; root deployment not regenerated yet (needs `npm run publish:root` with installed deps).
+
+## 2026-10-07 Default provider moves to gateway Demo sessions
+
+- **Why**: the embedded XOR-obfuscated `gw_*` key was effectively public and the gateway now answers `401 invalid api key`. The Default provider now uses short-lived, origin-bound `dmo_*` sessions instead.
+- **Implementation**: `services/ai/demoGatewaySession.ts` (in-memory token, single-flight refresh, 60 s expiry margin, `DemoGatewayError` carrying `error.code`). `fetchDefaultGateway` (`browserProviderFetch.ts`) still strips `max_output_tokens`, now also injects `Authorization: Bearer dmo_*`, rewrites `model` to the session's alias, and on 401 or "demo session request limit reached" (429) refreshes once and replays. `DEFAULT_GATEWAY_BASE_URL` is `.../demo/v1` for both the AI SDK and Pi paths. `DEFAULT_GATEWAY_MODEL` stays a logical label for settings, UI and context planning; the wire model comes from the session. `dmo_*` is redacted in local diagnostics. `xorCipher` and its test were deleted.
+- **Needs input before deploy**: the project id comes from build-time `VITE_DEFAULT_GATEWAY_PROJECT_ID`; no value is committed. The gateway project must have `agent_tools_enabled=true` and allow `demo-openai-mini`.
+- **Not done yet**: root deployment (`npm run publish:root`) is NOT regenerated, so the checked-in bundle under `assets/` still contains the old key until it is rebuilt with the project id. The old `gw_*` key must be revoked by the gateway operator after the new build is live. No live check against the real gateway, so `DEMO_SCHEMA_UNSUPPORTED` risk for strict `json_schema` outputs and tool round trips are unverified.
+- **Checks**: typecheck, lint, full suite (343 files / 2,819 tests) passed.
