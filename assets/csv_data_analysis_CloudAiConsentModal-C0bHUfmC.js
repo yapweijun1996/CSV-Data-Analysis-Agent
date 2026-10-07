@@ -1,19 +1,12 @@
 import { a as reactExports, j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
-import { u as useAppStore, e as useDialogAccessibility } from "./csv_data_analysis_index-CD4KXmqK.js";
-import { U as getTranslation } from "./csv_data_analysis_app-agent-D0y7xilO.js";
+import { u as useAppStore, e as useDialogAccessibility, l as getCloudAiProviderLabel } from "./csv_data_analysis_index-DOmmKOPO.js";
+import { U as getTranslation } from "./csv_data_analysis_app-agent-zR6ucGlD.js";
 import "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
 import "./csv_data_analysis_vendor-ai-google-Brpu0J-t.js";
 import "./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js";
-const getProviderLabel = (provider, language) => {
-  if (provider === "default") {
-    return getTranslation("cloud_ai_provider_default", language);
-  }
-  if (provider === "google") return "Google Gemini";
-  return "OpenAI";
-};
 const CloudAiConsentModal = () => {
   const {
     request,
@@ -41,7 +34,7 @@ const CloudAiConsentModal = () => {
       setIsSaving(false);
     }
   };
-  const providerLabel = getProviderLabel(request.provider, language);
+  const providerLabel = getCloudAiProviderLabel(request.provider, language);
   const sensitiveWarning = request.sensitiveDataWarning ?? null;
   const disclosures = [
     ["cloud_ai_consent_sent_title", "cloud_ai_consent_sent_detail"],

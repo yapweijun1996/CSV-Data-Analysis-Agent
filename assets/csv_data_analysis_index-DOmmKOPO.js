@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_ChatPanel-BJZkK7N0.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_vendor-state-CMf1uPe1.js","./csv_data_analysis_MarkdownRenderer-BlHMpbwo.js","./csv_data_analysis_vendor-ui-BoCHqsEI.js","./csv_data_analysis_IconInsights-C-7nPICp.js","./csv_data_analysis_IconSettings-FS0PVK9T.js","./csv_data_analysis_IconMemory-Cs1fVUAV.js","./csv_data_analysis_IconAi-DV4Egu6s.js","./csv_data_analysis_AnalysisPanel-C5Fm1_iT.js","./csv_data_analysis_exportUtils-DfKSpD2m.js","./csv_data_analysis_IconClose-DoCpdGZg.js","./csv_data_analysis_TabulatorTable-C--g8dyc.js","./csv_data_analysis_CleaningRunBanner-C1dKsAcw.js","./csv_data_analysis_AiTaskStatusBubble-Bp-XdHbr.js","./csv_data_analysis_IconSearch-j9OYkQx7.js","./csv_data_analysis_SpreadsheetPanel-BPEP_xrq.js","./csv_data_analysis_SettingsModal-B5QAuMkU.js","./csv_data_analysis_HistoryPanel-WWHfwVjY.js","./csv_data_analysis_MemoryPanel-eUqN7gG9.js","./csv_data_analysis_AgentMonitorModal-BTNvb8lk.js","./csv_data_analysis_AgentActivityView-CdbXuAp7.js","./csv_data_analysis_DatabaseModal-DXNJgKFr.js","./csv_data_analysis_WorkspaceModal-DVOYBOSV.js","./csv_data_analysis_DataPreparationWorkflowModal-CCZQy-3j.js","./csv_data_analysis_copyText-Di0nQNpb.js","./csv_data_analysis_DebugLogsModal-BfKajydt.js","./csv_data_analysis_ReportBoundaryConfirmModal--VeIyRDz.js","./csv_data_analysis_ApiKeyRequiredModal-uMR7XnjG.js","./csv_data_analysis_CloudAiConsentModal-BOCaFgpu.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_ChatPanel-DB4v9VWw.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_vendor-state-CMf1uPe1.js","./csv_data_analysis_MarkdownRenderer-BbEgcG19.js","./csv_data_analysis_vendor-ui-BoCHqsEI.js","./csv_data_analysis_IconInsights-C-7nPICp.js","./csv_data_analysis_IconSettings-FS0PVK9T.js","./csv_data_analysis_IconMemory-Cs1fVUAV.js","./csv_data_analysis_IconAi-DV4Egu6s.js","./csv_data_analysis_AnalysisPanel-GtpYaU4_.js","./csv_data_analysis_exportUtils-DfKSpD2m.js","./csv_data_analysis_IconClose-DoCpdGZg.js","./csv_data_analysis_TabulatorTable-C_rOEks0.js","./csv_data_analysis_CleaningRunBanner-pwGrASfA.js","./csv_data_analysis_AiTaskStatusBubble-Pim7LJ-D.js","./csv_data_analysis_IconSearch-j9OYkQx7.js","./csv_data_analysis_SpreadsheetPanel-CY8EBC7k.js","./csv_data_analysis_SettingsModal-DY4M2qjv.js","./csv_data_analysis_HistoryPanel-BDOethp5.js","./csv_data_analysis_MemoryPanel-CacMJSc9.js","./csv_data_analysis_AgentMonitorModal-69N-2VHQ.js","./csv_data_analysis_AgentActivityView-DP4Gzw6f.js","./csv_data_analysis_DatabaseModal-45usmxOp.js","./csv_data_analysis_WorkspaceModal-BogXZkpj.js","./csv_data_analysis_DataPreparationWorkflowModal-CM5k_4QN.js","./csv_data_analysis_copyText-Di0nQNpb.js","./csv_data_analysis_DebugLogsModal-7MImBoVD.js","./csv_data_analysis_ReportBoundaryConfirmModal-psKujiBs.js","./csv_data_analysis_ApiKeyRequiredModal-C1GIZWJx.js","./csv_data_analysis_CloudAiConsentModal-C0bHUfmC.js"])))=>i.map(i=>d[i]);
 import { r as reactDomExports, j as jsxRuntimeExports, a as reactExports, W as We, R as ReactDOM } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { b as buildCloudAiConsentKey, s as shouldAllowAgentThinkingSurface, a as shouldAllowLongTermMemorySurface, c as shouldAllowLogsSurface, d as shouldAllowWorkflowSurface, e as shouldAllowWorkspaceSurface, f as shouldAllowDatabaseSurface, g as shouldAllowSettingsSurface, h as grantCloudAiConsent, i as getDefaultSettings, _ as __vitePreload, n as normalizeRuntimeAccessControlSettings, j as normalizeAppLanguage, k as saveSettings, l as createId, m as disposeDuckDbQueryEngine, o as getReport, C as CURRENT_SESSION_KEY, v as vectorStore, p as deleteReport, q as createIdleDuckDbSessionStatus, r as saveReport, t as deleteOriginalData, u as parseReportArtifactManifest, w as loadReportArtifactHtml, x as printReportArtifact, y as openReportArtifact, z as purgeAllStorage, A as normalizeRestoredAppState, B as resolveReportMemoryScope, D as hydrateLatestReportWorkspaceFiles, E as normalizeRestoredGoalState, F as restoreAgentActivityHistory, G as normalizeSavedReportPendingMemoryDocuments, H as normalizeSavedAgentMemoryRuns, I as normalizeSavedAgentMemoryRun, J as normalizeSavedReportMemoryDocuments, K as appendUnfinishedCleaningNotice, L as getReportsList, M as createChatMessage, N as navigateToCard, O as buildColumnRegistry, P as duckDbWorkerClient, Q as DUCKDB_INIT_TIMEOUT_MS, R as profileDataWithWorker, S as createBindingDuckDbSessionStatus, T as getOriginalData, U as getTranslation, V as getAllowedColumns, W as createProgressMessage, X as trimProgressMessages, Y as isDuckDbSessionStatusEqual, Z as primeDuckDbDataset, $ as createDuckDbSessionStatusFromBinding, a0 as captureHistoryAnalysisSnapshot, a1 as getRestoredHistoryAnalysisState, a2 as buildEffectiveColumnRegistryFromState, a3 as createWorkerDiagnosticsTelemetryReporter, a4 as parseCardMentions, a5 as buildCorrelationFields, a6 as toSerializable, a7 as normalizeAgentActivityEvent, a8 as LATEST_REPORT_MANIFEST_PATH, a9 as hasOpenableLatestReport, aa as getCurrentAnalysisDatasetVersion, ab as LATEST_REPORT_HTML_PATH, ac as generateAnalystReportArtifacts, ad as saveReportArtifacts, ae as buildPersistedReportRecord, af as isRuntimeAbortError, ag as recordLocalDiagnosticBestEffort, ah as projectToolLogToActivity, ai as projectRuntimeEventToActivity, aj as getSettings, ak as configureCloudAiConsentRuntime, al as configureLocalDiagnosticContext, am as shouldShowNewSessionButton, an as shouldShowHistoryButton, ao as shouldShowDatabaseButton, ap as shouldShowWorkflowButton, aq as shouldShowLogsButton, ar as shouldShowChangeGoalButton, as as shouldShowAssistantToggleButton, at as buildPersistedAppStateSignature, au as checkStorageHealth, av as persistCurrentAppSessionSnapshot, aw as APP_HEADER_HIDE_FOR_CARD_NAVIGATION_EVENT, ax as shouldShowAgentThinkingModal, ay as shouldShowLongTermMemory, az as formatUserError } from "./csv_data_analysis_app-agent-D0y7xilO.js";
+import { b as buildCloudAiConsentKey, s as shouldAllowAgentThinkingSurface, a as shouldAllowLongTermMemorySurface, c as shouldAllowLogsSurface, d as shouldAllowWorkflowSurface, e as shouldAllowWorkspaceSurface, f as shouldAllowDatabaseSurface, g as shouldAllowSettingsSurface, h as grantCloudAiConsent, i as getDefaultSettings, _ as __vitePreload, n as normalizeRuntimeAccessControlSettings, j as normalizeAppLanguage, k as saveSettings, l as createId, m as disposeDuckDbQueryEngine, o as getReport, C as CURRENT_SESSION_KEY, v as vectorStore, p as deleteReport, q as createIdleDuckDbSessionStatus, r as saveReport, t as deleteOriginalData, u as parseReportArtifactManifest, w as loadReportArtifactHtml, x as printReportArtifact, y as openReportArtifact, z as purgeAllStorage, A as normalizeRestoredAppState, B as resolveReportMemoryScope, D as hydrateLatestReportWorkspaceFiles, E as normalizeRestoredGoalState, F as restoreAgentActivityHistory, G as normalizeSavedReportPendingMemoryDocuments, H as normalizeSavedAgentMemoryRuns, I as normalizeSavedAgentMemoryRun, J as normalizeSavedReportMemoryDocuments, K as appendUnfinishedCleaningNotice, L as getReportsList, M as createChatMessage, N as navigateToCard, O as buildColumnRegistry, P as duckDbWorkerClient, Q as DUCKDB_INIT_TIMEOUT_MS, R as profileDataWithWorker, S as createBindingDuckDbSessionStatus, T as getOriginalData, U as getTranslation, V as getAllowedColumns, W as createProgressMessage, X as trimProgressMessages, Y as isDuckDbSessionStatusEqual, Z as primeDuckDbDataset, $ as createDuckDbSessionStatusFromBinding, a0 as captureHistoryAnalysisSnapshot, a1 as getRestoredHistoryAnalysisState, a2 as buildEffectiveColumnRegistryFromState, a3 as createWorkerDiagnosticsTelemetryReporter, a4 as parseCardMentions, a5 as buildCorrelationFields, a6 as toSerializable, a7 as normalizeAgentActivityEvent, a8 as LATEST_REPORT_MANIFEST_PATH, a9 as hasOpenableLatestReport, aa as getCurrentAnalysisDatasetVersion, ab as LATEST_REPORT_HTML_PATH, ac as generateAnalystReportArtifacts, ad as saveReportArtifacts, ae as buildPersistedReportRecord, af as isRuntimeAbortError, ag as recordLocalDiagnosticBestEffort, ah as projectToolLogToActivity, ai as projectRuntimeEventToActivity, aj as getSettings, ak as configureCloudAiConsentRuntime, al as configureLocalDiagnosticContext, am as shouldShowNewSessionButton, an as shouldShowHistoryButton, ao as shouldShowDatabaseButton, ap as shouldShowWorkflowButton, aq as shouldShowLogsButton, ar as shouldShowChangeGoalButton, as as shouldShowAssistantToggleButton, at as buildPersistedAppStateSignature, au as checkStorageHealth, av as persistCurrentAppSessionSnapshot, aw as APP_HEADER_HIDE_FOR_CARD_NAVIGATION_EVENT, ax as shouldShowAgentThinkingModal, ay as shouldShowLongTermMemory, az as formatUserError } from "./csv_data_analysis_app-agent-zR6ucGlD.js";
 import { c as createWithEqualityFn, s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
@@ -169,7 +169,7 @@ const createSettingsSlice = (set, get) => ({
   isApiKeySet: false,
   handleSaveSettings: async (newSettings) => {
     if (!_isProviderConfigured$1) {
-      const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+      const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       _isProviderConfigured$1 = mod.isProviderConfigured;
     }
     const normalizedSettings = {
@@ -179,7 +179,7 @@ const createSettingsSlice = (set, get) => ({
     };
     const previousSettings = get().settings;
     set({ settings: normalizedSettings, isApiKeySet: _isProviderConfigured$1(normalizedSettings) });
-    const providerConfig = await __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+    const providerConfig = await __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     const connectionChanged = previousSettings.provider !== normalizedSettings.provider || previousSettings.simpleModel !== normalizedSettings.simpleModel || providerConfig.resolveProviderApiKey(previousSettings) !== providerConfig.resolveProviderApiKey(normalizedSettings);
     if (connectionChanged) {
       providerConfig.invalidateProviderHealthCache();
@@ -216,14 +216,14 @@ const writeTabSessionId = (sessionId) => {
 const createAndStoreTabSessionId = () => writeTabSessionId(generateSessionId());
 const discardPiSessionCheckpoint = async (sessionId) => {
   const { discardPiInitialAnalysisCheckpoint } = await __vitePreload(async () => {
-    const { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cH);
+    const { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cH);
     return { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 };
   }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
   discardPiInitialAnalysisCheckpoint(sessionId);
 };
 const purgeInactivePiCheckpoints = async (activeSessionId) => {
   const { purgePiInitialAnalysisCheckpoints } = await __vitePreload(async () => {
-    const { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cH);
+    const { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cH);
     return { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 };
   }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
   purgePiInitialAnalysisCheckpoints([activeSessionId]);
@@ -253,8 +253,8 @@ const createHistorySlice = (set, get) => ({
     get().addProgress(`Loading report ${id}...`);
     const [report, { normalizeDataPreparationPlan }, { updateCleaningRun }] = await Promise.all([
       getReport(id),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     if (report) {
       await discardPiSessionCheckpoint(get().sessionId);
@@ -345,7 +345,7 @@ const createHistorySlice = (set, get) => ({
           }
         })();
       } else {
-        void __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+        void __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
           (m) => m.rebuildVectorMemoryFromState({ getState: get, setState: set }, {
             reset: true,
             includeDatasetDocs: true,
@@ -434,11 +434,11 @@ const createHistorySlice = (set, get) => ({
       await vectorStore.clear();
       await deleteReport(CURRENT_SESSION_KEY);
       void __vitePreload(async () => {
-        const { removeOpfsDatasetSession } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.ct);
+        const { removeOpfsDatasetSession } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.ct);
         return { removeOpfsDatasetSession };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ removeOpfsDatasetSession }) => removeOpfsDatasetSession(get().sessionId)).catch((error) => console.warn("[History] Could not clear temporary OPFS data.", error));
       void __vitePreload(async () => {
-        const { clearSandboxTableRows } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cA);
+        const { clearSandboxTableRows } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cA);
         return { clearSandboxTableRows };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ clearSandboxTableRows }) => {
         var _a;
@@ -660,7 +660,7 @@ const createCardSlice = (set, get) => ({
     const card = get().analysisCards.find((item) => item.id === cardId);
     if (!card) return;
     invalidateChart(cardId);
-    void __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+    void __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
       (m) => m.removeCardMemoryDocument({ getState: get, setState: set }, cardId)
     );
     (_b = (_a = get()).addProgress) == null ? void 0 : _b.call(_a, `Removed card "${card.plan.title}".`);
@@ -770,7 +770,7 @@ const createCardSlice = (set, get) => ({
       }
     });
     if (didUpdate) {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.upsertCardMemoryDocument({ getState: get, setState: set }, cardId)
       );
     }
@@ -834,8 +834,8 @@ const createDataSlice = (set, get) => {
         { buildPersistedReportRecord: buildPersistedReportRecord2 },
         { CURRENT_SESSION_KEY: CURRENT_SESSION_KEY2, saveReport: saveReport2 }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cs), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cs), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const currentReport = buildPersistedReportRecord2(state2, {
         id: state2.sessionId,
@@ -858,8 +858,8 @@ const createDataSlice = (set, get) => {
   };
   const getDuckDbRefreshHelpers = async () => {
     duckDbRefreshHelpersPromise ?? (duckDbRefreshHelpersPromise = Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]).then(([
       { getPreferredAnalysisDataset },
       { resolveDatasetBindingTarget, isDuckDbSessionCurrentForDataset }
@@ -970,9 +970,9 @@ const createDataSlice = (set, get) => {
       { getPreferredAnalysisDataset },
       { buildSemanticDatasetVersion }
     ] = await Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cC), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cC), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     const state2 = get();
     const artifacts = await resolveReportStructureArtifactsWithProposal({
@@ -1019,7 +1019,7 @@ const createDataSlice = (set, get) => {
       currentView: "file_upload"
     }));
     const { orchestrateFileUpload } = await __vitePreload(async () => {
-      const { orchestrateFileUpload: orchestrateFileUpload2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cJ);
+      const { orchestrateFileUpload: orchestrateFileUpload2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cJ);
       return { orchestrateFileUpload: orchestrateFileUpload2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     try {
@@ -1059,14 +1059,14 @@ const createDataSlice = (set, get) => {
     },
     handleInitialAnalysis: async (dataForAnalysis, goal, options) => {
       const { handleInitialAnalysis } = await __vitePreload(async () => {
-        const { handleInitialAnalysis: handleInitialAnalysis2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cK);
+        const { handleInitialAnalysis: handleInitialAnalysis2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cK);
         return { handleInitialAnalysis: handleInitialAnalysis2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       return handleInitialAnalysis(dataForAnalysis, goal, storeApi, options);
     },
     proposeAnalysisGoals: async (dataForAnalysis) => {
       const { proposeAnalysisGoals: proposeGoals } = await __vitePreload(async () => {
-        const { proposeAnalysisGoals: proposeGoals2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cL);
+        const { proposeAnalysisGoals: proposeGoals2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cL);
         return { proposeAnalysisGoals: proposeGoals2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       return proposeGoals(dataForAnalysis, storeApi);
@@ -1104,14 +1104,14 @@ const createDataSlice = (set, get) => {
     },
     regenerateAnalyses: async (newData) => {
       const { regenerateAnalysesWithNewData } = await __vitePreload(async () => {
-        const { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cM);
+        const { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cM);
         return { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await regenerateAnalysesWithNewData(newData, storeApi);
     },
     reproposeAnalysisGoals: async () => {
       const { reproposeAnalysisGoals: reproposeGoalsService } = await __vitePreload(async () => {
-        const { reproposeAnalysisGoals: reproposeGoalsService2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cM);
+        const { reproposeAnalysisGoals: reproposeGoalsService2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cM);
         return { reproposeAnalysisGoals: reproposeGoalsService2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       reproposeGoalsService(storeApi);
@@ -1123,10 +1123,10 @@ const createDataSlice = (set, get) => {
         { resolveAnalysisDatasetProfiles },
         { annotateDatasetSemantics }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cN), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cN), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const targetDataset = dataset ?? getPreferredAnalysisDataset(get());
       if (!targetDataset) {
@@ -1262,10 +1262,10 @@ const createDataSlice = (set, get) => {
         { compileWorkspaceDataQuery },
         { executeStructuredDataQuery }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cO), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cE), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cO), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cE), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const resolveCurrentWorkspaceTarget = () => {
         const currentState = get();
@@ -1366,10 +1366,10 @@ const createDataSlice = (set, get) => {
         { getPreferredAnalysisDataset },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       updateAgentTaskStatus(storeApi, {
         status: "thinking",
@@ -1435,8 +1435,8 @@ const createDataSlice = (set, get) => {
         { createCleaningRun },
         { WORKSPACE_DATASET_CLEAN_CSV, WORKSPACE_DATASET_RAW_CSV, buildWorkspaceCsv }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const sessionId = get().sessionId;
       let originalData = sessionId ? await getOriginalData(sessionId) : null;
@@ -1503,12 +1503,12 @@ const createDataSlice = (set, get) => {
         { getPreferredAnalysisDataset },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const rawCsvData = get().rawCsvData;
       if (!rawCsvData) {
@@ -1630,9 +1630,9 @@ const createDataSlice = (set, get) => {
         { resolveAnalysisDatasetProfiles },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       await rebuildStructureArtifacts(boundary);
       get().setIsReportBoundaryConfirmModalOpen(false);
@@ -1696,7 +1696,7 @@ const createDataSlice = (set, get) => {
           })
         };
       });
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.upsertColumnAnnotationDoc(storeApi, annotation)
       );
     },
@@ -1717,7 +1717,7 @@ const createDataSlice = (set, get) => {
           })
         };
       });
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.removeColumnAnnotationDoc(storeApi, columnName)
       );
     }
@@ -1744,7 +1744,7 @@ const createChatSlice = (set, get) => {
       ]
     }));
     void __vitePreload(async () => {
-      const { upsertAcceptedDecisionDoc } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cx);
+      const { upsertAcceptedDecisionDoc } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cx);
       return { upsertAcceptedDecisionDoc };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ upsertAcceptedDecisionDoc }) => upsertAcceptedDecisionDoc(storeApi, entry)).catch((error) => {
       console.warn(`${LOG_PREFIX} Failed to retain accepted decision (non-blocking):`, error);
@@ -1757,7 +1757,7 @@ const createChatSlice = (set, get) => {
     isRefreshingContext = true;
     try {
       const { shouldRefreshContextualSummary, generateContextualSummary, markContextualSummaryRefreshed } = await __vitePreload(async () => {
-        const { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cw);
+        const { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cw);
         return { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const state2 = get();
@@ -1850,7 +1850,7 @@ const createChatSlice = (set, get) => {
     set({ isBusy: true, chatLifecycleState: "running", pendingClarification: null });
     try {
       const { handleAiAction } = await __vitePreload(async () => {
-        const { handleAiAction: handleAiAction2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cG);
+        const { handleAiAction: handleAiAction2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cG);
         return { handleAiAction: handleAiAction2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const result = await handleAiAction(action, storeApi, { spreadsheetFilterOrigin: origin });
@@ -1888,7 +1888,7 @@ const createChatSlice = (set, get) => {
     }
     if (!_isProviderConfigured) return false;
     const { validateProviderHealth } = await __vitePreload(async () => {
-      const { validateProviderHealth: validateProviderHealth2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cp);
+      const { validateProviderHealth: validateProviderHealth2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cp);
       return { validateProviderHealth: validateProviderHealth2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     const health = await validateProviderHealth(settings);
@@ -1924,7 +1924,7 @@ const createChatSlice = (set, get) => {
     }
     try {
       const { orchestrateChatResponse } = await __vitePreload(async () => {
-        const { orchestrateChatResponse: orchestrateChatResponse2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cP);
+        const { orchestrateChatResponse: orchestrateChatResponse2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cP);
         return { orchestrateChatResponse: orchestrateChatResponse2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await orchestrateChatResponse(message, storeApi);
@@ -1975,7 +1975,7 @@ const createChatSlice = (set, get) => {
     clearStreamingMessage: () => set({ streamingMessage: null }),
     confirmGoal: async (goalTitle) => {
       const { confirmAnalysisGoal } = await __vitePreload(async () => {
-        const { confirmAnalysisGoal: confirmAnalysisGoal2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cM);
+        const { confirmAnalysisGoal: confirmAnalysisGoal2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cM);
         return { confirmAnalysisGoal: confirmAnalysisGoal2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await confirmAnalysisGoal(goalTitle, storeApi);
@@ -1990,9 +1990,9 @@ const createChatSlice = (set, get) => {
       }
       if (!_resolveEffectivePendingClarification || !_isProviderConfigured) {
         const [clarificationMod, providerMod] = await Promise.all([
-          __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-          __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-          __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cP), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+          __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+          __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+          __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cP), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
         ]);
         _resolveEffectivePendingClarification = clarificationMod.resolveEffectivePendingClarification;
         _isProviderConfigured = providerMod.isProviderConfigured;
@@ -2014,11 +2014,11 @@ const createChatSlice = (set, get) => {
           pendingClarificationInStore: Boolean(get().pendingClarification)
         });
         const { buildClarificationFollowUpPrompt, handleClarificationResponse: processClarificationResponse } = await __vitePreload(async () => {
-          const { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cF);
+          const { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cF);
           return { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 };
         }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async (clarMod) => {
           const { handleClarificationResponse: procClarResp } = await __vitePreload(async () => {
-            const { handleClarificationResponse: procClarResp2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cP);
+            const { handleClarificationResponse: procClarResp2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cP);
             return { handleClarificationResponse: procClarResp2 };
           }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
           return { ...clarMod, handleClarificationResponse: procClarResp };
@@ -2090,7 +2090,7 @@ const createChatSlice = (set, get) => {
       });
       try {
         if (!_resolveEffectivePendingClarification) {
-          const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+          const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
           _resolveEffectivePendingClarification = mod.resolveEffectivePendingClarification;
         }
         const pendingClarification = getEffectivePendingClarification();
@@ -2098,7 +2098,7 @@ const createChatSlice = (set, get) => {
           storeResolvedClarification(pendingClarification, userChoice.value || userChoice.label);
         }
         const { handleClarificationResponse: processClarificationResponse } = await __vitePreload(async () => {
-          const { handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cP);
+          const { handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cP);
           return { handleClarificationResponse: processClarificationResponse2 };
         }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
         await processClarificationResponse(userChoice, storeApi);
@@ -2719,8 +2719,8 @@ const createAgentSlice = (set, get) => ({
       return;
     }
     const [{ abortRuntimeTurn }, { buildRuntimeContractDetail }] = await Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.co), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cq), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.co), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cq), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     set({ cancelRequestedTurnId: activeTurn.turnId });
     abortRuntimeTurn(activeTurn.turnId);
@@ -2743,7 +2743,7 @@ const createAgentSlice = (set, get) => ({
     const researchRun = get().activeAnalysisSession;
     if (!researchRun || researchRun.status !== "running") return;
     const { requestDataResearchCancellation } = await __vitePreload(async () => {
-      const { requestDataResearchCancellation: requestDataResearchCancellation2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cv);
+      const { requestDataResearchCancellation: requestDataResearchCancellation2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cv);
       return { requestDataResearchCancellation: requestDataResearchCancellation2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     requestDataResearchCancellation(researchRun.runId);
@@ -2816,7 +2816,7 @@ const createAgentSlice = (set, get) => ({
     set({ isCardReviewInProgress: true });
     try {
       const { generateCardEnhancementSuggestions } = await __vitePreload(async () => {
-        const { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cQ);
+        const { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cQ);
         return { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const cardContext = analysisCards.map((card) => ({
@@ -3196,9 +3196,9 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
       { updateCleaningRun }
     ] = await Promise.all([
       getSettings(),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     const persistedSettings = {
       ...rawPersistedSettings,
@@ -3215,11 +3215,11 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
     }
     set({ sessionId: activeSessionId });
     void __vitePreload(async () => {
-      const { cleanupStaleOpfsSessions } = await import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.ct);
+      const { cleanupStaleOpfsSessions } = await import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.ct);
       return { cleanupStaleOpfsSessions };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ cleanupStaleOpfsSessions }) => cleanupStaleOpfsSessions([activeSessionId])).catch((error) => console.warn("[Init] Could not clean abandoned OPFS imports.", error));
     if (typeof indexedDB !== "undefined") {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then((storage) => "pruneExpiredLocalDiagnostics" in storage && typeof storage.pruneExpiredLocalDiagnostics === "function" ? storage.pruneExpiredLocalDiagnostics() : 0).catch((error) => console.warn("[Init] Could not prune expired local diagnostics.", error));
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then((storage) => "pruneExpiredLocalDiagnostics" in storage && typeof storage.pruneExpiredLocalDiagnostics === "function" ? storage.pruneExpiredLocalDiagnostics() : 0).catch((error) => console.warn("[Init] Could not prune expired local diagnostics.", error));
     }
     try {
       const idbStart = performance.now();
@@ -3355,7 +3355,7 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
             set({ vectorMemoryState: "queued" });
             get().addProgress("Restored AI long-term memory from local storage.");
           } else {
-            void __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+            void __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
               (m) => m.rebuildVectorMemoryFromState({ getState: get, setState: set }, {
                 reset: true,
                 includeDatasetDocs: true,
@@ -3383,7 +3383,7 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
       set({ isAppInitializing: false });
     }
     if (get().csvData) {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-D0y7xilO.js").then((n) => n.cH), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async ({ recoverPiInitialAnalysisIfNeeded }) => {
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-zR6ucGlD.js").then((n) => n.cH), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async ({ recoverPiInitialAnalysisIfNeeded }) => {
         await recoverPiInitialAnalysisIfNeeded(store);
       }).catch((error) => {
         get().addProgress(
@@ -3429,6 +3429,127 @@ const IconLoadingSpinner = (props) => {
     /* @__PURE__ */ jsxRuntimeExports.jsx("path", { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
   ] });
 };
+const IconCheck = (props) => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "http://www.w3.org/2000/svg", className: "h-3 w-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", ...props, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "3", d: "M5 13l4 4L19 7" }) });
+const IconChevron = ({ isOpen }) => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "http://www.w3.org/2000/svg", className: `h-6 w-6 transform transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M19 9l-7 7-7-7" }) });
+const IconLock = (props) => /* @__PURE__ */ jsxRuntimeExports.jsxs("svg", { xmlns: "http://www.w3.org/2000/svg", className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2, "aria-hidden": "true", ...props, children: [
+  /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "5", y: "11", width: "14", height: "9", rx: "2" }),
+  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M8 11V8a4 4 0 118 0v3" })
+] });
+const IconShieldCheck = (props) => /* @__PURE__ */ jsxRuntimeExports.jsxs("svg", { xmlns: "http://www.w3.org/2000/svg", className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2, "aria-hidden": "true", ...props, children: [
+  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" }),
+  /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M9 12l2 2 4-4" })
+] });
+const STEPS = [
+  { id: "upload", labelKey: "import_step_upload", captionKey: "import_step_upload_caption" },
+  { id: "parse", labelKey: "import_step_parse", captionKey: "import_step_parse_caption" },
+  { id: "analyse", labelKey: "import_step_analyse", captionKey: "import_step_analyse_caption" },
+  { id: "ready", labelKey: "import_step_ready", captionKey: "import_step_ready_caption" }
+];
+const resolveStepState = (stepId, stage) => {
+  const activeIndex = STEPS.findIndex((step) => step.id === stage);
+  const index = STEPS.findIndex((step) => step.id === stepId);
+  if (index < activeIndex) return "done";
+  return index === activeIndex ? "active" : "waiting";
+};
+const fileExtension = (fileName) => {
+  const match = /\.([A-Za-z0-9]+)$/.exec(fileName);
+  return match ? match[1].toUpperCase() : "CSV";
+};
+const ImportProgressCard = ({
+  language,
+  fileName,
+  title,
+  detail,
+  tone,
+  stage,
+  providerLabel,
+  onOpenLogs
+}) => {
+  const [showDetails, setShowDetails] = reactExports.useState(false);
+  const isError = tone === "error";
+  const t = (key) => getTranslation(key, language);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-full items-center justify-center px-2", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `w-full max-w-3xl rounded-card border p-6 shadow-sm sm:p-8 ${isError ? "border-red-200 bg-red-50" : "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50"}`, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-4", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconFileUpload, { className: "h-7 w-7" }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-2xl font-semibold text-slate-900", children: title }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 truncate text-sm text-slate-600", title: fileName, children: getTranslation("import_preparing_file", language, { fileName }) })
+      ] })
+    ] }),
+    !isError && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("ol", { className: "mt-8 grid grid-cols-4 gap-2", "aria-label": t("import_steps_label"), children: STEPS.map((step) => {
+        const state2 = resolveStepState(step.id, stage);
+        return /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { className: "flex flex-col items-center text-center", "aria-current": state2 === "active" ? "step" : void 0, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: `flex h-6 w-6 items-center justify-center rounded-full border-2 ${state2 === "done" ? "border-blue-600 bg-blue-600 text-white" : state2 === "active" ? "border-blue-600 bg-white" : "border-slate-300 bg-white"}`, children: [
+            state2 === "done" && /* @__PURE__ */ jsxRuntimeExports.jsx(IconCheck, { className: "h-3 w-3" }),
+            state2 === "active" && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "h-2.5 w-2.5 rounded-full bg-blue-600" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `mt-2 text-sm font-semibold ${state2 === "waiting" ? "text-slate-400" : "text-slate-900"}`, children: t(step.labelKey) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-slate-500", children: t(step.captionKey) })
+        ] }, step.id);
+      }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-6 h-2 overflow-hidden rounded-full bg-slate-200", role: "progressbar", "aria-label": title, "aria-busy": "true", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-full w-1/3 animate-pulse rounded-full bg-blue-500" }) })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", "aria-live": "polite", className: `mt-4 text-sm leading-6 ${isError ? "text-red-700" : "font-medium text-slate-800"}`, children: detail }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-6 grid gap-3 sm:grid-cols-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(IconShieldCheck, { className: "mt-0.5 h-6 w-6 shrink-0 text-emerald-600" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-semibold text-emerald-950", children: t("import_privacy_local_title") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-xs leading-5 text-emerald-900/80", children: t("import_privacy_local_detail") })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(IconLock, { className: "mt-0.5 h-6 w-6 shrink-0 text-blue-600" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-semibold text-blue-950", children: t("import_privacy_ai_title") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-xs leading-5 text-blue-900/80", children: t("import_privacy_ai_detail") })
+        ] })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-4 rounded-lg border border-slate-200 bg-white/70", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "button",
+        {
+          type: "button",
+          onClick: () => setShowDetails((open) => !open),
+          "aria-expanded": showDetails,
+          className: "flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-slate-800",
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(IconChevron, { isOpen: showDetails }),
+            t("import_technical_details")
+          ]
+        }
+      ),
+      showDetails && /* @__PURE__ */ jsxRuntimeExports.jsxs("dl", { className: "grid gap-x-8 gap-y-2 border-t border-slate-200 px-4 py-3 text-sm sm:grid-cols-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("dt", { className: "text-slate-500", children: t("import_tech_engine") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("dd", { className: "text-slate-900", children: t("import_tech_engine_value") })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("dt", { className: "text-slate-500", children: t("import_tech_file_type") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("dd", { className: "text-slate-900", children: fileExtension(fileName) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("dt", { className: "text-slate-500", children: t("import_tech_provider") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("dd", { className: "text-slate-900", children: providerLabel })
+        ] }),
+        onOpenLogs && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between gap-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("dt", { className: "text-slate-500", children: t("import_tech_logs") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("dd", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: onOpenLogs, className: "font-medium text-blue-700 underline-offset-2 hover:underline", children: t("view_technical_details") }) })
+        ] })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-4 text-xs text-slate-500", children: t("data_privacy_note") })
+  ] }) });
+};
+const getCloudAiProviderLabel = (provider, language) => {
+  if (provider === "default") {
+    return getTranslation("cloud_ai_provider_default", language);
+  }
+  if (provider === "google") return "Google Gemini";
+  return "OpenAI";
+};
 const FileUpload = ({ isWorkspaceRestoring = false }) => {
   const {
     handleFileUpload,
@@ -3440,7 +3561,8 @@ const FileUpload = ({ isWorkspaceRestoring = false }) => {
     datasetBundle,
     fileName,
     language,
-    cleaningRunStatus
+    cleaningRunStatus,
+    provider
   } = useAppStore((state2) => {
     var _a, _b;
     return {
@@ -3453,7 +3575,8 @@ const FileUpload = ({ isWorkspaceRestoring = false }) => {
       datasetBundle: state2.datasetBundle,
       fileName: ((_a = state2.csvData) == null ? void 0 : _a.fileName) ?? null,
       language: state2.settings.language,
-      cleaningRunStatus: ((_b = state2.cleaningRun) == null ? void 0 : _b.status) ?? null
+      cleaningRunStatus: ((_b = state2.cleaningRun) == null ? void 0 : _b.status) ?? null,
+      provider: state2.settings.provider
     };
   }, shallow$1);
   const openDebugLogs = reactExports.useCallback(() => setIsDebugLogsModalOpen(true), [setIsDebugLogsModalOpen]);
@@ -3538,28 +3661,20 @@ const FileUpload = ({ isWorkspaceRestoring = false }) => {
   };
   if (isBusy && fileName) {
     const busyCard = resolveBusyCard();
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-full items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `w-full max-w-2xl rounded-card border p-6 shadow-sm ${busyCard.tone === "error" ? "border-red-200 bg-red-50" : "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50"}`, children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center text-slate-900", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(IconLoadingSpinner, { className: "mr-3 h-6 w-6" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-xl font-semibold", children: busyCard.title }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-600", children: getTranslation("upload_working_on_file", language, { fileName }) })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: `mt-5 text-sm leading-6 ${busyCard.tone === "error" ? "text-red-700" : "text-slate-600"}`, children: busyCard.detail }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-6 flex items-center justify-between gap-3", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "min-w-0 flex-1 text-xs text-slate-500", children: getTranslation("data_privacy_note", language) }),
-        canOpenLogs && /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "button",
-          {
-            type: "button",
-            onClick: openDebugLogs,
-            className: "shrink-0 whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50",
-            children: getTranslation("view_technical_details", language)
-          }
-        )
-      ] })
-    ] }) });
+    const analysing = Boolean(aiTaskStatus && aiTaskStatus.status !== "done" && aiTaskStatus.status !== "error") || cleaningRunStatus === "running";
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      ImportProgressCard,
+      {
+        language,
+        fileName,
+        title: busyCard.title,
+        detail: busyCard.detail,
+        tone: busyCard.tone,
+        stage: analysing ? "analyse" : "parse",
+        providerLabel: getCloudAiProviderLabel(provider, language),
+        onOpenLogs: canOpenLogs ? openDebugLogs : void 0
+      }
+    );
   }
   if (!allowManualUpload) {
     return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-full items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "w-full max-w-3xl rounded-card border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50 p-8 shadow-sm", children: [
@@ -3986,10 +4101,11 @@ const AppHeader = () => {
     reproposeAnalysisGoals,
     showAnalysisTools,
     hasPendingRestore,
+    fileName,
     language
   } = useAppStore(
     (state2) => {
-      var _a;
+      var _a, _b;
       return {
         onNewSession: state2.handleNewSession,
         onOpenHistory: () => {
@@ -4005,7 +4121,8 @@ const AppHeader = () => {
         reproposeAnalysisGoals: state2.reproposeAnalysisGoals,
         showAnalysisTools: Boolean(state2.csvData),
         hasPendingRestore: Boolean(state2.datasetBundle && !state2.csvData),
-        language: ((_a = state2.settings) == null ? void 0 : _a.language) ?? "English"
+        fileName: ((_a = state2.csvData) == null ? void 0 : _a.fileName) ?? null,
+        language: ((_b = state2.settings) == null ? void 0 : _b.language) ?? "English"
       };
     },
     shallow$1
@@ -4097,6 +4214,10 @@ const AppHeader = () => {
         className: "flex min-w-0 flex-row flex-nowrap items-center gap-2 overflow-hidden px-0 py-2",
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "shrink-0", children: /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "whitespace-nowrap text-xl font-extrabold leading-tight text-slate-900", children: "AI Analysis" }) }),
+          fileName && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "hidden min-w-0 items-center gap-2 border-l border-slate-200 pl-3 text-sm text-slate-600 lg:flex", title: fileName, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(IconFileUpload, { className: "h-4 w-4 shrink-0 text-slate-400" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "max-w-[22rem] truncate", children: fileName })
+          ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs(
             "nav",
             {
@@ -4131,7 +4252,6 @@ const AppHeader = () => {
                     ]
                   }
                 ),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(PwaUpdateButton, { className: secondaryButtonClass, language }),
                 showDatabaseButton && /* @__PURE__ */ jsxRuntimeExports.jsxs(
                   "button",
                   {
@@ -4240,6 +4360,13 @@ const AppHeader = () => {
                       /* @__PURE__ */ jsxRuntimeExports.jsx(IconShowAssistant, {}),
                       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "hidden lg:inline", children: getTranslation("assistant", language) })
                     ]
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  PwaUpdateButton,
+                  {
+                    className: `${primaryButtonClass} ml-1 border border-transparent text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700`,
+                    language
                   }
                 )
               ]
@@ -4944,20 +5071,20 @@ const PwaStatusBanner = () => {
     )
   ] });
 };
-const ChatPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ChatPanel-BJZkK7N0.js"), true ? __vite__mapDeps([5,0,1,2,3,4,6,7,8,9,10,11,12,13]) : void 0, import.meta.url).then((m) => ({ default: m.ChatPanel })));
-const AnalysisPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AnalysisPanel-C5Fm1_iT.js"), true ? __vite__mapDeps([14,6,7,10,8,9,0,1,2,3,4,15,16,17,18,19,20,11]) : void 0, import.meta.url).then((m) => ({ default: m.AnalysisPanel })));
-const SpreadsheetPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SpreadsheetPanel-BPEP_xrq.js"), true ? __vite__mapDeps([21,6,17,9,0,1,2,3,4,16,13,20,7,18,10]) : void 0, import.meta.url).then((m) => ({ default: m.SpreadsheetPanel })));
-const SettingsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SettingsModal-B5QAuMkU.js"), true ? __vite__mapDeps([22,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.SettingsModal })));
-const HistoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_HistoryPanel-WWHfwVjY.js"), true ? __vite__mapDeps([23,6,7,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.HistoryPanel })));
-const MemoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_MemoryPanel-eUqN7gG9.js"), true ? __vite__mapDeps([24,6,0,1,2,3,4,16,12,7]) : void 0, import.meta.url).then((module) => ({ default: module.MemoryPanel })));
-const AgentMonitorModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AgentMonitorModal-BTNvb8lk.js"), true ? __vite__mapDeps([25,6,7,16,19,20,11,0,1,2,3,4,26]) : void 0, import.meta.url).then((module) => ({ default: module.AgentMonitorModal })));
-const DatabaseModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DatabaseModal-DXNJgKFr.js"), true ? __vite__mapDeps([27,6,7,17,9,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.DatabaseModal })));
-const WorkspaceModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_WorkspaceModal-DVOYBOSV.js"), true ? __vite__mapDeps([28,0,1,2,3,4,6,7,16]) : void 0, import.meta.url).then((module) => ({ default: module.WorkspaceModal })));
-const DataPreparationWorkflowModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DataPreparationWorkflowModal-CCZQy-3j.js"), true ? __vite__mapDeps([29,6,7,0,1,2,3,4,30,16,26,15]) : void 0, import.meta.url).then((module) => ({ default: module.DataPreparationWorkflowModal })));
-const DebugLogsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DebugLogsModal-BfKajydt.js"), true ? __vite__mapDeps([31,6,7,0,1,2,3,4,30,16]) : void 0, import.meta.url).then((module) => ({ default: module.DebugLogsModal })));
-const ReportBoundaryConfirmModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ReportBoundaryConfirmModal--VeIyRDz.js"), true ? __vite__mapDeps([32,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ReportBoundaryConfirmModal })));
-const ApiKeyRequiredModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ApiKeyRequiredModal-uMR7XnjG.js"), true ? __vite__mapDeps([33,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ApiKeyRequiredModal })));
-const CloudAiConsentModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_CloudAiConsentModal-BOCaFgpu.js"), true ? __vite__mapDeps([34,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.CloudAiConsentModal })));
+const ChatPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ChatPanel-DB4v9VWw.js"), true ? __vite__mapDeps([5,0,1,2,3,4,6,7,8,9,10,11,12,13]) : void 0, import.meta.url).then((m) => ({ default: m.ChatPanel })));
+const AnalysisPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AnalysisPanel-GtpYaU4_.js"), true ? __vite__mapDeps([14,6,7,10,8,9,0,1,2,3,4,15,16,17,18,19,20,11]) : void 0, import.meta.url).then((m) => ({ default: m.AnalysisPanel })));
+const SpreadsheetPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SpreadsheetPanel-CY8EBC7k.js"), true ? __vite__mapDeps([21,6,17,9,0,1,2,3,4,16,13,20,7,18,10]) : void 0, import.meta.url).then((m) => ({ default: m.SpreadsheetPanel })));
+const SettingsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SettingsModal-DY4M2qjv.js"), true ? __vite__mapDeps([22,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.SettingsModal })));
+const HistoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_HistoryPanel-BDOethp5.js"), true ? __vite__mapDeps([23,6,7,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.HistoryPanel })));
+const MemoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_MemoryPanel-CacMJSc9.js"), true ? __vite__mapDeps([24,6,0,1,2,3,4,16,12,7]) : void 0, import.meta.url).then((module) => ({ default: module.MemoryPanel })));
+const AgentMonitorModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AgentMonitorModal-69N-2VHQ.js"), true ? __vite__mapDeps([25,6,7,16,19,20,11,0,1,2,3,4,26]) : void 0, import.meta.url).then((module) => ({ default: module.AgentMonitorModal })));
+const DatabaseModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DatabaseModal-45usmxOp.js"), true ? __vite__mapDeps([27,6,7,17,9,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.DatabaseModal })));
+const WorkspaceModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_WorkspaceModal-BogXZkpj.js"), true ? __vite__mapDeps([28,0,1,2,3,4,6,7,16]) : void 0, import.meta.url).then((module) => ({ default: module.WorkspaceModal })));
+const DataPreparationWorkflowModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DataPreparationWorkflowModal-CM5k_4QN.js"), true ? __vite__mapDeps([29,6,7,0,1,2,3,4,30,16,26,15]) : void 0, import.meta.url).then((module) => ({ default: module.DataPreparationWorkflowModal })));
+const DebugLogsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DebugLogsModal-7MImBoVD.js"), true ? __vite__mapDeps([31,6,7,0,1,2,3,4,30,16]) : void 0, import.meta.url).then((module) => ({ default: module.DebugLogsModal })));
+const ReportBoundaryConfirmModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ReportBoundaryConfirmModal-psKujiBs.js"), true ? __vite__mapDeps([32,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ReportBoundaryConfirmModal })));
+const ApiKeyRequiredModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ApiKeyRequiredModal-C1GIZWJx.js"), true ? __vite__mapDeps([33,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ApiKeyRequiredModal })));
+const CloudAiConsentModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_CloudAiConsentModal-C0bHUfmC.js"), true ? __vite__mapDeps([34,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.CloudAiConsentModal })));
 const SpreadsheetPanelGate = We.memo(({ isVisible }) => {
   const isPipelineActive = useAppStore((state2) => {
     const task = state2.aiTaskStatus;
@@ -5209,8 +5336,11 @@ export {
   useDialogAccessibility as e,
   IconLoadingSpinner as f,
   getCachedChart as g,
-  usePwaLifecycle as h,
-  IconApiKeyRequired as i,
+  IconChevron as h,
+  usePwaLifecycle as i,
+  IconCheck as j,
+  IconApiKeyRequired as k,
+  getCloudAiProviderLabel as l,
   refreshPwaStorageEstimate as r,
   setCachedChart as s,
   useAppStore as u

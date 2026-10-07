@@ -6,6 +6,7 @@ import { IconHistory } from '../icons/IconHistory';
 import { IconShowAssistant } from '../icons/IconShowAssistant';
 import { IconChangeGoal } from '../icons/IconChangeGoal';
 import { IconCode } from '../icons/IconCode';
+import { IconFileUpload } from '../icons/IconFileUpload';
 import { IconMoreHorizontal } from '../icons/IconMoreHorizontal';
 import {
     shouldShowAssistantToggleButton,
@@ -36,6 +37,7 @@ export const AppHeader: React.FC = () => {
         reproposeAnalysisGoals,
         showAnalysisTools,
         hasPendingRestore,
+        fileName,
         language,
     } = useAppStore(
         (state: AppStore) => ({
@@ -53,6 +55,7 @@ export const AppHeader: React.FC = () => {
             reproposeAnalysisGoals: state.reproposeAnalysisGoals,
             showAnalysisTools: Boolean(state.csvData),
             hasPendingRestore: Boolean(state.datasetBundle && !state.csvData),
+            fileName: state.csvData?.fileName ?? null,
             language: state.settings?.language ?? 'English',
         }),
         shallow
@@ -156,6 +159,12 @@ export const AppHeader: React.FC = () => {
             <div className="shrink-0">
                 <h1 className="whitespace-nowrap text-xl font-extrabold leading-tight text-slate-900">AI Analysis</h1>
             </div>
+            {fileName && (
+                <div className="hidden min-w-0 items-center gap-2 border-l border-slate-200 pl-3 text-sm text-slate-600 lg:flex" title={fileName}>
+                    <IconFileUpload className="h-4 w-4 shrink-0 text-slate-400" />
+                    <span className="max-w-[22rem] truncate">{fileName}</span>
+                </div>
+            )}
             <nav
                 aria-label={getTranslation('header_analysis_actions', language)}
                 className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-visible"
@@ -184,7 +193,6 @@ export const AppHeader: React.FC = () => {
                        <span className="hidden lg:inline">{getTranslation('header_history', language)}</span>
                     </button>
                 )}
-                <PwaUpdateButton className={secondaryButtonClass} language={language} />
                 {showDatabaseButton && (
                     <button
                         onClick={showAnalysisTools ? onOpenDatabase : undefined}
@@ -280,6 +288,10 @@ export const AppHeader: React.FC = () => {
                         <span className="hidden lg:inline">{getTranslation('assistant', language)}</span>
                     </button>
                 )}
+                <PwaUpdateButton
+                    className={`${primaryButtonClass} ml-1 border border-transparent text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700`}
+                    language={language}
+                />
             </nav>
         </header>
         {isNewSessionConfirmOpen && createPortal(
