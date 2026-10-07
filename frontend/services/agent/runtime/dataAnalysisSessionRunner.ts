@@ -13,6 +13,8 @@ import {
 } from '../planning/topicProcessor';
 import { emitAgentEvent, updateAgentTaskStatus } from '../monitoring/agentMonitor';
 import { keepInitialAnalysisStageFrame } from '../monitoring/analysisStageFrame';
+import { getCurrentAnalysisDatasetVersion } from '../artifactProvenance';
+import { applyPlanToHypotheses, buildResearchTopic, getUsableResearchPlan } from './pi/researchPlan';
 import { emitSilentFailure } from '../monitoring/silentFailureTracker';
 import { recordRuntimeEvent } from './runtimeHelpers';
 import { upsertCardMemoryDocument } from '../memory/vectorMemorySync';
@@ -684,7 +686,14 @@ const runDataAnalysisSessionInternal = async (
     }
 
     let topics: string[] = [];
-    if (!effectiveDiagnosticMode && session.status !== 'cancelled') {
+    // A research plan Pi drafted for this dataset replaces the one-shot topic generator, once.
+    const researchPlan = effectiveDiagnosticMode
+        ? null
+        : getUsableResearchPlan(store.getState().initialAnalysisPlan, getCurrentAnalysisDatasetVersion(store.getState()));
+    if (researchPlan) {
+        topics = researchPlan.questions.map(buildResearchTopic);
+        store.setState({ initialAnalysisPlan: { ...researchPlan, consumed: true } });
+    } else if (!effectiveDiagnosticMode && session.status !== 'cancelled') {
         updateAgentTaskStatus(store, {
             status: 'thinking',
             title: 'Starting analysis session',
@@ -727,7 +736,8 @@ const runDataAnalysisSessionInternal = async (
         : availableDimCount <= 2
             ? Math.min(4, DATA_ANALYSIS_MIN_TARGET_CARDS)
             : DATA_ANALYSIS_MIN_TARGET_CARDS;
-    const hypotheses = effectiveDiagnosticMode ? [] : buildHypotheses(topics, semanticUnderstanding, datasetContext, suggestedPivots);
+    const builtHypotheses = effectiveDiagnosticMode ? [] : buildHypotheses(topics, semanticUnderstanding, datasetContext, suggestedPivots);
+    const hypotheses = researchPlan ? applyPlanToHypotheses(builtHypotheses, researchPlan) : builtHypotheses;
     session = setDataAnalysisHypotheses(session, hypotheses);
     session = {
         ...session,

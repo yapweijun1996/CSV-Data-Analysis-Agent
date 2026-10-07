@@ -366,6 +366,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
                 aiTaskStatus: null,
                 initialAnalysisStatus: 'idle',
                 initialAnalysisFailureKind: null,
+                initialAnalysisPlan: null,
                 confirmedAnalysisGoal: null,
                 goalState: 'idle',
                 dataQualityIssues: null,

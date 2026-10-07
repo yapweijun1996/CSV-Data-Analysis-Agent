@@ -3,7 +3,7 @@ import type { CsvRow, CsvData, ReportIntakeIr } from './intake';
 import type { DataPreparationPlan, DataOperation } from './operations';
 import type { ActiveDataQuery, QueryTraceEntry, DuckDbSessionStatus } from './querying';
 import type { ReportContextResolution, DatasetSemanticSnapshot, SemanticSnapshotStatus } from './semantics';
-import { AnalysisArtifactProvenance, AnalysisCardData, AnalysisPlan, ColumnProfile } from './analysis';
+import { AnalysisArtifactProvenance, AnalysisCardData, AnalysisPlan, ColumnProfile, ResearchPlan } from './analysis';
 import { ColumnRegistry } from './columns';
 import { ChatMessage, ClarificationRequest, PendingMutationConfirmation, QueuedChatTurn, ResolvedClarification } from './chat';
 import { AiTaskStatusMessage, CleaningRun, RuntimeAccessControlSettings, WorkspaceActionHistoryEntry } from './ai';
@@ -205,6 +205,8 @@ export interface AppState {
     initialAnalysisStatus: InitialAnalysisStatus;
     /** Last terminal failure category; absent in reports saved before this field existed. */
     initialAnalysisFailureKind?: InitialAnalysisFailureKind | null;
+    /** Research questions Pi drafted for the initial analysis; null when none or already used. */
+    initialAnalysisPlan?: ResearchPlan | null;
     agentEvents: AgentEvent[];
     agentToolLogs: AgentToolLogEntry[];
     confirmedAnalysisGoal: string | null;

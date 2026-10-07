@@ -16,6 +16,7 @@ import { executeInitialAnalysisStageTool, type InitialAnalysisStageActionResult 
 import type { InitialAnalysisRunOutcome, InitialAnalysisRunRequest } from './initialAnalysisTypes';
 import { createPiCompactionTelemetry, createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
 import { isInitialAnalysisProviderFailure } from './initialAnalysisFailure';
+import { runPiResearchPlanner } from './piResearchPlanner';
 
 const STAGES = createInitialAnalysisStageToolManifests();
 const CHECKPOINT_PREFIX = 'pi-initial-analysis-v1:';
@@ -83,7 +84,11 @@ const run = async (
     store: StoreApi,
     checkpoint: PiInitialCheckpoint | null,
     streamOverride?: StreamFn,
+    options: { plannerStream?: StreamFn } = {},
 ): Promise<InitialAnalysisRunOutcome> => {
+    // A stream override replaces the model for the whole run (tests), so the planner
+    // only runs when the caller also supplies its own planner stream.
+    const plannerEnabled = !streamOverride || Boolean(options.plannerStream);
     if (activeRuns.has(request.appSessionId)) throw new Error('Initial analysis is already running.');
     const controller = new AbortController();
     const forwardAbort = () => controller.abort(request.signal?.reason);
@@ -167,6 +172,17 @@ const run = async (
                 executors,
             });
             results.push(result);
+            // Pi decides what to investigate once the data is ready. This never fails the run:
+            // without a usable plan the existing question planner is used.
+            if (plannerEnabled && stage.name === 'analysis.researchQuestions' && result.decision === 'pass') {
+                await runPiResearchPlanner({
+                    store,
+                    goal: request.researchGoal,
+                    datasetVersionFallback: request.datasetVersion,
+                    signal: signal ?? controller.signal,
+                    streamFn: options.plannerStream,
+                });
+            }
             warnings.push(...result.warningCodes.map(code => ({
                 code, message: result.summary, phase: result.phase,
             })));
@@ -310,9 +326,10 @@ export const runPiInitialAnalysis = (
     request: InitialAnalysisRunRequest,
     store: StoreApi,
     streamOverride?: StreamFn,
+    options?: { plannerStream?: StreamFn },
 ): Promise<InitialAnalysisRunOutcome> => {
     discardCheckpoint(request.appSessionId);
-    return run(request, store, null, streamOverride);
+    return run(request, store, null, streamOverride, options);
 };
 
 export const recoverPiInitialAnalysisIfNeeded = async (store: StoreApi): Promise<InitialAnalysisRunOutcome | null> => {

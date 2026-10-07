@@ -797,7 +797,7 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
             set(prev => ({
                 csvData: restoredData, canonicalCsvData: null, canonicalBuildMeta: null,
                 canonicalizationStatus: 'idle', pipelineOutcome: null, reportStructureResolution: null,
-                initialAnalysisFailureKind: null,
+                initialAnalysisFailureKind: null, initialAnalysisPlan: null,
                 columnProfiles: profileResult.profiles, columnRegistry: restoredRegistry, datasetSemanticSnapshot: null,
                 semanticStatus: 'idle', semanticDatasetVersion: null, activeDataQuery: null,
                 activeMetricMappingValidation: null, activeSpreadsheetFilter: null,

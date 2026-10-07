@@ -93,6 +93,25 @@ export interface ColumnProfile {
 }
 
 
+/** One question Pi chose to investigate, already checked against the dataset's columns. */
+export interface ResearchPlanQuestion {
+    title: string;
+    rationale: string;
+    dimension: string | null;
+    metric: string | null;
+    aggregation: AggregationType | null;
+    comparison: string | null;
+}
+
+/** The research plan Pi drafted for the initial analysis, consumed once by the evidence stage. */
+export interface ResearchPlan {
+    datasetVersion: string;
+    questions: ResearchPlanQuestion[];
+    /** Questions Pi proposed that failed validation, kept for diagnostics. */
+    rejected: Array<{ title: string; reason: string }>;
+    consumed: boolean;
+}
+
 export interface AnalysisPlan {
     chartType: ChartType;
     title: string;
