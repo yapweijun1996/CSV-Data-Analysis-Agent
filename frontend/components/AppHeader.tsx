@@ -19,6 +19,7 @@ import {
 import { useAppStore, AppStore } from '../store/useAppStore';
 import { getTranslation } from '../utils/localization';
 import { useDialogAccessibility } from '../hooks/useDialogAccessibility';
+import { PwaUpdateButton } from './PwaUpdateButton';
 
 export const AppHeader: React.FC = () => {
     const primaryButtonClass = 'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium leading-none transition-colors md:min-h-0 md:min-w-0 md:py-1.5';
@@ -183,6 +184,7 @@ export const AppHeader: React.FC = () => {
                        <span className="hidden lg:inline">{getTranslation('header_history', language)}</span>
                     </button>
                 )}
+                <PwaUpdateButton className={secondaryButtonClass} language={language} />
                 {showDatabaseButton && (
                     <button
                         onClick={showAnalysisTools ? onOpenDatabase : undefined}
