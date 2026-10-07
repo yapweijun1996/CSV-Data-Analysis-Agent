@@ -1,5 +1,5 @@
 import { AGGREGATION_TYPES, isAggregationType } from '../../../../types/analysis';
-import type { AggregationType, ColumnProfile, DataAnalysisHypothesis, ResearchPlan, ResearchPlanQuestion } from '../../../../types';
+import type { AggregationType, ColumnAdditivity, ColumnProfile, DataAnalysisHypothesis, ResearchPlan, ResearchPlanQuestion } from '../../../../types';
 
 export const MIN_PLAN_QUESTIONS = 2;
 export const MAX_PLAN_QUESTIONS = 6;
@@ -139,3 +139,53 @@ export const applyPlanToHypotheses = (
         };
     });
 };
+
+const ADDITIVITY_KINDS = new Set<ColumnAdditivity['kind']>(['additive', 'non_additive']);
+const ADDITIVITY_NATURES = new Set<ColumnAdditivity['nature']>(['flow', 'stock', 'ratio', 'unit_value', 'other']);
+const MAX_ADDITIVITY_ENTRIES = 40;
+
+export interface ColumnAdditivityValidation {
+    accepted: Record<string, ColumnAdditivity>;
+    rejected: Array<{ column: string; reason: string }>;
+}
+
+/**
+ * Pi says which numeric columns can be summed; the app keeps only judgements it can
+ * stand behind. Unknown or non-numeric columns are dropped, an inconsistent
+ * kind/nature pair is rejected, and a percentage column is always non-additive
+ * because that is a fact about the data, whatever the model says.
+ */
+export const validateColumnAdditivity = (
+    raw: unknown,
+    columns: readonly ColumnProfile[],
+): ColumnAdditivityValidation => {
+    const entries = Array.isArray(raw) ? raw.slice(0, MAX_ADDITIVITY_ENTRIES) : [];
+    const accepted: Record<string, ColumnAdditivity> = {};
+    const rejected: ColumnAdditivityValidation['rejected'] = [];
+    for (const entry of entries) {
+        const item = (entry ?? {}) as Record<string, unknown>;
+        const label = typeof item.column === 'string' ? item.column : '(unnamed)';
+        const reject = (reason: string) => rejected.push({ column: label, reason });
+        const column = resolveColumn(item.column, columns);
+        if (!column) { reject('Unknown column.'); continue; }
+        if (!NUMERIC_COLUMN_TYPES.has(column.type)) { reject(`"${column.name}" is ${column.type}, not numeric.`); continue; }
+        if (!ADDITIVITY_KINDS.has(item.kind as ColumnAdditivity['kind'])) { reject('kind must be additive or non_additive.'); continue; }
+        if (!ADDITIVITY_NATURES.has(item.nature as ColumnAdditivity['nature'])) { reject('nature must be flow, stock, ratio, unit_value or other.'); continue; }
+        let kind = item.kind as ColumnAdditivity['kind'];
+        const nature = item.nature as ColumnAdditivity['nature'];
+        // Ratios, unit values and balances at a point in time are not summed across rows.
+        if (kind === 'additive' && (nature === 'ratio' || nature === 'unit_value')) {
+            reject(`A ${nature} cannot be additive.`); continue;
+        }
+        if (column.type === 'percentage') kind = 'non_additive';
+        accepted[column.name] = { kind, nature, rationale: readText(item.rationale, MAX_RATIONALE_CHARS) };
+    }
+    return { accepted, rejected };
+};
+
+/** Returns the profiles with the accepted additivity judgements attached; other fields are untouched. */
+export const applyColumnAdditivity = (
+    profiles: readonly ColumnProfile[],
+    accepted: Record<string, ColumnAdditivity>,
+): ColumnProfile[] =>
+    profiles.map(profile => accepted[profile.name] ? { ...profile, additivity: accepted[profile.name] } : profile);

@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentSkillsSection } from '../components/modals/AgentSkillsSection';
 import { resolveAvailableSkills, resolveSkillEntries } from '../services/agent/skills/skillRegistry';
+import { buildEvidenceSkillGuidance } from '../services/agent/skills/evidencePromptSkills';
+import { parseSkillMarkdown, serializeSkillMarkdown } from '../services/agent/skills/skillMarkdown';
 import {
     MAX_USER_SKILLS,
     MAX_USER_SKILL_CHARS,
@@ -11,6 +13,8 @@ import {
     readUserSkillSources,
     removeUserSkill,
     resetUserSkillsForTests,
+    saveEditedUserSkill,
+    setSkillEnabled,
 } from '../services/agent/skills/userSkillStore';
 import { createPiSkillTool } from '../services/agent/runtime/pi/piSkillTool';
 import { createPiFollowUpSystemPrompt } from '../services/agent/runtime/pi/piContext';
@@ -115,5 +119,87 @@ describe('Agent skills settings section', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Remove house-style' }));
         await waitFor(() => expect(screen.queryByText('house-style')).toBeNull());
+    });
+});
+
+describe('skill export, edit and switch', () => {
+    beforeEach(resetUserSkillsForTests);
+    afterEach(cleanup);
+
+    it('serializes a skill so it parses back to the same skill', () => {
+        const original = resolveSkillEntries({}).entries[0].skill;
+        const parsed = parseSkillMarkdown(serializeSkillMarkdown(original), 'x.md').skill;
+        expect(parsed).toMatchObject({ name: original.name, description: original.description, content: original.content });
+    });
+
+    it('a disabled skill is hidden from the agent, the read tool and the evidence guidance, and can be switched back on', async () => {
+        setSkillEnabled('choose-metric-and-aggregation', false);
+
+        expect(resolveAvailableSkills().skills.map(skill => skill.name)).not.toContain('choose-metric-and-aggregation');
+        expect(buildEvidenceSkillGuidance({})).not.toContain('### Skill: choose-metric-and-aggregation');
+        const tool = createPiSkillTool({ getState: () => ({ workspaceFiles: {} }) } as never);
+        await expect(tool.execute('1', { name: 'choose-metric-and-aggregation' }, undefined as never)).rejects.toThrow();
+        expect(resolveSkillEntries({}).entries.find(entry => entry.skill.name === 'choose-metric-and-aggregation')?.enabled).toBe(false);
+
+        setSkillEnabled('choose-metric-and-aggregation', true);
+        expect(resolveAvailableSkills().skills.map(skill => skill.name)).toContain('choose-metric-and-aggregation');
+    });
+
+    it('saving an edit validates the text, replaces the skill, and handles a rename', () => {
+        importUserSkills([{ fileName: 'a.md', text: doc('house-style', 'Old.', 'Old body.') }]);
+
+        expect(saveEditedUserSkill('house-style', '# not a skill').ok).toBe(false);
+        expect(saveEditedUserSkill('house-style', doc('house-style', 'New.', 'New body.')).ok).toBe(true);
+        expect(Object.keys(readUserSkillSources())).toEqual(['skills/house-style/SKILL.md']);
+        expect(resolveSkillEntries({}).entries.find(entry => entry.skill.name === 'house-style')?.skill.content).toBe('New body.');
+
+        expect(saveEditedUserSkill('house-style', doc('team-style')).ok).toBe(true);
+        expect(Object.keys(readUserSkillSources())).toEqual(['skills/team-style/SKILL.md']);
+    });
+
+    it('editing a built-in skill keeps a user version and restoring brings the original back', async () => {
+        render(<AgentSkillsSection language="English" />);
+        const original = resolveSkillEntries({}, {}).entries.find(entry => entry.skill.name === 'data-quality-check')!.skill;
+
+        fireEvent.click(screen.getByRole('button', { name: 'Edit data-quality-check' }));
+        const editor = screen.getByRole('textbox', { name: 'Edit data-quality-check' }) as HTMLTextAreaElement;
+        expect(editor.value).toContain('name: data-quality-check');
+        fireEvent.change(editor, { target: { value: serializeSkillMarkdown({ ...original, content: 'My own version.' }) } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+        await waitFor(() => expect(resolveSkillEntries({}).entries.find(entry => entry.skill.name === 'data-quality-check')?.skill.content).toBe('My own version.'));
+        fireEvent.click(screen.getByRole('button', { name: 'Restore default' }));
+        await waitFor(() => expect(resolveSkillEntries({}).entries.find(entry => entry.skill.name === 'data-quality-check')?.source).toBe('builtin'));
+    });
+
+    it('shows an error and keeps the editor open when the edited text is not a skill', () => {
+        render(<AgentSkillsSection language="English" />);
+        fireEvent.click(screen.getByRole('button', { name: 'Edit data-quality-check' }));
+        fireEvent.change(screen.getByRole('textbox', { name: 'Edit data-quality-check' }), { target: { value: 'nope' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+        expect(screen.getByRole('alert').textContent).toContain('frontmatter');
+    });
+
+    it('exports a skill as a markdown download and toggles it from the list', () => {
+        const created: Blob[] = [];
+        const clicks: string[] = [];
+        (URL as unknown as { createObjectURL: (blob: Blob) => string }).createObjectURL = blob => { created.push(blob); return 'blob:x'; };
+        (URL as unknown as { revokeObjectURL: () => void }).revokeObjectURL = () => undefined;
+        const realCreate = document.createElement.bind(document);
+        vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+            const element = realCreate(tag);
+            if (tag === 'a') (element as HTMLAnchorElement).click = () => { clicks.push((element as HTMLAnchorElement).download); };
+            return element;
+        });
+        render(<AgentSkillsSection language="English" />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Export data-quality-check' }));
+        expect(clicks).toEqual(['data-quality-check.md']);
+        expect(created).toHaveLength(1);
+
+        fireEvent.click(screen.getByRole('switch', { name: 'Use data-quality-check' }));
+        expect(screen.getAllByText('Off')).toHaveLength(1);
+        vi.restoreAllMocks();
     });
 });

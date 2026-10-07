@@ -244,6 +244,7 @@ const resolveAnalysisRole = (
  * only names that explicitly describe a configured/snapshot budget match.
  */
 const NON_ADDITIVE_NAME_PATTERNS = [
+    /%/,
     /(^|[\s_\-.])(avg|average|mean|rate|ratio|margin|yield|pct|percent|index|score)([\s_\-.]|$)/i,
     /(^|[\s_\-.])(roas|roi|ctr|cvr|cpc|cpm|cpa|cpv)([\s_\-.]|$)/i,
     /(^|[\s_\-.])per([\s_\-.]|$)/i,
@@ -253,6 +254,18 @@ const NON_ADDITIVE_NAME_PATTERNS = [
 
 export const isNonAdditiveMetricName = (physicalName: string): boolean =>
     NON_ADDITIVE_NAME_PATTERNS.some(pattern => pattern.test(physicalName));
+
+/**
+ * Whether a metric's values cannot be summed. Order of evidence: a percentage
+ * column is never summable (a fact about the data); then Pi's judgement from
+ * looking at the column (`profile.additivity`); only without either, the
+ * column-name keywords above act as a prior.
+ */
+export const isNonAdditiveMetric = (physicalName: string, profile?: ColumnProfile | null): boolean => {
+    if (profile?.type === 'percentage') return true;
+    if (profile?.additivity) return profile.additivity.kind === 'non_additive';
+    return isNonAdditiveMetricName(physicalName);
+};
 
 const resolveAggregationHint = (
     analysisRole: ColumnRegistryEntry['analysisRole'],
@@ -265,10 +278,7 @@ const resolveAggregationHint = (
     if (analysisRole === 'structural_metadata' || analysisRole === 'blocked_dimension') {
         return 'unrestricted';
     }
-    if (profile?.type === 'percentage') {
-        return 'non_additive';
-    }
-    if (physicalName && isNonAdditiveMetricName(physicalName)) {
+    if (physicalName ? isNonAdditiveMetric(physicalName, profile) : profile?.type === 'percentage') {
         return 'non_additive';
     }
     if (analysisRole === 'business_metric') {

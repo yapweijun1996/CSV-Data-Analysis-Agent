@@ -76,6 +76,13 @@ export interface PivotMatrixConfig {
     };
 }
 
+/** Whether a numeric column's values can be summed, as judged by Pi and checked by the app. */
+export interface ColumnAdditivity {
+    kind: 'additive' | 'non_additive';
+    nature: 'flow' | 'stock' | 'ratio' | 'unit_value' | 'other';
+    rationale: string;
+}
+
 export interface ColumnProfile {
     name: string;
     type: 'numerical' | 'categorical' | 'date' | 'time' | 'currency' | 'percentage';
@@ -90,6 +97,8 @@ export interface ColumnProfile {
      *  numbers (e.g. "'-852.81"). DuckDB cannot CAST these directly;
      *  replace_values must strip the leading apostrophe first. */
     hasApostrophePrefixedNumbers?: boolean;
+    /** Pi's additivity judgement (flow, stock, ratio, unit value). When set it replaces the column-name keyword guess. */
+    additivity?: ColumnAdditivity;
 }
 
 

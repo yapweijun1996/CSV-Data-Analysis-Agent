@@ -1,3 +1,5 @@
+import { isNonAdditiveMetricName } from '../../data/columnRegistry';
+
 /**
  * Structural row role signals — data-driven replacements for domain-specific
  * regex patterns (SUMMARY_TOKEN_PATTERN, SUBTOTAL_ROW_PATTERN, etc.).
@@ -66,7 +68,6 @@ const parseNumeric = (value: unknown): number | null => {
 
 const isBlankValue = (value: unknown): boolean => String(value ?? '').trim() === '';
 
-const NON_ADDITIVE_FACT_COLUMN_PATTERN = /(?:rate|ratio|average|\bavg\b|percent|%|\bctr\b|\bcpc\b|\bcpm\b|cost\s+per)/i;
 
 const withinTolerance = (a: number, b: number): boolean => {
     if (a === 0 && b === 0) return true;
@@ -128,7 +129,7 @@ const detectLeadingAggregateRow = (
         return null;
     }
     const detailRows = rows.slice(1);
-    const summableColumns = factColumns.filter(column => !NON_ADDITIVE_FACT_COLUMN_PATTERN.test(column));
+    const summableColumns = factColumns.filter(column => !isNonAdditiveMetricName(column));
     let comparedCount = 0;
     const matchedColumns: string[] = [];
 

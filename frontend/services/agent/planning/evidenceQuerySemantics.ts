@@ -7,7 +7,7 @@ import type {
     QueryPlan,
     SqlEvidenceQueryPlan,
 } from '../../../types';
-import { isNonAdditiveMetricName } from '../../data/columnRegistry';
+import { isNonAdditiveMetric, isNonAdditiveMetricName } from '../../data/columnRegistry';
 import { injectDirectivesIntoQueryPlan } from '../../duckdb/directiveInjector';
 import { createEmptyRuntimeDirectives } from '../runtime/investigationTypes';
 
@@ -165,9 +165,9 @@ export const isRatioLikeMetric = (
     if (!columnName) {
         return false;
     }
-    return profile?.type === 'percentage'
-        || RATIO_METRIC_PATTERN.test(columnName)
-        || isNonAdditiveMetricName(columnName);
+    // Pi's judgement (or the percentage type) decides when present; the name patterns are only a prior.
+    if (profile?.type === 'percentage' || profile?.additivity) return isNonAdditiveMetric(columnName, profile);
+    return RATIO_METRIC_PATTERN.test(columnName) || isNonAdditiveMetricName(columnName);
 };
 
 export const topicPrefersAverageAggregation = (

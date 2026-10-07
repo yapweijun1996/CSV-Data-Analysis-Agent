@@ -1,6 +1,6 @@
 import type { Skill } from '@earendil-works/pi-agent-core';
 import { parseSkillMarkdown, type SkillParseDiagnostic } from './skillMarkdown';
-import { readUserSkillSources } from './userSkillStore';
+import { readDisabledSkillNames, readUserSkillSources } from './userSkillStore';
 
 const SKILLS_DIR = 'skills/';
 const SKILL_FILE = 'SKILL.md';
@@ -23,6 +23,8 @@ export interface ResolvedSkills {
 export interface SkillEntry {
     skill: Skill;
     source: SkillSource;
+    /** False when the person switched the skill off in Settings. */
+    enabled: boolean;
 }
 
 const loadBuiltinSkills = (): ResolvedSkills => {
@@ -66,14 +68,15 @@ const loadUserSkills = (workspaceFiles: Record<string, string> | undefined): Res
 export const resolveSkillEntries = (
     workspaceFiles?: Record<string, string>,
     userSkillSources: Record<string, string> = readUserSkillSources(),
+    disabledNames: ReadonlySet<string> = readDisabledSkillNames(),
 ): { entries: SkillEntry[]; diagnostics: SkillParseDiagnostic[] } => {
     const builtin = loadBuiltinSkills();
     const stored = loadUserSkills(userSkillSources);
     const workspace = loadUserSkills(workspaceFiles);
     const byName = new Map<string, SkillEntry>();
-    for (const skill of builtin.skills) byName.set(skill.name, { skill, source: 'builtin' });
-    for (const skill of stored.skills) byName.set(skill.name, { skill, source: 'user' });
-    for (const skill of workspace.skills) byName.set(skill.name, { skill, source: 'workspace' });
+    for (const skill of builtin.skills) byName.set(skill.name, { skill, source: 'builtin', enabled: !disabledNames.has(skill.name) });
+    for (const skill of stored.skills) byName.set(skill.name, { skill, source: 'user', enabled: !disabledNames.has(skill.name) });
+    for (const skill of workspace.skills) byName.set(skill.name, { skill, source: 'workspace', enabled: !disabledNames.has(skill.name) });
     return {
         entries: Array.from(byName.values()),
         diagnostics: [...builtin.diagnostics, ...stored.diagnostics, ...workspace.diagnostics],
@@ -85,7 +88,7 @@ export const resolveAvailableSkills = (
     userSkillSources?: Record<string, string>,
 ): ResolvedSkills => {
     const { entries, diagnostics } = resolveSkillEntries(workspaceFiles, userSkillSources);
-    return { skills: entries.map(entry => entry.skill), diagnostics };
+    return { skills: entries.filter(entry => entry.enabled).map(entry => entry.skill), diagnostics };
 };
 
 export const findSkillByName = (skills: readonly Skill[], name: string): Skill | undefined =>

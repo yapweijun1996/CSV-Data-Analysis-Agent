@@ -11,8 +11,9 @@ export const buildEvidenceSkillGuidance = (
     userSkillSources?: Record<string, string>,
 ): string => {
     const { entries } = resolveSkillEntries(undefined, userSkillSources);
-    const chosen = entries.filter(({ skill, source }) =>
-        !skill.disableModelInvocation
+    const chosen = entries.filter(({ skill, source, enabled }) =>
+        enabled
+        && !skill.disableModelInvocation
         && (source !== 'builtin' || (EVIDENCE_STAGE_BUILTIN_SKILLS as readonly string[]).includes(skill.name)));
     const parts: string[] = [];
     let used = 0;
