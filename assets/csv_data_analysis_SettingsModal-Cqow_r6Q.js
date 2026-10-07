@@ -1,7 +1,7 @@
-import { a as reactExports, j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
+import { a as reactExports, j as jsxRuntimeExports, W as We } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
-import { u as useAppStore, i as usePwaLifecycle, e as useDialogAccessibility, r as refreshPwaStorageEstimate } from "./csv_data_analysis_index-D1-iAbuJ.js";
-import { U as getTranslation, bu as DEFAULT_GATEWAY_MODEL, bv as GOOGLE_MODELS, bw as OPENAI_MODELS, bx as DEFAULT_FALLBACK_MODEL, by as SUPPORTED_APP_LANGUAGES, bz as DEFAULT_MAX_AGENT_TURNS, bA as MAX_MAX_AGENT_TURNS, bB as MIN_MAX_AGENT_TURNS, bC as DEFAULT_TOOL_OUTPUT_CUTOFF, bD as MAX_TOOL_OUTPUT_CUTOFF, bE as MIN_TOOL_OUTPUT_CUTOFF, bF as DEFAULT_GOOGLE_MODEL, b3 as createProviderModel, bG as clearCloudAiConsentRuntimeDecisions, bH as clearAllLocalBrowserData } from "./csv_data_analysis_app-agent-CfRovE3b.js";
+import { u as useAppStore, i as usePwaLifecycle, e as useDialogAccessibility, r as refreshPwaStorageEstimate } from "./csv_data_analysis_index-Bg0z2KI0.js";
+import { bu as subscribeUserSkills, bv as getUserSkillsSnapshot, bw as resolveSkillEntries, U as getTranslation, bx as removeUserSkill, by as importUserSkills, bz as DEFAULT_GATEWAY_MODEL, bA as GOOGLE_MODELS, bB as OPENAI_MODELS, bC as DEFAULT_FALLBACK_MODEL, bD as SUPPORTED_APP_LANGUAGES, bE as DEFAULT_MAX_AGENT_TURNS, bF as MAX_MAX_AGENT_TURNS, bG as MIN_MAX_AGENT_TURNS, bH as DEFAULT_TOOL_OUTPUT_CUTOFF, bI as MAX_TOOL_OUTPUT_CUTOFF, bJ as MIN_TOOL_OUTPUT_CUTOFF, bK as DEFAULT_GOOGLE_MODEL, b3 as createProviderModel, bL as clearCloudAiConsentRuntimeDecisions, bM as clearAllLocalBrowserData } from "./csv_data_analysis_app-agent-CTsNdKam.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
@@ -162,6 +162,81 @@ const Combobox = ({
         })
       }
     )
+  ] });
+};
+const EXAMPLE_SKILL = `---
+name: house-style
+description: Use when writing summaries for our leadership team.
+---
+
+Lead with the decision, then the evidence. Keep numbers to two figures.`;
+const AgentSkillsSection = ({ language }) => {
+  const snapshot = reactExports.useSyncExternalStore(subscribeUserSkills, getUserSkillsSnapshot, getUserSkillsSnapshot);
+  const { entries } = We.useMemo(() => resolveSkillEntries({}), [snapshot]);
+  const fileInputRef = reactExports.useRef(null);
+  const [lastImport, setLastImport] = reactExports.useState(null);
+  const handleFiles = async (event) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    event.target.value = "";
+    if (files.length === 0) return;
+    const loaded = await Promise.all(files.map(async (file) => ({ fileName: file.name, text: await file.text() })));
+    setLastImport(importUserSkills(loaded));
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-card border border-slate-200 bg-slate-50 p-4", "data-agent-skills-section": "true", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-sm font-semibold text-slate-900", children: getTranslation("settings_skills_title", language) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-xs leading-5 text-slate-600", children: getTranslation("settings_skills_detail", language) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white", children: entries.map(({ skill, source }) => /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { className: "flex items-start gap-3 px-3 py-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "flex items-center gap-2 text-sm font-medium text-slate-900", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate", children: skill.name }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${source === "user" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`, children: getTranslation(source === "user" ? "settings_skills_yours" : "settings_skills_builtin", language) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-xs text-slate-500", children: skill.description })
+      ] }),
+      source === "user" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          type: "button",
+          onClick: () => removeUserSkill(skill.name),
+          "aria-label": getTranslation("settings_skills_remove", language, { name: skill.name }),
+          className: "min-h-[44px] shrink-0 rounded-md px-2 text-xs font-semibold text-red-700 hover:bg-red-50 md:min-h-0 md:py-1",
+          children: "✕"
+        }
+      )
+    ] }, skill.name)) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "input",
+      {
+        ref: fileInputRef,
+        type: "file",
+        accept: ".md,text/markdown",
+        multiple: true,
+        className: "sr-only",
+        "aria-label": getTranslation("settings_skills_import", language),
+        onChange: (event) => void handleFiles(event)
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        type: "button",
+        onClick: () => {
+          var _a;
+          return (_a = fileInputRef.current) == null ? void 0 : _a.click();
+        },
+        className: "mt-3 min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100",
+        children: getTranslation("settings_skills_import", language)
+      }
+    ),
+    lastImport && (lastImport.added.length > 0 || lastImport.rejected.length > 0) && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { role: "status", className: "mt-2 space-y-1 text-xs", children: [
+      lastImport.added.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-emerald-800", children: getTranslation("settings_skills_added", language, { names: lastImport.added.join(", ") }) }),
+      lastImport.rejected.map((item) => /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-red-800", children: getTranslation("settings_skills_rejected", language, { fileName: item.fileName, reason: item.reason }) }, `${item.fileName}-${item.reason}`))
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("details", { className: "mt-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("summary", { className: "cursor-pointer text-xs font-medium text-slate-600", children: getTranslation("settings_skills_format_title", language) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-xs text-slate-600", children: getTranslation("settings_skills_format_hint", language) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("pre", { className: "mt-2 overflow-x-auto rounded-md bg-white p-2 text-[11px] text-slate-700", children: EXAMPLE_SKILL })
+    ] })
   ] });
 };
 const languages = SUPPORTED_APP_LANGUAGES;
@@ -531,6 +606,7 @@ const SettingsModal = () => {
                   ] })
                 ] })
               ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(AgentSkillsSection, { language }),
               /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-card border border-red-200 bg-red-50 p-4", children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-sm font-semibold text-slate-950", children: getTranslation("settings_local_data_title", language) }),
                 /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-2 text-xs leading-5 text-slate-700", children: getTranslation("settings_local_data_detail", language) }),

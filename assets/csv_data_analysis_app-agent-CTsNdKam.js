@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-CfypbU1s.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-D2PMCXUg.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-DNCistdN.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-EE1ShgLg.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-C4tebuSn.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-ixIvO9-4.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -30007,6 +30007,16 @@ const translations = {
     "Malay": "Semakan gagal",
     "Japanese": "確認に失敗"
   },
+  "settings_skills_title": { "English": "Agent skills", "Mandarin": "Agent 技能", "Japanese": "エージェントのスキル", "Malay": "Kemahiran ejen" },
+  "settings_skills_detail": { "English": "Skills are short written instructions the AI agent can load when a task matches, for example how to choose a metric or how your team writes summaries. They only guide the analysis; they never change your data or the app safety rules.", "Mandarin": "技能是 AI agent 在任务匹配时可以读取的简短文字说明，例如如何选择指标，或你的团队如何撰写摘要。它们只指导分析，不会修改你的数据，也不会改变应用的安全规则。", "Japanese": "スキルは、タスクに合うときに AI エージェントが読み込む短い手順書です（指標の選び方、チームの要約の書き方など）。分析を導くだけで、データやアプリの安全ルールは変更しません。", "Malay": "Kemahiran ialah arahan bertulis ringkas yang boleh dimuatkan oleh ejen AI apabila tugas sepadan, contohnya cara memilih metrik atau cara pasukan anda menulis ringkasan. Ia hanya membimbing analisis dan tidak mengubah data anda atau peraturan keselamatan aplikasi." },
+  "settings_skills_import": { "English": "Add skill files (.md)", "Mandarin": "添加技能文件 (.md)", "Japanese": "スキルファイルを追加 (.md)", "Malay": "Tambah fail kemahiran (.md)" },
+  "settings_skills_builtin": { "English": "Built-in", "Mandarin": "内置", "Japanese": "組み込み", "Malay": "Terbina dalam" },
+  "settings_skills_yours": { "English": "Yours", "Mandarin": "你的", "Japanese": "追加済み", "Malay": "Anda" },
+  "settings_skills_remove": { "English": "Remove {name}", "Mandarin": "删除 {name}", "Japanese": "{name} を削除", "Malay": "Buang {name}" },
+  "settings_skills_added": { "English": "Added: {names}", "Mandarin": "已添加：{names}", "Japanese": "追加しました: {names}", "Malay": "Ditambah: {names}" },
+  "settings_skills_rejected": { "English": "Not added: {fileName} — {reason}", "Mandarin": "未添加：{fileName} — {reason}", "Japanese": "追加できません: {fileName} — {reason}", "Malay": "Tidak ditambah: {fileName} — {reason}" },
+  "settings_skills_format_title": { "English": "Skill file format", "Mandarin": "技能文件格式", "Japanese": "スキルファイルの形式", "Malay": "Format fail kemahiran" },
+  "settings_skills_format_hint": { "English": "A skill is a markdown file that starts with a name (lowercase letters, digits and hyphens) and a description that says when to use it. A skill with the same name as a built-in one replaces it.", "Mandarin": "技能是一个 markdown 文件，开头需要名称（小写字母、数字和连字符）以及说明何时使用的描述。与内置技能同名的技能会替换内置技能。", "Japanese": "スキルは、名前（小文字・数字・ハイフン）と、いつ使うかを説明する description で始まる markdown ファイルです。組み込みと同じ名前のスキルは置き換えます。", "Malay": "Kemahiran ialah fail markdown yang bermula dengan nama (huruf kecil, nombor dan sempang) dan huraian bila hendak menggunakannya. Kemahiran dengan nama yang sama seperti kemahiran terbina dalam akan menggantikannya." },
   "settings_clear_local_data": {
     "English": "Clear all local data",
     "Mandarin": "清除全部本地资料",
@@ -90903,7 +90913,7 @@ const executeInitialAnalysisStageTool = async (params) => {
     params.args
   );
 };
-const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-CfypbU1s.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
+const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-EE1ShgLg.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values$1 = {
   "google-generative-ai": /* @__PURE__ */ JSON.parse('{"deep-research-max-preview-04-2026":{"id":"deep-research-max-preview-04-2026","name":"Deep Research Max Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"deep-research-preview-04-2026":{"id":"deep-research-preview-04-2026","name":"Deep Research Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-computer-use-preview-10-2025":{"id":"gemini-2.5-computer-use-preview-10-2025","name":"Gemini 2.5 Computer Use Preview 10-2025","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash":{"id":"gemini-2.5-flash","name":"Gemini 2.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash-lite":{"id":"gemini-2.5-flash-lite","name":"Gemini 2.5 Flash-Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.01,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-pro":{"id":"gemini-2.5-pro","name":"Gemini 2.5 Pro","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3-flash-preview":{"id":"gemini-3-flash-preview","name":"Gemini 3 Flash Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.5,"output":3,"cacheRead":0.05,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite":{"id":"gemini-3.1-flash-lite","name":"Gemini 3.1 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-image":{"id":"gemini-3.1-flash-lite-image","name":"Nano Banana 2 Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":null,"medium":null,"high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":65536,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-preview":{"id":"gemini-3.1-flash-lite-preview","name":"Gemini 3.1 Flash Lite Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-live-preview":{"id":"gemini-3.1-flash-live-preview","name":"Gemini 3.1 Flash Live Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview":{"id":"gemini-3.1-pro-preview","name":"Gemini 3.1 Pro Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview-customtools":{"id":"gemini-3.1-pro-preview-customtools","name":"Gemini 3.1 Pro Preview Custom Tools","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash":{"id":"gemini-3.5-flash","name":"Gemini 3.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash-lite":{"id":"gemini-3.5-flash-lite","name":"Gemini 3.5 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.6-flash":{"id":"gemini-3.6-flash","name":"Gemini 3.6 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.7-flash":{"id":"gemini-3.7-flash","name":"Gemini 3.7 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.8-flash":{"id":"gemini-3.8-flash","name":"Gemini 3.8 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-latest":{"id":"gemini-flash-latest","name":"Gemini Flash Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-lite-latest":{"id":"gemini-flash-lite-latest","name":"Gemini Flash-Lite Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-26b-a4b-it":{"id":"gemma-4-26b-a4b-it","name":"Gemma 4 26B A4B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-31b-it":{"id":"gemma-4-31b-it","name":"Gemma 4 31B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -90921,7 +90931,7 @@ function googleProvider() {
     api: googleGenerativeAIApi()
   });
 }
-const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-DNCistdN.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
+const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-ixIvO9-4.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values = {
   "openai-responses": /* @__PURE__ */ JSON.parse('{"gpt-4":{"id":"gpt-4","name":"GPT-4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text"],"cost":{"input":30,"output":60,"cacheRead":0,"cacheWrite":0},"contextWindow":8192,"maxTokens":8192,"compat":{"supportsStrictMode":true}},"gpt-4-turbo":{"id":"gpt-4-turbo","name":"GPT-4 Turbo","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":10,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1":{"id":"gpt-4.1","name":"GPT-4.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-mini":{"id":"gpt-4.1-mini","name":"GPT-4.1 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.4,"output":1.6,"cacheRead":0.1,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-nano":{"id":"gpt-4.1-nano","name":"GPT-4.1 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o":{"id":"gpt-4o","name":"GPT-4o","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-05-13":{"id":"gpt-4o-2024-05-13","name":"GPT-4o (2024-05-13)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":5,"output":15,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-08-06":{"id":"gpt-4o-2024-08-06","name":"GPT-4o (2024-08-06)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-11-20":{"id":"gpt-4o-2024-11-20","name":"GPT-4o (2024-11-20)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.15,"output":0.6,"cacheRead":0.075,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5":{"id":"gpt-5","name":"GPT-5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-chat-latest":{"id":"gpt-5-chat-latest","name":"GPT-5 Chat Latest","api":"openai-responses","baseUrl":"https://api.openai.com/v1","provider":"openai","reasoning":false,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-mini":{"id":"gpt-5-mini","name":"GPT-5 Mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.25,"output":2,"cacheRead":0.025,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-nano":{"id":"gpt-5-nano","name":"GPT-5 Nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.05,"output":0.4,"cacheRead":0.005,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-pro":{"id":"gpt-5-pro","name":"GPT-5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":120,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":null,"high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.1":{"id":"gpt-5.1","name":"GPT-5.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2":{"id":"gpt-5.2","name":"GPT-5.2","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-chat-latest":{"id":"gpt-5.2-chat-latest","name":"GPT-5.2 Chat","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":null,"xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-pro":{"id":"gpt-5.2-pro","name":"GPT-5.2 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":21,"output":168,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-chat-latest":{"id":"gpt-5.3-chat-latest","name":"GPT-5.3 Chat (latest)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"xhigh":"xhigh"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex":{"id":"gpt-5.3-codex","name":"GPT-5.3 Codex","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex-spark":{"id":"gpt-5.3-codex-spark","name":"GPT-5.3 Codex Spark","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4":{"id":"gpt-5.4","name":"GPT-5.4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2.5,"output":15,"cacheRead":0.25,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":5,"output":22.5,"cacheRead":0.5,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-mini":{"id":"gpt-5.4-mini","name":"GPT-5.4 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0.075,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-nano":{"id":"gpt-5.4-nano","name":"GPT-5.4 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.25,"cacheRead":0.02,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-pro":{"id":"gpt-5.4-pro","name":"GPT-5.4 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5":{"id":"gpt-5.5","name":"GPT-5.5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":5,"output":30,"cacheRead":0.5,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":10,"output":45,"cacheRead":1,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5-pro":{"id":"gpt-5.5-pro","name":"GPT-5.5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-luna":{"id":"gpt-5.6-luna","name":"GPT-5.6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.2,"cacheRead":0.02,"cacheWrite":0.25,"tiers":[{"inputTokensAbove":272000,"input":0.4,"output":1.8,"cacheRead":0.04,"cacheWrite":0.5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-sol":{"id":"gpt-5.6-sol","name":"GPT-5.6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":20,"cacheRead":0.4,"cacheWrite":5,"tiers":[{"inputTokensAbove":272000,"input":8,"output":30,"cacheRead":0.8,"cacheWrite":10}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-terra":{"id":"gpt-5.6-terra","name":"GPT-5.6 Terra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":18,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-astra":{"id":"gpt-6-astra","name":"GPT-6 Astra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":10,"output":50,"cacheRead":1,"cacheWrite":12.5,"tiers":[{"inputTokensAbove":272000,"input":20,"output":75,"cacheRead":2,"cacheWrite":25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-luna":{"id":"gpt-6-luna","name":"GPT-6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"inputTokensAbove":272000,"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-sol":{"id":"gpt-6-sol","name":"GPT-6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":10,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":15,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-realtime-2.1":{"id":"gpt-realtime-2.1","name":"GPT-Realtime-2.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":24,"cacheRead":0.4,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1":{"id":"o1","name":"o1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":60,"cacheRead":7.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1-pro":{"id":"o1-pro","name":"o1-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":150,"output":600,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3":{"id":"o3","name":"o3","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3-mini":{"id":"o3-mini","name":"o3-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.55,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true}},"o3-pro":{"id":"o3-pro","name":"o3-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":20,"output":80,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o4-mini":{"id":"o4-mini","name":"o4-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.275,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -96730,6 +96740,173 @@ const buildExecutiveKpis = ({
   }
   return kpis.slice(0, 4);
 };
+const __vite_glob_0_0 = '---\nname: choose-metric-and-aggregation\ndescription: Decide which measure and aggregation answer a question (sum, average, median, count, share). Use before creating any chart, card or summary that aggregates a numeric column.\n---\n\n# Choose the metric and aggregation\n\nPick the measure from what the numbers *mean*, not from what is easy to compute.\n\n1. Identify the column\'s meaning with `data_describe` (and `data_value_counts` for categories). Is it an amount that adds up (revenue, quantity, cost), a unit price or rate (price per sqm, margin %, score), an ID, or a date?\n2. Match the aggregation to the meaning:\n   - Amounts that add up: `sum` is right; show `count` or `avg` alongside when group sizes differ a lot.\n   - Prices, rates, scores, ratios: do NOT sum them. Use `median` (robust to outliers) or `avg`, and say which one. Summing the price of every transaction is not a useful number.\n   - "How many": `count` (rows) or `count_distinct` (unique entities).\n   - "Which part is biggest": show a share of total with the total stated.\n3. Check the distribution first when a mean could mislead: if `data_outliers` or `data_describe` shows a long tail, prefer `median` and mention the spread.\n4. Compare like with like: do not rank groups of very different size by an average without showing the count.\n5. State the scope in the title or description (all rows, a filter, top N) so a number is never presented as bigger than what it covers.\n\nIf the question names a metric, use it. If it is ambiguous, choose the most meaningful option, explain the choice in one sentence, and mention the alternative.\n';
+const __vite_glob_0_1 = "---\nname: clean-data-safely\ndescription: Plan and propose data cleaning (types, formats, duplicates, noise rows) without damaging the original data. Use when the user asks to clean, fix or reshape data.\n---\n\n# Clean data safely\n\nThe original file is never modified. Cleaning applies to a working copy and must be explainable and reversible.\n\n1. Diagnose first: `data_missing`, `data_value_counts`, `data_outliers` and `data_describe` show what is actually wrong. Fix only what blocks the analysis or the user's request.\n2. Propose a short plan: for each issue give the column, the problem, the exact operation and the expected effect (rows or values affected). Prefer deterministic operations (cast type, replace values, trim, derive a column) over deleting rows.\n3. Changing data (`data_mutate`) needs the user's approval in the app. Describe the change precisely and let the approval flow run; do not claim a change was made before it is approved and applied.\n4. Never delete rows to make a chart look better. Deleting rows needs an explicit user request and the app's confirmation flow.\n5. After a change, verify with a read-only query (row counts, a sample) and report what changed.\n\nIf you are unsure whether a value is an error (for example an unusual price), ask the user instead of changing it.\n";
+const __vite_glob_0_2 = '---\nname: compare-periods-and-find-drivers\ndescription: Compare two time periods and explain what changed (growth, decline, contributing groups). Use for "versus last month/year", "why did X change", trends and variance questions.\n---\n\n# Compare periods and find drivers\n\n1. Confirm the date or period column and the measure. Use `data_describe` or `data_value_counts` to see the available periods; do not guess period boundaries.\n2. Compare the latest period with a clearly named baseline (previous period or same period last year). Always state both periods and both values, the absolute change and the percentage change.\n3. To explain a change, break the difference down by the most relevant dimension (product, region, customer segment) and report the few groups that account for most of it, with their share of the change.\n4. Be careful with partial periods (an unfinished month looks like a drop) and with groups that appear or disappear between periods.\n5. Report causes as evidence ("most of the decline comes from X"), not as certainty. If the data cannot show why, say what additional data would.\n\nTools: if `analysis_period_compare` and `analysis_root_cause_breakdown` are available, use them. Otherwise run `data_query` once per period (a `where` on the period column, or `groupBy` the period) with the same aggregate, and compute the change from the returned rows.\n\nUse the same aggregation for both periods, and the aggregation that fits the measure (see choose-metric-and-aggregation).\n';
+const __vite_glob_0_3 = "---\nname: data-quality-check\ndescription: Check whether data is trustworthy before analysing it - missing values, outliers, inconsistent categories. Use when results look odd or before drawing conclusions.\n---\n\n# Data quality check\n\nRun only the checks that matter for the question, and keep the reply short.\n\n- Missing data: `data_missing` returns null, blank and zero rates per column. A key measure with many gaps limits any conclusion built on it; say so with the percentage.\n- Outliers: `data_outliers` (IQR method) on a numeric column. Report how many rows and how extreme, and whether they change the answer. Do not delete them; explain the effect (for example mean versus median).\n- Categories: `data_value_counts` on a categorical column. Look for the same thing spelled several ways, one dominant value, or a long tail of rare values.\n- Distribution: `data_describe` for count, min, max, quartiles. Impossible values (negative quantities, dates in the future) are findings.\n\nHow to report: lead with whether the problem could change the conclusion (yes or no), then the evidence (column, count, share), then what you did about it. Never modify the data to hide a problem; propose a fix and let the user decide (see the clean-data-safely skill).\n";
+const __vite_glob_0_4 = "---\nname: explore-with-data-query\ndescription: Answer questions with structured read-only queries - filter, group, aggregate, rank, top-N. Use for most \"what / which / how many / compare\" questions on the dataset.\n---\n\n# Explore with data_query\n\n`data_query` takes a structured `plan`, not free-text SQL. The full dataset is queried even when the preview is a sample.\n\nPlan fields: `select`, `where` (predicates combined with AND; `groups` for OR), `groupBy` with `aggregates`, `orderBy`, `limit`, `postAggregateFilter`.\n\nPatterns:\n- Ranking: `groupBy: [Dimension]`, `aggregates: [{ function: 'sum', column: 'Amount', as: 'total' }]`, `select: [Dimension, 'total']`, `orderBy` desc, `limit: 10`.\n- Share of total: query the grouped totals, then compute shares in your answer from the returned rows and state the total.\n- Only groups above a threshold: use `postAggregateFilter` on the aggregate alias (there is no HAVING).\n- Different subsets per measure: put a `where` inside each aggregate instead of one shared `where`.\n- Functions: `count`, `count_distinct`, `sum`, `avg`, `min`, `max`, `median`, `percentile`.\n\nRules: use real column names; `where` may not reference aggregate aliases; when you `groupBy` always give `aggregates`; include sorted columns in `select`. Keep results bounded and explain what the rows show. If a query returns nothing or errors, read the error, fix the plan once, and tell the user what you changed.\n";
+const __vite_glob_0_5 = "---\nname: pivot-and-crosstab\ndescription: Build a pivot table or cross-tab (rows by columns with one measure). Use when the user asks for a pivot, matrix, crosstab or a two-axis summary.\n---\n\n# Pivot and cross-tab\n\nUse a pivot when the user wants two dimensions side by side (for example region by quarter). For a single dimension, a grouped `data_query` is simpler.\n\n1. Pick `rows` (what each row is) and, for a true cross-tab, `columns` (the dimension whose values become columns). Both must be real columns with a sensible number of distinct values; check with `data_value_counts` before choosing a high-cardinality column.\n2. Pick one measure and aggregation with the choose-metric-and-aggregation skill. Do not sum prices or rates.\n3. Keep the matrix readable: limit to the most important rows or columns, and sort by the measure.\n4. Say what the matrix shows in one sentence, then call out the largest cell, the strongest row or column, and any empty pattern worth attention.\n\nHow to build it with the tools you have: if `analysis_pivot_matrix` is available, use it with `rows`, optional `columns`, one `metric` and an `aggregate`. Otherwise run `data_query` with `groupBy` on both dimensions and one aggregate, then present the returned rows as a small matrix in your answer; when the user wants it as a card, create it with `analysis_create_plan`.\n\nIf the data is in wide format (one column per period), reshape or query it first so periods become values, then pivot. Never change the dataset only to produce a pivot; a pivot is an analysis result, not a data edit.\n";
+const FRONTMATTER_FENCE = "---";
+const MAX_NAME_LENGTH = 64;
+const MAX_DESCRIPTION_LENGTH = 1024;
+const isValidSkillName = (name2) => name2.length > 0 && name2.length <= MAX_NAME_LENGTH && Array.from(name2).every((char) => char >= "a" && char <= "z" || char >= "0" && char <= "9" || char === "-");
+const parseBoolean = (value2) => (value2 == null ? void 0 : value2.trim().toLowerCase()) === "true";
+const parseSkillMarkdown = (text, filePath) => {
+  var _a;
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const fail = (message) => ({ skill: null, diagnostic: { path: filePath, message } });
+  if (((_a = lines[0]) == null ? void 0 : _a.trim()) !== FRONTMATTER_FENCE) return fail('The skill file must start with a "---" frontmatter block.');
+  const closingIndex = lines.findIndex((line, index2) => index2 > 0 && line.trim() === FRONTMATTER_FENCE);
+  if (closingIndex < 0) return fail('The frontmatter block is not closed with "---".');
+  const fields = /* @__PURE__ */ new Map();
+  for (const line of lines.slice(1, closingIndex)) {
+    const separator = line.indexOf(":");
+    if (separator <= 0) continue;
+    fields.set(line.slice(0, separator).trim().toLowerCase(), line.slice(separator + 1).trim());
+  }
+  const name2 = fields.get("name") ?? "";
+  const description = fields.get("description") ?? "";
+  if (!isValidSkillName(name2)) return fail("The skill name must be 1-64 characters of lowercase letters, digits and hyphens.");
+  if (!description) return fail("The skill needs a description that says when to use it.");
+  if (description.length > MAX_DESCRIPTION_LENGTH) return fail(`The description is longer than ${MAX_DESCRIPTION_LENGTH} characters.`);
+  const content = lines.slice(closingIndex + 1).join("\n").trim();
+  if (!content) return fail("The skill has no instructions after the frontmatter.");
+  return {
+    diagnostic: null,
+    skill: {
+      name: name2,
+      description,
+      content,
+      filePath,
+      ...parseBoolean(fields.get("disable-model-invocation")) ? { disableModelInvocation: true } : {}
+    }
+  };
+};
+const STORAGE_KEY = "csv-ai-user-skills-v1";
+const MAX_USER_SKILLS = 30;
+const MAX_USER_SKILL_CHARS = 2e4;
+let memoryFallback = {};
+const listeners = /* @__PURE__ */ new Set();
+const virtualPath = (name2) => `skills/${name2}/SKILL.md`;
+const readAll = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    const entries2 = Object.entries((parsed == null ? void 0 : parsed.skills) ?? {}).filter((entry) => typeof entry[1] === "string");
+    return Object.fromEntries(entries2);
+  } catch {
+    return memoryFallback;
+  }
+};
+const writeAll = (skills) => {
+  memoryFallback = skills;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, skills }));
+  } catch {
+  }
+  listeners.forEach((listener) => listener());
+};
+const readUserSkillSources = () => Object.fromEntries(Object.entries(readAll()).map(([name2, text]) => [virtualPath(name2), text]));
+const subscribeUserSkills = (listener) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+const getUserSkillsSnapshot = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEY) ?? JSON.stringify(memoryFallback);
+  } catch {
+    return JSON.stringify(memoryFallback);
+  }
+};
+const importUserSkills = (files) => {
+  var _a;
+  const current2 = readAll();
+  const next = { ...current2 };
+  const result = { added: [], rejected: [] };
+  for (const { fileName, text } of files) {
+    if (text.length > MAX_USER_SKILL_CHARS) {
+      result.rejected.push({ fileName, reason: `The file is longer than ${MAX_USER_SKILL_CHARS.toLocaleString()} characters.` });
+      continue;
+    }
+    const parsed = parseSkillMarkdown(text, fileName);
+    if (!parsed.skill) {
+      result.rejected.push({ fileName, reason: ((_a = parsed.diagnostic) == null ? void 0 : _a.message) ?? "The file is not a valid skill." });
+      continue;
+    }
+    if (!(parsed.skill.name in next) && Object.keys(next).length >= MAX_USER_SKILLS) {
+      result.rejected.push({ fileName, reason: `At most ${MAX_USER_SKILLS} skills can be added. Remove one first.` });
+      continue;
+    }
+    next[parsed.skill.name] = text;
+    result.added.push(parsed.skill.name);
+  }
+  if (result.added.length > 0) writeAll(next);
+  return result;
+};
+const removeUserSkill = (name2) => {
+  const current2 = readAll();
+  if (!(name2 in current2)) return;
+  const { [name2]: _removed, ...rest } = current2;
+  writeAll(rest);
+};
+const SKILLS_DIR = "skills/";
+const SKILL_FILE = "SKILL.md";
+const MARKDOWN_EXTENSION = ".md";
+const builtinSources = /* @__PURE__ */ Object.assign({
+  "./builtin/choose-metric-and-aggregation/SKILL.md": __vite_glob_0_0,
+  "./builtin/clean-data-safely/SKILL.md": __vite_glob_0_1,
+  "./builtin/compare-periods-and-find-drivers/SKILL.md": __vite_glob_0_2,
+  "./builtin/data-quality-check/SKILL.md": __vite_glob_0_3,
+  "./builtin/explore-with-data-query/SKILL.md": __vite_glob_0_4,
+  "./builtin/pivot-and-crosstab/SKILL.md": __vite_glob_0_5
+});
+const loadBuiltinSkills = () => {
+  const skills = [];
+  const diagnostics = [];
+  for (const [sourcePath, text] of Object.entries(builtinSources).sort(([left], [right]) => left.localeCompare(right))) {
+    const virtualPath2 = `${SKILLS_DIR}${sourcePath.replace("./builtin/", "")}`;
+    const parsed = parseSkillMarkdown(text, virtualPath2);
+    if (parsed.skill) skills.push(parsed.skill);
+    else if (parsed.diagnostic) diagnostics.push(parsed.diagnostic);
+  }
+  return { skills, diagnostics };
+};
+const isUserSkillPath = (path) => {
+  if (!path.startsWith(SKILLS_DIR) || !path.endsWith(MARKDOWN_EXTENSION)) return false;
+  const relative = path.slice(SKILLS_DIR.length);
+  const segments = relative.split("/");
+  if (segments.some((segment) => segment.length === 0)) return false;
+  return segments.length === 1 || segments.length === 2 && segments[1] === SKILL_FILE;
+};
+const loadUserSkills = (workspaceFiles) => {
+  const skills = [];
+  const diagnostics = [];
+  for (const path of Object.keys(workspaceFiles ?? {}).filter(isUserSkillPath).sort()) {
+    const parsed = parseSkillMarkdown(workspaceFiles[path], path);
+    if (parsed.skill) skills.push(parsed.skill);
+    else if (parsed.diagnostic) diagnostics.push(parsed.diagnostic);
+  }
+  return { skills, diagnostics };
+};
+const resolveSkillEntries = (workspaceFiles, userSkillSources = readUserSkillSources()) => {
+  const builtin = loadBuiltinSkills();
+  const stored = loadUserSkills(userSkillSources);
+  const workspace = loadUserSkills(workspaceFiles);
+  const byName = /* @__PURE__ */ new Map();
+  for (const skill of builtin.skills) byName.set(skill.name, { skill, source: "builtin" });
+  for (const skill of stored.skills) byName.set(skill.name, { skill, source: "user" });
+  for (const skill of workspace.skills) byName.set(skill.name, { skill, source: "workspace" });
+  return {
+    entries: Array.from(byName.values()),
+    diagnostics: [...builtin.diagnostics, ...stored.diagnostics, ...workspace.diagnostics]
+  };
+};
+const resolveAvailableSkills = (workspaceFiles, userSkillSources) => {
+  const { entries: entries2, diagnostics } = resolveSkillEntries(workspaceFiles, userSkillSources);
+  return { skills: entries2.map((entry) => entry.skill), diagnostics };
+};
+const findSkillByName = (skills, name2) => skills.find((skill) => skill.name === name2.trim());
 const summarizeTraceContract = (traceContract) => {
   if (!traceContract) {
     return null;
@@ -98409,98 +98586,6 @@ const followUpMemory = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defi
   promoteAppFollowUpMemory,
   readAppFollowUpMemory
 }, Symbol.toStringTag, { value: "Module" }));
-const __vite_glob_0_0 = '---\nname: choose-metric-and-aggregation\ndescription: Decide which measure and aggregation answer a question (sum, average, median, count, share). Use before creating any chart, card or summary that aggregates a numeric column.\n---\n\n# Choose the metric and aggregation\n\nPick the measure from what the numbers *mean*, not from what is easy to compute.\n\n1. Identify the column\'s meaning with `data_describe` (and `data_value_counts` for categories). Is it an amount that adds up (revenue, quantity, cost), a unit price or rate (price per sqm, margin %, score), an ID, or a date?\n2. Match the aggregation to the meaning:\n   - Amounts that add up: `sum` is right; show `count` or `avg` alongside when group sizes differ a lot.\n   - Prices, rates, scores, ratios: do NOT sum them. Use `median` (robust to outliers) or `avg`, and say which one. Summing the price of every transaction is not a useful number.\n   - "How many": `count` (rows) or `count_distinct` (unique entities).\n   - "Which part is biggest": show a share of total with the total stated.\n3. Check the distribution first when a mean could mislead: if `data_outliers` or `data_describe` shows a long tail, prefer `median` and mention the spread.\n4. Compare like with like: do not rank groups of very different size by an average without showing the count.\n5. State the scope in the title or description (all rows, a filter, top N) so a number is never presented as bigger than what it covers.\n\nIf the question names a metric, use it. If it is ambiguous, choose the most meaningful option, explain the choice in one sentence, and mention the alternative.\n';
-const __vite_glob_0_1 = "---\nname: clean-data-safely\ndescription: Plan and propose data cleaning (types, formats, duplicates, noise rows) without damaging the original data. Use when the user asks to clean, fix or reshape data.\n---\n\n# Clean data safely\n\nThe original file is never modified. Cleaning applies to a working copy and must be explainable and reversible.\n\n1. Diagnose first: `data_missing`, `data_value_counts`, `data_outliers` and `data_describe` show what is actually wrong. Fix only what blocks the analysis or the user's request.\n2. Propose a short plan: for each issue give the column, the problem, the exact operation and the expected effect (rows or values affected). Prefer deterministic operations (cast type, replace values, trim, derive a column) over deleting rows.\n3. Changing data (`data_mutate`) needs the user's approval in the app. Describe the change precisely and let the approval flow run; do not claim a change was made before it is approved and applied.\n4. Never delete rows to make a chart look better. Deleting rows needs an explicit user request and the app's confirmation flow.\n5. After a change, verify with a read-only query (row counts, a sample) and report what changed.\n\nIf you are unsure whether a value is an error (for example an unusual price), ask the user instead of changing it.\n";
-const __vite_glob_0_2 = '---\nname: compare-periods-and-find-drivers\ndescription: Compare two time periods and explain what changed (growth, decline, contributing groups). Use for "versus last month/year", "why did X change", trends and variance questions.\n---\n\n# Compare periods and find drivers\n\n1. Confirm the date or period column and the measure. Use `data_describe` or `data_value_counts` to see the available periods; do not guess period boundaries.\n2. Compare the latest period with a clearly named baseline (previous period or same period last year). Always state both periods and both values, the absolute change and the percentage change.\n3. To explain a change, break the difference down by the most relevant dimension (product, region, customer segment) and report the few groups that account for most of it, with their share of the change.\n4. Be careful with partial periods (an unfinished month looks like a drop) and with groups that appear or disappear between periods.\n5. Report causes as evidence ("most of the decline comes from X"), not as certainty. If the data cannot show why, say what additional data would.\n\nTools: if `analysis_period_compare` and `analysis_root_cause_breakdown` are available, use them. Otherwise run `data_query` once per period (a `where` on the period column, or `groupBy` the period) with the same aggregate, and compute the change from the returned rows.\n\nUse the same aggregation for both periods, and the aggregation that fits the measure (see choose-metric-and-aggregation).\n';
-const __vite_glob_0_3 = "---\nname: data-quality-check\ndescription: Check whether data is trustworthy before analysing it - missing values, outliers, inconsistent categories. Use when results look odd or before drawing conclusions.\n---\n\n# Data quality check\n\nRun only the checks that matter for the question, and keep the reply short.\n\n- Missing data: `data_missing` returns null, blank and zero rates per column. A key measure with many gaps limits any conclusion built on it; say so with the percentage.\n- Outliers: `data_outliers` (IQR method) on a numeric column. Report how many rows and how extreme, and whether they change the answer. Do not delete them; explain the effect (for example mean versus median).\n- Categories: `data_value_counts` on a categorical column. Look for the same thing spelled several ways, one dominant value, or a long tail of rare values.\n- Distribution: `data_describe` for count, min, max, quartiles. Impossible values (negative quantities, dates in the future) are findings.\n\nHow to report: lead with whether the problem could change the conclusion (yes or no), then the evidence (column, count, share), then what you did about it. Never modify the data to hide a problem; propose a fix and let the user decide (see the clean-data-safely skill).\n";
-const __vite_glob_0_4 = "---\nname: explore-with-data-query\ndescription: Answer questions with structured read-only queries - filter, group, aggregate, rank, top-N. Use for most \"what / which / how many / compare\" questions on the dataset.\n---\n\n# Explore with data_query\n\n`data_query` takes a structured `plan`, not free-text SQL. The full dataset is queried even when the preview is a sample.\n\nPlan fields: `select`, `where` (predicates combined with AND; `groups` for OR), `groupBy` with `aggregates`, `orderBy`, `limit`, `postAggregateFilter`.\n\nPatterns:\n- Ranking: `groupBy: [Dimension]`, `aggregates: [{ function: 'sum', column: 'Amount', as: 'total' }]`, `select: [Dimension, 'total']`, `orderBy` desc, `limit: 10`.\n- Share of total: query the grouped totals, then compute shares in your answer from the returned rows and state the total.\n- Only groups above a threshold: use `postAggregateFilter` on the aggregate alias (there is no HAVING).\n- Different subsets per measure: put a `where` inside each aggregate instead of one shared `where`.\n- Functions: `count`, `count_distinct`, `sum`, `avg`, `min`, `max`, `median`, `percentile`.\n\nRules: use real column names; `where` may not reference aggregate aliases; when you `groupBy` always give `aggregates`; include sorted columns in `select`. Keep results bounded and explain what the rows show. If a query returns nothing or errors, read the error, fix the plan once, and tell the user what you changed.\n";
-const __vite_glob_0_5 = "---\nname: pivot-and-crosstab\ndescription: Build a pivot table or cross-tab (rows by columns with one measure). Use when the user asks for a pivot, matrix, crosstab or a two-axis summary.\n---\n\n# Pivot and cross-tab\n\nUse a pivot when the user wants two dimensions side by side (for example region by quarter). For a single dimension, a grouped `data_query` is simpler.\n\n1. Pick `rows` (what each row is) and, for a true cross-tab, `columns` (the dimension whose values become columns). Both must be real columns with a sensible number of distinct values; check with `data_value_counts` before choosing a high-cardinality column.\n2. Pick one measure and aggregation with the choose-metric-and-aggregation skill. Do not sum prices or rates.\n3. Keep the matrix readable: limit to the most important rows or columns, and sort by the measure.\n4. Say what the matrix shows in one sentence, then call out the largest cell, the strongest row or column, and any empty pattern worth attention.\n\nHow to build it with the tools you have: if `analysis_pivot_matrix` is available, use it with `rows`, optional `columns`, one `metric` and an `aggregate`. Otherwise run `data_query` with `groupBy` on both dimensions and one aggregate, then present the returned rows as a small matrix in your answer; when the user wants it as a card, create it with `analysis_create_plan`.\n\nIf the data is in wide format (one column per period), reshape or query it first so periods become values, then pivot. Never change the dataset only to produce a pivot; a pivot is an analysis result, not a data edit.\n";
-const FRONTMATTER_FENCE = "---";
-const MAX_NAME_LENGTH = 64;
-const MAX_DESCRIPTION_LENGTH = 1024;
-const isValidSkillName = (name2) => name2.length > 0 && name2.length <= MAX_NAME_LENGTH && Array.from(name2).every((char) => char >= "a" && char <= "z" || char >= "0" && char <= "9" || char === "-");
-const parseBoolean = (value2) => (value2 == null ? void 0 : value2.trim().toLowerCase()) === "true";
-const parseSkillMarkdown = (text, filePath) => {
-  var _a;
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
-  const fail = (message) => ({ skill: null, diagnostic: { path: filePath, message } });
-  if (((_a = lines[0]) == null ? void 0 : _a.trim()) !== FRONTMATTER_FENCE) return fail('The skill file must start with a "---" frontmatter block.');
-  const closingIndex = lines.findIndex((line, index2) => index2 > 0 && line.trim() === FRONTMATTER_FENCE);
-  if (closingIndex < 0) return fail('The frontmatter block is not closed with "---".');
-  const fields = /* @__PURE__ */ new Map();
-  for (const line of lines.slice(1, closingIndex)) {
-    const separator = line.indexOf(":");
-    if (separator <= 0) continue;
-    fields.set(line.slice(0, separator).trim().toLowerCase(), line.slice(separator + 1).trim());
-  }
-  const name2 = fields.get("name") ?? "";
-  const description = fields.get("description") ?? "";
-  if (!isValidSkillName(name2)) return fail("The skill name must be 1-64 characters of lowercase letters, digits and hyphens.");
-  if (!description) return fail("The skill needs a description that says when to use it.");
-  if (description.length > MAX_DESCRIPTION_LENGTH) return fail(`The description is longer than ${MAX_DESCRIPTION_LENGTH} characters.`);
-  const content = lines.slice(closingIndex + 1).join("\n").trim();
-  if (!content) return fail("The skill has no instructions after the frontmatter.");
-  return {
-    diagnostic: null,
-    skill: {
-      name: name2,
-      description,
-      content,
-      filePath,
-      ...parseBoolean(fields.get("disable-model-invocation")) ? { disableModelInvocation: true } : {}
-    }
-  };
-};
-const SKILLS_DIR = "skills/";
-const SKILL_FILE = "SKILL.md";
-const MARKDOWN_EXTENSION = ".md";
-const builtinSources = /* @__PURE__ */ Object.assign({
-  "./builtin/choose-metric-and-aggregation/SKILL.md": __vite_glob_0_0,
-  "./builtin/clean-data-safely/SKILL.md": __vite_glob_0_1,
-  "./builtin/compare-periods-and-find-drivers/SKILL.md": __vite_glob_0_2,
-  "./builtin/data-quality-check/SKILL.md": __vite_glob_0_3,
-  "./builtin/explore-with-data-query/SKILL.md": __vite_glob_0_4,
-  "./builtin/pivot-and-crosstab/SKILL.md": __vite_glob_0_5
-});
-const loadBuiltinSkills = () => {
-  const skills = [];
-  const diagnostics = [];
-  for (const [sourcePath, text] of Object.entries(builtinSources).sort(([left], [right]) => left.localeCompare(right))) {
-    const virtualPath = `${SKILLS_DIR}${sourcePath.replace("./builtin/", "")}`;
-    const parsed = parseSkillMarkdown(text, virtualPath);
-    if (parsed.skill) skills.push(parsed.skill);
-    else if (parsed.diagnostic) diagnostics.push(parsed.diagnostic);
-  }
-  return { skills, diagnostics };
-};
-const isUserSkillPath = (path) => {
-  if (!path.startsWith(SKILLS_DIR) || !path.endsWith(MARKDOWN_EXTENSION)) return false;
-  const relative = path.slice(SKILLS_DIR.length);
-  const segments = relative.split("/");
-  if (segments.some((segment) => segment.length === 0)) return false;
-  return segments.length === 1 || segments.length === 2 && segments[1] === SKILL_FILE;
-};
-const loadUserSkills = (workspaceFiles) => {
-  const skills = [];
-  const diagnostics = [];
-  for (const path of Object.keys(workspaceFiles ?? {}).filter(isUserSkillPath).sort()) {
-    const parsed = parseSkillMarkdown(workspaceFiles[path], path);
-    if (parsed.skill) skills.push(parsed.skill);
-    else if (parsed.diagnostic) diagnostics.push(parsed.diagnostic);
-  }
-  return { skills, diagnostics };
-};
-const resolveAvailableSkills = (workspaceFiles) => {
-  const builtin = loadBuiltinSkills();
-  const user = loadUserSkills(workspaceFiles);
-  const byName = /* @__PURE__ */ new Map();
-  for (const skill of [...builtin.skills, ...user.skills]) byName.set(skill.name, skill);
-  return {
-    skills: Array.from(byName.values()),
-    diagnostics: [...builtin.diagnostics, ...user.diagnostics]
-  };
-};
-const findSkillByName = (skills, name2) => skills.find((skill) => skill.name === name2.trim());
 const READ_SKILL_TOOL_NAME = "read_skill";
 const buildSkillsPromptSection = (skills) => {
   const listing = formatSkillsForSystemPrompt([...skills]);
@@ -99742,7 +99827,7 @@ export {
   shouldShowLongTermMemory as ay,
   formatUserError as az,
   buildCloudAiConsentKey as b,
-  selectRuntimeLogsExport as b$,
+  buildCleaningFailureBundleExport as b$,
   coerceNumericValue as b0,
   formatAnalysisCellValue as b1,
   isProviderConfigured as b2,
@@ -99753,33 +99838,33 @@ export {
   getAvailableChartTypes as b7,
   isTimeLikeDimensionColumn as b8,
   buildStackedPivotChartPlan as b9,
-  MAX_MAX_AGENT_TURNS as bA,
-  MIN_MAX_AGENT_TURNS as bB,
-  DEFAULT_TOOL_OUTPUT_CUTOFF as bC,
-  MAX_TOOL_OUTPUT_CUTOFF as bD,
-  MIN_TOOL_OUTPUT_CUTOFF as bE,
-  DEFAULT_GOOGLE_MODEL as bF,
-  clearCloudAiConsentRuntimeDecisions as bG,
-  clearAllLocalBrowserData as bH,
-  getStorageBreakdown as bI,
-  clearAllCacheStorage as bJ,
-  clearStore as bK,
-  flushPendingVectorMemoryDocs as bL,
-  summarizeTraceContract as bM,
-  WORKSPACE_QUERY_LIMIT_OPTIONS as bN,
-  DEFAULT_WORKSPACE_QUERY_LIMIT as bO,
-  WORKSPACE_QUERY_TEMPLATE_OPTIONS as bP,
-  createDefaultWorkspaceQueryDrafts as bQ,
-  buildWorkspaceBundle as bR,
-  isWorkspaceWritablePath as bS,
-  readDatasetFileFromOpfs as bT,
-  getSandboxTableRows as bU,
-  buildWorkflowSnapshotExport as bV,
-  buildCleaningFailureBundleExport as bW,
-  selectReportScopedActivity as bX,
-  isEndUserMode as bY,
-  selectDebugTimelineEntries as bZ,
-  selectDebugFlows as b_,
+  GOOGLE_MODELS$1 as bA,
+  OPENAI_MODELS$1 as bB,
+  DEFAULT_FALLBACK_MODEL as bC,
+  SUPPORTED_APP_LANGUAGES as bD,
+  DEFAULT_MAX_AGENT_TURNS as bE,
+  MAX_MAX_AGENT_TURNS as bF,
+  MIN_MAX_AGENT_TURNS as bG,
+  DEFAULT_TOOL_OUTPUT_CUTOFF as bH,
+  MAX_TOOL_OUTPUT_CUTOFF as bI,
+  MIN_TOOL_OUTPUT_CUTOFF as bJ,
+  DEFAULT_GOOGLE_MODEL as bK,
+  clearCloudAiConsentRuntimeDecisions as bL,
+  clearAllLocalBrowserData as bM,
+  getStorageBreakdown as bN,
+  clearAllCacheStorage as bO,
+  clearStore as bP,
+  flushPendingVectorMemoryDocs as bQ,
+  summarizeTraceContract as bR,
+  WORKSPACE_QUERY_LIMIT_OPTIONS as bS,
+  DEFAULT_WORKSPACE_QUERY_LIMIT as bT,
+  WORKSPACE_QUERY_TEMPLATE_OPTIONS as bU,
+  createDefaultWorkspaceQueryDrafts as bV,
+  buildWorkspaceBundle as bW,
+  isWorkspaceWritablePath as bX,
+  readDatasetFileFromOpfs as bY,
+  getSandboxTableRows as bZ,
+  buildWorkflowSnapshotExport as b_,
   getPivotCardQualitySummary as ba,
   normalizeDisplayLabel as bb,
   resolveAnalysisCompletionGate as bc,
@@ -99800,69 +99885,74 @@ export {
   buildColumnDisplayLabels as br,
   getSemanticHiddenRowCount as bs,
   isPreviewDataQuery as bt,
-  DEFAULT_GATEWAY_MODEL as bu,
-  GOOGLE_MODELS$1 as bv,
-  OPENAI_MODELS$1 as bw,
-  DEFAULT_FALLBACK_MODEL as bx,
-  SUPPORTED_APP_LANGUAGES as by,
-  DEFAULT_MAX_AGENT_TURNS as bz,
+  subscribeUserSkills as bu,
+  getUserSkillsSnapshot as bv,
+  resolveSkillEntries as bw,
+  removeUserSkill as bx,
+  importUserSkills as by,
+  DEFAULT_GATEWAY_MODEL as bz,
   shouldAllowLogsSurface as c,
-  selectRecentPayloadSnapshotsExport as c0,
-  selectIrDiagnostics as c1,
-  selectPlannerFailureBundle as c2,
-  selectSqlFailureBundle as c3,
-  selectDebugOperatorSummary as c4,
-  loadRecentLocalDiagnostics as c5,
-  selectAiDebugBundle as c6,
-  withoutInitialSystemMessage as c7,
-  collapseSystemMessages as c8,
-  clampThinkingLevel as c9,
-  analysisDatasetProfiles as cA,
-  cleaningRunState as cB,
-  sandboxTableRegistry as cC,
-  autonomousCleaningPipeline as cD,
-  reportStructureOrchestrator as cE,
-  datasetBinding as cF,
-  dataQueryExecution as cG,
-  runtimeClarification as cH,
-  actionHandler as cI,
-  piInitialAnalysisRuntimeService as cJ,
-  analysisDefaults as cK,
-  fileOrchestrator as cL,
-  initialAnalysisService as cM,
-  goalProposer as cN,
-  sessionManager as cO,
-  datasetSemanticAnnotator as cP,
-  workspaceDataQuery as cQ,
-  chatOrchestrator as cR,
-  enhancementGenerator as cS,
-  piBrowserAgent as cT,
-  AssistantMessageEventStream as ca,
-  calculateCost as cb,
-  getInitialSystemMessage as cc,
-  getCurrentTools as cd,
-  getSystemMessageText as ce,
-  parseStreamingJson as cf,
-  resolveTranscript as cg,
-  resolveTranscriptTools as ch,
-  renderSystemMessageUpdate as ci,
-  getDeclaredTools as cj,
-  workspaceFileUtils as ck,
-  storageService as cl,
-  cloudAiConsent as cm,
-  columnRegistry as cn,
-  datasetSemantics as co,
-  dataOperationRunner as cp,
-  runtimeAbort as cq,
-  providerConfig as cr,
-  runtimeControlPlaneContract as cs,
-  reportStructureState as ct,
-  persistedAppState as cu,
-  opfsDatasetStorage as cv,
-  agentMonitor as cw,
-  dataResearchCancellation as cx,
-  contextManager as cy,
-  vectorMemorySync as cz,
+  selectReportScopedActivity as c0,
+  isEndUserMode as c1,
+  selectDebugTimelineEntries as c2,
+  selectDebugFlows as c3,
+  selectRuntimeLogsExport as c4,
+  selectRecentPayloadSnapshotsExport as c5,
+  selectIrDiagnostics as c6,
+  selectPlannerFailureBundle as c7,
+  selectSqlFailureBundle as c8,
+  selectDebugOperatorSummary as c9,
+  opfsDatasetStorage as cA,
+  agentMonitor as cB,
+  dataResearchCancellation as cC,
+  contextManager as cD,
+  vectorMemorySync as cE,
+  analysisDatasetProfiles as cF,
+  cleaningRunState as cG,
+  sandboxTableRegistry as cH,
+  autonomousCleaningPipeline as cI,
+  reportStructureOrchestrator as cJ,
+  datasetBinding as cK,
+  dataQueryExecution as cL,
+  runtimeClarification as cM,
+  actionHandler as cN,
+  piInitialAnalysisRuntimeService as cO,
+  analysisDefaults as cP,
+  fileOrchestrator as cQ,
+  initialAnalysisService as cR,
+  goalProposer as cS,
+  sessionManager as cT,
+  datasetSemanticAnnotator as cU,
+  workspaceDataQuery as cV,
+  chatOrchestrator as cW,
+  enhancementGenerator as cX,
+  piBrowserAgent as cY,
+  loadRecentLocalDiagnostics as ca,
+  selectAiDebugBundle as cb,
+  withoutInitialSystemMessage as cc,
+  collapseSystemMessages as cd,
+  clampThinkingLevel as ce,
+  AssistantMessageEventStream as cf,
+  calculateCost as cg,
+  getInitialSystemMessage as ch,
+  getCurrentTools as ci,
+  getSystemMessageText as cj,
+  parseStreamingJson as ck,
+  resolveTranscript as cl,
+  resolveTranscriptTools as cm,
+  renderSystemMessageUpdate as cn,
+  getDeclaredTools as co,
+  workspaceFileUtils as cp,
+  storageService as cq,
+  cloudAiConsent as cr,
+  columnRegistry as cs,
+  datasetSemantics as ct,
+  dataOperationRunner as cu,
+  runtimeAbort as cv,
+  providerConfig as cw,
+  runtimeControlPlaneContract as cx,
+  reportStructureState as cy,
+  persistedAppState as cz,
   shouldAllowWorkflowSurface as d,
   shouldAllowWorkspaceSurface as e,
   shouldAllowDatabaseSurface as f,

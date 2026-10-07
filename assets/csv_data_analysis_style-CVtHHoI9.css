@@ -3838,6 +3838,11 @@ video {
     border-radius: 0px;
   }
 
+  .md\:py-1 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
   .md\:py-1\.5 {
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
