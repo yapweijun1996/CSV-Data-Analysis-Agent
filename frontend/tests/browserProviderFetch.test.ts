@@ -41,6 +41,39 @@ describe('default gateway browser fetch', () => {
         expect(upstream).toHaveBeenCalledTimes(2);
     });
 
+    it('reduces replayed reasoning items to the fields the gateway accepts', async () => {
+        const seen: unknown[] = [];
+        vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
+            if (isSessionCall(input)) return sessionResponse('dmo_token_a');
+            seen.push((await (input as Request).json()).input);
+            return new Response('{}', { status: 200 });
+        }));
+
+        await fetchDefaultGateway('https://example.invalid/demo/v1/responses', {
+            method: 'POST',
+            body: JSON.stringify({
+                input: [
+                    { role: 'user', content: 'hi' },
+                    {
+                        type: 'reasoning',
+                        id: 'rs_1',
+                        summary: [{ type: 'summary_text', text: 's' }],
+                        content: [{ type: 'reasoning_text', text: 'raw' }],
+                        encrypted_content: 'enc',
+                        status: 'completed',
+                    },
+                    { type: 'function_call', call_id: 'c1', name: 'f', arguments: '{}' },
+                ],
+            }),
+        });
+
+        expect(seen[0]).toEqual([
+            { role: 'user', content: 'hi' },
+            { type: 'reasoning', id: 'rs_1', summary: [{ type: 'summary_text', text: 's' }], encrypted_content: 'enc' },
+            { type: 'function_call', call_id: 'c1', name: 'f', arguments: '{}' },
+        ]);
+    });
+
     it('refreshes the session once and replays the request after a 401', async () => {
         let sessions = 0;
         const seenTokens: string[] = [];
