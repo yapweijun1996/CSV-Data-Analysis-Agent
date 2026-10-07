@@ -26,10 +26,12 @@ export const DEFAULT_GATEWAY_MODEL = 'gpt-5.4-mini';
 export const DEFAULT_GATEWAY_API_KEY_PLACEHOLDER = 'demo-session';
 
 /**
- * Demo project registered in the gateway for this app's exact origin. It is
- * supplied at build time (VITE_DEFAULT_GATEWAY_PROJECT_ID) so it lives in one
- * place and is never duplicated in source. An empty value makes the session
- * flow fail with a clear configuration error instead of guessing.
+ * Demo project registered in the gateway for this app's exact origin. The id is
+ * a public identifier, not a credential. VITE_DEFAULT_GATEWAY_PROJECT_ID
+ * overrides it for other deployments; an explicitly empty value makes the
+ * session flow fail with a clear configuration error.
  */
+const DEFAULT_GATEWAY_PROJECT_ID = 'github-pages';
+
 export const resolveDefaultGatewayProjectId = (): string =>
-    (import.meta.env.VITE_DEFAULT_GATEWAY_PROJECT_ID ?? '').trim();
+    (import.meta.env.VITE_DEFAULT_GATEWAY_PROJECT_ID ?? DEFAULT_GATEWAY_PROJECT_ID).trim();
