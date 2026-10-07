@@ -1,16 +1,16 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports, r as reactDomExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-DFp1XitY.js";
-import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as getBarChartReadabilityHints, aX as PIVOT_FOLDED_OTHERS_KEY, aY as collectOrderedColumnNames, aZ as getNumericColumns, a_ as getAnalysisColumnLabels, a$ as coerceNumericValue, b0 as formatAnalysisCellValue, b1 as isProviderConfigured, b2 as createProviderModel, b3 as resolveCardTrustDecision, b4 as getLocalizedText, b5 as evaluateChartPresentation, b6 as getAvailableChartTypes, b7 as isTimeLikeDimensionColumn, b8 as buildStackedPivotChartPlan, b9 as getPivotCardQualitySummary, ba as normalizeDisplayLabel, bb as isUsableReportTitle, bc as isLatestReportPartial, bd as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, be as resolveAnalysisCompletionGate, bf as buildDisplayAnalysisIr, bg as DEFAULT_AUTO_ANALYSIS_GOAL, bh as buildExecutiveKpis, bi as resolveEffectiveReportContext, bj as shouldShowDataWarnings, bk as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-CNQ3PHgm.js";
-import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-Be8kubB_.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-CMRe7zJm.js";
+import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as getBarChartReadabilityHints, aX as PIVOT_FOLDED_OTHERS_KEY, aY as collectOrderedColumnNames, aZ as getNumericColumns, a_ as getAnalysisColumnLabels, a$ as coerceNumericValue, b0 as formatAnalysisCellValue, b1 as isProviderConfigured, b2 as createProviderModel, b3 as resolveCardTrustDecision, b4 as getLocalizedText, b5 as evaluateChartPresentation, b6 as getAvailableChartTypes, b7 as isTimeLikeDimensionColumn, b8 as buildStackedPivotChartPlan, b9 as getPivotCardQualitySummary, ba as normalizeDisplayLabel, bb as isUsableReportTitle, bc as isLatestReportPartial, bd as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, be as resolveAnalysisCompletionGate, bf as buildDisplayAnalysisIr, bg as DEFAULT_AUTO_ANALYSIS_GOAL, bh as buildExecutiveKpis, bi as resolveEffectiveReportContext, bj as shouldShowDataWarnings, bk as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-BYlUw_Vb.js";
+import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-BYjCn1Yx.js";
 import { C as Chart, p as plugin, a as plugin$1, M as Masonry } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import { e as exportToHtml, a as exportToCsv, b as exportToPng } from "./csv_data_analysis_exportUtils-DfKSpD2m.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
-import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-B164gXNz.js";
-import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-C5nBGh8y.js";
+import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-DD_8fkp9.js";
+import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-DMwTz-Z5.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
-import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-DQ8SU6Dv.js";
+import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-tpYPN2mY.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
 import "./csv_data_analysis_vendor-ai-google-Brpu0J-t.js";
@@ -4126,7 +4126,7 @@ const DocumentIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(
     )
   }
 );
-const SparkleIcon$1 = () => /* @__PURE__ */ jsxRuntimeExports.jsx(
+const SparkleIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(
   "svg",
   {
     xmlns: "http://www.w3.org/2000/svg",
@@ -4389,7 +4389,7 @@ const ReportDeliveryComponent = ({
                     progressLabel ? ` (${progressLabel})` : ""
                   ] })
                 ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsx(SparkleIcon$1, {}),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(SparkleIcon, {}),
                   /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: generateLabel })
                 ] })
               }
@@ -4521,7 +4521,6 @@ const FileIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "ht
 const RowsIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: 1.5, stroke: "currentColor", className: "h-4 w-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375z" }) });
 const LayersIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: 1.5, stroke: "currentColor", className: "h-4 w-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" }) });
 const ClockIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: 1.5, stroke: "currentColor", className: "h-4 w-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" }) });
-const SparkleIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", strokeWidth: 1.5, stroke: "currentColor", className: "h-3.5 w-3.5", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" }) });
 const StatCard = ({ icon, iconBg, label, value }) => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-card border border-slate-200/80 bg-white/80 p-3", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-2", children: [
   /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${iconBg}`, children: icon }),
   /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1", children: [
@@ -4562,26 +4561,20 @@ const ReportHeaderComponent = ({
     aiGuess && (reportContextResolution == null ? void 0 : reportContextResolution.verification.usedFallback) && (differs(aiGuess.reportTitle, effectiveReportContext.reportTitle) || aiParameterLines.join("\n") !== effectiveParameterLines.join("\n"))
   );
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "overflow-hidden rounded-card border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-4 p-4 xl:flex-row xl:items-start xl:justify-between", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-3xl", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500", children: getTranslation("report_header_context", language) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "mt-2 text-2xl font-semibold tracking-tight text-slate-950", children: displayTitle }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-2 text-sm text-slate-600", children: effectiveReportContext.reportDescription || getTranslation("report_header_hint", language) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 flex flex-wrap items-center gap-2", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(SparkleIcon, {}),
-          getTranslation("report_header_ai_badge", language)
-        ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-4 px-4 py-3 xl:flex-row xl:items-start xl:justify-between", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-3xl", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[11px] font-semibold tracking-wide text-slate-500", children: getTranslation("report_header_context", language) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "mt-1 text-lg font-semibold tracking-tight text-slate-950", children: displayTitle }),
+      effectiveReportContext.reportDescription && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-600", children: effectiveReportContext.reportDescription }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "mt-1 text-xs text-slate-500", children: [
+        getTranslation("report_header_meta_rows", language, { count: preparedRowCount.toLocaleString() }),
+        fileName && differs(fileName, displayTitle) && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          " · ",
+          fileName
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-2 flex flex-wrap items-center gap-2 empty:hidden", children: [
         showAiGuessBanner && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900", children: getTranslation("report_header_low_confidence", language) }),
         showValidatedFallbackNote && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700", children: getTranslation("report_header_validated_fallback", language) })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "mt-2 text-xs text-slate-500", children: [
-        fileName && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-          fileName,
-          " · "
-        ] }),
-        preparedRowCount.toLocaleString(),
-        " ",
-        getTranslation("report_header_prepared_rows", language).toLowerCase()
       ] })
     ] }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("details", { className: "group border-t border-slate-100", children: [

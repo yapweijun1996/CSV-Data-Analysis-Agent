@@ -3435,6 +3435,16 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
     'analysis_skeleton_hint': { 'English': 'Your results will appear here as soon as the analysis finishes.', 'Mandarin': '分析完成后，结果会显示在这里。', 'Japanese': '分析が終わると、結果がここに表示されます。', 'Malay': 'Keputusan anda akan dipaparkan di sini sebaik sahaja analisis selesai.' },
     'data_warnings_compact_summary': { 'English': '{count} data quality notes · The AI accounts for them and your file is not changed.', 'Mandarin': '共 {count} 条数据备注 · AI 会自动处理，你的文件不会被修改。', 'Japanese': 'データ品質メモ {count} 件 · AI が考慮し、ファイルは変更されません。', 'Malay': '{count} nota kualiti data · AI mengambil kira nota ini dan fail anda tidak diubah.' },
     'data_warnings_view_notes': { 'English': 'View notes', 'Mandarin': '查看备注', 'Japanese': 'メモを表示', 'Malay': 'Lihat nota' },
+    'analysis_initial_stage_1_short': { 'English': 'Structure', 'Mandarin': '结构', 'Japanese': '構造', 'Malay': 'Struktur' },
+    'analysis_initial_stage_2_short': { 'English': 'Non-data rows', 'Mandarin': '非数据行', 'Japanese': '非データ行', 'Malay': 'Baris bukan data' },
+    'analysis_initial_stage_3_short': { 'English': 'Plan', 'Mandarin': '规划', 'Japanese': '計画', 'Malay': 'Rancang' },
+    'analysis_initial_stage_4_short': { 'English': 'Prepare', 'Mandarin': '准备', 'Japanese': '準備', 'Malay': 'Sedia' },
+    'analysis_initial_stage_5_short': { 'English': 'Quality', 'Mandarin': '质量', 'Japanese': '品質', 'Malay': 'Kualiti' },
+    'analysis_initial_stage_6_short': { 'English': 'Connect', 'Mandarin': '连接', 'Japanese': '接続', 'Malay': 'Sambung' },
+    'analysis_initial_stage_7_short': { 'English': 'Questions', 'Mandarin': '问题', 'Japanese': '問い', 'Malay': 'Soalan' },
+    'analysis_initial_stage_8_short': { 'English': 'Analyse', 'Mandarin': '分析', 'Japanese': '分析', 'Malay': 'Analisis' },
+    'analysis_initial_stage_9_short': { 'English': 'Results', 'Mandarin': '结果', 'Japanese': '結果', 'Malay': 'Keputusan' },
+    'report_header_meta_rows': { 'English': '{count} rows', 'Mandarin': '{count} 行', 'Japanese': '{count} 行', 'Malay': '{count} baris' },
     'upload_working_on_file': { 'English': 'Working on “{fileName}”', 'Mandarin': '正在处理“{fileName}”', 'Japanese': '「{fileName}」を処理中', 'Malay': 'Sedang memproses “{fileName}”' },
 
     // --- UI component labels (M5 localization) ---

@@ -163,6 +163,21 @@ export const AiTaskStatusBubble: React.FC<AiTaskStatusBubbleProps> = ({ task, va
                             />
                         ))}
                     </div>
+                    {task.titleKey?.startsWith('analysis_initial_stage_') && (
+                        <ol className="mt-1.5 hidden gap-0.5 text-[11px] md:flex" aria-hidden="true">
+                            {Array.from({ length: task.totalSteps }, (_, index) => (
+                                <li
+                                    key={index}
+                                    className={`min-w-0 flex-1 truncate ${
+                                        index < task.currentStep - 1 ? 'text-slate-500'
+                                            : index === task.currentStep - 1 ? 'font-semibold text-blue-700' : 'text-slate-400'
+                                    }`}
+                                >
+                                    {index < task.currentStep - 1 ? '✓ ' : ''}{getTranslation(`analysis_initial_stage_${index + 1}_short`, language)}
+                                </li>
+                            ))}
+                        </ol>
+                    )}
                     <p className="mt-1.5 text-xs text-slate-500">
                         {getTranslation('analysis_progress_caption', language, {
                             done: Math.max(0, task.currentStep - 1),
