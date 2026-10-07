@@ -23,5 +23,6 @@ export const keepInitialAnalysisStageFrame = (
         titleParams: previous.titleParams,
         totalSteps: previous.totalSteps,
         currentStep: previous.currentStep,
+        rowCount: next.rowCount ?? previous.rowCount,
     };
 };

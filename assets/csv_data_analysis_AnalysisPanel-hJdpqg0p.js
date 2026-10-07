@@ -1,16 +1,16 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports, r as reactDomExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-D_z73KUF.js";
-import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as formatAxisValue, aX as getBarChartReadabilityHints, aY as PIVOT_FOLDED_OTHERS_KEY, aZ as collectOrderedColumnNames, a_ as getNumericColumns, a$ as getAnalysisColumnLabels, b0 as coerceNumericValue, b1 as formatAnalysisCellValue, b2 as isProviderConfigured, b3 as createProviderModel, b4 as resolveCardTrustDecision, b5 as getLocalizedText, b6 as evaluateChartPresentation, b7 as getAvailableChartTypes, b8 as isTimeLikeDimensionColumn, b9 as buildStackedPivotChartPlan, ba as getPivotCardQualitySummary, bb as normalizeDisplayLabel, bc as resolveAnalysisCompletionGate, bd as buildDisplayAnalysisIr, be as isUsableReportTitle, bf as isSchemaDerivedReportTitle, bg as isLatestReportPartial, bh as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, bi as DEFAULT_AUTO_ANALYSIS_GOAL, bj as buildExecutiveKpis, bk as resolveEffectiveReportContext, bl as shouldShowDataWarnings, bm as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-BFf5nFx-.js";
-import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-BiTtkf2E.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-MKcM60Eo.js";
+import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as formatAxisValue, aX as getBarChartReadabilityHints, aY as PIVOT_FOLDED_OTHERS_KEY, aZ as collectOrderedColumnNames, a_ as getNumericColumns, a$ as getAnalysisColumnLabels, b0 as coerceNumericValue, b1 as formatAnalysisCellValue, b2 as isProviderConfigured, b3 as createProviderModel, b4 as resolveCardTrustDecision, b5 as getLocalizedText, b6 as evaluateChartPresentation, b7 as getAvailableChartTypes, b8 as isTimeLikeDimensionColumn, b9 as buildStackedPivotChartPlan, ba as getPivotCardQualitySummary, bb as normalizeDisplayLabel, bc as resolveAnalysisCompletionGate, bd as buildDisplayAnalysisIr, be as isUsableReportTitle, bf as isSchemaDerivedReportTitle, bg as isLatestReportPartial, bh as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, bi as DEFAULT_AUTO_ANALYSIS_GOAL, bj as buildExecutiveKpis, bk as resolveEffectiveReportContext, bl as shouldShowDataWarnings, bm as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-Dh58Ubpl.js";
+import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-owxy8Znm.js";
 import { C as Chart, p as plugin, a as plugin$1, M as Masonry } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import { e as exportToHtml, a as exportToCsv, b as exportToPng } from "./csv_data_analysis_exportUtils-DfKSpD2m.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
-import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-DkrlEQsy.js";
-import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-Dh1DEBpm.js";
+import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-CRUEaweO.js";
+import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-BXfWsWoY.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
-import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-DHIcKHGZ.js";
+import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-D6UKm6sO.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
 import "./csv_data_analysis_vendor-ai-google-Brpu0J-t.js";
@@ -3817,16 +3817,23 @@ const AnalysisCardGrid = reactExports.memo(({
 ));
 AnalysisCardGrid.displayName = "AnalysisCardGrid";
 const AnalysisStatusSection = reactExports.memo(() => {
-  const { aiTaskStatus, hasCards, hasFinalSummary, activeResearchRun, requestActiveResearchCancellation } = useAppStore(
+  const { aiTaskStatus, hasCards, hasFinalSummary, activeResearchRun, requestActiveResearchCancellation, initialRunning, requestInitialAnalysisCancellation, language } = useAppStore(
     (state) => ({
       aiTaskStatus: state.aiTaskStatus,
       hasCards: state.analysisCards.length > 0,
       hasFinalSummary: !!state.finalSummary,
       activeResearchRun: state.activeAnalysisSession,
-      requestActiveResearchCancellation: state.requestActiveResearchCancellation
+      requestActiveResearchCancellation: state.requestActiveResearchCancellation,
+      initialRunning: state.initialAnalysisStatus === "running",
+      requestInitialAnalysisCancellation: state.requestInitialAnalysisCancellation,
+      language: state.settings.language
     }),
     shallow$1
   );
+  const [stopping, setStopping] = reactExports.useState(false);
+  reactExports.useEffect(() => {
+    if (!initialRunning) setStopping(false);
+  }, [initialRunning]);
   if (!aiTaskStatus) return null;
   if (aiTaskStatus.status === "done" && (hasCards || hasFinalSummary)) return null;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
@@ -3837,7 +3844,20 @@ const AnalysisStatusSection = reactExports.memo(() => {
         variant: !hasCards && !hasFinalSummary ? "default" : "compact"
       }
     ),
-    (activeResearchRun == null ? void 0 : activeResearchRun.status) === "running" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-end", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+    initialRunning && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-end", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        type: "button",
+        onClick: () => {
+          setStopping(true);
+          requestInitialAnalysisCancellation();
+        },
+        disabled: stopping,
+        className: "rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60",
+        children: getTranslation(stopping ? "analysis_stopping" : "analysis_stop", language)
+      }
+    ) }),
+    !initialRunning && (activeResearchRun == null ? void 0 : activeResearchRun.status) === "running" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex justify-end", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
       "button",
       {
         type: "button",

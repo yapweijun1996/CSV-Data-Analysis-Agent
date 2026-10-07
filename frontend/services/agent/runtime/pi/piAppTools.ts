@@ -13,6 +13,9 @@ export const PI_MAX_TOOL_CALLS_PER_TURN = 3;
 
 const MAX_TOOL_RESULT_CHARS = 6_000;
 
+const isCardCreatingTool = (manifest: ToolManifest): boolean =>
+    manifest.name === 'analysis.create_plan' || manifest.capabilities?.piFollowUpCardCreation === true;
+
 export const createPiAppTools = (
     store: StoreApi,
     datasetVersion: string | null,
@@ -30,7 +33,8 @@ export const createPiAppTools = (
         (manifest.risk === 'low'
             && manifest.capabilities?.readOnly === true
             && manifest.capabilities?.piFollowUpReadOnly === true)
-        || (options.allowCardCreation && manifest.name === 'analysis.create_plan')
+        || (options.allowCardCreation
+            && (manifest.name === 'analysis.create_plan' || manifest.capabilities?.piFollowUpCardCreation === true))
         || (manifest.name === 'data.mutate'
             && manifest.capabilities?.piFollowUpMutation === true));
     const manifestTools = manifests.map((manifest: ToolManifest): AgentTool => ({
@@ -39,7 +43,7 @@ export const createPiAppTools = (
         description: [manifest.description, ...(manifest.promptHints ?? [])].join(' ').slice(0, 4_000),
         parameters: Type.Unsafe<Record<string, unknown>>(manifest.inputSchema),
         executionMode: 'sequential',
-        replay: manifest.capabilities?.mutatesState || manifest.name === 'analysis.create_plan'
+        replay: manifest.capabilities?.mutatesState || isCardCreatingTool(manifest)
             ? 'never' : 'safe',
         execute: async (_toolCallId, args, signal) => {
             if (manifest.capabilities?.mutatesState) {
@@ -62,8 +66,9 @@ export const createPiAppTools = (
                 abortSignal: signal,
                 requireRowDeleteConfirmation: true,
             });
-            if (manifest.name === 'analysis.create_plan' && result.status === 'success') {
-                const cardId = result.artifacts?.createdCardId;
+            if (isCardCreatingTool(manifest) && result.status === 'success') {
+                // analysis.create_plan reports `createdCardId`; the other analysis tools report `cardId`.
+                const cardId = result.artifacts?.createdCardId ?? result.artifacts?.cardId;
                 if (typeof cardId === 'string'
                     && store.getState().analysisCards.some(card => card.id === cardId)) {
                     options.onCardCreated?.(cardId);

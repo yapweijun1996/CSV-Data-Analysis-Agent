@@ -1,8 +1,8 @@
 import { j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { u as useAppStore, a as IconWarning, j as IconCheck } from "./csv_data_analysis_index-BiTtkf2E.js";
+import { u as useAppStore, a as IconWarning, j as IconCheck } from "./csv_data_analysis_index-owxy8Znm.js";
 import { I as IconSearch } from "./csv_data_analysis_IconSearch-j9OYkQx7.js";
 import { a as IconSettings, I as IconThinking } from "./csv_data_analysis_IconSettings-FS0PVK9T.js";
-import { U as getTranslation } from "./csv_data_analysis_app-agent-BFf5nFx-.js";
+import { U as getTranslation } from "./csv_data_analysis_app-agent-Dh58Ubpl.js";
 const IconWrapper = ({ children, colorClass }) => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`, children });
 const ThinkingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-blue-100 text-blue-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconThinking, { className: "h-5 w-5" }) });
 const ExecutingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-indigo-100 text-indigo-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconSettings, { className: "h-5 w-5", "aria-hidden": "true" }) });
@@ -124,7 +124,8 @@ const AiTaskStatusBubble = ({ task, variant = "default" }) => {
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1.5 text-xs text-slate-500", children: getTranslation("analysis_progress_caption", language, {
         done: Math.max(0, task.currentStep - 1),
         total: task.totalSteps
-      }) })
+      }) }),
+      typeof task.rowCount === "number" && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-xs text-slate-500", children: getTranslation("analysis_rows_in_dataset", language, { rows: task.rowCount.toLocaleString() }) })
     ] }),
     task.microTasks && task.microTasks.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-2 border-t border-slate-200 pt-4 text-sm", children: task.microTasks.map((microTask) => /* @__PURE__ */ jsxRuntimeExports.jsx(MicroTaskStep, { task: microTask }, microTask.name)) }),
     task.status === "error" && task.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("details", { children: [

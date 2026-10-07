@@ -9,7 +9,9 @@ import { persistCurrentAppSessionSnapshot } from '../../../persistence/currentSe
 import { ensureCloudAiConsent } from '../../../privacy/cloudAiConsent';
 import { buildToolAvailabilityContext } from '../../tools/toolGovernance';
 import { createInitialAnalysisStageToolManifests } from '../../tools/manifests/initialAnalysisStageManifests';
+import type { ResearchPlan } from '../../../../types';
 import type { StoreApi } from '../../types';
+import { getPreferredAnalysisDataset } from '../../reportStructureState';
 import { requestDataResearchCancellation } from '../dataResearchCancellation';
 import { createInitialAnalysisStageExecutors } from './initialAnalysisStageExecutors';
 import { executeInitialAnalysisStageTool, type InitialAnalysisStageActionResult } from './initialAnalysisStageTools';
@@ -21,7 +23,23 @@ import { runPiResearchPlanner } from './piResearchPlanner';
 const STAGES = createInitialAnalysisStageToolManifests();
 const CHECKPOINT_PREFIX = 'pi-initial-analysis-v1:';
 const INITIAL_ANALYSIS_BUDGET_MS = 240_000;
-const activeRuns = new Map<string, { agent: Agent; controller: AbortController; runtimeRunId: string }>();
+const activeRuns = new Map<string, { agent: Agent; controller: AbortController; runtimeRunId: string; cancelledByUser: boolean }>();
+
+/** Stops the running initial analysis for a session; returns false when none is running. */
+export const cancelPiInitialAnalysis = (appSessionId: string): boolean => {
+    const active = activeRuns.get(appSessionId);
+    if (!active || active.controller.signal.aborted) return false;
+    active.cancelledByUser = true;
+    active.controller.abort(new Error('The analysis was stopped.'));
+    return true;
+};
+
+// The real size of the dataset the next stage will work on (it changes after cleaning).
+const readCurrentRowCount = (store: StoreApi): number | null => {
+    const dataset = getPreferredAnalysisDataset(store.getState());
+    const count = dataset?.backing?.rowCount ?? dataset?.data?.length;
+    return typeof count === 'number' && Number.isFinite(count) ? count : null;
+};
 
 interface PiInitialCheckpoint {
     schemaVersion: 1;
@@ -33,6 +51,8 @@ interface PiInitialCheckpoint {
     committedTransformationIds: string[];
     cardFingerprints: string[];
     warnings: InitialAnalysisRunOutcome['warnings'];
+    // Pi's research plan, kept so a resumed run does not lose it. Optional: older checkpoints lack it.
+    researchPlan?: ResearchPlan | null;
 }
 
 const checkpointKey = (sessionId: string) => `${CHECKPOINT_PREFIX}${sessionId}`;
@@ -99,6 +119,11 @@ const run = async (
     let nextStageIndex = checkpoint?.nextStageIndex ?? 0;
     const results: InitialAnalysisStageActionResult[] = [];
     const warnings: InitialAnalysisRunOutcome['warnings'] = [...(checkpoint?.warnings ?? [])];
+    // A fresh run must not reuse a plan left by an earlier one; a resumed run brings its own back.
+    if (!checkpoint) store.setState({ initialAnalysisPlan: null });
+    else if (checkpoint.researchPlan && !store.getState().initialAnalysisPlan) {
+        store.setState({ initialAnalysisPlan: checkpoint.researchPlan });
+    }
     const executors = createInitialAnalysisStageExecutors();
     let recoveryEnabled = !store.getState().csvData?.backing?.ephemeral;
     let providerTurns = 0;
@@ -125,6 +150,7 @@ const run = async (
                 .map(card => buildCardSemanticFingerprint(card.plan, card.provenance?.datasetVersion))
                 .filter((value): value is string => Boolean(value)),
             warnings,
+            researchPlan: store.getState().initialAnalysisPlan ?? null,
         });
     };
     const tool: AgentTool = {
@@ -153,6 +179,7 @@ const run = async (
                 subtitleKey: `analysis_initial_stage_${stageIndex + 1}_desc`,
                 totalSteps: STAGES.length,
                 currentStep: stageIndex + 1,
+                rowCount: readCurrentRowCount(store),
             });
             const result = await executeInitialAnalysisStageTool({
                 toolName: stage.name,
@@ -238,7 +265,8 @@ const run = async (
                 ? { action: 'end' } : { action: 'continue' };
         },
     });
-    activeRuns.set(request.appSessionId, { agent, controller, runtimeRunId });
+    const activeEntry = { agent, controller, runtimeRunId, cancelledByUser: false };
+    activeRuns.set(request.appSessionId, activeEntry);
     const abortAgent = () => {
         requestDataResearchCancellation(runtimeRunId);
         agent.abort();
@@ -262,7 +290,7 @@ const run = async (
     } catch (error) {
         errorMessage = sanitizeError(error);
         providerFailure ||= isInitialAnalysisProviderFailure(error);
-        status = controller.signal.aborted && request.signal?.aborted ? 'cancelled'
+        status = controller.signal.aborted && (request.signal?.aborted || activeEntry.cancelledByUser) ? 'cancelled'
             : results.length > 0 ? 'degraded' : 'failed';
         if (status === 'degraded') warnings.push({
             code: 'pi_initial_analysis_incomplete',
@@ -351,11 +379,6 @@ export const recoverPiInitialAnalysisIfNeeded = async (store: StoreApi): Promise
         researchGoal: checkpoint.researchGoal,
         provider: { provider: state.settings.provider, modelId: state.settings.complexModel },
     }, store, checkpoint);
-};
-
-export const cancelPiInitialAnalysis = (sessionId: string): void => {
-    const active = activeRuns.get(sessionId);
-    if (active) active.controller.abort(new DOMException('Analysis was cancelled.', 'AbortError'));
 };
 
 export const discardPiInitialAnalysisCheckpoint = discardCheckpoint;
