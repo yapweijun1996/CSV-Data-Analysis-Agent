@@ -221,6 +221,27 @@ describe('dataAnalysisSessionRunner', () => {
         });
     });
 
+    it('uses a Pi research plan once instead of generating topics', async () => {
+        const { getCurrentAnalysisDatasetVersion } = await import('../services/agent/artifactProvenance');
+        const { store, state } = createStore();
+        state.initialAnalysisPlan = {
+            datasetVersion: getCurrentAnalysisDatasetVersion(state as never),
+            consumed: false,
+            rejected: [],
+            questions: [
+                { title: 'Typical value by code', rationale: 'r', dimension: 'Code', metric: 'Value', aggregation: 'median', comparison: null },
+                { title: 'Total value', rationale: 'r', dimension: null, metric: 'Value', aggregation: 'sum', comparison: null },
+            ],
+        };
+        const { runDataAnalysisSession } = await import('../services/agent/runtime/dataAnalysisSessionRunner');
+
+        await runDataAnalysisSession({ origin: 'auto_analysis', goal: 'Summarize key patterns', store: store as never });
+
+        // Later gap rounds may still ask for topics; the first round must come from the plan.
+        expect(JSON.stringify(processSingleTopicMock.mock.calls[0])).toContain('Typical value by code (median of Value by Code)');
+        expect(state.initialAnalysisPlan.consumed).toBe(true);
+    });
+
     it('degrades early without generating business hypotheses when no safe business grain and no candidate metrics exist', async () => {
         buildDatasetContextMock.mockReturnValue({
             title: 'Dataset',

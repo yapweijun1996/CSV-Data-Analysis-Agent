@@ -153,6 +153,7 @@ export const initialAppState: AppState = {
     aiTaskStatus: null,
     initialAnalysisStatus: 'idle',
     initialAnalysisFailureKind: null,
+    initialAnalysisPlan: null,
     confirmedAnalysisGoal: null,
     goalState: 'idle',
     dataQualityIssues: null,
