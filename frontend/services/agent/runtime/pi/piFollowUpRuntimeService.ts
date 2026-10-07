@@ -1,3 +1,4 @@
+import { presentGatewayError } from '../../../../utils/gatewayErrorMessage';
 import { Agent, type AgentEvent, type StreamFn } from '@earendil-works/pi-agent-core';
 import type { AnalysisCardData, ClarificationRequest } from '../../../../types';
 import { createChatMessage } from '../../../../utils/messageState';
@@ -314,12 +315,12 @@ export const runPiFollowUpTurn = async (
         if (status === 'failed') settleCreatedCards();
         const savedCards = status === 'failed' ? findSavedCards(store, createdCardIds) : [];
         if (savedCards.length > 0) {
-            text = `${describeCreatedCards(savedCards, tableOnlyCardIds)} Pi then stopped early: ${sanitizeError(error)}`;
+            text = `${describeCreatedCards(savedCards, tableOnlyCardIds)} Pi then stopped early: ${presentGatewayError(sanitizeError(error), state.settings.language)}`;
             status = 'completed';
         } else {
             text = status === 'cancelled'
                 ? 'The request was cancelled.'
-                : `Pi could not complete this request: ${sanitizeError(error)}`;
+                : `Pi could not complete this request: ${presentGatewayError(sanitizeError(error), state.settings.language)}`;
         }
     } finally {
         attachEvidenceVerdicts(store, createdCardIds);

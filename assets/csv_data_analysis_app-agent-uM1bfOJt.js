@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-fLrSG3po.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-BZfpb1PG.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-BOJ5V4qW.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-CqpUlYzc.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-DN_pugsg.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-BFOuKxXG.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -33900,7 +33900,7 @@ const releaseWhenBodyDone = (response, releaseSlot, maxHoldMs = MAX_SLOT_HOLD_MS
   return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
 };
 const isRecord$1 = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
-const pick = (record, fields) => {
+const pick$1 = (record, fields) => {
   const reduced = {};
   for (const field2 of fields) {
     if (record[field2] !== void 0) reduced[field2] = record[field2];
@@ -33923,7 +33923,7 @@ const reduceAssistantPart = (part) => {
   return { type: "output_text", text: part.text, annotations: [] };
 };
 const reduceAssistantMessage = (item) => {
-  const reduced = pick(item, ["type", "role", "id", "phase"]);
+  const reduced = pick$1(item, ["type", "role", "id", "phase"]);
   if (reduced.phase !== "commentary" && reduced.phase !== "final_answer") delete reduced.phase;
   reduced.content = Array.isArray(item.content) ? item.content.map(reduceAssistantPart) : item.content;
   return reduced;
@@ -33944,20 +33944,20 @@ const reduceItems = (items) => {
       }
       reasoningDropped = false;
       reduced.push({
-        ...pick(item, ["type", "id", "encrypted_content"]),
+        ...pick$1(item, ["type", "id", "encrypted_content"]),
         summary: Array.isArray(item.summary) ? item.summary : []
       });
       continue;
     }
     if (item.type === "function_call") {
-      const call2 = pick(item, ["type", "id", "call_id", "name", "arguments", "status"]);
+      const call2 = pick$1(item, ["type", "id", "call_id", "name", "arguments", "status"]);
       if (reasoningDropped) delete call2.id;
       reduced.push(call2);
       continue;
     }
     reasoningDropped = false;
     if (item.type === "function_call_output") {
-      reduced.push({ ...pick(item, ["type", "id", "call_id", "status"]), output: stringifyToolOutput(item.output) });
+      reduced.push({ ...pick$1(item, ["type", "id", "call_id", "status"]), output: stringifyToolOutput(item.output) });
       continue;
     }
     reduced.push(isAssistantMessage(item) && item.type === "message" ? reduceAssistantMessage(item) : item);
@@ -51193,6 +51193,173 @@ const opfsDatasetStorage = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.
   removeOpfsDatasetSession,
   stageDatasetFileInOpfs
 }, Symbol.toStringTag, { value: "Module" }));
+const COPY = {
+  session: {
+    message: {
+      English: "The shared AI session expired.",
+      Mandarin: "共享 AI 的连接已过期。",
+      Malay: "Sesi AI dikongsi telah tamat tempoh.",
+      Japanese: "共有 AI のセッションが期限切れになりました。"
+    },
+    suggestion: {
+      English: "Retry the analysis; a new session is opened automatically.",
+      Mandarin: "请重试分析，系统会自动建立新连接。",
+      Malay: "Cuba analisis semula; sesi baharu dibuka secara automatik.",
+      Japanese: "分析を再実行してください。新しいセッションが自動で開始されます。"
+    }
+  },
+  concurrency: {
+    message: {
+      English: "Too many AI requests were running at once.",
+      Mandarin: "同时进行的 AI 请求过多。",
+      Malay: "Terlalu banyak permintaan AI berjalan serentak.",
+      Japanese: "同時に実行されている AI リクエストが多すぎます。"
+    },
+    suggestion: {
+      English: "Wait a few seconds and retry.",
+      Mandarin: "请等几秒后重试。",
+      Malay: "Tunggu beberapa saat dan cuba semula.",
+      Japanese: "数秒待ってから再試行してください。"
+    }
+  },
+  ip_rate_limit: {
+    message: {
+      English: "Your network sent too many requests to the shared AI service.",
+      Mandarin: "你的网络向共享 AI 服务发送的请求过多。",
+      Malay: "Rangkaian anda menghantar terlalu banyak permintaan kepada perkhidmatan AI dikongsi.",
+      Japanese: "お使いのネットワークから共有 AI サービスへのリクエストが多すぎます。"
+    },
+    suggestion: {
+      English: "Wait about a minute, then retry.",
+      Mandarin: "请等待约一分钟后重试。",
+      Malay: "Tunggu kira-kira seminit, kemudian cuba semula.",
+      Japanese: "1 分ほど待ってから再試行してください。"
+    }
+  },
+  quota: {
+    message: {
+      English: "Today's shared AI quota is used up.",
+      Mandarin: "今天的共享 AI 额度已用完。",
+      Malay: "Kuota AI dikongsi hari ini telah habis.",
+      Japanese: "本日の共有 AI の利用枠を使い切りました。"
+    },
+    suggestion: {
+      English: "Try again tomorrow, or add your own API key in Settings.",
+      Mandarin: "请明天再试，或在 Settings 中填入你自己的 API key。",
+      Malay: "Cuba lagi esok, atau tambah kunci API anda sendiri dalam Settings.",
+      Japanese: "明日もう一度お試しいただくか、Settings で自分の API キーを設定してください。"
+    }
+  },
+  unavailable: {
+    message: {
+      English: "The shared AI service is not available for this site right now.",
+      Mandarin: "共享 AI 服务目前不适用于此网站。",
+      Malay: "Perkhidmatan AI dikongsi tidak tersedia untuk laman ini buat masa ini.",
+      Japanese: "現在、このサイトでは共有 AI サービスを利用できません。"
+    },
+    suggestion: {
+      English: "Try again later, or add your own API key in Settings.",
+      Mandarin: "请稍后再试，或在 Settings 中填入你自己的 API key。",
+      Malay: "Cuba lagi kemudian, atau tambah kunci API anda sendiri dalam Settings.",
+      Japanese: "後でもう一度お試しいただくか、Settings で自分の API キーを設定してください。"
+    }
+  },
+  upstream: {
+    message: {
+      English: "The AI provider behind the shared service had a problem.",
+      Mandarin: "共享服务背后的 AI 提供方出现了问题。",
+      Malay: "Penyedia AI di sebalik perkhidmatan dikongsi menghadapi masalah.",
+      Japanese: "共有サービスの背後にある AI プロバイダーで問題が発生しました。"
+    },
+    suggestion: {
+      English: "Retry in a moment. Your imported data is still available.",
+      Mandarin: "请稍后重试。已导入的数据仍可使用。",
+      Malay: "Cuba semula sebentar lagi. Data yang diimport masih tersedia.",
+      Japanese: "しばらくしてから再試行してください。取り込んだデータは保持されています。"
+    }
+  },
+  rejected: {
+    message: {
+      English: "The shared AI service rejected this request.",
+      Mandarin: "共享 AI 服务拒绝了这次请求。",
+      Malay: "Perkhidmatan AI dikongsi menolak permintaan ini.",
+      Japanese: "共有 AI サービスがこのリクエストを拒否しました。"
+    },
+    suggestion: {
+      English: "Retry once. If it repeats, report the code below or use your own API key in Settings.",
+      Mandarin: "请重试一次。如果反复出现，请把下方代码反馈给我们，或在 Settings 中使用你自己的 API key。",
+      Malay: "Cuba sekali lagi. Jika berulang, laporkan kod di bawah atau gunakan kunci API anda sendiri dalam Settings.",
+      Japanese: "一度再試行してください。繰り返す場合は下のコードを報告するか、Settings で自分の API キーを使用してください。"
+    }
+  },
+  stale_build: {
+    message: {
+      English: "The AI service rejected this app version’s access key.",
+      Mandarin: "本应用版本使用的访问密钥已被 AI 服务拒绝。",
+      Malay: "Perkhidmatan AI menolak kunci akses versi aplikasi ini.",
+      Japanese: "AI サービスがこのアプリのバージョンのアクセスキーを拒否しました。"
+    },
+    suggestion: {
+      English: "Reload the page (or use the version button in the header) to get the latest version.",
+      Mandarin: "请刷新页面（或点击页眉的版本按钮）以获取最新版本。",
+      Malay: "Muat semula halaman (atau gunakan butang versi di pengepala) untuk mendapatkan versi terkini.",
+      Japanese: "ページを再読み込みする（またはヘッダーのバージョンボタンを使う）と最新版になります。"
+    }
+  }
+};
+const pick = (map, language) => map[language] ?? map.English;
+const REJECTED_CODES = /* @__PURE__ */ new Set([
+  "DEMO_FIELD_DISABLED",
+  "DEMO_INPUT_INVALID",
+  "DEMO_INPUT_TOO_LARGE",
+  "DEMO_TOOLS_INVALID",
+  "DEMO_SCHEMA_UNSUPPORTED",
+  "DEMO_FORMAT_DISABLED",
+  "DEMO_MODEL_NOT_ALLOWED"
+]);
+const extractStatus = (raw) => {
+  const match2 = /\((\d{3})\)/.exec(raw) ?? /\bstatus(?: code)?[:= ]+(\d{3})\b/i.exec(raw);
+  return match2 ? Number(match2[1]) : void 0;
+};
+const classifyGatewayError = (raw) => {
+  var _a;
+  const code = (_a = /\b(DEMO_[A-Z_]+)\b/.exec(raw)) == null ? void 0 : _a[1];
+  const text = raw.toLowerCase();
+  const status = extractStatus(raw);
+  if (code === "DEMO_SESSION_CONCURRENCY_LIMIT") return { kind: "concurrency", code };
+  if (code === "DEMO_SESSION_REQUEST_LIMIT" || code === "DEMO_SESSION_EXPIRED" || text.includes("demo session token required") || text.includes("demo session request limit")) {
+    return { kind: "session", code };
+  }
+  if (text.includes("demo ip rate limit")) return { kind: "ip_rate_limit", code };
+  if (text.includes("daily budget exhausted") || text.includes("daily token limit") || code === "DEMO_ALL_ROUTES_EXHAUSTED") {
+    return { kind: "quota", code };
+  }
+  if (code === "DEMO_PROJECT_NOT_CONFIGURED" || code === "DEMO_ORIGIN_NOT_REGISTERED" || code === "DEMO_ROUTER_DISABLED" || text.includes("public demo is disabled") || text.includes("demo origin is not registered")) {
+    return { kind: "unavailable", code };
+  }
+  if (code == null ? void 0 : code.startsWith("DEMO_UPSTREAM")) return { kind: "upstream", code };
+  if (code && REJECTED_CODES.has(code)) return { kind: "rejected", code };
+  if (code) return { kind: status !== void 0 && status >= 500 ? "upstream" : "rejected", code };
+  if (status === 401 && text.includes("invalid api key")) return { kind: "stale_build" };
+  return null;
+};
+const describeGatewayError = (raw, language) => {
+  const info = classifyGatewayError(raw);
+  if (!info) return null;
+  const copy = COPY[info.kind];
+  const message = pick(copy.message, language);
+  const suggestion = pick(copy.suggestion, language);
+  return {
+    message,
+    suggestion,
+    code: info.code,
+    fullText: `${message} ${suggestion}${info.code ? ` (${info.code})` : ""}`
+  };
+};
+const presentGatewayError = (raw, language) => {
+  var _a;
+  return ((_a = describeGatewayError(raw, language)) == null ? void 0 : _a.fullText) ?? raw;
+};
 function IsBetween(value2, min2, max2) {
   return value2 >= min2 && value2 <= max2;
 }
@@ -90636,7 +90803,7 @@ const executeInitialAnalysisStageTool = async (params) => {
     params.args
   );
 };
-const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-fLrSG3po.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
+const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-CqpUlYzc.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values$1 = {
   "google-generative-ai": /* @__PURE__ */ JSON.parse('{"deep-research-max-preview-04-2026":{"id":"deep-research-max-preview-04-2026","name":"Deep Research Max Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"deep-research-preview-04-2026":{"id":"deep-research-preview-04-2026","name":"Deep Research Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-computer-use-preview-10-2025":{"id":"gemini-2.5-computer-use-preview-10-2025","name":"Gemini 2.5 Computer Use Preview 10-2025","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash":{"id":"gemini-2.5-flash","name":"Gemini 2.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash-lite":{"id":"gemini-2.5-flash-lite","name":"Gemini 2.5 Flash-Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.01,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-pro":{"id":"gemini-2.5-pro","name":"Gemini 2.5 Pro","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3-flash-preview":{"id":"gemini-3-flash-preview","name":"Gemini 3 Flash Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.5,"output":3,"cacheRead":0.05,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite":{"id":"gemini-3.1-flash-lite","name":"Gemini 3.1 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-image":{"id":"gemini-3.1-flash-lite-image","name":"Nano Banana 2 Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":null,"medium":null,"high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":65536,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-preview":{"id":"gemini-3.1-flash-lite-preview","name":"Gemini 3.1 Flash Lite Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-live-preview":{"id":"gemini-3.1-flash-live-preview","name":"Gemini 3.1 Flash Live Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview":{"id":"gemini-3.1-pro-preview","name":"Gemini 3.1 Pro Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview-customtools":{"id":"gemini-3.1-pro-preview-customtools","name":"Gemini 3.1 Pro Preview Custom Tools","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash":{"id":"gemini-3.5-flash","name":"Gemini 3.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash-lite":{"id":"gemini-3.5-flash-lite","name":"Gemini 3.5 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.6-flash":{"id":"gemini-3.6-flash","name":"Gemini 3.6 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.7-flash":{"id":"gemini-3.7-flash","name":"Gemini 3.7 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.8-flash":{"id":"gemini-3.8-flash","name":"Gemini 3.8 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-latest":{"id":"gemini-flash-latest","name":"Gemini Flash Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-lite-latest":{"id":"gemini-flash-lite-latest","name":"Gemini Flash-Lite Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-26b-a4b-it":{"id":"gemma-4-26b-a4b-it","name":"Gemma 4 26B A4B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-31b-it":{"id":"gemma-4-31b-it","name":"Gemma 4 31B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -90654,7 +90821,7 @@ function googleProvider() {
     api: googleGenerativeAIApi()
   });
 }
-const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-BOJ5V4qW.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
+const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-BFOuKxXG.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values = {
   "openai-responses": /* @__PURE__ */ JSON.parse('{"gpt-4":{"id":"gpt-4","name":"GPT-4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text"],"cost":{"input":30,"output":60,"cacheRead":0,"cacheWrite":0},"contextWindow":8192,"maxTokens":8192,"compat":{"supportsStrictMode":true}},"gpt-4-turbo":{"id":"gpt-4-turbo","name":"GPT-4 Turbo","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":10,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1":{"id":"gpt-4.1","name":"GPT-4.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-mini":{"id":"gpt-4.1-mini","name":"GPT-4.1 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.4,"output":1.6,"cacheRead":0.1,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-nano":{"id":"gpt-4.1-nano","name":"GPT-4.1 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o":{"id":"gpt-4o","name":"GPT-4o","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-05-13":{"id":"gpt-4o-2024-05-13","name":"GPT-4o (2024-05-13)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":5,"output":15,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-08-06":{"id":"gpt-4o-2024-08-06","name":"GPT-4o (2024-08-06)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-11-20":{"id":"gpt-4o-2024-11-20","name":"GPT-4o (2024-11-20)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.15,"output":0.6,"cacheRead":0.075,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5":{"id":"gpt-5","name":"GPT-5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-chat-latest":{"id":"gpt-5-chat-latest","name":"GPT-5 Chat Latest","api":"openai-responses","baseUrl":"https://api.openai.com/v1","provider":"openai","reasoning":false,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-mini":{"id":"gpt-5-mini","name":"GPT-5 Mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.25,"output":2,"cacheRead":0.025,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-nano":{"id":"gpt-5-nano","name":"GPT-5 Nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.05,"output":0.4,"cacheRead":0.005,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-pro":{"id":"gpt-5-pro","name":"GPT-5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":120,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":null,"high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.1":{"id":"gpt-5.1","name":"GPT-5.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2":{"id":"gpt-5.2","name":"GPT-5.2","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-chat-latest":{"id":"gpt-5.2-chat-latest","name":"GPT-5.2 Chat","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":null,"xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-pro":{"id":"gpt-5.2-pro","name":"GPT-5.2 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":21,"output":168,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-chat-latest":{"id":"gpt-5.3-chat-latest","name":"GPT-5.3 Chat (latest)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"xhigh":"xhigh"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex":{"id":"gpt-5.3-codex","name":"GPT-5.3 Codex","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex-spark":{"id":"gpt-5.3-codex-spark","name":"GPT-5.3 Codex Spark","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4":{"id":"gpt-5.4","name":"GPT-5.4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2.5,"output":15,"cacheRead":0.25,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":5,"output":22.5,"cacheRead":0.5,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-mini":{"id":"gpt-5.4-mini","name":"GPT-5.4 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0.075,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-nano":{"id":"gpt-5.4-nano","name":"GPT-5.4 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.25,"cacheRead":0.02,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-pro":{"id":"gpt-5.4-pro","name":"GPT-5.4 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5":{"id":"gpt-5.5","name":"GPT-5.5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":5,"output":30,"cacheRead":0.5,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":10,"output":45,"cacheRead":1,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5-pro":{"id":"gpt-5.5-pro","name":"GPT-5.5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-luna":{"id":"gpt-5.6-luna","name":"GPT-5.6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.2,"cacheRead":0.02,"cacheWrite":0.25,"tiers":[{"inputTokensAbove":272000,"input":0.4,"output":1.8,"cacheRead":0.04,"cacheWrite":0.5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-sol":{"id":"gpt-5.6-sol","name":"GPT-5.6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":20,"cacheRead":0.4,"cacheWrite":5,"tiers":[{"inputTokensAbove":272000,"input":8,"output":30,"cacheRead":0.8,"cacheWrite":10}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-terra":{"id":"gpt-5.6-terra","name":"GPT-5.6 Terra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":18,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-astra":{"id":"gpt-6-astra","name":"GPT-6 Astra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":10,"output":50,"cacheRead":1,"cacheWrite":12.5,"tiers":[{"inputTokensAbove":272000,"input":20,"output":75,"cacheRead":2,"cacheWrite":25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-luna":{"id":"gpt-6-luna","name":"GPT-6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"inputTokensAbove":272000,"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-sol":{"id":"gpt-6-sol","name":"GPT-6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":10,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":15,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-realtime-2.1":{"id":"gpt-realtime-2.1","name":"GPT-Realtime-2.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":24,"cacheRead":0.4,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1":{"id":"o1","name":"o1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":60,"cacheRead":7.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1-pro":{"id":"o1-pro","name":"o1-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":150,"output":600,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3":{"id":"o3","name":"o3","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3-mini":{"id":"o3-mini","name":"o3-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.55,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true}},"o3-pro":{"id":"o3-pro","name":"o3-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":20,"output":80,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o4-mini":{"id":"o4-mini","name":"o4-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.275,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -91093,7 +91260,7 @@ const run = async (request, store, checkpoint, streamOverride) => {
   updateAgentTaskStatus(store, {
     status: status === "failed" || noUsableResults ? "error" : "done",
     title: noUsableResults ? "Unable to reliably analyze" : status === "completed" ? "Analysis ready" : "Analysis ready with limitations",
-    subtitle: ((_k = warnings[0]) == null ? void 0 : _k.message) ?? errorMessage,
+    subtitle: ((_k = warnings[0]) == null ? void 0 : _k.message) ?? presentGatewayError(errorMessage, store.getState().settings.language),
     totalSteps: STAGES.length,
     currentStep: Math.min(nextStageIndex, STAGES.length)
   });
@@ -99028,10 +99195,10 @@ ${describeRejectedCards(gateRejections)}` : "";
     if (status === "failed") settleCreatedCards();
     const savedCards = status === "failed" ? findSavedCards(store, createdCardIds) : [];
     if (savedCards.length > 0) {
-      text = `${describeCreatedCards(savedCards, tableOnlyCardIds)} Pi then stopped early: ${sanitizeError(error2)}`;
+      text = `${describeCreatedCards(savedCards, tableOnlyCardIds)} Pi then stopped early: ${presentGatewayError(sanitizeError(error2), state2.settings.language)}`;
       status = "completed";
     } else {
-      text = status === "cancelled" ? "The request was cancelled." : `Pi could not complete this request: ${sanitizeError(error2)}`;
+      text = status === "cancelled" ? "The request was cancelled." : `Pi could not complete this request: ${presentGatewayError(sanitizeError(error2), state2.settings.language)}`;
     }
   } finally {
     attachEvidenceVerdicts(store, createdCardIds);

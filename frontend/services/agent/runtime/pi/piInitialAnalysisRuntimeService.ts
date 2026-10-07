@@ -1,3 +1,4 @@
+import { presentGatewayError } from '../../../../utils/gatewayErrorMessage';
 import { Agent, type AgentTool, type StreamFn } from '@earendil-works/pi-agent-core';
 import { Type } from '@earendil-works/pi-ai';
 import { resolveAnalysisCompletionGate } from '../../analysisCompletionGate';
@@ -283,7 +284,7 @@ const run = async (
         status: status === 'failed' || noUsableResults ? 'error' : 'done',
         title: noUsableResults ? 'Unable to reliably analyze'
             : status === 'completed' ? 'Analysis ready' : 'Analysis ready with limitations',
-        subtitle: warnings[0]?.message ?? errorMessage,
+        subtitle: warnings[0]?.message ?? presentGatewayError(errorMessage, store.getState().settings.language),
         totalSteps: STAGES.length,
         currentStep: Math.min(nextStageIndex, STAGES.length),
     });

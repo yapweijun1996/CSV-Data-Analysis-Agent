@@ -42,6 +42,7 @@ vi.mock('../services/agent/monitoring/agentMonitor', () => ({
     updateAgentTaskStatus: vi.fn(),
 }));
 
+import { updateAgentTaskStatus } from '../services/agent/monitoring/agentMonitor';
 import { runPiFollowUpTurn } from '../services/agent/runtime/pi/piFollowUpRuntimeService';
 import { runPiInitialAnalysis } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
 import { recoverPiInitialAnalysisIfNeeded } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
@@ -524,5 +525,32 @@ describe('Pi production runtime', () => {
         expect(outcome.status).toBe('failed');
         expect(store.getState().initialAnalysisStatus).toBe('error');
         expect(store.getState().initialAnalysisFailureKind).toBe('provider');
+    });
+
+    it('shows a plain-language message with the gateway code when the shared service rejects a request', async () => {
+        const rawError = 'OpenAI API error (400): {"message":"content is not allowed in reasoning items","code":"DEMO_FIELD_DISABLED"}';
+        const stream: StreamFn = model => {
+            const output = createAssistantMessageEventStream();
+            const message: AssistantMessage = {
+                role: 'assistant', content: [], api: model.api, provider: model.provider,
+                model: model.id, usage, stopReason: 'error', errorMessage: rawError,
+                timestamp: Date.now(),
+            };
+            output.push({ type: 'start', partial: message });
+            output.push({ type: 'error', reason: 'error', error: message });
+            return output;
+        };
+        const store = createStore();
+        const outcome = await runPiInitialAnalysis({
+            appSessionId: 'session-1', datasetId: 'dataset-1', datasetVersion: 'version-1',
+            researchGoal: 'Find patterns.', provider: { provider: 'openai', modelId: 'gpt-5.4-mini' },
+        }, store as never, stream);
+
+        const statusCall = vi.mocked(updateAgentTaskStatus).mock.calls.at(-1)?.[1] as { subtitle?: string };
+        expect(statusCall.subtitle).toContain('The shared AI service rejected this request.');
+        expect(statusCall.subtitle).toContain('(DEMO_FIELD_DISABLED)');
+        expect(statusCall.subtitle).not.toContain('reasoning items');
+        // Diagnostics keep the raw text.
+        expect(outcome.error?.message).toContain('content is not allowed in reasoning items');
     });
 });
