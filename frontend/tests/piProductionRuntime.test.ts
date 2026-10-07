@@ -45,7 +45,7 @@ vi.mock('../services/agent/monitoring/agentMonitor', () => ({
 import { updateAgentTaskStatus } from '../services/agent/monitoring/agentMonitor';
 import { runPiFollowUpTurn } from '../services/agent/runtime/pi/piFollowUpRuntimeService';
 import { runPiInitialAnalysis } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
-import { recoverPiInitialAnalysisIfNeeded } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
+import { cancelPiInitialAnalysis, recoverPiInitialAnalysisIfNeeded } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
 import { getCurrentAnalysisDatasetVersion } from '../services/agent/artifactProvenance';
 import { createPiAppTools } from '../services/agent/runtime/pi/piAppTools';
 
@@ -159,6 +159,19 @@ describe('Pi production runtime', () => {
             .not.toContain('analysis_create_plan');
         expect(createPiAppTools(store as never, version, { allowCardCreation: true })
             .map(tool => tool.name)).toContain('analysis_create_plan');
+    });
+
+    it('offers the other card-creating analysis tools only with card creation', () => {
+        const store = createStore();
+        const version = getCurrentAnalysisDatasetVersion(store.getState());
+        const cardTools = ['analysis_pivot_matrix', 'analysis_period_compare', 'analysis_cohort_retention',
+            'analysis_root_cause_breakdown', 'analysis_correlation'];
+        const withoutCards = createPiAppTools(store as never, version).map(tool => tool.name);
+        const withCards = createPiAppTools(store as never, version, { allowCardCreation: true }).map(tool => tool.name);
+        cardTools.forEach(name => {
+            expect(withoutCards).not.toContain(name);
+            expect(withCards).toContain(name);
+        });
     });
 
     it('does not report success when Pi answers a card request without creating one', async () => {
@@ -452,6 +465,73 @@ describe('Pi production runtime', () => {
         expect(await recoverPiInitialAnalysisIfNeeded(store as never)).toBeNull();
         expect(localStorage.getItem('pi-initial-analysis-v1:session-1')).toBeNull();
         expect(stageMock).not.toHaveBeenCalled();
+    });
+
+    const stageToolStream = (): StreamFn => model => {
+        const output = createAssistantMessageEventStream();
+        const message: AssistantMessage = {
+            role: 'assistant',
+            content: [{ type: 'toolCall', id: `stage-${Math.random()}`, name: 'run_next_analysis_stage', arguments: {} }],
+            api: model.api, provider: model.provider, model: model.id,
+            usage, stopReason: 'toolUse', timestamp: Date.now(),
+        };
+        output.push({ type: 'start', partial: message });
+        output.push({ type: 'done', reason: 'toolUse', message });
+        return output;
+    };
+
+    it('stops the whole initial analysis when the user cancels', async () => {
+        stageMock.mockImplementation(({ context }) => new Promise((_resolve, reject) => {
+            context.signal.addEventListener('abort', () => reject(context.signal.reason), { once: true });
+            setTimeout(() => cancelPiInitialAnalysis('session-1'), 0);
+        }));
+        const store = createStore();
+        const outcome = await runPiInitialAnalysis({
+            appSessionId: 'session-1', datasetId: 'dataset-1', datasetVersion: 'version-1',
+            researchGoal: 'Find patterns.', provider: { provider: 'openai', modelId: 'gpt-5.4-mini' },
+        }, store as never, stageToolStream());
+
+        expect(outcome.status).toBe('cancelled');
+        expect(store.getState().initialAnalysisStatus).toBe('paused');
+        expect(cancelPiInitialAnalysis('session-1')).toBe(false);
+    });
+
+    it('reports the real row count of the working dataset with each stage', async () => {
+        stageMock.mockImplementation(async ({ toolName, phase, context }) => ({
+            decision: 'pass', phase, toolName, datasetVersion: context.request.datasetVersion,
+            summary: 'ok', warningCodes: [], artifactRefs: [], transformationIds: [], cardIds: [],
+        }));
+        const store = createStore();
+        await runPiInitialAnalysis({
+            appSessionId: 'session-1', datasetId: 'dataset-1', datasetVersion: 'version-1',
+            researchGoal: 'Find patterns.', provider: { provider: 'openai', modelId: 'gpt-5.4-mini' },
+        }, store as never, stageToolStream());
+
+        expect(updateAgentTaskStatus).toHaveBeenCalledWith(expect.anything(),
+            expect.objectContaining({ currentStep: 1, rowCount: 1 }));
+    });
+
+    it('restores a saved research plan when a run resumes from its checkpoint', async () => {
+        stageMock.mockImplementation(async ({ toolName, phase, context }) => ({
+            decision: 'pass', phase, toolName, datasetVersion: context.request.datasetVersion,
+            summary: 'ok', warningCodes: [], artifactRefs: [], transformationIds: [], cardIds: [],
+        }));
+        const store = createStore();
+        store.setState({ confirmedAnalysisGoal: 'Find patterns.' });
+        const version = getCurrentAnalysisDatasetVersion(store.getState());
+        const plan = {
+            datasetVersion: version, consumed: false, rejected: [],
+            questions: [{ title: 'Q', rationale: '', dimension: 'Town', metric: 'Amount', aggregation: 'avg', comparison: null }],
+        };
+        localStorage.setItem('pi-initial-analysis-v1:session-1', JSON.stringify({
+            schemaVersion: 1, sessionId: 'session-1', datasetVersion: version, researchGoal: 'Find patterns.',
+            nextStageIndex: 8, pendingStageIndex: null, committedTransformationIds: [], cardFingerprints: [],
+            warnings: [], researchPlan: plan,
+        }));
+        // Recovery needs a stream; the production stream is not reachable offline, so a failure is fine here.
+        await recoverPiInitialAnalysisIfNeeded(store as never).catch(() => null);
+
+        expect(store.getState().initialAnalysisPlan).toEqual(plan);
     });
 
     it('runs all governed initial-analysis stages in order through the Pi tool loop', async () => {

@@ -4,22 +4,29 @@
  * hypothesis but this re-render is now isolated (~<50ms) instead of
  * triggering a full AnalysisPanel re-render (~2.3s).
  */
-import React, { memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { shallow } from 'zustand/shallow';
 import { useAppStore } from '../../store/useAppStore';
 import { AiTaskStatusBubble } from '../AiTaskStatusBubble';
+import { getTranslation } from '../../utils/localization';
 
 export const AnalysisStatusSection: React.FC = memo(() => {
-    const { aiTaskStatus, hasCards, hasFinalSummary, activeResearchRun, requestActiveResearchCancellation } = useAppStore(
+    const { aiTaskStatus, hasCards, hasFinalSummary, activeResearchRun, requestActiveResearchCancellation, initialRunning, requestInitialAnalysisCancellation, language } = useAppStore(
         state => ({
             aiTaskStatus: state.aiTaskStatus,
             hasCards: state.analysisCards.length > 0,
             hasFinalSummary: !!state.finalSummary,
             activeResearchRun: state.activeAnalysisSession,
             requestActiveResearchCancellation: state.requestActiveResearchCancellation,
+            initialRunning: state.initialAnalysisStatus === 'running',
+            requestInitialAnalysisCancellation: state.requestInitialAnalysisCancellation,
+            language: state.settings.language,
         }),
         shallow,
     );
+
+    const [stopping, setStopping] = useState(false);
+    useEffect(() => { if (!initialRunning) setStopping(false); }, [initialRunning]);
 
     if (!aiTaskStatus) return null;
     // A finished status line only repeats what the results below already show.
@@ -31,7 +38,19 @@ export const AnalysisStatusSection: React.FC = memo(() => {
                 task={aiTaskStatus}
                 variant={!hasCards && !hasFinalSummary ? 'default' : 'compact'}
             />
-            {activeResearchRun?.status === 'running' && (
+            {initialRunning && (
+                <div className="flex justify-end">
+                    <button
+                        type="button"
+                        onClick={() => { setStopping(true); requestInitialAnalysisCancellation(); }}
+                        disabled={stopping}
+                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+                    >
+                        {getTranslation(stopping ? 'analysis_stopping' : 'analysis_stop', language)}
+                    </button>
+                </div>
+            )}
+            {!initialRunning && activeResearchRun?.status === 'running' && (
                 <div className="flex justify-end">
                     <button
                         type="button"

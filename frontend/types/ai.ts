@@ -29,6 +29,8 @@ export interface AiTaskStatusMessage {
     microTasks?: MicroTask[];
     totalSteps: number;
     currentStep: number;
+    /** Rows in the dataset the analysis is working on right now; omitted when unknown. */
+    rowCount?: number | null;
     error?: string;
 }
 

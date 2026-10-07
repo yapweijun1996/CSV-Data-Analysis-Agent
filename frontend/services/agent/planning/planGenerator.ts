@@ -1,3 +1,4 @@
+import { buildEvidenceSkillGuidance } from '../skills/evidencePromptSkills';
 import { Output, jsonSchema } from 'ai';
 import { streamGenerateText } from '../../ai/streamGenerateText';
 import { prepareSchemaForProvider } from '../../ai/googleSchemaAdapter';
@@ -601,6 +602,7 @@ export const generateEvidenceQueryPlanWithRetry = async (
             .map(column => column.name),
     };
     let lastError: string | undefined = retryFeedback;
+    const skillGuidance = buildEvidenceSkillGuidance();
     const planningIntentSummary = [
         planningIntent?.preferredGroupBy ? `Preferred groupBy from runtime hypothesis: ${planningIntent.preferredGroupBy}` : '',
         planningIntent?.preferredMetric ? `Preferred metric from runtime hypothesis: ${planningIntent.preferredMetric}` : '',
@@ -637,6 +639,9 @@ export const generateEvidenceQueryPlanWithRetry = async (
                             ...createPlannerSections(columns, plannerDatasetContext, sampleData, learningHints, explorationContext ?? undefined, harnessSummary),
                             ...(planningIntentSummary
                                 ? [createContextSection('runtime_hypothesis_intent', planningIntentSummary, 'high', 'sticky')]
+                                : []),
+                            ...(skillGuidance
+                                ? [createContextSection('analysis_skills', skillGuidance, 'medium', 'sticky')]
                                 : []),
                         ],
                         settings,

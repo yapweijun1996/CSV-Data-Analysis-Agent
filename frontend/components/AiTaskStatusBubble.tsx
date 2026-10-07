@@ -184,6 +184,11 @@ export const AiTaskStatusBubble: React.FC<AiTaskStatusBubbleProps> = ({ task, va
                             total: task.totalSteps,
                         })}
                     </p>
+                    {typeof task.rowCount === 'number' && (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                            {getTranslation('analysis_rows_in_dataset', language, { rows: task.rowCount.toLocaleString() })}
+                        </p>
+                    )}
                 </div>
             )}
 

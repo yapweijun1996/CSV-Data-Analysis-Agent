@@ -133,6 +133,7 @@ export const createAnalysisToolManifests = (columnNames: string[]): ToolManifest
         resultShape: 'Creates a bounded statistical analysis card.',
         isAvailable: requireAnalysisStage,
         validate: args => args?.analysisType ? [] : ['Correlation analysis payload is required.'],
+        capabilities: { piFollowUpCardCreation: true },
     },
     {
         name: 'analysis.pivot_matrix',
@@ -154,7 +155,7 @@ export const createAnalysisToolManifests = (columnNames: string[]): ToolManifest
             'Do NOT send extra fields like `matrixValueColumns` or `pivotColumns` — only use the documented properties: rows, columns, metric, aggregate, title, description, topN, sort.',
         ],
         resultShape: 'Creates a pivot-style analysis card with a matrix artifact and a safe fallback chart.',
-        capabilities: { singleMetricOnly: true, noColumnFilter: true },
+        capabilities: { piFollowUpCardCreation: true, singleMetricOnly: true, noColumnFilter: true },
         isAvailable: requireAnalysisStage,
         validate: (args, context) => {
             const errors: string[] = [];
@@ -222,6 +223,7 @@ export const createAnalysisToolManifests = (columnNames: string[]): ToolManifest
         resultShape: 'Creates a comparison table/card with current, previous, variance, and variance percentage.',
         isAvailable: requireAnalysisStage,
         validate: args => args?.dateColumn ? [] : ['"dateColumn" is required.'],
+        capabilities: { piFollowUpCardCreation: true },
     },
     {
         name: 'analysis.cohort_retention',
@@ -238,6 +240,7 @@ export const createAnalysisToolManifests = (columnNames: string[]): ToolManifest
         resultShape: 'Creates a cohort retention matrix/card or a structured blocking result when required fields are missing.',
         isAvailable: requireAnalysisStage,
         validate: args => args?.timeUnit ? [] : ['"timeUnit" is required.'],
+        capabilities: { piFollowUpCardCreation: true },
     },
     {
         name: 'analysis.root_cause_breakdown',
@@ -254,6 +257,7 @@ export const createAnalysisToolManifests = (columnNames: string[]): ToolManifest
         resultShape: 'Creates a root-cause contribution card and table.',
         isAvailable: requireAnalysisStage,
         validate: args => Array.isArray(args?.dimensionColumns) && args.dimensionColumns.length > 0 ? [] : ['"dimensionColumns" must include at least one dimension.'],
+        capabilities: { piFollowUpCardCreation: true },
     },
     {
         name: 'card.aggregate_table',

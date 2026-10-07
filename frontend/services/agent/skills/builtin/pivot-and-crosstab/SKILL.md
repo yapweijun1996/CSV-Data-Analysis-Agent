@@ -12,6 +12,6 @@ Use a pivot when the user wants two dimensions side by side (for example region 
 3. Keep the matrix readable: limit to the most important rows or columns, and sort by the measure.
 4. Say what the matrix shows in one sentence, then call out the largest cell, the strongest row or column, and any empty pattern worth attention.
 
-How to build it with the tools you have: if `analysis_pivot_matrix` is available, use it with `rows`, optional `columns`, one `metric` and an `aggregate`. Otherwise run `data_query` with `groupBy` on both dimensions and one aggregate, then present the returned rows as a small matrix in your answer; when the user wants it as a card, create it with `analysis_create_plan`.
+How to build it with the tools you have: if `analysis_pivot_matrix` is available (it creates a card), use it with `rows`, optional `columns`, one `metric` and an `aggregate`. Otherwise run `data_query` with `groupBy` on both dimensions and one aggregate, then present the returned rows as a small matrix in your answer; when the user wants it as a card, create it with `analysis_create_plan`.
 
 If the data is in wide format (one column per period), reshape or query it first so periods become values, then pivot. Never change the dataset only to produce a pivot; a pivot is an analysis result, not a data edit.

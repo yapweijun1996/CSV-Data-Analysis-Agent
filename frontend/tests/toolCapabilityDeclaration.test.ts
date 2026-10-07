@@ -56,6 +56,21 @@ describe('tool capability declarations', () => {
         });
     });
 
+    it('declares which analysis tools create cards for Pi', () => {
+        const names = manifests
+            .filter(manifest => manifest.capabilities?.piFollowUpCardCreation === true)
+            .map(manifest => manifest.name)
+            .sort();
+
+        expect(names).toEqual([
+            'analysis.cohort_retention',
+            'analysis.correlation',
+            'analysis.period_compare',
+            'analysis.pivot_matrix',
+            'analysis.root_cause_breakdown',
+        ]);
+    });
+
     it('tools without explicit capabilities have undefined capabilities field', () => {
         const manifest = findManifest('data.keep_wide');
 

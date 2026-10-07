@@ -60,6 +60,7 @@ export interface IAgentSlice {
     requestActiveTurnCancellation: () => void;
     clearActiveTurnCancellation: () => void;
     requestActiveResearchCancellation: () => void;
+    requestInitialAnalysisCancellation: () => void;
     setAiTaskStatus: (status: AiTaskStatusMessage | null) => void;
     setAgentMemoryRun: (run: AgentMemoryRun | null) => void;
     setLiveAgentMemoryRun: (run: AgentMemoryRun | null) => void;
@@ -250,6 +251,12 @@ export const createAgentSlice: StateCreator<AppStore, [], [], IAgentSlice> = (se
                 explanation: 'The current operation may finish, but no later research question will start.',
             },
         });
+    },
+    requestInitialAnalysisCancellation: async () => {
+        const { cancelPiInitialAnalysis } = await import(
+            '../../services/agent/runtime/pi/piInitialAnalysisRuntimeService'
+        );
+        cancelPiInitialAnalysis(get().sessionId);
     },
     logAgentToolUsage: (entryInput) => {
         const activeTurn = get().activeTurn;
