@@ -493,3 +493,7 @@
 ## 2026-10-03 piBrowserLab flaky test root cause
 
 - `tests/piBrowserLab.test.tsx` failed intermittently in the full suite because the dialog dynamically imports `piBrowserAgent` on click and testing-library's default 1 s `waitFor` timeout is too short for a cold module load under CPU contention. Reproduced 4/4 under artificial CPU load ("Unable to find a label with the text of: Pi answer" after ~1.5–2.4 s); no app bug. The wait now allows 10 s; 4/4 passes under the same load. Test-only change, no deployment regeneration needed.
+
+## 2026-10-07 Import card "View technical details" button layout
+
+- `FileUpload.tsx` (importing state): the button wrapped to three lines and was squeezed into an oval beside the privacy note. The button is now `shrink-0 whitespace-nowrap` and the note takes `min-w-0 flex-1`, so the label stays on one line. Layout-only change; root deployment not regenerated yet (needs `npm run publish:root` with installed deps).
