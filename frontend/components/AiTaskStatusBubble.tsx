@@ -143,6 +143,35 @@ export const AiTaskStatusBubble: React.FC<AiTaskStatusBubbleProps> = ({ task, va
                 </div>
             </div>
 
+            {task.totalSteps > 1 && task.status !== 'done' && task.status !== 'error' && (
+                <div className="mb-3">
+                    <div
+                        className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-slate-100"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={task.totalSteps}
+                        aria-valuenow={Math.max(0, task.currentStep - 1)}
+                        aria-label={title}
+                    >
+                        {Array.from({ length: task.totalSteps }, (_, index) => (
+                            <span
+                                key={index}
+                                className={`h-full flex-1 ${
+                                    index < task.currentStep - 1 ? 'bg-blue-600'
+                                        : index === task.currentStep - 1 ? 'animate-pulse bg-blue-400' : 'bg-transparent'
+                                }`}
+                            />
+                        ))}
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-500">
+                        {getTranslation('analysis_progress_caption', language, {
+                            done: Math.max(0, task.currentStep - 1),
+                            total: task.totalSteps,
+                        })}
+                    </p>
+                </div>
+            )}
+
             {task.microTasks && task.microTasks.length > 0 && (
                 <div className="space-y-2 border-t border-slate-200 pt-4 text-sm">
                     {task.microTasks.map((microTask) => (

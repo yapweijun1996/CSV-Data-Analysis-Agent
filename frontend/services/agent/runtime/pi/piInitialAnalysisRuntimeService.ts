@@ -142,8 +142,10 @@ const run = async (
             const state = store.getState();
             updateAgentTaskStatus(store, {
                 status: 'acting',
-                title: 'Running automatic analysis',
-                subtitle: stage.description,
+                // User-facing copy; the technical stage description stays in the tool manifest.
+                title: 'Analysing your data',
+                titleKey: `analysis_initial_stage_${stageIndex + 1}_title`,
+                subtitleKey: `analysis_initial_stage_${stageIndex + 1}_desc`,
                 totalSteps: STAGES.length,
                 currentStep: stageIndex + 1,
             });

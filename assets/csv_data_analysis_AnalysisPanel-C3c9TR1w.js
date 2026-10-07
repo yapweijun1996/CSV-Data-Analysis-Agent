@@ -1,16 +1,16 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports, r as reactDomExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-CFteQh4H.js";
-import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as getBarChartReadabilityHints, aX as PIVOT_FOLDED_OTHERS_KEY, aY as collectOrderedColumnNames, aZ as getNumericColumns, a_ as getAnalysisColumnLabels, a$ as coerceNumericValue, b0 as formatAnalysisCellValue, b1 as isProviderConfigured, b2 as createProviderModel, b3 as resolveCardTrustDecision, b4 as getLocalizedText, b5 as evaluateChartPresentation, b6 as getAvailableChartTypes, b7 as isTimeLikeDimensionColumn, b8 as buildStackedPivotChartPlan, b9 as getPivotCardQualitySummary, ba as normalizeDisplayLabel, bb as isUsableReportTitle, bc as isLatestReportPartial, bd as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, be as resolveAnalysisCompletionGate, bf as buildDisplayAnalysisIr, bg as DEFAULT_AUTO_ANALYSIS_GOAL, bh as buildExecutiveKpis, bi as resolveEffectiveReportContext, bj as shouldShowDataWarnings, bk as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-uM1bfOJt.js";
-import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-Pvi3iTjw.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-DFp1XitY.js";
+import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as getBarChartReadabilityHints, aX as PIVOT_FOLDED_OTHERS_KEY, aY as collectOrderedColumnNames, aZ as getNumericColumns, a_ as getAnalysisColumnLabels, a$ as coerceNumericValue, b0 as formatAnalysisCellValue, b1 as isProviderConfigured, b2 as createProviderModel, b3 as resolveCardTrustDecision, b4 as getLocalizedText, b5 as evaluateChartPresentation, b6 as getAvailableChartTypes, b7 as isTimeLikeDimensionColumn, b8 as buildStackedPivotChartPlan, b9 as getPivotCardQualitySummary, ba as normalizeDisplayLabel, bb as isUsableReportTitle, bc as isLatestReportPartial, bd as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, be as resolveAnalysisCompletionGate, bf as buildDisplayAnalysisIr, bg as DEFAULT_AUTO_ANALYSIS_GOAL, bh as buildExecutiveKpis, bi as resolveEffectiveReportContext, bj as shouldShowDataWarnings, bk as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-CNQ3PHgm.js";
+import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-Be8kubB_.js";
 import { C as Chart, p as plugin, a as plugin$1, M as Masonry } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import { e as exportToHtml, a as exportToCsv, b as exportToPng } from "./csv_data_analysis_exportUtils-DfKSpD2m.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
-import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-CdgitqSX.js";
-import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-hjw2bizQ.js";
+import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-B164gXNz.js";
+import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-C5nBGh8y.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
-import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-BxRorTzv.js";
+import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-DQ8SU6Dv.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
 import "./csv_data_analysis_vendor-ai-google-Brpu0J-t.js";
@@ -108,7 +108,6 @@ const DataQualityWarningsComponent = () => {
       language: state.settings.language
     };
   }, shallow$1);
-  const [showTechnical, setShowTechnical] = reactExports.useState(false);
   const warningMessages = Array.isArray(dataWarnings) ? dataWarnings : [];
   const intakeWarningMessages = intakeWarnings.map((warning) => warning.message);
   const hasWarnings = warningMessages.length > 0 || intakeWarningMessages.length > 0;
@@ -116,32 +115,25 @@ const DataQualityWarningsComponent = () => {
   const endUserResult = warningMessages.length > 0 ? summarizeDataQualityForEndUser(warningMessages) : null;
   const userSummary = (endUserResult == null ? void 0 : endUserResult.userSummary) ?? getTranslation("data_warnings_intake_reported", language, { count: intakeWarningMessages.length });
   const technicalDetail = (endUserResult == null ? void 0 : endUserResult.technicalDetail) ?? null;
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "bg-amber-50 border border-amber-200 rounded-card p-4 shadow-sm", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center mb-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(IconWarning, { className: "text-amber-600 w-5 h-5 mr-2" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-amber-800 font-semibold text-sm uppercase tracking-wide", children: getTranslation("data_warnings_title", language) })
+  const noteCount = warningMessages.length > 0 ? warningMessages.length : intakeWarningMessages.length;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("details", { className: "group rounded-card border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("summary", { className: "flex cursor-pointer list-none items-center gap-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(IconWarning, { className: "h-4 w-4 shrink-0 text-amber-500" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "min-w-0 flex-1", children: getTranslation("data_warnings_compact_summary", language, { count: noteCount }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 text-xs font-medium text-slate-500 underline-offset-2 group-open:hidden group-hover:underline", children: getTranslation("data_warnings_view_notes", language) })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-amber-800", children: userSummary }),
-    intakeWarningMessages.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 rounded-md border border-amber-200 bg-white/50 p-3", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold uppercase tracking-wide text-amber-700", children: getTranslation("data_warnings_intake_label", language) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "mt-2 space-y-1 text-xs text-amber-800", children: intakeWarningMessages.slice(0, 3).map((message) => /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
-        "- ",
-        message
-      ] }, message)) })
-    ] }),
-    technicalDetail && /* @__PURE__ */ jsxRuntimeExports.jsxs(
-      "details",
-      {
-        open: showTechnical,
-        onToggle: (e) => setShowTechnical(e.target.open),
-        className: "mt-2",
-        children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("summary", { className: "cursor-pointer text-xs font-medium text-amber-600 hover:text-amber-800", children: getTranslation("data_warnings_technical_toggle", language) }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 rounded-md bg-white/50 p-2 text-xs text-amber-700 font-mono", children: technicalDetail })
-        ]
-      }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-2 text-xs text-amber-700", children: getTranslation("data_warnings_footer", language) })
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-2 space-y-2 border-t border-slate-200 pt-2 text-xs text-slate-600", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: userSummary }),
+      intakeWarningMessages.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-semibold text-slate-700", children: getTranslation("data_warnings_intake_label", language) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "mt-1 space-y-1", children: intakeWarningMessages.slice(0, 3).map((message) => /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { children: [
+          "- ",
+          message
+        ] }, message)) })
+      ] }),
+      technicalDetail && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "rounded-md bg-white p-2 font-mono text-slate-500", children: technicalDetail }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-slate-500", children: getTranslation("data_warnings_footer", language) })
+    ] })
   ] });
 };
 const DataQualityWarnings = We.memo(DataQualityWarningsComponent);
@@ -3857,6 +3849,33 @@ const AnalysisStatusSection = reactExports.memo(() => {
   ] });
 });
 AnalysisStatusSection.displayName = "AnalysisStatusSection";
+const Bar = ({ className }) => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `animate-pulse rounded bg-slate-200 ${className}` });
+const AnalysisResultsSkeleton = ({ language }) => /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "space-y-4", "aria-hidden": "true", "data-analysis-results-skeleton": "true", children: [
+  /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-card border border-slate-200 bg-white p-4", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400", children: getTranslation("analysis_skeleton_summary", language) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 space-y-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Bar, { className: "h-3 w-5/6" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Bar, { className: "h-3 w-4/6" })
+    ] })
+  ] }),
+  /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-card border border-slate-200 bg-white p-4", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400", children: getTranslation("analysis_skeleton_findings", language) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 grid gap-3 sm:grid-cols-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Bar, { className: "h-16" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Bar, { className: "h-16" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Bar, { className: "h-16" })
+    ] })
+  ] }),
+  /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-card border border-slate-200 bg-white p-4", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400", children: getTranslation("analysis_skeleton_charts", language) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Bar, { className: "h-40" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Bar, { className: "h-40" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Bar, { className: "hidden h-40 xl:block" })
+    ] })
+  ] }),
+  /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-center text-xs text-slate-400", children: getTranslation("analysis_skeleton_hint", language) })
+] });
 const statusStyle = {
   running: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
@@ -5008,6 +5027,7 @@ const AnalysisPanelComponent = () => {
     const showReportHeader = Boolean(reportContext && csvData);
     const analysisTerminal = initialAnalysisStatus === "ready" || initialAnalysisStatus === "degraded" || initialAnalysisStatus === "error";
     const analysisComplete = analysisTerminal && completionGate.status === "complete";
+    const analysisRunning = !analysisTerminal && cards.length === 0 && !aiTaskDone;
     const needsStructureRepair = completionGate.status === "blocked" && (pipelineOutcome == null ? void 0 : pipelineOutcome.status) === "needs_structure_review" && (reportStructureResolution == null ? void 0 : reportStructureResolution.requiresHumanReview) === true;
     const needsProviderRecovery = !needsStructureRepair && initialAnalysisFailureKind === "provider" && (initialAnalysisStatus === "error" || initialAnalysisStatus === "degraded");
     const needsEvidenceReview = completionGate.status === "blocked" && !needsStructureRepair && !needsProviderRecovery;
@@ -5017,9 +5037,9 @@ const AnalysisPanelComponent = () => {
     const isSimpleReportBlocked = Boolean(reportBlockedInfo) && !hasLatestAnalystReport && !isGeneratingReport;
     const reportProgressLabel = isArtifactReportGeneration && reportGenerationProgress ? `${reportGenerationProgress.completed}/${reportGenerationProgress.total}` : null;
     const largeDatasetBacking = (_c = canonicalCsvData ?? csvData) == null ? void 0 : _c.backing;
-    const largeDatasetNotice = (largeDatasetBacking == null ? void 0 : largeDatasetBacking.mode) === "duckdb_file" ? /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-card border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950", role: "status", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-semibold", children: getTranslation("large_dataset_mode_title", language) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1", children: getTranslation("large_dataset_mode_body", language, {
+    const largeDatasetNotice = (largeDatasetBacking == null ? void 0 : largeDatasetBacking.mode) === "duckdb_file" ? /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "rounded-card border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700", role: "status", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-semibold text-slate-900", children: getTranslation("large_dataset_mode_title", language) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-slate-600", children: getTranslation("large_dataset_mode_body", language, {
         totalRows: largeDatasetBacking.rowCount.toLocaleString(),
         sampleRows: largeDatasetBacking.sampleRowCount.toLocaleString()
       }) })
@@ -5063,7 +5083,7 @@ const AnalysisPanelComponent = () => {
     }
     console.log(`[Perf:Diag] AnalysisPanel render: ${Math.round(performance.now() - _renderT0)}ms | cards=${cards.length}`);
     return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "analysis-results-section", className: "scroll-mt-6 space-y-4", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "flex flex-col gap-3 rounded-card border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between", "aria-label": getTranslation("analysis_results_view_label", language), children: [
+      !analysisRunning && /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "flex flex-col gap-3 rounded-card border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between", "aria-label": getTranslation("analysis_results_view_label", language), children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-semibold uppercase tracking-[0.18em] text-slate-500", children: getTranslation("analysis_results_view_label", language) }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-sm text-slate-600", children: getTranslation(
@@ -5100,6 +5120,7 @@ const AnalysisPanelComponent = () => {
         }
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsx(AnalysisStatusSection, {}),
+      analysisRunning && /* @__PURE__ */ jsxRuntimeExports.jsx(AnalysisResultsSkeleton, { language }),
       resultsViewMode === "explore" && (latestAnalysisSession == null ? void 0 : latestAnalysisSession.researchBrief) && /* @__PURE__ */ jsxRuntimeExports.jsx(ResearchRunSummary, { session: latestAnalysisSession }),
       showHeadlineSections && credibilitySummary && /* @__PURE__ */ jsxRuntimeExports.jsx(
         CredibilityBanner,
