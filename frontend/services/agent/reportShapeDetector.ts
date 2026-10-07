@@ -48,7 +48,21 @@ const PARSER_HEADER_ROW_INDEX = -1;
 // ISO-style "YYYY-MM" period labels (e.g. "2010-01") carry no month name at
 // all, so they need their own alternative; the year is anchored to 19xx/20xx
 // and the month to 01-12 to avoid matching arbitrary dash-separated numbers.
-const SERIES_HEADER_PATTERN = /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|fy\d{2,4}|q[1-4]|corp_|corp\b|ec\b|re\b|project\b|office\b|capex\b)\b|\b(?:19|20)\d{2}-(?:0[1-9]|1[0-2])\b/i;
+const SERIES_HEADER_PATTERN = /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|fy\d{2,4}|q[1-4])\b|\b(?:19|20)\d{2}-(?:0[1-9]|1[0-2])\b/i;
+
+// A report's series columns (entities, cost centres, scenarios) have no common name pattern, but
+// they do share a structure: below the header they hold numbers. This verifies that from the
+// values instead of guessing from header words.
+const SERIES_VALUE_SAMPLE_ROWS = 300;
+const MIN_SERIES_NUMERIC_VALUES = 3;
+const MIN_SERIES_NUMERIC_RATIO = 0.7;
+const isNumericDominantColumn = (data: CsvData, column: string): boolean => {
+    const values = getRows(data).slice(0, SERIES_VALUE_SAMPLE_ROWS)
+        .map(row => String(row[column] ?? '').trim().replace(/^\((.*)\)$/, '-$1'))
+        .filter(Boolean);
+    if (values.length < MIN_SERIES_NUMERIC_VALUES) return false;
+    return values.filter(value => isNumericLike(value)).length / values.length >= MIN_SERIES_NUMERIC_RATIO;
+};
 
 const buildParserMetadataBands = (data: CsvData | null): HeaderBandCandidate[] => {
     if (!data) return [];
@@ -107,7 +121,7 @@ const buildExplicitHeaderLayoutCandidate = (
     const detailSeriesColumns = columns.filter(column => {
         const normalized = column.toLowerCase();
         if (descriptorColumnSet.has(normalized) || summarySet.has(normalized)) return false;
-        return isCodeLike(column) || SERIES_HEADER_PATTERN.test(column);
+        return isCodeLike(column) || SERIES_HEADER_PATTERN.test(column) || isNumericDominantColumn(data, column);
     });
     if (detailSeriesColumns.length < 4) return null;
     const detailSeriesCodeLikeRatio = detailSeriesColumns.filter(column => isCodeLike(column)).length / detailSeriesColumns.length;
