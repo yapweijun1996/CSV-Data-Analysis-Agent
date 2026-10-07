@@ -7,6 +7,7 @@ import { getPreferredAnalysisDataset } from '../../reportStructureState';
 import type { StoreApi } from '../../types';
 import { getQueryableColumnProfiles } from '../analysisContextBuilder';
 import { buildBuiltinToolRegistry } from '../../tools/toolRegistry';
+import { createPiSkillTool } from './piSkillTool';
 
 export const PI_MAX_TOOL_CALLS_PER_TURN = 3;
 
@@ -15,7 +16,7 @@ const MAX_TOOL_RESULT_CHARS = 6_000;
 export const createPiAppTools = (
     store: StoreApi,
     datasetVersion: string | null,
-    options: { allowCardCreation?: boolean; maxToolCalls?: number; onCardCreated?: (cardId: string) => void } = {},
+    options: { allowCardCreation?: boolean; maxToolCalls?: number; onCardCreated?: (cardId: string) => void; includeSkills?: boolean } = {},
 ): AgentTool[] => {
     let calls = 0;
     const maxToolCalls = options.maxToolCalls ?? PI_MAX_TOOL_CALLS_PER_TURN;
@@ -32,7 +33,7 @@ export const createPiAppTools = (
         || (options.allowCardCreation && manifest.name === 'analysis.create_plan')
         || (manifest.name === 'data.mutate'
             && manifest.capabilities?.piFollowUpMutation === true));
-    return manifests.map((manifest: ToolManifest): AgentTool => ({
+    const manifestTools = manifests.map((manifest: ToolManifest): AgentTool => ({
         name: manifest.name.replace(/[^a-zA-Z0-9_-]/g, '_'),
         label: manifest.name,
         description: [manifest.description, ...(manifest.promptHints ?? [])].join(' ').slice(0, 4_000),
@@ -79,4 +80,6 @@ export const createPiAppTools = (
             return { details: undefined, content: [{ type: 'text', text: payload }] };
         },
     }));
+    // Skills are guidance, not data tools, so loading one does not use the app-tool budget.
+    return options.includeSkills === false ? manifestTools : [...manifestTools, createPiSkillTool(store)];
 };

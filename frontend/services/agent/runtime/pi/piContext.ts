@@ -1,4 +1,6 @@
 /** Project bounded app evidence into the browser Pi turn prompt. */
+import { resolveAvailableSkills } from '../../skills/skillRegistry';
+import { buildSkillsPromptSection } from '../../skills/skillsPrompt';
 import { resolveCardTrustDecision } from '../../cardTrustDecision';
 import type { StoreApi } from '../../types';
 import { getCsvDataRowCount } from '../../../../utils/datasetId';
@@ -175,5 +177,6 @@ export const createPiFollowUpSystemPrompt = (
         buildSystemPrompt(state.settings.language, compactedContext, requestContext.allowCardCreation ?? false, requestContext.cardTarget ?? 1),
         `Current goal: ${state.confirmedAnalysisGoal ?? 'Answer the current follow-up accurately.'}`,
         `Recent turns:\n${formatRecentTurns(state)}`,
-    ].join('\n\n');
+        buildSkillsPromptSection(resolveAvailableSkills(state.workspaceFiles).skills),
+    ].filter(Boolean).join('\n\n');
 };

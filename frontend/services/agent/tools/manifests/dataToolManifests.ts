@@ -113,6 +113,7 @@ export const createDataToolManifests = (): ToolManifest[] => [
             'Returns top-N values with counts. Default limit is 20.',
         ],
         resultShape: 'Shows value frequency table in the data explorer.',
+        capabilities: { readOnly: true, piFollowUpReadOnly: true },
         isAvailable: requireDataset,
     },
     {
@@ -128,6 +129,7 @@ export const createDataToolManifests = (): ToolManifest[] => [
             'Returns rows where the value falls outside Q1-1.5*IQR or Q3+1.5*IQR, plus fence statistics.',
         ],
         resultShape: 'Shows outlier rows and IQR statistics in the data explorer.',
+        capabilities: { readOnly: true, piFollowUpReadOnly: true },
         isAvailable: requireDataset,
     },
     {
@@ -143,6 +145,7 @@ export const createDataToolManifests = (): ToolManifest[] => [
             'Returns null/blank/zero rates per column with severity classification.',
         ],
         resultShape: 'Shows missing data profile in the data explorer.',
+        capabilities: { readOnly: true, piFollowUpReadOnly: true },
         isAvailable: requireDataset,
     },
     {
