@@ -82,4 +82,11 @@ describe('PwaStatusBanner', () => {
         expect(screen.getByRole('status')).toHaveTextContent('History');
         expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
+
+    it('stays out of the way while an update is being applied (the header button shows progress)', () => {
+        pwaState.status = 'applying_update';
+        const { container } = render(<PwaStatusBanner />);
+
+        expect(container).toBeEmptyDOMElement();
+    });
 });

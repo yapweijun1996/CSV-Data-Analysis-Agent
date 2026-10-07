@@ -181,6 +181,10 @@ export const AppHeader: React.FC = () => {
                        <span className="hidden lg:inline">{getTranslation('header_new', language)}</span>
                     </button>
                 )}
+                <PwaUpdateButton
+                    className={`${primaryButtonClass} border border-transparent text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700`}
+                    language={language}
+                />
                 {showHistoryButton && (
                     <button
                         onClick={onOpenHistory}
@@ -288,10 +292,6 @@ export const AppHeader: React.FC = () => {
                         <span className="hidden lg:inline">{getTranslation('assistant', language)}</span>
                     </button>
                 )}
-                <PwaUpdateButton
-                    className={`${primaryButtonClass} ml-1 border border-transparent text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700`}
-                    language={language}
-                />
             </nav>
         </header>
         {isNewSessionConfirmOpen && createPortal(

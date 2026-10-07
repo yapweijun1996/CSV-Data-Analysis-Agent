@@ -1,8 +1,8 @@
 import { j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { u as useAppStore, a as IconWarning, j as IconCheck } from "./csv_data_analysis_index-SD-V1-4F.js";
+import { u as useAppStore, a as IconWarning, j as IconCheck } from "./csv_data_analysis_index-Be8kubB_.js";
 import { I as IconSearch } from "./csv_data_analysis_IconSearch-j9OYkQx7.js";
 import { a as IconSettings, I as IconThinking } from "./csv_data_analysis_IconSettings-FS0PVK9T.js";
-import { U as getTranslation } from "./csv_data_analysis_app-agent-uM1bfOJt.js";
+import { U as getTranslation } from "./csv_data_analysis_app-agent-CNQ3PHgm.js";
 const IconWrapper = ({ children, colorClass }) => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`, children });
 const ThinkingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-blue-100 text-blue-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconThinking, { className: "h-5 w-5" }) });
 const ExecutingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-indigo-100 text-indigo-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconSettings, { className: "h-5 w-5", "aria-hidden": "true" }) });
@@ -89,6 +89,30 @@ const AiTaskStatusBubble = ({ task, variant = "default" }) => {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-slate-500", children: subtitle })
       ] })
+    ] }),
+    task.totalSteps > 1 && task.status !== "done" && task.status !== "error" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "div",
+        {
+          className: "flex h-2 gap-0.5 overflow-hidden rounded-full bg-slate-100",
+          role: "progressbar",
+          "aria-valuemin": 0,
+          "aria-valuemax": task.totalSteps,
+          "aria-valuenow": Math.max(0, task.currentStep - 1),
+          "aria-label": title,
+          children: Array.from({ length: task.totalSteps }, (_, index) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "span",
+            {
+              className: `h-full flex-1 ${index < task.currentStep - 1 ? "bg-blue-600" : index === task.currentStep - 1 ? "animate-pulse bg-blue-400" : "bg-transparent"}`
+            },
+            index
+          ))
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1.5 text-xs text-slate-500", children: getTranslation("analysis_progress_caption", language, {
+        done: Math.max(0, task.currentStep - 1),
+        total: task.totalSteps
+      }) })
     ] }),
     task.microTasks && task.microTasks.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-2 border-t border-slate-200 pt-4 text-sm", children: task.microTasks.map((microTask) => /* @__PURE__ */ jsxRuntimeExports.jsx(MicroTaskStep, { task: microTask }, microTask.name)) }),
     task.status === "error" && task.error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("details", { children: [

@@ -6,6 +6,7 @@ import { useAppStore, AppStore } from '../store/useAppStore';
 import { DataQualityWarnings } from './DataQualityWarnings';
 import { AnalysisCardGrid } from './analysis-panel/AnalysisCardGrid';
 import { AnalysisStatusSection } from './analysis-panel/AnalysisStatusSection';
+import { AnalysisResultsSkeleton } from './analysis-panel/AnalysisResultsSkeleton';
 import { ResearchRunSummary } from './analysis-panel/ResearchRunSummary';
 import { CleaningRunBanner } from './cleaning/CleaningRunBanner';
 import { ExecutiveKpiRow } from './dashboard/ExecutiveKpiRow';
@@ -418,6 +419,8 @@ const AnalysisPanelComponent: React.FC = () => {
             || initialAnalysisStatus === 'degraded'
             || initialAnalysisStatus === 'error';
         const analysisComplete = analysisTerminal && completionGate.status === 'complete';
+        // Nothing to show yet: hide the results controls and reserve the space with placeholders.
+        const analysisRunning = !analysisTerminal && cards.length === 0 && !aiTaskDone;
         const needsStructureRepair = completionGate.status === 'blocked'
             && pipelineOutcome?.status === 'needs_structure_review'
             && reportStructureResolution?.requiresHumanReview === true;
@@ -437,9 +440,9 @@ const AnalysisPanelComponent: React.FC = () => {
             : null;
         const largeDatasetBacking = (canonicalCsvData ?? csvData)?.backing;
         const largeDatasetNotice = largeDatasetBacking?.mode === 'duckdb_file' ? (
-            <section className="rounded-card border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" role="status">
-                <p className="font-semibold">{getTranslation('large_dataset_mode_title', language)}</p>
-                <p className="mt-1">
+            <section className="rounded-card border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700" role="status">
+                <p className="font-semibold text-slate-900">{getTranslation('large_dataset_mode_title', language)}</p>
+                <p className="mt-0.5 text-slate-600">
                     {getTranslation('large_dataset_mode_body', language, {
                         totalRows: largeDatasetBacking.rowCount.toLocaleString(),
                         sampleRows: largeDatasetBacking.sampleRowCount.toLocaleString(),
@@ -509,6 +512,7 @@ const AnalysisPanelComponent: React.FC = () => {
         return (
             <>
                 <div id="analysis-results-section" className="scroll-mt-6 space-y-4">
+                    {!analysisRunning && (
                     <section className="flex flex-col gap-3 rounded-card border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between" aria-label={getTranslation('analysis_results_view_label', language)}>
                         <div className="min-w-0">
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -546,6 +550,7 @@ const AnalysisPanelComponent: React.FC = () => {
                             ))}
                         </div>
                     </section>
+                    )}
 
                     {largeDatasetNotice}
 
@@ -564,6 +569,7 @@ const AnalysisPanelComponent: React.FC = () => {
 
                     {/* 2. AI task progress — PERF-303: isolated subscription */}
                     <AnalysisStatusSection />
+                    {analysisRunning && <AnalysisResultsSkeleton language={language} />}
                     {resultsViewMode === 'explore' && latestAnalysisSession?.researchBrief && (
                         <ResearchRunSummary session={latestAnalysisSession} />
                     )}
