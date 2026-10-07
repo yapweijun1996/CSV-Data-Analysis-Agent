@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ReportHeader } from '../components/dashboard/ReportHeader';
 import { AiTaskStatusBubble } from '../components/AiTaskStatusBubble';
 import { vi } from 'vitest';
+import { isSchemaDerivedReportTitle } from '../services/agent/reportContext';
 
 vi.mock('../store/useAppStore', () => ({
     useAppStore: (selector: (state: unknown) => unknown) => selector({ settings: { language: 'English' } }),
@@ -53,5 +54,41 @@ describe('compact dataset header and named step track', () => {
         expect(labels[0]).toBe('✓ Structure');
         expect(labels[3]).toBe('Prepare');
         expect(labels[8]).toBe('Results');
+    });
+
+    it('shows the file name when the title is only the column names', () => {
+        const { container } = render(<ReportHeader
+            {...baseProps}
+            fileName="mid.csv"
+            effectiveReportContext={{ reportTitle: 'month town flat_type resale_price', reportDescription: null, parameterLines: [] } as never}
+            columnNames={['month', 'town', 'flat_type', 'resale_price']}
+        />);
+
+        expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('mid.csv');
+        expect(container.textContent).not.toContain('flat_type resale_price');
+    });
+
+    it('keeps a real report title even when a dataset has columns', () => {
+        render(<ReportHeader
+            {...baseProps}
+            effectiveReportContext={{ reportTitle: 'Quarterly Sales Review', reportDescription: null, parameterLines: [] } as never}
+            columnNames={['Region', 'Sales']}
+        />);
+        expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Quarterly Sales Review');
+    });
+});
+
+describe('isSchemaDerivedReportTitle', () => {
+    it('matches joined column names, reordered or partial', () => {
+        expect(isSchemaDerivedReportTitle('Project Amount', ['Project', 'Amount'])).toBe(true);
+        expect(isSchemaDerivedReportTitle('amount project', ['Project', 'Amount', 'Date'])).toBe(true);
+        expect(isSchemaDerivedReportTitle('month town', ['month', 'town', 'flat_type'])).toBe(true);
+    });
+
+    it('does not match real titles, empty input or datasets without columns', () => {
+        expect(isSchemaDerivedReportTitle('HDB Resale Prices', ['month', 'town'])).toBe(false);
+        expect(isSchemaDerivedReportTitle('Region', ['Region', 'Sales'])).toBe(false); // a single word may be a real title
+        expect(isSchemaDerivedReportTitle('', ['a'])).toBe(false);
+        expect(isSchemaDerivedReportTitle('anything here', [])).toBe(false);
     });
 });

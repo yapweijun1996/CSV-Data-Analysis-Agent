@@ -1,8 +1,8 @@
 import { j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { u as useAppStore, a as IconWarning, j as IconCheck } from "./csv_data_analysis_index-BYjCn1Yx.js";
+import { u as useAppStore, a as IconWarning, j as IconCheck } from "./csv_data_analysis_index-5YasT6AW.js";
 import { I as IconSearch } from "./csv_data_analysis_IconSearch-j9OYkQx7.js";
 import { a as IconSettings, I as IconThinking } from "./csv_data_analysis_IconSettings-FS0PVK9T.js";
-import { U as getTranslation } from "./csv_data_analysis_app-agent-BYlUw_Vb.js";
+import { U as getTranslation } from "./csv_data_analysis_app-agent-DEjtVUEI.js";
 const IconWrapper = ({ children, colorClass }) => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`, children });
 const ThinkingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-blue-100 text-blue-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconThinking, { className: "h-5 w-5" }) });
 const ExecutingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-indigo-100 text-indigo-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconSettings, { className: "h-5 w-5", "aria-hidden": "true" }) });

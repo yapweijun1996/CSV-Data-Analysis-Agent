@@ -255,6 +255,27 @@ export const isUsableReportTitle = (value: string | null | undefined): boolean =
     return suspiciousTokenCount / tokens.length < 0.6;
 };
 
+/**
+ * True when a report title is only the dataset's own column names joined
+ * together (the schema fallback used when a file has no title lines). That text
+ * is useful context for the AI but is not a title a person would recognise, so
+ * the UI shows the file name instead.
+ */
+export const isSchemaDerivedReportTitle = (
+    title: string | null | undefined,
+    columnNames: readonly string[],
+): boolean => {
+    const normalizedTitle = normalizeText(title).toLowerCase();
+    if (!normalizedTitle) return false;
+    const columns = columnNames.map(name => normalizeText(name).toLowerCase()).filter(Boolean);
+    if (columns.length === 0) return false;
+    if (normalizedTitle === columns.join(' ')) return true;
+    // The same words in another order or with some columns omitted (unnamed columns are skipped).
+    const columnTokens = new Set(columns.flatMap(name => name.split(/\s+/)));
+    const titleTokens = normalizedTitle.split(/\s+/).filter(Boolean);
+    return titleTokens.length >= 2 && titleTokens.every(token => columnTokens.has(token));
+};
+
 const isLikelyParameterLine = (line: string): boolean => isStructuredParameterLine(line);
 
 const resolveConfidence = (value: unknown): ReportContextConfidence => {

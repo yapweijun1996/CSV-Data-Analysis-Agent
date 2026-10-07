@@ -566,3 +566,10 @@
 - **Observed, not changed**: for a CSV with no title row the report title falls back to the header cells ("month town flat_type resale_price") instead of the file name; this comes from existing title inference in `services/agent/reportContext`.
 - **Still open**: Cancel for the initial analysis, per-stage row counts and sample-versus-full labelling, severity grading of quality notes, header de-cluttering (including whether to keep the version button), typography and max-width.
 - **Checks**: typecheck, lint, full suite passed; root deployment regenerated.
+
+## 2026-10-07 Report title no longer shows the column names
+
+- **Problem**: for a CSV with no title lines the dataset header displayed the column names joined together ("month town flat_type resale_price") as if it were the report title. It comes from the schema fallback in `services/agent/reportContext.ts` (`inferFallbackReportTitle`), which is deliberate and pinned by a test for the AI context.
+- **Decision**: the data/AI context is unchanged (the joined column names remain useful prompt context and the existing test still passes); only what the user sees changes. `isSchemaDerivedReportTitle(title, columnNames)` detects a title made only of the dataset's own column words (joined, reordered or partial; a single word never counts), and `ReportHeader` skips such candidates, so the file name is shown. `AnalysisPanel` passes `columnNames` from the first row of the prepared data.
+- **Limit**: a real title made only of column words (for example "Sales Region" for columns Region and Sales) is treated as schema-derived and replaced by the file name. That is the safer failure.
+- **Verified** in a real browser (Playwright) with a plain 30,000-row CSV: the header shows "mid.csv". Typecheck, lint, full suite passed; root deployment regenerated.
