@@ -480,6 +480,61 @@ describe('Pi production runtime', () => {
         return output;
     };
 
+    const scriptedStageStream = (argsList: Array<Record<string, unknown>>): StreamFn => {
+        let call = 0;
+        return model => {
+            const output = createAssistantMessageEventStream();
+            const args = argsList[Math.min(call, argsList.length - 1)];
+            const message: AssistantMessage = {
+                role: 'assistant',
+                content: [{ type: 'toolCall', id: `stage-${call++}`, name: 'run_next_analysis_stage', arguments: args as never }],
+                api: model.api, provider: model.provider, model: model.id,
+                usage, stopReason: 'toolUse', timestamp: Date.now(),
+            };
+            output.push({ type: 'start', partial: message });
+            output.push({ type: 'done', reason: 'toolUse', message });
+            return output;
+        };
+    };
+    const passingStages = (names: string[]) => stageMock.mockImplementation(async ({ toolName, phase, context }) => {
+        names.push(toolName);
+        return {
+            decision: 'pass', phase, toolName, datasetVersion: context.request.datasetVersion,
+            summary: 'ok', warningCodes: [], artifactRefs: [], transformationIds: [], cardIds: [],
+        };
+    });
+    const runStages = (stream: StreamFn) => runPiInitialAnalysis({
+        appSessionId: 'session-1', datasetId: 'dataset-1', datasetVersion: 'version-1',
+        researchGoal: 'Find patterns.', provider: { provider: 'openai', modelId: 'gpt-5.4-mini' },
+    }, createStore() as never, stream);
+
+    it('lets Pi skip the optional cleaning stages and still completes the run', async () => {
+        const names: string[] = [];
+        passingStages(names);
+        const outcome = await runStages(scriptedStageStream([
+            {}, {}, { stage: 'dataset.validatePreparedData', reason: 'No noise rows and no notes.' }, {},
+        ]));
+
+        expect(outcome.status).toBe('completed');
+        expect(names).not.toContain('dataset.suggestCleaningPlan');
+        expect(names).not.toContain('dataset.applyTransform');
+        expect(names.at(-1)).toBe('analysis.finalizeArtifacts');
+    });
+
+    it('never lets Pi skip a required stage and runs the next one after repeated bad requests', async () => {
+        const names: string[] = [];
+        passingStages(names);
+        const outcome = await runStages(scriptedStageStream([
+            { stage: 'analysis.executeEvidence' }, { stage: 'analysis.executeEvidence' },
+            { stage: 'analysis.executeEvidence' }, {},
+        ]));
+
+        expect(names.slice(0, 2)).toEqual(['dataset.profileStructure', 'dataset.detectNoiseRows'].slice(0, 2));
+        expect(names.indexOf('analysis.executeEvidence')).toBeGreaterThan(names.indexOf('dataset.validatePreparedData'));
+        expect(names.indexOf('dataset.bindQueryEngine')).toBeLessThan(names.indexOf('analysis.executeEvidence'));
+        expect(['completed', 'degraded']).toContain(outcome.status);
+    });
+
     it('stops the whole initial analysis when the user cancels', async () => {
         stageMock.mockImplementation(({ context }) => new Promise((_resolve, reject) => {
             context.signal.addEventListener('abort', () => reject(context.signal.reason), { once: true });
