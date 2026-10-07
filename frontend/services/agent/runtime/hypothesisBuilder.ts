@@ -250,7 +250,8 @@ export const buildHypotheses = (
             grain: inferMentionedValue(topic.topic, datasetContext.preferredGrainColumns ?? semanticUnderstanding.businessGrains) ?? inferMentionedValue(topic.topic, datasetContext.dimensionColumns),
             metric: inferMentionedValue(topic.topic, datasetContext.preferredMetricTerms ?? semanticUnderstanding.candidateMetrics) ?? inferMentionedValue(topic.topic, datasetContext.metricColumns),
             filterIntent: inferMentionedValue(topic.topic, datasetContext.preferredBusinessTerms ?? []),
-            comparisonIntent: /compare|comparison|versus|vs|breakdown|distribution|trend|anomal/i.test(topic.topic) ? topic.topic : null,
+            // Set from a Pi research plan question when one exists; no keyword guess from the topic text.
+            comparisonIntent: null,
             priority: topic.priority,
             attemptsUsed: 0,
             status: 'pending',

@@ -111,10 +111,9 @@ const LOG_PREFIX = '[PlanGenerator]';
 const MAX_ATTEMPTS = 3;
 export const PLAN_GENERATION_TIMEOUT_MS = 30_000;
 
-const PRIMARY_BUSINESS_METRIC_PATTERN = /(^|[\s_\-.])(amount|balance|cost|expense|income|margin|price|profit|revenue|sales|spend|turnover|value)([\s_\-.]|$)/i;
-const SECONDARY_BUSINESS_METRIC_PATTERN = /(^|[\s_\-.])(count|quantity|qty|total|units|volume)([\s_\-.]|$)/i;
-const SUPPORTING_MEASURE_PATTERN = /(^|[\s_\-.])(age|area|date|day|duration|floor|id|lease|month|number|sqm|square|year)([\s_\-.]|$)/i;
-
+// Which numeric column leads the fallback topics. This only runs when AI topic planning failed, so it
+// relies on facts and on the AI's earlier semantic understanding (preferred and candidate metrics),
+// not on words in the column name: a currency-typed column leads, then the semantic ranks.
 const scoreDeterministicMetric = (
     column: ColumnProfile,
     preferredRank: number | undefined,
@@ -122,9 +121,6 @@ const scoreDeterministicMetric = (
 ): number => {
     let score = 0;
     if (column.type === 'currency') score += 80;
-    if (PRIMARY_BUSINESS_METRIC_PATTERN.test(column.name)) score += 70;
-    if (SECONDARY_BUSINESS_METRIC_PATTERN.test(column.name)) score += 25;
-    if (SUPPORTING_MEASURE_PATTERN.test(column.name)) score -= 35;
     if (preferredRank !== undefined) score += Math.max(1, 30 - preferredRank);
     if (metricRank !== undefined) score += Math.max(1, 15 - metricRank);
     return score;
@@ -246,7 +242,7 @@ export const buildDeterministicTopics = (
     }
     const topics = dims.map(dim =>
         dim.name === timeDimension?.name
-            ? `Average ${metric} trend by ${dim.name}`
+            ? `${metric} trend by ${dim.name}`
             : `${metric} by ${dim.name}`);
 
     // When period column families exist (wide-pivot with monthly columns),
@@ -255,7 +251,8 @@ export const buildDeterministicTopics = (
     const periodFamilies = datasetContext.analysisSteering?.periodColumnFamilies;
     if (periodFamilies && periodFamilies.length > 0) {
         const timeDim = dims.find(d => isTimeLikeDimensionColumn(d.name));
-        if (timeDim && !topics.some(t => /\b(trend|over time|monthly)\b/i.test(t))) {
+        // A trend topic already exists exactly when the time dimension is one of the chosen dimensions.
+        if (timeDim && !dims.some(d => d.name === timeDimension?.name)) {
             topics.push(`${metric} monthly trend by ${timeDim.name}`);
         }
     }
@@ -364,27 +361,6 @@ const isTopicDeprioritizedByQualityGovernance = (
     return Array.from(avoidColumns).some(column => topicMentionsColumn(topic, column));
 };
 
-const DECISION_OUTCOME_TOPIC_PATTERN = /(^|[\s_\-.])(amount|balance|cost|expense|income|margin|price|profit|revenue|sales|spend|turnover|value)([\s_\-.]|$)/i;
-const TEMPORAL_ANALYSIS_TOPIC_PATTERN = /(^|[\s_\-.])(change|date|day|month|quarter|trend|week|year)([\s_\-.]|$)/i;
-const MECHANICAL_BREAKDOWN_TOPIC_PATTERN = /\bby\s+(?:uom|curr(?:ency)?|unit\s+of\s+measure)\b/i;
-
-const scoreTopicBusinessValue = (
-    topic: string,
-    datasetContext: AnalysisDatasetContext,
-): number => {
-    let score = 0;
-    if (DECISION_OUTCOME_TOPIC_PATTERN.test(topic)) score += 4;
-    if (TEMPORAL_ANALYSIS_TOPIC_PATTERN.test(topic)) score += 2;
-    if (MECHANICAL_BREAKDOWN_TOPIC_PATTERN.test(topic)) score -= 3;
-
-    const preferredDimensions = [
-        ...(datasetContext.businessGrains ?? []),
-        ...(datasetContext.preferredTimeColumns ?? []),
-    ];
-    if (preferredDimensions.some(column => topicMentionsColumn(topic, column))) score += 2;
-    return score;
-};
-
 const isBlockedAggregateMetric = (
     columnName: string | undefined,
     aggregation: string,
@@ -406,6 +382,11 @@ const isBlockedAggregateMetric = (
 // Context section assembly extracted to planningContextBuilder.ts
 // Evidence plan adaptation extracted to evidencePlanAdapter.ts
 
+/**
+ * The topic AI is asked to list topics from most to least useful, so its order is kept. Code only
+ * removes duplicates and topics on blocked dimensions, and moves topics that touch quality-governed
+ * columns to the end instead of dropping them.
+ */
 export const rankAnalysisTopics = (
     topics: string[],
     datasetContext: AnalysisDatasetContext,
@@ -418,10 +399,7 @@ export const rankAnalysisTopics = (
     .sort((a, b) => {
         const aDeprioritized = isTopicDeprioritizedByQualityGovernance(a.topic, datasetContext) ? 1 : 0;
         const bDeprioritized = isTopicDeprioritizedByQualityGovernance(b.topic, datasetContext) ? 1 : 0;
-        if (aDeprioritized !== bDeprioritized) return aDeprioritized - bDeprioritized;
-        const scoreDifference = scoreTopicBusinessValue(b.topic, datasetContext)
-            - scoreTopicBusinessValue(a.topic, datasetContext);
-        return scoreDifference || a.index - b.index;
+        return aDeprioritized - bDeprioritized || a.index - b.index;
     })
     .map(({ topic }) => topic);
 

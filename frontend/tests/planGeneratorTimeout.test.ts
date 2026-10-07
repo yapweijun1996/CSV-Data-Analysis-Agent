@@ -269,7 +269,7 @@ describe('buildDeterministicTopics', () => {
         expect(topics).toEqual(['NET SALES SGD by CUSTOMER DELIVERY LOCATION']);
     });
 
-    it('prioritizes a primary business value metric over supporting physical measures', () => {
+    it('prioritizes a currency-typed metric over other physical measures', () => {
         const columns: ColumnProfile[] = [
             { name: 'month', type: 'date', uniqueValues: 439 },
             { name: 'town', type: 'categorical', uniqueValues: 27 },
@@ -290,8 +290,24 @@ describe('buildDeterministicTopics', () => {
 
         expect(topics).toEqual([
             'resale_price by town',
-            'Average resale_price trend by month',
+            'resale_price trend by month',
         ]);
+    });
+
+    it('leads with the semantically preferred metric, not the one whose name sounds like money', () => {
+        const columns: ColumnProfile[] = [
+            { name: 'region', type: 'categorical', uniqueValues: 6 },
+            { name: 'sales_index', type: 'numerical', uniqueValues: 50 },
+            { name: 'dwell_minutes', type: 'numerical', uniqueValues: 50 },
+        ];
+        const context: AnalysisDatasetContext = {
+            ...makeDatasetContext(),
+            dimensionColumns: ['region'],
+            metricColumns: ['sales_index', 'dwell_minutes'],
+            preferredMetricTerms: ['dwell_minutes'],
+        };
+
+        expect(buildDeterministicTopics(columns, context)).toEqual(['dwell_minutes by region']);
     });
 });
 

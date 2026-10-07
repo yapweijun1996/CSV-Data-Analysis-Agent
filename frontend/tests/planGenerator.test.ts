@@ -110,36 +110,24 @@ describe('planGenerator topic ranking', () => {
         expect(ranked).toContain('Margin by Customer');
     });
 
-    it('ranks decision-useful customer and trend topics before unit and currency mechanics', () => {
-        const ranked = rankAnalysisTopics(
-            [
-                'Sum Quantity by UOM',
-                'Quantity by UOM and Curr',
-                'Total Sales Amount Base by Customer',
-                'Monthly Sales Amount Base trend by SO Received Date',
-                'Total Profit Amount by Customer',
-            ],
-            {
-                title: 'Sales Order Daily Report',
-                dimensionColumns: ['Customer', 'UOM', 'Curr', 'SO Received Date'],
-                metricColumns: ['Quantity', 'Sales Amount Base', 'Profit Amount'],
-                preferredGrainColumns: ['Customer'],
-                preferredTimeColumns: ['SO Received Date'],
-                businessGrains: ['Customer'],
-                avoidGrainColumns: [],
-                preferredMetricTerms: ['Sales Amount Base', 'Profit Amount'],
-            },
-        );
-
-        expect(ranked.slice(0, 3)).toEqual([
+    it('keeps the order the topic AI gave and applies no word-based scoring', () => {
+        const topics = [
+            'Sum Quantity by UOM',
             'Monthly Sales Amount Base trend by SO Received Date',
             'Total Sales Amount Base by Customer',
-            'Total Profit Amount by Customer',
-        ]);
-        expect(ranked.slice(-2)).toEqual([
-            'Sum Quantity by UOM',
-            'Quantity by UOM and Curr',
-        ]);
+        ];
+        const ranked = rankAnalysisTopics(topics, {
+            title: 'Sales Order Daily Report',
+            dimensionColumns: ['Customer', 'UOM', 'SO Received Date'],
+            metricColumns: ['Quantity', 'Sales Amount Base'],
+            preferredGrainColumns: ['Customer'],
+            preferredTimeColumns: ['SO Received Date'],
+            businessGrains: ['Customer'],
+            avoidGrainColumns: [],
+            preferredMetricTerms: ['Sales Amount Base'],
+        });
+
+        expect(ranked).toEqual(topics);
     });
 });
 

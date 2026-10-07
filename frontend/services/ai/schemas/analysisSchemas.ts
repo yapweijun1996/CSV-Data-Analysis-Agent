@@ -21,7 +21,7 @@ export const createAnalysisTopicsSchema = (minTopics = 4, maxTopics = 8) => ({
     properties: {
         topics: {
             type: 'array',
-            description: `An array of ${minTopics} to ${maxTopics} distinct, high-level analysis topics or questions.`,
+            description: `An array of ${minTopics} to ${maxTopics} distinct, high-level analysis topics or questions, ordered from most to least useful.`,
             items: { type: 'string' },
         }
     },
