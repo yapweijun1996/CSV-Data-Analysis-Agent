@@ -526,3 +526,9 @@
 - **What changed**: new `components/ImportProgressCard.tsx` (used by `FileUpload.tsx` while `isBusy`): file icon and title, a Upload/Parse/Analyse/Ready stage tracker driven by `aiTaskStatus` and `cleaningRunStatus`, an indeterminate progress bar, the live `progressMessages` line, "Processed locally" and "AI protected" cards, and a collapsible Technical details panel (engine, file type, AI provider, link to diagnostics). Card is 768px wide. Header (`AppHeader.tsx`) now shows the loaded file name beside the title and moves the version/update button to a quieter spot at the far right. Provider label shared via `utils/cloudAiProviderLabel.ts`. New `import_*` translations in four languages.
 - **Deliberately not built**: percentage, rows processed, ETA, memory and exact file size from the mockup. The import pipeline reports none of them, and inventing numbers would mislead. "Cancel import" is also not built because import has no cancel path. Both need pipeline changes (structured progress events from `fileOrchestrator`, an abort signal) and are the proposed next step.
 - **Checks**: typecheck, lint, full suite passed; real-browser screenshot of the importing state and expanded details confirmed the layout.
+
+## 2026-10-07 Demo gateway input sanitizer (Phase 0 scaffold)
+
+- `services/ai/demoGatewayInputSanitizer.ts` replaces the inline reasoning fix in `browserProviderFetch.ts` with a per-item-type allowlist table (`CONFIRMED_ITEM_FIELDS`). Only `reasoning` is confirmed live; message, function_call and function_call_output pass through untouched on purpose.
+- **Next**: fill in the other item types from the gateway operator's reported input schema (or from the next live `error.code`), then add a matching test per type. Do not add allowlists from assumptions: a wrong allowlist can strip fields the gateway needs.
+- Checks: typecheck, lint, full suite passed. Root deployment regenerated after this change.

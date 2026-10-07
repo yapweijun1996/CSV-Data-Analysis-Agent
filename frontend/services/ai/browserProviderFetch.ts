@@ -1,3 +1,4 @@
+import { sanitizeDemoGatewayInput } from './demoGatewayInputSanitizer';
 import {
     getDemoGatewaySession,
     invalidateDemoGatewaySession,
@@ -24,29 +25,6 @@ export const fetchWithoutForbiddenUserAgent: typeof fetch = (
         ...init,
         headers,
     });
-};
-
-/**
- * Pi replays each stored reasoning item verbatim, including the optional
- * `content` and `status` fields the model streamed back. The demo gateway
- * accepts only the replayable core (DEMO_FIELD_DISABLED otherwise), so reduce
- * reasoning input items to it. Encrypted content carries the real state.
- */
-const sanitizeReasoningInput = (body: Record<string, unknown>): Record<string, unknown> => {
-    if (!Array.isArray(body.input)) return body;
-    return {
-        ...body,
-        input: body.input.map(item => {
-            if (!item || typeof item !== 'object' || (item as { type?: unknown }).type !== 'reasoning') return item;
-            const { id, summary, encrypted_content: encryptedContent } = item as Record<string, unknown>;
-            return {
-                type: 'reasoning',
-                ...(id !== undefined ? { id } : {}),
-                summary: Array.isArray(summary) ? summary : [],
-                ...(encryptedContent !== undefined ? { encrypted_content: encryptedContent } : {}),
-            };
-        }),
-    };
 };
 
 const SESSION_LIMIT_MESSAGE = 'demo session request limit reached';
@@ -93,7 +71,7 @@ export const fetchDefaultGateway: typeof fetch = async (input, init) => {
         throw new Error('The demo gateway requires a JSON object request body.');
     }
 
-    const body = sanitizeReasoningInput({ ...payload as Record<string, unknown> });
+    const body = sanitizeDemoGatewayInput({ ...payload as Record<string, unknown> });
     delete body.max_output_tokens;
 
     const first = await sendWithSession(request.clone(), body);

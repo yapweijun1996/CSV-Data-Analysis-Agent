@@ -1,7 +1,7 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { H as HighlightJS, b as bash, c as css, j as javascript, d as json, m as markdown, s as sql, t as typescript, x as xml } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
-import { u as useAppStore } from "./csv_data_analysis_index-DOmmKOPO.js";
-import { U as getTranslation } from "./csv_data_analysis_app-agent-zR6ucGlD.js";
+import { u as useAppStore } from "./csv_data_analysis_index-BguLWYJM.js";
+import { U as getTranslation } from "./csv_data_analysis_app-agent-BPTmHNE4.js";
 HighlightJS.registerLanguage("bash", bash);
 HighlightJS.registerLanguage("css", css);
 HighlightJS.registerLanguage("javascript", javascript);
