@@ -35,7 +35,7 @@ describe('tool capability declarations', () => {
         expect(manifest?.capabilities?.supportsConditionalAggregate).toBe(true);
     });
 
-    it('declares the five Pi canary actions as read-only in the manifest source of truth', () => {
+    it('declares the Pi follow-up read-only tools in the manifest source of truth', () => {
         const canaryNames = manifests
             .filter(manifest => manifest.capabilities?.piFollowUpReadOnly === true)
             .map(manifest => manifest.name)
@@ -43,7 +43,10 @@ describe('tool capability declarations', () => {
 
         expect(canaryNames).toEqual([
             'data.describe',
+            'data.missing',
+            'data.outliers',
             'data.query',
+            'data.value_counts',
             'workspace.list',
             'workspace.read',
             'workspace.search',
@@ -54,7 +57,7 @@ describe('tool capability declarations', () => {
     });
 
     it('tools without explicit capabilities have undefined capabilities field', () => {
-        const manifest = findManifest('data.value_counts');
+        const manifest = findManifest('data.keep_wide');
 
         expect(manifest).toBeDefined();
         expect(manifest?.capabilities).toBeUndefined();

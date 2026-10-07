@@ -23,6 +23,7 @@ import { clearAllLocalBrowserData } from '../../services/storageService';
 import { clearCloudAiConsentRuntimeDecisions } from '../../services/privacy/cloudAiConsent';
 import { usePwaLifecycle } from '../../hooks/usePwaLifecycle';
 import { refreshPwaStorageEstimate } from '../../services/pwa/pwaManager';
+import { AgentSkillsSection } from './AgentSkillsSection';
 
 const languages: Settings['language'][] = SUPPORTED_APP_LANGUAGES;
 const googleModels = [...GOOGLE_MODELS];
@@ -475,6 +476,8 @@ export const SettingsModal: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+
+                        <AgentSkillsSection language={language} />
 
                         <div className="rounded-card border border-red-200 bg-red-50 p-4">
                             <h3 className="text-sm font-semibold text-slate-950">

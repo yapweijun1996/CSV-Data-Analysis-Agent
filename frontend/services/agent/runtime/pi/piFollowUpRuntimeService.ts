@@ -70,7 +70,8 @@ const readAssistantText = (event: AgentEvent): string => {
 const BATCH_ANALYSIS_CARD_TARGET = 3;
 const BATCH_ANALYSIS_MAX_TOOL_CALLS = 8;
 const BATCH_ANALYSIS_MAX_PROVIDER_TURNS = 10;
-const DEFAULT_MAX_PROVIDER_TURNS = 6;
+// Room for up to two skill reads and three app tools before the final answer.
+const DEFAULT_MAX_PROVIDER_TURNS = 8;
 
 /**
  * Pi-created cards start without a persisted quality verdict, so the trust
