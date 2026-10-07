@@ -1,7 +1,7 @@
 import { j as jsxRuntimeExports, a as reactExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-CdgitqSX.js";
-import { u as useAppStore, e as useDialogAccessibility } from "./csv_data_analysis_index-SD-V1-4F.js";
+import { u as useAppStore, e as useDialogAccessibility } from "./csv_data_analysis_index-Pvi3iTjw.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
 import { bK as summarizeTraceContract, U as getTranslation, bL as WORKSPACE_QUERY_LIMIT_OPTIONS, bM as DEFAULT_WORKSPACE_QUERY_LIMIT, bN as WORKSPACE_QUERY_TEMPLATE_OPTIONS, a2 as buildEffectiveColumnRegistryFromState, bO as createDefaultWorkspaceQueryDrafts, q as createIdleDuckDbSessionStatus } from "./csv_data_analysis_app-agent-uM1bfOJt.js";
 import "./csv_data_analysis_vendor-ui-BoCHqsEI.js";

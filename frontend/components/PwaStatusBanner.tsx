@@ -26,7 +26,9 @@ export const PwaStatusBanner: React.FC = () => {
         );
     }
 
-    if (pwa.status !== 'update_available' && pwa.status !== 'applying_update') return null;
+    // Once an update is being applied the header button already shows "Updating…",
+    // so the banner only appears while an update is held (for example during a run).
+    if (pwa.status !== 'update_available') return null;
 
     const handleApply = async () => {
         setApplyFailed(false);
@@ -50,15 +52,10 @@ export const PwaStatusBanner: React.FC = () => {
             <button
                 type="button"
                 onClick={() => void handleApply()}
-                disabled={isRunActive || pwa.status === 'applying_update'}
+                disabled={isRunActive}
                 className="min-h-[44px] shrink-0 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-                {getTranslation(
-                    pwa.status === 'applying_update'
-                        ? 'pwa_update_applying'
-                        : 'pwa_update_action',
-                    language,
-                )}
+                {getTranslation('pwa_update_action', language)}
             </button>
         </div>
     );
