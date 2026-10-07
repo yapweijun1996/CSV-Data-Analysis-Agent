@@ -413,7 +413,9 @@ const AnalysisPanelComponent: React.FC = () => {
             && (cleaningRun.status !== 'completed' || dataPreparationPlan?.sqlPrecheck?.status === 'blocked' || dataPreparationPlan?.sqlPrecheck?.status === 'warning')
             && !isSpreadsheetVisible
             && !analysisAlreadyStarted
-            && initialAnalysisFailureKind !== 'provider';
+            && initialAnalysisFailureKind !== 'provider'
+            // The step tracker already shows preparation progress while the analysis runs.
+            && initialAnalysisStatus !== 'running';
         const showReportHeader = Boolean(reportContext && csvData);
         const reportColumnNames = Object.keys((canonicalCsvData ?? csvData)?.data?.[0] ?? {});
         const analysisTerminal = initialAnalysisStatus === 'ready'

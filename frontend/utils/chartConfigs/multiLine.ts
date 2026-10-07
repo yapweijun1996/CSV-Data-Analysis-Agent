@@ -8,7 +8,7 @@
 
 import { ChartConfigProps } from './types';
 import { COLORS, BORDER_COLORS, getCommonOptions, getZoomOptions } from './common';
-import { formatAnalysisValue, normalizeCategoryLabel } from '../analysisCardPresentation';
+import { formatAnalysisValue, formatAxisValue, normalizeCategoryLabel } from '../analysisCardPresentation';
 import { parseNumericValue } from '../dataHelpers';
 
 export const createMultiLineChartConfig = ({
@@ -135,7 +135,7 @@ export const createMultiLineChartConfig = ({
                 y: {
                     ticks: {
                         color: '#64748b',
-                        callback: (value: number | string) => formatAnalysisValue(Number(value)),
+                        callback: (value: number | string) => formatAxisValue(Number(value)),
                     },
                     grid: { color: '#e2e8f0' },
                 },

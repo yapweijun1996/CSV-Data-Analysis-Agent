@@ -3561,10 +3561,10 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Analisis ini mempunyai batasan. Semak bukti dan butiran kualiti data sebelum menggunakan hasilnya.',
     },
     'analysis_results_next_step_reason_degraded_report': {
-        'English': 'This analysis has limitations. The report will preserve the visible evidence and quality caveats.',
-        'Mandarin': '此分析存在限制；生成的报告会保留可见证据与数据质量说明。',
-        'Japanese': 'この分析には制限があります。レポートには、確認可能な根拠と品質上の注意点が保持されます。',
-        'Malay': 'Analisis ini mempunyai batasan. Laporan akan mengekalkan bukti yang dipaparkan dan peringatan kualiti.',
+        'English': 'Ready to share. The report keeps the visible evidence and notes what could not be verified.',
+        'Mandarin': '可以分享了。报告会保留可见的证据，并注明未能验证的部分。',
+        'Japanese': '共有できます。レポートには確認可能な根拠が含まれ、検証できなかった点も明記されます。',
+        'Malay': 'Sedia untuk dikongsi. Laporan mengekalkan bukti yang dipaparkan dan mencatat perkara yang tidak dapat disahkan.',
     },
     'analysis_results_next_step_reason_no_cards': {
         'English': 'No reliable chart was produced. Open the detailed view to understand what limited the analysis.',

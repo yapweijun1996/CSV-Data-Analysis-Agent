@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-Cfq6GfnB.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-Cgkmd82A.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-C4sZRayY.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-DluhpyJj.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-C9iTkQ83.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-cLwKgT7s.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -8422,6 +8422,12 @@ const datasetSemantics = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.de
   resolveSemanticDefaultCsvData,
   sanitizeDatasetSemanticSnapshot
 }, Symbol.toStringTag, { value: "Module" }));
+const compactFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1
+});
+const formatCompactNumber = (value2) => compactFormatter.format(value2);
+const compactIfLarge = (value2, minAbs) => Number.isFinite(value2) && Math.abs(value2) >= minAbs ? formatCompactNumber(value2) : null;
 const PERCENTAGE_LIKE_PATTERN = /pct|percent|percentage|rate|ratio|share|margin/i;
 const TRAILING_PUNCTUATION_PATTERN$1 = /[\s._:;,)\]-]+$/;
 const NON_ASCII_PATTERN = /[^\x00-\x7F]/;
@@ -8486,6 +8492,7 @@ const getRowValue = (row, columnName) => {
   return matchingKey ? row[matchingKey] : void 0;
 };
 const toNumericValue$3 = (value2) => robustParseFloat(value2);
+const KPI_COMPACT_MIN_ABS = 1e6;
 const formatMetricValue = (value2, columnName, columnProfiles) => {
   const profile = getColumnProfile(columnProfiles, columnName);
   const normalizedName = (columnName ?? "").toLowerCase();
@@ -8494,7 +8501,7 @@ const formatMetricValue = (value2, columnName, columnProfiles) => {
     const percentValue = Math.abs(value2) <= 1 ? value2 * 100 : value2;
     return `${percentValue.toLocaleString(void 0, { maximumFractionDigits: 1 })}%`;
   }
-  return value2.toLocaleString(void 0, { maximumFractionDigits });
+  return compactIfLarge(value2, KPI_COMPACT_MIN_ABS) ?? value2.toLocaleString(void 0, { maximumFractionDigits });
 };
 const formatShareValue = (ratio) => `${(ratio * 100).toLocaleString(void 0, { maximumFractionDigits: ratio >= 0.1 ? 0 : 1 })}%`;
 const buildMetricLabel$1 = (columnName) => {
@@ -31209,10 +31216,10 @@ const translations = {
     "Malay": "Analisis ini mempunyai batasan. Semak bukti dan butiran kualiti data sebelum menggunakan hasilnya."
   },
   "analysis_results_next_step_reason_degraded_report": {
-    "English": "This analysis has limitations. The report will preserve the visible evidence and quality caveats.",
-    "Mandarin": "此分析存在限制；生成的报告会保留可见证据与数据质量说明。",
-    "Japanese": "この分析には制限があります。レポートには、確認可能な根拠と品質上の注意点が保持されます。",
-    "Malay": "Analisis ini mempunyai batasan. Laporan akan mengekalkan bukti yang dipaparkan dan peringatan kualiti."
+    "English": "Ready to share. The report keeps the visible evidence and notes what could not be verified.",
+    "Mandarin": "可以分享了。报告会保留可见的证据，并注明未能验证的部分。",
+    "Japanese": "共有できます。レポートには確認可能な根拠が含まれ、検証できなかった点も明記されます。",
+    "Malay": "Sedia untuk dikongsi. Laporan mengekalkan bukti yang dipaparkan dan mencatat perkara yang tidak dapat disahkan."
   },
   "analysis_results_next_step_reason_no_cards": {
     "English": "No reliable chart was produced. Open the detailed view to understand what limited the analysis.",
@@ -63911,6 +63918,22 @@ const buildCardSemanticFingerprint = (plan, datasetVersion) => {
     pivotValues: ((_l = (_k = plan.artifactMetadata) == null ? void 0 : _k.matrixValueColumns) == null ? void 0 : _l.map((value2) => value2.trim().toLowerCase())) ?? []
   });
 };
+const INITIAL_STAGE_KEY_PREFIX = "analysis_initial_stage_";
+const keepInitialAnalysisStageFrame = (previous, next) => {
+  var _a, _b;
+  if (!next || !((_a = previous == null ? void 0 : previous.titleKey) == null ? void 0 : _a.startsWith(INITIAL_STAGE_KEY_PREFIX))) return next;
+  if (previous.status === "done" || previous.status === "error") return next;
+  if ((_b = next.titleKey) == null ? void 0 : _b.startsWith(INITIAL_STAGE_KEY_PREFIX)) return next;
+  if (next.status === "done" || next.status === "error") return next;
+  return {
+    ...next,
+    title: previous.title,
+    titleKey: previous.titleKey,
+    titleParams: previous.titleParams,
+    totalSteps: previous.totalSteps,
+    currentStep: previous.currentStep
+  };
+};
 const emitAgentEvent = (store, payload) => {
   const recorder = store.getState().recordAgentEvent;
   if (!recorder) return;
@@ -63919,7 +63942,7 @@ const emitAgentEvent = (store, payload) => {
 const updateAgentTaskStatus = (store, status) => {
   const setter = store.getState().setAiTaskStatus;
   if (!setter) return;
-  setter(status);
+  setter(keepInitialAnalysisStageFrame(store.getState().aiTaskStatus, status));
 };
 const agentMonitor = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
@@ -75059,6 +75082,11 @@ const formatAnalysisValue = (value2, maximumFractionDigits = 2) => {
     minimumFractionDigits: hasFraction ? 0 : 0,
     maximumFractionDigits: hasFraction ? maximumFractionDigits : 0
   });
+};
+const AXIS_COMPACT_MIN_ABS = 1e4;
+const formatAxisValue = (value2) => {
+  const numericValue = coerceNumericValue(value2);
+  return (numericValue === null ? null : compactIfLarge(numericValue, AXIS_COMPACT_MIN_ABS)) ?? formatAnalysisValue(value2);
 };
 const formatAnalysisMeasureValue = (value2, fractionDigits = 2) => {
   const numericValue = coerceNumericValue(value2);
@@ -89629,7 +89657,7 @@ const runDataAnalysisSessionInternal = async (params) => {
       total: hypotheses.length || 1,
       mode: "analysis"
     },
-    aiTaskStatus: hypotheses.length > 0 ? {
+    aiTaskStatus: hypotheses.length > 0 ? keepInitialAnalysisStageFrame(store.getState().aiTaskStatus, {
       status: "thinking",
       title: "Verifying analysis hypotheses",
       titleKey: "ai_task_verifying_hypotheses",
@@ -89638,7 +89666,7 @@ const runDataAnalysisSessionInternal = async (params) => {
       subtitleParams: { total: hypotheses.length },
       totalSteps: hypotheses.length,
       currentStep: 0
-    } : null
+    }) : null
   });
   const existingCards = store.getState().analysisCards ?? [];
   const acceptedEvidenceForDedupe = existingCards.filter((card) => {
@@ -90057,7 +90085,7 @@ const runDataAnalysisSessionInternal = async (params) => {
         total: session.hypotheses.length || 1,
         mode: "analysis"
       },
-      aiTaskStatus: {
+      aiTaskStatus: keepInitialAnalysisStageFrame(store.getState().aiTaskStatus, {
         status: "thinking",
         title: "Verifying analysis hypotheses",
         titleKey: "ai_task_verifying_hypotheses",
@@ -90066,7 +90094,7 @@ const runDataAnalysisSessionInternal = async (params) => {
         subtitleParams: { completed: processedHypotheses, total: session.hypotheses.length },
         totalSteps: session.hypotheses.length,
         currentStep: processedHypotheses
-      }
+      })
     });
     await new Promise((resolve2) => setTimeout(resolve2, 0));
   }
@@ -90517,7 +90545,7 @@ const createInitialAnalysisStageExecutors = (overrides = {}) => {
           phase: "apply_safe_cleaning",
           toolName: "dataset.applyTransform",
           decision: "warn",
-          summary: "No cleaning was applied. The original large CSV remains read-only and full-dataset analysis continues in DuckDB.",
+          summary: "Your original file was not changed. The full dataset is analysed as it is.",
           warningCodes: ["large_dataset_read_only"],
           artifactRefs: [`cleaning-run:${existingRun.runId}`]
         });
@@ -90848,7 +90876,7 @@ const executeInitialAnalysisStageTool = async (params) => {
     params.args
   );
 };
-const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-Cfq6GfnB.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
+const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-DluhpyJj.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values$1 = {
   "google-generative-ai": /* @__PURE__ */ JSON.parse('{"deep-research-max-preview-04-2026":{"id":"deep-research-max-preview-04-2026","name":"Deep Research Max Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"deep-research-preview-04-2026":{"id":"deep-research-preview-04-2026","name":"Deep Research Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-computer-use-preview-10-2025":{"id":"gemini-2.5-computer-use-preview-10-2025","name":"Gemini 2.5 Computer Use Preview 10-2025","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash":{"id":"gemini-2.5-flash","name":"Gemini 2.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash-lite":{"id":"gemini-2.5-flash-lite","name":"Gemini 2.5 Flash-Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.01,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-pro":{"id":"gemini-2.5-pro","name":"Gemini 2.5 Pro","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3-flash-preview":{"id":"gemini-3-flash-preview","name":"Gemini 3 Flash Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.5,"output":3,"cacheRead":0.05,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite":{"id":"gemini-3.1-flash-lite","name":"Gemini 3.1 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-image":{"id":"gemini-3.1-flash-lite-image","name":"Nano Banana 2 Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":null,"medium":null,"high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":65536,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-preview":{"id":"gemini-3.1-flash-lite-preview","name":"Gemini 3.1 Flash Lite Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-live-preview":{"id":"gemini-3.1-flash-live-preview","name":"Gemini 3.1 Flash Live Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview":{"id":"gemini-3.1-pro-preview","name":"Gemini 3.1 Pro Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview-customtools":{"id":"gemini-3.1-pro-preview-customtools","name":"Gemini 3.1 Pro Preview Custom Tools","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash":{"id":"gemini-3.5-flash","name":"Gemini 3.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash-lite":{"id":"gemini-3.5-flash-lite","name":"Gemini 3.5 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.6-flash":{"id":"gemini-3.6-flash","name":"Gemini 3.6 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.7-flash":{"id":"gemini-3.7-flash","name":"Gemini 3.7 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.8-flash":{"id":"gemini-3.8-flash","name":"Gemini 3.8 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-latest":{"id":"gemini-flash-latest","name":"Gemini Flash Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-lite-latest":{"id":"gemini-flash-lite-latest","name":"Gemini Flash-Lite Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-26b-a4b-it":{"id":"gemma-4-26b-a4b-it","name":"Gemma 4 26B A4B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-31b-it":{"id":"gemma-4-31b-it","name":"Gemma 4 31B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -90866,7 +90894,7 @@ function googleProvider() {
     api: googleGenerativeAIApi()
   });
 }
-const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-C4sZRayY.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
+const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-cLwKgT7s.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values = {
   "openai-responses": /* @__PURE__ */ JSON.parse('{"gpt-4":{"id":"gpt-4","name":"GPT-4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text"],"cost":{"input":30,"output":60,"cacheRead":0,"cacheWrite":0},"contextWindow":8192,"maxTokens":8192,"compat":{"supportsStrictMode":true}},"gpt-4-turbo":{"id":"gpt-4-turbo","name":"GPT-4 Turbo","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":10,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1":{"id":"gpt-4.1","name":"GPT-4.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-mini":{"id":"gpt-4.1-mini","name":"GPT-4.1 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.4,"output":1.6,"cacheRead":0.1,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-nano":{"id":"gpt-4.1-nano","name":"GPT-4.1 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o":{"id":"gpt-4o","name":"GPT-4o","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-05-13":{"id":"gpt-4o-2024-05-13","name":"GPT-4o (2024-05-13)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":5,"output":15,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-08-06":{"id":"gpt-4o-2024-08-06","name":"GPT-4o (2024-08-06)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-11-20":{"id":"gpt-4o-2024-11-20","name":"GPT-4o (2024-11-20)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.15,"output":0.6,"cacheRead":0.075,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5":{"id":"gpt-5","name":"GPT-5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-chat-latest":{"id":"gpt-5-chat-latest","name":"GPT-5 Chat Latest","api":"openai-responses","baseUrl":"https://api.openai.com/v1","provider":"openai","reasoning":false,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-mini":{"id":"gpt-5-mini","name":"GPT-5 Mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.25,"output":2,"cacheRead":0.025,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-nano":{"id":"gpt-5-nano","name":"GPT-5 Nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.05,"output":0.4,"cacheRead":0.005,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-pro":{"id":"gpt-5-pro","name":"GPT-5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":120,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":null,"high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.1":{"id":"gpt-5.1","name":"GPT-5.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2":{"id":"gpt-5.2","name":"GPT-5.2","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-chat-latest":{"id":"gpt-5.2-chat-latest","name":"GPT-5.2 Chat","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":null,"xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-pro":{"id":"gpt-5.2-pro","name":"GPT-5.2 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":21,"output":168,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-chat-latest":{"id":"gpt-5.3-chat-latest","name":"GPT-5.3 Chat (latest)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"xhigh":"xhigh"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex":{"id":"gpt-5.3-codex","name":"GPT-5.3 Codex","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex-spark":{"id":"gpt-5.3-codex-spark","name":"GPT-5.3 Codex Spark","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4":{"id":"gpt-5.4","name":"GPT-5.4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2.5,"output":15,"cacheRead":0.25,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":5,"output":22.5,"cacheRead":0.5,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-mini":{"id":"gpt-5.4-mini","name":"GPT-5.4 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0.075,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-nano":{"id":"gpt-5.4-nano","name":"GPT-5.4 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.25,"cacheRead":0.02,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-pro":{"id":"gpt-5.4-pro","name":"GPT-5.4 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5":{"id":"gpt-5.5","name":"GPT-5.5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":5,"output":30,"cacheRead":0.5,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":10,"output":45,"cacheRead":1,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5-pro":{"id":"gpt-5.5-pro","name":"GPT-5.5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-luna":{"id":"gpt-5.6-luna","name":"GPT-5.6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.2,"cacheRead":0.02,"cacheWrite":0.25,"tiers":[{"inputTokensAbove":272000,"input":0.4,"output":1.8,"cacheRead":0.04,"cacheWrite":0.5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-sol":{"id":"gpt-5.6-sol","name":"GPT-5.6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":20,"cacheRead":0.4,"cacheWrite":5,"tiers":[{"inputTokensAbove":272000,"input":8,"output":30,"cacheRead":0.8,"cacheWrite":10}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-terra":{"id":"gpt-5.6-terra","name":"GPT-5.6 Terra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":18,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-astra":{"id":"gpt-6-astra","name":"GPT-6 Astra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":10,"output":50,"cacheRead":1,"cacheWrite":12.5,"tiers":[{"inputTokensAbove":272000,"input":20,"output":75,"cacheRead":2,"cacheWrite":25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-luna":{"id":"gpt-6-luna","name":"GPT-6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"inputTokensAbove":272000,"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-sol":{"id":"gpt-6-sol","name":"GPT-6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":10,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":15,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-realtime-2.1":{"id":"gpt-realtime-2.1","name":"GPT-Realtime-2.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":24,"cacheRead":0.4,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1":{"id":"o1","name":"o1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":60,"cacheRead":7.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1-pro":{"id":"o1-pro","name":"o1-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":150,"output":600,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3":{"id":"o3","name":"o3","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3-mini":{"id":"o3-mini","name":"o3-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.55,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true}},"o3-pro":{"id":"o3-pro","name":"o3-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":20,"output":80,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o4-mini":{"id":"o4-mini","name":"o4-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.275,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -99484,7 +99512,7 @@ export {
   primeDuckDbDataset as Z,
   __vitePreload as _,
   shouldAllowLongTermMemorySurface as a,
-  coerceNumericValue as a$,
+  getAnalysisColumnLabels as a$,
   captureHistoryAnalysisSnapshot as a0,
   getRestoredHistoryAnalysisState as a1,
   buildEffectiveColumnRegistryFromState as a2,
@@ -99517,11 +99545,11 @@ export {
   resolveDisplayPlanDescription as aT,
   resolvePlanGroupLabel as aU,
   resolvePlanMetricLabel as aV,
-  getBarChartReadabilityHints as aW,
-  PIVOT_FOLDED_OTHERS_KEY as aX,
-  collectOrderedColumnNames as aY,
-  getNumericColumns$1 as aZ,
-  getAnalysisColumnLabels as a_,
+  formatAxisValue as aW,
+  getBarChartReadabilityHints as aX,
+  PIVOT_FOLDED_OTHERS_KEY as aY,
+  collectOrderedColumnNames as aZ,
+  getNumericColumns$1 as a_,
   getCurrentAnalysisDatasetVersion as aa,
   LATEST_REPORT_HTML_PATH as ab,
   generateAnalystReportArtifacts as ac,
@@ -99549,126 +99577,127 @@ export {
   shouldShowLongTermMemory as ay,
   formatUserError as az,
   buildCloudAiConsentKey as b,
-  selectRecentPayloadSnapshotsExport as b$,
-  formatAnalysisCellValue as b0,
-  isProviderConfigured as b1,
-  createProviderModel as b2,
-  resolveCardTrustDecision as b3,
-  getLocalizedText as b4,
-  evaluateChartPresentation as b5,
-  getAvailableChartTypes as b6,
-  isTimeLikeDimensionColumn as b7,
-  buildStackedPivotChartPlan as b8,
-  getPivotCardQualitySummary as b9,
-  MIN_MAX_AGENT_TURNS as bA,
-  DEFAULT_TOOL_OUTPUT_CUTOFF as bB,
-  MAX_TOOL_OUTPUT_CUTOFF as bC,
-  MIN_TOOL_OUTPUT_CUTOFF as bD,
-  DEFAULT_GOOGLE_MODEL as bE,
-  clearCloudAiConsentRuntimeDecisions as bF,
-  clearAllLocalBrowserData as bG,
-  getStorageBreakdown as bH,
-  clearAllCacheStorage as bI,
-  clearStore as bJ,
-  flushPendingVectorMemoryDocs as bK,
-  summarizeTraceContract as bL,
-  WORKSPACE_QUERY_LIMIT_OPTIONS as bM,
-  DEFAULT_WORKSPACE_QUERY_LIMIT as bN,
-  WORKSPACE_QUERY_TEMPLATE_OPTIONS as bO,
-  createDefaultWorkspaceQueryDrafts as bP,
-  buildWorkspaceBundle as bQ,
-  isWorkspaceWritablePath as bR,
-  readDatasetFileFromOpfs as bS,
-  getSandboxTableRows as bT,
-  buildWorkflowSnapshotExport as bU,
-  buildCleaningFailureBundleExport as bV,
-  selectReportScopedActivity as bW,
-  isEndUserMode as bX,
-  selectDebugTimelineEntries as bY,
-  selectDebugFlows as bZ,
-  selectRuntimeLogsExport as b_,
-  normalizeDisplayLabel as ba,
-  isUsableReportTitle as bb,
-  isSchemaDerivedReportTitle as bc,
-  isLatestReportPartial as bd,
-  resolveLatestReportBlockedInfo as be,
-  resolveAnalysisCompletionGate as bf,
-  buildDisplayAnalysisIr as bg,
-  DEFAULT_AUTO_ANALYSIS_GOAL as bh,
-  buildExecutiveKpis as bi,
-  resolveEffectiveReportContext as bj,
-  shouldShowDataWarnings as bk,
-  getCsvDataRowCount as bl,
-  applySpreadsheetFilterOperation as bm,
-  buildDataPreparationWorkflowBundle as bn,
-  resolveDatasetBindingTarget as bo,
-  buildDisplayLabelMap as bp,
-  buildColumnDisplayLabels as bq,
-  getSemanticHiddenRowCount as br,
-  isPreviewDataQuery as bs,
-  DEFAULT_GATEWAY_MODEL as bt,
-  GOOGLE_MODELS$1 as bu,
-  OPENAI_MODELS$1 as bv,
-  DEFAULT_FALLBACK_MODEL as bw,
-  SUPPORTED_APP_LANGUAGES as bx,
-  DEFAULT_MAX_AGENT_TURNS as by,
-  MAX_MAX_AGENT_TURNS as bz,
+  selectRuntimeLogsExport as b$,
+  coerceNumericValue as b0,
+  formatAnalysisCellValue as b1,
+  isProviderConfigured as b2,
+  createProviderModel as b3,
+  resolveCardTrustDecision as b4,
+  getLocalizedText as b5,
+  evaluateChartPresentation as b6,
+  getAvailableChartTypes as b7,
+  isTimeLikeDimensionColumn as b8,
+  buildStackedPivotChartPlan as b9,
+  MAX_MAX_AGENT_TURNS as bA,
+  MIN_MAX_AGENT_TURNS as bB,
+  DEFAULT_TOOL_OUTPUT_CUTOFF as bC,
+  MAX_TOOL_OUTPUT_CUTOFF as bD,
+  MIN_TOOL_OUTPUT_CUTOFF as bE,
+  DEFAULT_GOOGLE_MODEL as bF,
+  clearCloudAiConsentRuntimeDecisions as bG,
+  clearAllLocalBrowserData as bH,
+  getStorageBreakdown as bI,
+  clearAllCacheStorage as bJ,
+  clearStore as bK,
+  flushPendingVectorMemoryDocs as bL,
+  summarizeTraceContract as bM,
+  WORKSPACE_QUERY_LIMIT_OPTIONS as bN,
+  DEFAULT_WORKSPACE_QUERY_LIMIT as bO,
+  WORKSPACE_QUERY_TEMPLATE_OPTIONS as bP,
+  createDefaultWorkspaceQueryDrafts as bQ,
+  buildWorkspaceBundle as bR,
+  isWorkspaceWritablePath as bS,
+  readDatasetFileFromOpfs as bT,
+  getSandboxTableRows as bU,
+  buildWorkflowSnapshotExport as bV,
+  buildCleaningFailureBundleExport as bW,
+  selectReportScopedActivity as bX,
+  isEndUserMode as bY,
+  selectDebugTimelineEntries as bZ,
+  selectDebugFlows as b_,
+  getPivotCardQualitySummary as ba,
+  normalizeDisplayLabel as bb,
+  isUsableReportTitle as bc,
+  isSchemaDerivedReportTitle as bd,
+  isLatestReportPartial as be,
+  resolveLatestReportBlockedInfo as bf,
+  resolveAnalysisCompletionGate as bg,
+  buildDisplayAnalysisIr as bh,
+  DEFAULT_AUTO_ANALYSIS_GOAL as bi,
+  buildExecutiveKpis as bj,
+  resolveEffectiveReportContext as bk,
+  shouldShowDataWarnings as bl,
+  getCsvDataRowCount as bm,
+  applySpreadsheetFilterOperation as bn,
+  buildDataPreparationWorkflowBundle as bo,
+  resolveDatasetBindingTarget as bp,
+  buildDisplayLabelMap as bq,
+  buildColumnDisplayLabels as br,
+  getSemanticHiddenRowCount as bs,
+  isPreviewDataQuery as bt,
+  DEFAULT_GATEWAY_MODEL as bu,
+  GOOGLE_MODELS$1 as bv,
+  OPENAI_MODELS$1 as bw,
+  DEFAULT_FALLBACK_MODEL as bx,
+  SUPPORTED_APP_LANGUAGES as by,
+  DEFAULT_MAX_AGENT_TURNS as bz,
   shouldAllowLogsSurface as c,
-  selectIrDiagnostics as c0,
-  selectPlannerFailureBundle as c1,
-  selectSqlFailureBundle as c2,
-  selectDebugOperatorSummary as c3,
-  loadRecentLocalDiagnostics as c4,
-  selectAiDebugBundle as c5,
-  withoutInitialSystemMessage as c6,
-  collapseSystemMessages as c7,
-  clampThinkingLevel as c8,
-  AssistantMessageEventStream as c9,
-  cleaningRunState as cA,
-  sandboxTableRegistry as cB,
-  autonomousCleaningPipeline as cC,
-  reportStructureOrchestrator as cD,
-  datasetBinding as cE,
-  dataQueryExecution as cF,
-  runtimeClarification as cG,
-  actionHandler as cH,
-  piInitialAnalysisRuntimeService as cI,
-  analysisDefaults as cJ,
-  fileOrchestrator as cK,
-  initialAnalysisService as cL,
-  goalProposer as cM,
-  sessionManager as cN,
-  datasetSemanticAnnotator as cO,
-  workspaceDataQuery as cP,
-  chatOrchestrator as cQ,
-  enhancementGenerator as cR,
-  piBrowserAgent as cS,
-  calculateCost as ca,
-  getInitialSystemMessage as cb,
-  getCurrentTools as cc,
-  getSystemMessageText as cd,
-  parseStreamingJson as ce,
-  resolveTranscript as cf,
-  resolveTranscriptTools as cg,
-  renderSystemMessageUpdate as ch,
-  getDeclaredTools as ci,
-  workspaceFileUtils as cj,
-  storageService as ck,
-  cloudAiConsent as cl,
-  columnRegistry as cm,
-  datasetSemantics as cn,
-  dataOperationRunner as co,
-  runtimeAbort as cp,
-  providerConfig as cq,
-  runtimeControlPlaneContract as cr,
-  reportStructureState as cs,
-  persistedAppState as ct,
-  opfsDatasetStorage as cu,
-  agentMonitor as cv,
-  dataResearchCancellation as cw,
-  contextManager as cx,
-  vectorMemorySync as cy,
-  analysisDatasetProfiles as cz,
+  selectRecentPayloadSnapshotsExport as c0,
+  selectIrDiagnostics as c1,
+  selectPlannerFailureBundle as c2,
+  selectSqlFailureBundle as c3,
+  selectDebugOperatorSummary as c4,
+  loadRecentLocalDiagnostics as c5,
+  selectAiDebugBundle as c6,
+  withoutInitialSystemMessage as c7,
+  collapseSystemMessages as c8,
+  clampThinkingLevel as c9,
+  analysisDatasetProfiles as cA,
+  cleaningRunState as cB,
+  sandboxTableRegistry as cC,
+  autonomousCleaningPipeline as cD,
+  reportStructureOrchestrator as cE,
+  datasetBinding as cF,
+  dataQueryExecution as cG,
+  runtimeClarification as cH,
+  actionHandler as cI,
+  piInitialAnalysisRuntimeService as cJ,
+  analysisDefaults as cK,
+  fileOrchestrator as cL,
+  initialAnalysisService as cM,
+  goalProposer as cN,
+  sessionManager as cO,
+  datasetSemanticAnnotator as cP,
+  workspaceDataQuery as cQ,
+  chatOrchestrator as cR,
+  enhancementGenerator as cS,
+  piBrowserAgent as cT,
+  AssistantMessageEventStream as ca,
+  calculateCost as cb,
+  getInitialSystemMessage as cc,
+  getCurrentTools as cd,
+  getSystemMessageText as ce,
+  parseStreamingJson as cf,
+  resolveTranscript as cg,
+  resolveTranscriptTools as ch,
+  renderSystemMessageUpdate as ci,
+  getDeclaredTools as cj,
+  workspaceFileUtils as ck,
+  storageService as cl,
+  cloudAiConsent as cm,
+  columnRegistry as cn,
+  datasetSemantics as co,
+  dataOperationRunner as cp,
+  runtimeAbort as cq,
+  providerConfig as cr,
+  runtimeControlPlaneContract as cs,
+  reportStructureState as ct,
+  persistedAppState as cu,
+  opfsDatasetStorage as cv,
+  agentMonitor as cw,
+  dataResearchCancellation as cx,
+  contextManager as cy,
+  vectorMemorySync as cz,
   shouldAllowWorkflowSurface as d,
   shouldAllowWorkspaceSurface as e,
   shouldAllowDatabaseSurface as f,

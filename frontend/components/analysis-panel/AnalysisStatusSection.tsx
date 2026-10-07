@@ -22,6 +22,8 @@ export const AnalysisStatusSection: React.FC = memo(() => {
     );
 
     if (!aiTaskStatus) return null;
+    // A finished status line only repeats what the results below already show.
+    if (aiTaskStatus.status === 'done' && (hasCards || hasFinalSummary)) return null;
 
     return (
         <div className="space-y-2">

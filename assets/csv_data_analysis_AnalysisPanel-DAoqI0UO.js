@@ -1,16 +1,16 @@
 import { W as We, a as reactExports, j as jsxRuntimeExports, r as reactDomExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-BAH1GP0R.js";
-import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as getBarChartReadabilityHints, aX as PIVOT_FOLDED_OTHERS_KEY, aY as collectOrderedColumnNames, aZ as getNumericColumns, a_ as getAnalysisColumnLabels, a$ as coerceNumericValue, b0 as formatAnalysisCellValue, b1 as isProviderConfigured, b2 as createProviderModel, b3 as resolveCardTrustDecision, b4 as getLocalizedText, b5 as evaluateChartPresentation, b6 as getAvailableChartTypes, b7 as isTimeLikeDimensionColumn, b8 as buildStackedPivotChartPlan, b9 as getPivotCardQualitySummary, ba as normalizeDisplayLabel, bb as isUsableReportTitle, bc as isSchemaDerivedReportTitle, bd as isLatestReportPartial, be as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, bf as resolveAnalysisCompletionGate, bg as buildDisplayAnalysisIr, bh as DEFAULT_AUTO_ANALYSIS_GOAL, bi as buildExecutiveKpis, bj as resolveEffectiveReportContext, bk as shouldShowDataWarnings, bl as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-DEjtVUEI.js";
-import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-5YasT6AW.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-Coeq3BIU.js";
+import { U as getTranslation, aa as getCurrentAnalysisDatasetVersion, aH as resolveAnalysisArtifactFreshness, aI as summarizeDataQualityForEndUser, aJ as normalizeCategoryLabel, aK as parseNumericValue, aL as formatAnalysisValue, aM as formatAnalysisMeasureValue, aN as formatTemporalDisplayValue, aO as isAdditiveAggregation, aP as isTemporalDisplayColumn, aQ as applyTopNWithOthers, aR as buildPivotStackedChartState, aS as DEFAULT_STACKED_PIVOT_COLUMN_TOP_N, aC as resolveDisplayPlanTitle, aT as resolveDisplayPlanDescription, aU as resolvePlanGroupLabel, aV as resolvePlanMetricLabel, aW as formatAxisValue, aX as getBarChartReadabilityHints, aY as PIVOT_FOLDED_OTHERS_KEY, aZ as collectOrderedColumnNames, a_ as getNumericColumns, a$ as getAnalysisColumnLabels, b0 as coerceNumericValue, b1 as formatAnalysisCellValue, b2 as isProviderConfigured, b3 as createProviderModel, b4 as resolveCardTrustDecision, b5 as getLocalizedText, b6 as evaluateChartPresentation, b7 as getAvailableChartTypes, b8 as isTimeLikeDimensionColumn, b9 as buildStackedPivotChartPlan, ba as getPivotCardQualitySummary, bb as normalizeDisplayLabel, bc as isUsableReportTitle, bd as isSchemaDerivedReportTitle, be as isLatestReportPartial, bf as resolveLatestReportBlockedInfo, a9 as hasOpenableLatestReport, bg as resolveAnalysisCompletionGate, bh as buildDisplayAnalysisIr, bi as DEFAULT_AUTO_ANALYSIS_GOAL, bj as buildExecutiveKpis, bk as resolveEffectiveReportContext, bl as shouldShowDataWarnings, bm as getCsvDataRowCount, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-nllI4bG9.js";
+import { u as useAppStore, a as IconWarning, b as IconMoreHorizontal, g as getCachedChart, c as computeChartCacheKey, d as computeDataContentHash, s as setCachedChart, e as useDialogAccessibility, E as ErrorBoundary } from "./csv_data_analysis_index-D2tBy_aT.js";
 import { C as Chart, p as plugin, a as plugin$1, M as Masonry } from "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import { e as exportToHtml, a as exportToCsv, b as exportToPng } from "./csv_data_analysis_exportUtils-DfKSpD2m.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
-import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-9Bpaiy7v.js";
-import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-_fhf8iBJ.js";
+import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-D4wSkoYp.js";
+import { V as ViewModeToggle, G as GroupByTest, f as formatNumber, D as DataTable$1, C as CleaningRunBanner } from "./csv_data_analysis_CleaningRunBanner-aKrf_KPr.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
-import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-DUy-2pqH.js";
+import { A as AiTaskStatusBubble } from "./csv_data_analysis_AiTaskStatusBubble-BMgVHbcl.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
 import "./csv_data_analysis_vendor-ai-google-Brpu0J-t.js";
@@ -1012,7 +1012,7 @@ const getCommonOptions = (onElementClick, disableAnimation, showDataLabels) => (
     y: {
       ticks: {
         color: "#64748b",
-        callback: (value) => formatAnalysisValue(Number(value))
+        callback: (value) => formatAxisValue(Number(value))
       },
       grid: { color: "#e2e8f0" }
     }
@@ -1093,7 +1093,7 @@ const createBarChartConfig = ({ data, plan, selectedIndices, onElementClick, dis
         x: {
           ticks: {
             color: "#64748b",
-            callback: (value) => formatAnalysisValue(Number(value))
+            callback: (value) => formatAxisValue(Number(value))
           },
           grid: { color: "#e2e8f0" }
         },
@@ -1117,7 +1117,7 @@ const createBarChartConfig = ({ data, plan, selectedIndices, onElementClick, dis
           ...(_d = commonOptions.scales) == null ? void 0 : _d.y,
           ticks: {
             color: "#64748b",
-            callback: (value) => formatAnalysisValue(Number(value))
+            callback: (value) => formatAxisValue(Number(value))
           },
           grid: { color: "#e2e8f0" }
         }
@@ -1162,7 +1162,7 @@ const createHorizontalBarChartConfig = ({ data, plan, selectedIndices, onElement
         x: {
           ticks: {
             color: "#64748b",
-            callback: (value) => formatAnalysisValue(Number(value))
+            callback: (value) => formatAxisValue(Number(value))
           },
           grid: { color: "#e2e8f0" }
         },
@@ -1599,7 +1599,7 @@ const createStackedChartConfig = ({ chartType, data, plan, selectedIndices, onEl
           stacked: true,
           ticks: {
             color: "#64748b",
-            callback: (value) => formatAnalysisValue(Number(value))
+            callback: (value) => formatAxisValue(Number(value))
           },
           grid: { color: "#e2e8f0" }
         },
@@ -1624,7 +1624,7 @@ const createStackedChartConfig = ({ chartType, data, plan, selectedIndices, onEl
           stacked: true,
           ticks: {
             color: "#64748b",
-            callback: (value) => formatAnalysisValue(Number(value))
+            callback: (value) => formatAxisValue(Number(value))
           },
           grid: { color: "#e2e8f0" }
         }
@@ -1748,7 +1748,7 @@ const createMultiLineChartConfig = ({
         y: {
           ticks: {
             color: "#64748b",
-            callback: (value) => formatAnalysisValue(Number(value))
+            callback: (value) => formatAxisValue(Number(value))
           },
           grid: { color: "#e2e8f0" }
         }
@@ -3828,6 +3828,7 @@ const AnalysisStatusSection = reactExports.memo(() => {
     shallow$1
   );
   if (!aiTaskStatus) return null;
+  if (aiTaskStatus.status === "done" && (hasCards || hasFinalSummary)) return null;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       AiTaskStatusBubble,
@@ -5017,7 +5018,7 @@ const AnalysisPanelComponent = () => {
     const finalSummaryTitle = getTranslation("overall_insights", language);
     const showWarnings = shouldShowDataWarnings();
     const analysisAlreadyStarted = initialAnalysisStatus === "ready" || initialAnalysisStatus === "degraded" || cards.length > 0;
-    const showCleaningBanner = cleaningRun && (cleaningRun.status !== "completed" || ((_a = dataPreparationPlan == null ? void 0 : dataPreparationPlan.sqlPrecheck) == null ? void 0 : _a.status) === "blocked" || ((_b = dataPreparationPlan == null ? void 0 : dataPreparationPlan.sqlPrecheck) == null ? void 0 : _b.status) === "warning") && !isSpreadsheetVisible && !analysisAlreadyStarted && initialAnalysisFailureKind !== "provider";
+    const showCleaningBanner = cleaningRun && (cleaningRun.status !== "completed" || ((_a = dataPreparationPlan == null ? void 0 : dataPreparationPlan.sqlPrecheck) == null ? void 0 : _a.status) === "blocked" || ((_b = dataPreparationPlan == null ? void 0 : dataPreparationPlan.sqlPrecheck) == null ? void 0 : _b.status) === "warning") && !isSpreadsheetVisible && !analysisAlreadyStarted && initialAnalysisFailureKind !== "provider" && initialAnalysisStatus !== "running";
     const showReportHeader = Boolean(reportContext && csvData);
     const reportColumnNames = Object.keys(((_d = (_c = canonicalCsvData ?? csvData) == null ? void 0 : _c.data) == null ? void 0 : _d[0]) ?? {});
     const analysisTerminal = initialAnalysisStatus === "ready" || initialAnalysisStatus === "degraded" || initialAnalysisStatus === "error";

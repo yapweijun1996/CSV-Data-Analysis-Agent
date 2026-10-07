@@ -12,6 +12,7 @@ import {
     processSingleTopic,
 } from '../planning/topicProcessor';
 import { emitAgentEvent, updateAgentTaskStatus } from '../monitoring/agentMonitor';
+import { keepInitialAnalysisStageFrame } from '../monitoring/analysisStageFrame';
 import { emitSilentFailure } from '../monitoring/silentFailureTracker';
 import { recordRuntimeEvent } from './runtimeHelpers';
 import { upsertCardMemoryDocument } from '../memory/vectorMemorySync';
@@ -802,7 +803,7 @@ const runDataAnalysisSessionInternal = async (
             total: hypotheses.length || 1,
             mode: 'analysis',
         },
-        aiTaskStatus: hypotheses.length > 0 ? {
+        aiTaskStatus: hypotheses.length > 0 ? keepInitialAnalysisStageFrame(store.getState().aiTaskStatus, {
             status: 'thinking',
             title: 'Verifying analysis hypotheses',
             titleKey: 'ai_task_verifying_hypotheses',
@@ -811,7 +812,7 @@ const runDataAnalysisSessionInternal = async (
             subtitleParams: { total: hypotheses.length },
             totalSteps: hypotheses.length,
             currentStep: 0,
-        } : null,
+        }) : null,
     });
 
     // Seed dedup list from existing cards so follow-up sessions don't
@@ -1294,7 +1295,7 @@ const runDataAnalysisSessionInternal = async (
                 total: session.hypotheses.length || 1,
                 mode: 'analysis',
             },
-            aiTaskStatus: {
+            aiTaskStatus: keepInitialAnalysisStageFrame(store.getState().aiTaskStatus, {
                 status: 'thinking',
                 title: 'Verifying analysis hypotheses',
                 titleKey: 'ai_task_verifying_hypotheses',
@@ -1305,7 +1306,7 @@ const runDataAnalysisSessionInternal = async (
                 subtitleParams: { completed: processedHypotheses, total: session.hypotheses.length },
                 totalSteps: session.hypotheses.length,
                 currentStep: processedHypotheses,
-            },
+            }),
         });
         // PERF-304: Yield after main loop setState so browser can paint the
         // updated progress counter before next hypothesis starts.

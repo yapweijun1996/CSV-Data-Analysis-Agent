@@ -271,7 +271,7 @@ export const createInitialAnalysisStageExecutors = (
                     phase: 'apply_safe_cleaning',
                     toolName: 'dataset.applyTransform',
                     decision: 'warn',
-                    summary: 'No cleaning was applied. The original large CSV remains read-only and full-dataset analysis continues in DuckDB.',
+                    summary: 'Your original file was not changed. The full dataset is analysed as it is.',
                     warningCodes: ['large_dataset_read_only'],
                     artifactRefs: [`cleaning-run:${existingRun.runId}`],
                 });

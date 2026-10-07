@@ -1,6 +1,6 @@
 // Common constants and helper functions for chart configurations.
 import { ChartConfigProps } from './types';
-import { formatAnalysisMeasureValue, formatAnalysisValue } from '../analysisCardPresentation';
+import { formatAnalysisMeasureValue, formatAnalysisValue, formatAxisValue } from '../analysisCardPresentation';
 import { AnalysisPlan, CsvRow } from '../../types';
 
 // Humanize a raw column name for display in tooltips.
@@ -203,7 +203,7 @@ export const getCommonOptions = (onElementClick: (index: number, event: MouseEve
         y: {
             ticks: {
                 color: '#64748b',
-                callback: (value: number | string) => formatAnalysisValue(Number(value)),
+                callback: (value: number | string) => formatAxisValue(Number(value)),
             },
             grid: { color: '#e2e8f0' }
         }
