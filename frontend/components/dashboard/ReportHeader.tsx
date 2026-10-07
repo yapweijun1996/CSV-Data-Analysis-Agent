@@ -50,12 +50,6 @@ const ClockIcon: React.FC = () => (
     </svg>
 );
 
-const SparkleIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-3.5 w-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-    </svg>
-);
-
 // ---------------------------------------------------------------------------
 // KPI stat card
 // ---------------------------------------------------------------------------
@@ -126,24 +120,24 @@ const ReportHeaderComponent: React.FC<ReportHeaderProps> = ({
     return (
         <section className="overflow-hidden rounded-card border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
             {/* Title area */}
-            <div className="flex flex-col gap-4 p-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex flex-col gap-4 px-4 py-3 xl:flex-row xl:items-start xl:justify-between">
                 <div className="max-w-3xl">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                    <p className="text-[11px] font-semibold tracking-wide text-slate-500">
                         {getTranslation('report_header_context', language)}
                     </p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                    <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-950">
                         {displayTitle}
                     </h2>
-                    <p className="mt-2 text-sm text-slate-600">
-                        {effectiveReportContext.reportDescription
-                            || getTranslation('report_header_hint', language)}
+                    {effectiveReportContext.reportDescription && (
+                        <p className="mt-1 text-sm text-slate-600">{effectiveReportContext.reportDescription}</p>
+                    )}
+                    {/* Compact meta: rows once, file name only when it is not already the title */}
+                    <p className="mt-1 text-xs text-slate-500">
+                        {getTranslation('report_header_meta_rows', language, { count: preparedRowCount.toLocaleString() })}
+                        {fileName && differs(fileName, displayTitle) && <> · {fileName}</>}
                     </p>
-                    {/* Badges row */}
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
-                            <SparkleIcon />
-                            {getTranslation('report_header_ai_badge', language)}
-                        </span>
+                    {/* Badges only for states that matter (the page is already "AI Analysis") */}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 empty:hidden">
                         {showAiGuessBanner && (
                             <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
                                 {getTranslation('report_header_low_confidence', language)}
@@ -155,10 +149,6 @@ const ReportHeaderComponent: React.FC<ReportHeaderProps> = ({
                             </span>
                         )}
                     </div>
-                    {/* Compact info: file + rows — always visible */}
-                    <p className="mt-2 text-xs text-slate-500">
-                        {fileName && <>{fileName} · </>}{preparedRowCount.toLocaleString()} {getTranslation('report_header_prepared_rows', language).toLowerCase()}
-                    </p>
                 </div>
             </div>
 

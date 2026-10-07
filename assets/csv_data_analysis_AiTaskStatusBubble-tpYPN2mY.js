@@ -1,8 +1,8 @@
 import { j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { u as useAppStore, a as IconWarning, j as IconCheck } from "./csv_data_analysis_index-Be8kubB_.js";
+import { u as useAppStore, a as IconWarning, j as IconCheck } from "./csv_data_analysis_index-BYjCn1Yx.js";
 import { I as IconSearch } from "./csv_data_analysis_IconSearch-j9OYkQx7.js";
 import { a as IconSettings, I as IconThinking } from "./csv_data_analysis_IconSettings-FS0PVK9T.js";
-import { U as getTranslation } from "./csv_data_analysis_app-agent-CNQ3PHgm.js";
+import { U as getTranslation } from "./csv_data_analysis_app-agent-BYlUw_Vb.js";
 const IconWrapper = ({ children, colorClass }) => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`, children });
 const ThinkingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-blue-100 text-blue-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconThinking, { className: "h-5 w-5" }) });
 const ExecutingIcon = () => /* @__PURE__ */ jsxRuntimeExports.jsx(IconWrapper, { colorClass: "bg-indigo-100 text-indigo-600", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconSettings, { className: "h-5 w-5", "aria-hidden": "true" }) });
@@ -44,6 +44,7 @@ const MicroTaskStep = ({ task }) => {
   ] });
 };
 const AiTaskStatusBubble = ({ task, variant = "default" }) => {
+  var _a;
   const { title, subtitle, language } = useLocalizedTask(task);
   const renderIcon = () => {
     switch (task.status) {
@@ -109,6 +110,17 @@ const AiTaskStatusBubble = ({ task, variant = "default" }) => {
           ))
         }
       ),
+      ((_a = task.titleKey) == null ? void 0 : _a.startsWith("analysis_initial_stage_")) && /* @__PURE__ */ jsxRuntimeExports.jsx("ol", { className: "mt-1.5 hidden gap-0.5 text-[11px] md:flex", "aria-hidden": "true", children: Array.from({ length: task.totalSteps }, (_, index) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "li",
+        {
+          className: `min-w-0 flex-1 truncate ${index < task.currentStep - 1 ? "text-slate-500" : index === task.currentStep - 1 ? "font-semibold text-blue-700" : "text-slate-400"}`,
+          children: [
+            index < task.currentStep - 1 ? "✓ " : "",
+            getTranslation(`analysis_initial_stage_${index + 1}_short`, language)
+          ]
+        },
+        index
+      )) }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1.5 text-xs text-slate-500", children: getTranslation("analysis_progress_caption", language, {
         done: Math.max(0, task.currentStep - 1),
         total: task.totalSteps
