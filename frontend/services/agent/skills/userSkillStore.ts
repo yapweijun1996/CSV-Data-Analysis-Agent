@@ -6,6 +6,7 @@ import { parseSkillMarkdown } from './skillMarkdown';
  * virtual `skills/<name>/SKILL.md` files, the same layout the loader reads.
  */
 const STORAGE_KEY = 'csv-ai-user-skills-v1';
+const DISABLED_KEY = 'csv-ai-disabled-skills-v1';
 export const MAX_USER_SKILLS = 30;
 export const MAX_USER_SKILL_CHARS = 20_000;
 
@@ -15,6 +16,7 @@ export interface UserSkillImportResult {
 }
 
 let memoryFallback: Record<string, string> = {};
+let disabledFallback: string[] = [];
 const listeners = new Set<() => void>();
 
 const virtualPath = (name: string) => `skills/${name}/SKILL.md`;
@@ -52,13 +54,33 @@ export const subscribeUserSkills = (listener: () => void): (() => void) => {
     return () => listeners.delete(listener);
 };
 
-/** A stable snapshot string for useSyncExternalStore. */
+/** A stable snapshot string for useSyncExternalStore (stored skills and the disabled list). */
 export const getUserSkillsSnapshot = (): string => {
     try {
-        return localStorage.getItem(STORAGE_KEY) ?? JSON.stringify(memoryFallback);
+        return `${localStorage.getItem(STORAGE_KEY) ?? JSON.stringify(memoryFallback)}|${localStorage.getItem(DISABLED_KEY) ?? JSON.stringify(disabledFallback)}`;
     } catch {
-        return JSON.stringify(memoryFallback);
+        return `${JSON.stringify(memoryFallback)}|${JSON.stringify(disabledFallback)}`;
     }
+};
+
+/** Names of skills the person switched off. A switched-off skill is not listed to the agent and cannot be read. */
+export const readDisabledSkillNames = (): Set<string> => {
+    try {
+        const raw = localStorage.getItem(DISABLED_KEY);
+        if (!raw) return new Set(disabledFallback);
+        const parsed: unknown = JSON.parse(raw);
+        return new Set(Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []);
+    } catch {
+        return new Set(disabledFallback);
+    }
+};
+
+export const setSkillEnabled = (name: string, enabled: boolean): void => {
+    const disabled = readDisabledSkillNames();
+    if (enabled) disabled.delete(name); else disabled.add(name);
+    disabledFallback = [...disabled];
+    try { localStorage.setItem(DISABLED_KEY, JSON.stringify(disabledFallback)); } catch { /* still applies to this tab */ }
+    listeners.forEach(listener => listener());
 };
 
 /**
@@ -92,6 +114,25 @@ export const importUserSkills = (files: Array<{ fileName: string; text: string }
     return result;
 };
 
+/**
+ * Saves an edited skill. The text is validated like an import. If the name was changed, a
+ * skill the person owns under the old name is removed so the edit does not leave a copy.
+ */
+export const saveEditedUserSkill = (
+    originalName: string,
+    text: string,
+): { ok: boolean; name?: string; reason?: string } => {
+    const result = importUserSkills([{ fileName: `${originalName}.md`, text }]);
+    if (result.rejected.length > 0) return { ok: false, reason: result.rejected[0].reason };
+    const name = result.added[0];
+    if (name !== originalName) {
+        removeUserSkill(originalName);
+        const disabled = readDisabledSkillNames();
+        if (disabled.has(originalName)) { setSkillEnabled(originalName, true); setSkillEnabled(name, false); }
+    }
+    return { ok: true, name };
+};
+
 export const removeUserSkill = (name: string): void => {
     const current = readAll();
     if (!(name in current)) return;
@@ -101,6 +142,7 @@ export const removeUserSkill = (name: string): void => {
 
 export const resetUserSkillsForTests = (): void => {
     memoryFallback = {};
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    disabledFallback = [];
+    try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(DISABLED_KEY); } catch { /* ignore */ }
     listeners.forEach(listener => listener());
 };

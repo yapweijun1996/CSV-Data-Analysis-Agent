@@ -62,3 +62,15 @@ export const parseSkillMarkdown = (text: string, filePath: string): SkillParseRe
         },
     };
 };
+
+/** The `SKILL.md` text for a skill, so it can be exported or edited and parses back to the same skill. */
+export const serializeSkillMarkdown = (skill: Skill): string => [
+    '---',
+    `name: ${skill.name}`,
+    `description: ${skill.description}`,
+    ...(skill.disableModelInvocation ? ['disable-model-invocation: true'] : []),
+    '---',
+    '',
+    skill.content,
+    '',
+].join('\n');

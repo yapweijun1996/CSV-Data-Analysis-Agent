@@ -1,7 +1,7 @@
 import { a as reactExports, j as jsxRuntimeExports, W as We } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
-import { u as useAppStore, i as usePwaLifecycle, e as useDialogAccessibility, r as refreshPwaStorageEstimate } from "./csv_data_analysis_index-i6t6jQCM.js";
-import { bu as subscribeUserSkills, bv as getUserSkillsSnapshot, bw as resolveSkillEntries, U as getTranslation, bx as removeUserSkill, by as importUserSkills, bz as DEFAULT_GATEWAY_MODEL, bA as GOOGLE_MODELS, bB as OPENAI_MODELS, bC as DEFAULT_FALLBACK_MODEL, bD as SUPPORTED_APP_LANGUAGES, bE as DEFAULT_MAX_AGENT_TURNS, bF as MAX_MAX_AGENT_TURNS, bG as MIN_MAX_AGENT_TURNS, bH as DEFAULT_TOOL_OUTPUT_CUTOFF, bI as MAX_TOOL_OUTPUT_CUTOFF, bJ as MIN_TOOL_OUTPUT_CUTOFF, bK as DEFAULT_GOOGLE_MODEL, b3 as createProviderModel, bL as clearCloudAiConsentRuntimeDecisions, bM as clearAllLocalBrowserData } from "./csv_data_analysis_app-agent-CT0vsnX5.js";
+import { u as useAppStore, i as usePwaLifecycle, e as useDialogAccessibility, r as refreshPwaStorageEstimate } from "./csv_data_analysis_index-zDD06bL0.js";
+import { bu as subscribeUserSkills, bv as getUserSkillsSnapshot, bw as resolveSkillEntries, U as getTranslation, bx as setSkillEnabled, by as serializeSkillMarkdown, bz as removeUserSkill, bA as saveEditedUserSkill, bB as importUserSkills, bC as DEFAULT_GATEWAY_MODEL, bD as GOOGLE_MODELS, bE as OPENAI_MODELS, bF as DEFAULT_FALLBACK_MODEL, bG as SUPPORTED_APP_LANGUAGES, bH as DEFAULT_MAX_AGENT_TURNS, bI as MAX_MAX_AGENT_TURNS, bJ as MIN_MAX_AGENT_TURNS, bK as DEFAULT_TOOL_OUTPUT_CUTOFF, bL as MAX_TOOL_OUTPUT_CUTOFF, bM as MIN_TOOL_OUTPUT_CUTOFF, bN as DEFAULT_GOOGLE_MODEL, b3 as createProviderModel, bO as clearCloudAiConsentRuntimeDecisions, bP as clearAllLocalBrowserData } from "./csv_data_analysis_app-agent-Ct6u7ALG.js";
 import { g as generateText } from "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
@@ -170,11 +170,27 @@ description: Use when writing summaries for our leadership team.
 ---
 
 Lead with the decision, then the evidence. Keep numbers to two figures.`;
+const downloadSkill = (name, text) => {
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${name}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch {
+  }
+};
 const AgentSkillsSection = ({ language }) => {
   const snapshot = reactExports.useSyncExternalStore(subscribeUserSkills, getUserSkillsSnapshot, getUserSkillsSnapshot);
   const { entries } = We.useMemo(() => resolveSkillEntries({}), [snapshot]);
   const fileInputRef = reactExports.useRef(null);
   const [lastImport, setLastImport] = reactExports.useState(null);
+  const [editing, setEditing] = reactExports.useState(null);
+  const builtinNames = We.useMemo(
+    () => new Set(resolveSkillEntries({}, {}).entries.map((entry) => entry.skill.name)),
+    []
+  );
   const handleFiles = async (event) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
     event.target.value = "";
@@ -185,24 +201,102 @@ const AgentSkillsSection = ({ language }) => {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-card border border-slate-200 bg-slate-50 p-4", "data-agent-skills-section": "true", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-sm font-semibold text-slate-900", children: getTranslation("settings_skills_title", language) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-1 text-xs leading-5 text-slate-600", children: getTranslation("settings_skills_detail", language) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white", children: entries.map(({ skill, source }) => /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { className: "flex items-start gap-3 px-3 py-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "flex items-center gap-2 text-sm font-medium text-slate-900", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate", children: skill.name }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${source === "user" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`, children: getTranslation(source === "user" ? "settings_skills_yours" : "settings_skills_builtin", language) })
+    /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white", children: entries.map(({ skill, source, enabled }) => /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { className: "px-3 py-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-3", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "input",
+          {
+            type: "checkbox",
+            role: "switch",
+            checked: enabled,
+            onChange: (event) => setSkillEnabled(skill.name, event.target.checked),
+            "aria-label": getTranslation("settings_skills_toggle_label", language, { name: skill.name }),
+            className: "mt-1 h-4 w-4 shrink-0"
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `min-w-0 flex-1 ${enabled ? "" : "opacity-60"}`, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "flex items-center gap-2 text-sm font-medium text-slate-900", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate", children: skill.name }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${source === "user" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`, children: getTranslation(source === "user" ? "settings_skills_yours" : "settings_skills_builtin", language) }),
+            !enabled && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800", children: getTranslation("settings_skills_off", language) })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-xs text-slate-500", children: skill.description })
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-xs text-slate-500", children: skill.description })
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex shrink-0 items-center gap-1", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => setEditing({ name: skill.name, text: serializeSkillMarkdown(skill), error: null }),
+              "aria-label": getTranslation("settings_skills_edit_label", language, { name: skill.name }),
+              className: "min-h-[44px] rounded-md px-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 md:min-h-0 md:py-1",
+              children: getTranslation("settings_skills_edit", language)
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => downloadSkill(skill.name, serializeSkillMarkdown(skill)),
+              "aria-label": getTranslation("settings_skills_export_label", language, { name: skill.name }),
+              className: "min-h-[44px] rounded-md px-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 md:min-h-0 md:py-1",
+              children: getTranslation("settings_skills_export", language)
+            }
+          ),
+          source === "user" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => removeUserSkill(skill.name),
+              "aria-label": getTranslation(
+                builtinNames.has(skill.name) ? "settings_skills_restore" : "settings_skills_remove",
+                language,
+                { name: skill.name }
+              ),
+              className: "min-h-[44px] rounded-md px-2 text-xs font-semibold text-red-700 hover:bg-red-50 md:min-h-0 md:py-1",
+              children: builtinNames.has(skill.name) ? getTranslation("settings_skills_restore", language) : "✕"
+            }
+          )
+        ] })
       ] }),
-      source === "user" && /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
-        {
-          type: "button",
-          onClick: () => removeUserSkill(skill.name),
-          "aria-label": getTranslation("settings_skills_remove", language, { name: skill.name }),
-          className: "min-h-[44px] shrink-0 rounded-md px-2 text-xs font-semibold text-red-700 hover:bg-red-50 md:min-h-0 md:py-1",
-          children: "✕"
-        }
-      )
+      (editing == null ? void 0 : editing.name) === skill.name && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-2 space-y-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "textarea",
+          {
+            value: editing.text,
+            onChange: (event) => setEditing({ ...editing, text: event.target.value, error: null }),
+            rows: 10,
+            spellCheck: false,
+            "aria-label": getTranslation("settings_skills_edit_label", language, { name: skill.name }),
+            className: "w-full rounded-md border border-slate-300 bg-white p-2 font-mono text-[12px] text-slate-800"
+          }
+        ),
+        source === "builtin" && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-slate-500", children: getTranslation("settings_skills_edit_hint", language) }),
+        editing.error && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "alert", className: "text-xs text-red-800", children: editing.error }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => {
+                const outcome = saveEditedUserSkill(skill.name, editing.text);
+                setEditing(outcome.ok ? null : { ...editing, error: outcome.reason ?? null });
+              },
+              className: "min-h-[44px] rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:min-h-0",
+              children: getTranslation("settings_skills_save", language)
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: () => setEditing(null),
+              className: "min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:min-h-0",
+              children: getTranslation("settings_skills_cancel", language)
+            }
+          )
+        ] })
+      ] })
     ] }, skill.name)) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "input",

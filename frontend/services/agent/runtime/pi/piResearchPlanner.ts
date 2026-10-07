@@ -1,6 +1,6 @@
 import { Agent, type AgentTool, type StreamFn } from '@earendil-works/pi-agent-core';
 import { Type } from '@earendil-works/pi-ai';
-import type { ColumnProfile, ResearchPlan } from '../../../../types';
+import type { ColumnAdditivity, ColumnProfile, ResearchPlan } from '../../../../types';
 import { getCurrentAnalysisDatasetVersion } from '../../artifactProvenance';
 import { emitAgentEvent } from '../../monitoring/agentMonitor';
 import { emitSilentFailure } from '../../monitoring/silentFailureTracker';
@@ -8,7 +8,7 @@ import { getPreferredAnalysisDataset } from '../../reportStructureState';
 import type { StoreApi } from '../../types';
 import { createPiAppTools } from './piAppTools';
 import { createPiCompactionTelemetry, createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
-import { buildResearchPlan, MAX_PLAN_QUESTIONS, MIN_PLAN_QUESTIONS, validateResearchQuestions } from './researchPlan';
+import { applyColumnAdditivity, buildResearchPlan, MAX_PLAN_QUESTIONS, MIN_PLAN_QUESTIONS, validateColumnAdditivity, validateResearchQuestions } from './researchPlan';
 import { createPiSkillTool } from './piSkillTool';
 
 export const SUBMIT_RESEARCH_PLAN_TOOL = 'submit_research_plan';
@@ -41,7 +41,8 @@ const buildPlannerSystemPrompt = (params: {
     '1. Read the choose-metric-and-aggregation skill first, and any other listed skill that matches.',
     '2. Look at the data only as much as needed (data_describe, data_value_counts, data_missing, data_outliers, data_query) so your choices rest on what the columns actually contain.',
     `3. Call ${SUBMIT_RESEARCH_PLAN_TOOL} once with ${MIN_PLAN_QUESTIONS}-${MAX_PLAN_QUESTIONS} varied questions that a decision-maker would care about. Each question gets a short title, a one-sentence rationale, a dimension and/or a metric using exact column names, and the aggregation that matches the meaning of the metric (do not sum prices or rates; use median or average).`,
-    '4. If the tool rejects a question, fix it and submit again.',
+    '4. In the same call, fill `columns` for every numeric column you looked at or plan to use as a metric: additivity (additive = summing rows is meaningful, non_additive = it is not) and nature (flow, stock, ratio, unit_value, other), judged from what the values mean, not from the column name. A rate, ratio, unit price or point-in-time balance is non_additive.',
+    '5. If the tool rejects a question, fix it and submit again.',
     'Use only the tools provided. Do not answer the questions yourself; plan them.',
 ].join('\n');
 
@@ -50,7 +51,7 @@ const optionalString = (description: string) => Type.Optional(Type.Union([Type.S
 const buildSubmitTool = (params: {
     columns: ColumnProfile[];
     datasetVersion: string;
-    onAccepted: (plan: ResearchPlan) => void;
+    onAccepted: (plan: ResearchPlan, additivity: Record<string, ColumnAdditivity>) => void;
 }): AgentTool => {
     let submissions = 0;
     return {
@@ -66,6 +67,12 @@ const buildSubmitTool = (params: {
                 aggregation: optionalString('sum, avg, median, count, count_distinct, min, max or percentile.'),
                 comparison: optionalString('Optional comparison intent such as "trend over time".'),
             })),
+            columns: Type.Optional(Type.Array(Type.Object({
+                column: Type.String({ description: 'Exact numeric column name.' }),
+                kind: Type.String({ description: 'additive or non_additive.' }),
+                nature: Type.String({ description: 'flow, stock, ratio, unit_value or other.' }),
+                rationale: Type.Optional(Type.String({ description: 'One short sentence.' })),
+            }))),
         }),
         executionMode: 'sequential',
         replay: 'never',
@@ -81,12 +88,15 @@ const buildSubmitTool = (params: {
                 const reasons = validation.rejected.map(item => `"${item.title}": ${item.reason}`).join(' ');
                 throw new Error(`Need at least ${MIN_PLAN_QUESTIONS} valid questions; ${validation.questions.length} were valid. ${reasons}`.trim());
             }
-            params.onAccepted(plan);
+            const additivity = validateColumnAdditivity((args as { columns?: unknown })?.columns, params.columns);
+            params.onAccepted(plan, additivity.accepted);
             return {
                 details: undefined,
                 content: [{ type: 'text', text: JSON.stringify({
                     accepted: plan.questions.length,
                     rejected: plan.rejected,
+                    columnsAccepted: Object.keys(additivity.accepted).length,
+                    columnsRejected: additivity.rejected,
                 }) }],
                 terminate: true,
             };
@@ -115,6 +125,7 @@ export const runPiResearchPlanner = async (params: {
     const datasetVersion = getCurrentAnalysisDatasetVersion(state) ?? params.datasetVersionFallback;
 
     let accepted: ResearchPlan | null = null;
+    let acceptedAdditivity: Record<string, ColumnAdditivity> = {};
     let providerTurns = 0;
     const planningController = new AbortController();
     const forwardAbort = () => planningController.abort(signal.reason);
@@ -131,7 +142,7 @@ export const runPiResearchPlanner = async (params: {
     const tools: AgentTool[] = [
         ...dataTools,
         createPiSkillTool(store),
-        buildSubmitTool({ columns, datasetVersion, onAccepted: plan => { accepted = plan; } }),
+        buildSubmitTool({ columns, datasetVersion, onAccepted: (plan, additivity) => { accepted = plan; acceptedAdditivity = additivity; } }),
     ];
 
     const settings = state.settings;
@@ -186,7 +197,13 @@ export const runPiResearchPlanner = async (params: {
         });
         return null;
     }
-    store.setState({ initialAnalysisPlan: accepted });
+    store.setState(current => ({
+        initialAnalysisPlan: accepted,
+        // Pi's additivity judgements travel with the column profiles the evidence stage reads.
+        ...(Object.keys(acceptedAdditivity).length > 0
+            ? { columnProfiles: applyColumnAdditivity(current.columnProfiles ?? [], acceptedAdditivity) }
+            : {}),
+    }));
     emitAgentEvent(store, {
         runId: `pi-plan:${datasetVersion}`,
         phase: 'planning',

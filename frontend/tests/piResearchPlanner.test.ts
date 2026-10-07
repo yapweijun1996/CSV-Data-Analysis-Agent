@@ -105,6 +105,25 @@ describe('Pi research planner', () => {
         expect(offered[0]).not.toContain('analysis_create_plan');
     });
 
+    it('attaches validated additivity judgements to the column profiles', async () => {
+        const store = createStore();
+        await run(store, scriptedStream([{
+            name: 'submit_research_plan',
+            arguments: {
+                questions: [question('A'), question('B', { metric: 'floor_area', aggregation: 'avg' })],
+                columns: [
+                    { column: 'resale_price', kind: 'non_additive', nature: 'unit_value', rationale: 'Price per flat.' },
+                    { column: 'nope', kind: 'additive', nature: 'flow' },
+                ],
+            },
+        }]));
+
+        const profiles = store.getState().columnProfiles;
+        expect(profiles.find((column: { name: string }) => column.name === 'resale_price').additivity)
+            .toMatchObject({ kind: 'non_additive', nature: 'unit_value' });
+        expect(profiles.find((column: { name: string }) => column.name === 'town').additivity).toBeUndefined();
+    });
+
     it('lets Pi correct a rejected submission', async () => {
         const store = createStore();
         const plan = await run(store, scriptedStream([
