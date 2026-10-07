@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_ChatPanel-BSTuDSiE.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_vendor-state-CMf1uPe1.js","./csv_data_analysis_MarkdownRenderer-DOHaSws0.js","./csv_data_analysis_vendor-ui-BoCHqsEI.js","./csv_data_analysis_IconInsights-C-7nPICp.js","./csv_data_analysis_IconSettings-FS0PVK9T.js","./csv_data_analysis_IconMemory-Cs1fVUAV.js","./csv_data_analysis_IconAi-DV4Egu6s.js","./csv_data_analysis_AnalysisPanel-jV7fDlXf.js","./csv_data_analysis_exportUtils-DfKSpD2m.js","./csv_data_analysis_IconClose-DoCpdGZg.js","./csv_data_analysis_TabulatorTable-BhiImEnR.js","./csv_data_analysis_CleaningRunBanner-CffQSLkk.js","./csv_data_analysis_AiTaskStatusBubble-CjlYYe65.js","./csv_data_analysis_IconSearch-j9OYkQx7.js","./csv_data_analysis_SpreadsheetPanel-DDKBxrQ6.js","./csv_data_analysis_SettingsModal-B10HtFyX.js","./csv_data_analysis_HistoryPanel-gkTwcDFa.js","./csv_data_analysis_MemoryPanel-Dv9HmSgg.js","./csv_data_analysis_AgentMonitorModal-CbIeTf7L.js","./csv_data_analysis_AgentActivityView-BwbBfG0H.js","./csv_data_analysis_DatabaseModal-Crl9eJBU.js","./csv_data_analysis_WorkspaceModal-YeKwuIWO.js","./csv_data_analysis_DataPreparationWorkflowModal-BFfYT89I.js","./csv_data_analysis_copyText-Di0nQNpb.js","./csv_data_analysis_DebugLogsModal-kW4jmyik.js","./csv_data_analysis_ReportBoundaryConfirmModal-w2TgpQxq.js","./csv_data_analysis_ApiKeyRequiredModal-p2RxIDUT.js","./csv_data_analysis_CloudAiConsentModal-BXaH8POT.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_ChatPanel-D1DylxPv.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_vendor-state-CMf1uPe1.js","./csv_data_analysis_MarkdownRenderer-DkpJCsvN.js","./csv_data_analysis_vendor-ui-BoCHqsEI.js","./csv_data_analysis_IconInsights-C-7nPICp.js","./csv_data_analysis_IconSettings-FS0PVK9T.js","./csv_data_analysis_IconMemory-Cs1fVUAV.js","./csv_data_analysis_IconAi-DV4Egu6s.js","./csv_data_analysis_AnalysisPanel-DKEP9xGi.js","./csv_data_analysis_exportUtils-DfKSpD2m.js","./csv_data_analysis_IconClose-DoCpdGZg.js","./csv_data_analysis_TabulatorTable-BERRGXcr.js","./csv_data_analysis_CleaningRunBanner-DMlNrrGF.js","./csv_data_analysis_AiTaskStatusBubble-CG9LH_QY.js","./csv_data_analysis_IconSearch-j9OYkQx7.js","./csv_data_analysis_SpreadsheetPanel-RS6ayDeL.js","./csv_data_analysis_SettingsModal-DsGeQpkv.js","./csv_data_analysis_HistoryPanel-CzkCm0Db.js","./csv_data_analysis_MemoryPanel-D863NFVS.js","./csv_data_analysis_AgentMonitorModal-CTqy5x2-.js","./csv_data_analysis_AgentActivityView-Bk1Z4n6i.js","./csv_data_analysis_DatabaseModal-B897q1zM.js","./csv_data_analysis_WorkspaceModal-DDN1R539.js","./csv_data_analysis_DataPreparationWorkflowModal-BXtNTDIF.js","./csv_data_analysis_copyText-Di0nQNpb.js","./csv_data_analysis_DebugLogsModal-CurzfTpj.js","./csv_data_analysis_ReportBoundaryConfirmModal-NwzwyjHp.js","./csv_data_analysis_ApiKeyRequiredModal-QG8QipR1.js","./csv_data_analysis_CloudAiConsentModal-CiPuzcHx.js"])))=>i.map(i=>d[i]);
 import { r as reactDomExports, j as jsxRuntimeExports, a as reactExports, W as We, R as ReactDOM } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { b as buildCloudAiConsentKey, s as shouldAllowAgentThinkingSurface, a as shouldAllowLongTermMemorySurface, c as shouldAllowLogsSurface, d as shouldAllowWorkflowSurface, e as shouldAllowWorkspaceSurface, f as shouldAllowDatabaseSurface, g as shouldAllowSettingsSurface, h as grantCloudAiConsent, i as getDefaultSettings, _ as __vitePreload, n as normalizeRuntimeAccessControlSettings, j as normalizeAppLanguage, k as saveSettings, l as createId, m as disposeDuckDbQueryEngine, o as getReport, C as CURRENT_SESSION_KEY, v as vectorStore, p as deleteReport, q as createIdleDuckDbSessionStatus, r as saveReport, t as deleteOriginalData, u as parseReportArtifactManifest, w as loadReportArtifactHtml, x as printReportArtifact, y as openReportArtifact, z as purgeAllStorage, A as normalizeRestoredAppState, B as resolveReportMemoryScope, D as hydrateLatestReportWorkspaceFiles, E as normalizeRestoredGoalState, F as restoreAgentActivityHistory, G as normalizeSavedReportPendingMemoryDocuments, H as normalizeSavedAgentMemoryRuns, I as normalizeSavedAgentMemoryRun, J as normalizeSavedReportMemoryDocuments, K as appendUnfinishedCleaningNotice, L as getReportsList, M as createChatMessage, N as navigateToCard, O as buildColumnRegistry, P as duckDbWorkerClient, Q as DUCKDB_INIT_TIMEOUT_MS, R as profileDataWithWorker, S as createBindingDuckDbSessionStatus, T as getOriginalData, U as getTranslation, V as getAllowedColumns, W as createProgressMessage, X as trimProgressMessages, Y as isDuckDbSessionStatusEqual, Z as primeDuckDbDataset, $ as createDuckDbSessionStatusFromBinding, a0 as captureHistoryAnalysisSnapshot, a1 as getRestoredHistoryAnalysisState, a2 as buildEffectiveColumnRegistryFromState, a3 as createWorkerDiagnosticsTelemetryReporter, a4 as parseCardMentions, a5 as buildCorrelationFields, a6 as toSerializable, a7 as normalizeAgentActivityEvent, a8 as LATEST_REPORT_MANIFEST_PATH, a9 as hasOpenableLatestReport, aa as getCurrentAnalysisDatasetVersion, ab as LATEST_REPORT_HTML_PATH, ac as generateAnalystReportArtifacts, ad as saveReportArtifacts, ae as buildPersistedReportRecord, af as isRuntimeAbortError, ag as recordLocalDiagnosticBestEffort, ah as projectToolLogToActivity, ai as projectRuntimeEventToActivity, aj as getSettings, ak as configureCloudAiConsentRuntime, al as configureLocalDiagnosticContext, am as shouldShowNewSessionButton, an as shouldShowHistoryButton, ao as shouldShowDatabaseButton, ap as shouldShowWorkflowButton, aq as shouldShowLogsButton, ar as shouldShowChangeGoalButton, as as shouldShowAssistantToggleButton, at as buildPersistedAppStateSignature, au as checkStorageHealth, av as persistCurrentAppSessionSnapshot, aw as APP_HEADER_HIDE_FOR_CARD_NAVIGATION_EVENT, ax as shouldShowAgentThinkingModal, ay as shouldShowLongTermMemory, az as formatUserError } from "./csv_data_analysis_app-agent-CRavRYcr.js";
+import { b as buildCloudAiConsentKey, s as shouldAllowAgentThinkingSurface, a as shouldAllowLongTermMemorySurface, c as shouldAllowLogsSurface, d as shouldAllowWorkflowSurface, e as shouldAllowWorkspaceSurface, f as shouldAllowDatabaseSurface, g as shouldAllowSettingsSurface, h as grantCloudAiConsent, i as getDefaultSettings, _ as __vitePreload, n as normalizeRuntimeAccessControlSettings, j as normalizeAppLanguage, k as saveSettings, l as createId, m as disposeDuckDbQueryEngine, o as getReport, C as CURRENT_SESSION_KEY, v as vectorStore, p as deleteReport, q as createIdleDuckDbSessionStatus, r as saveReport, t as deleteOriginalData, u as parseReportArtifactManifest, w as loadReportArtifactHtml, x as printReportArtifact, y as openReportArtifact, z as purgeAllStorage, A as normalizeRestoredAppState, B as resolveReportMemoryScope, D as hydrateLatestReportWorkspaceFiles, E as normalizeRestoredGoalState, F as restoreAgentActivityHistory, G as normalizeSavedReportPendingMemoryDocuments, H as normalizeSavedAgentMemoryRuns, I as normalizeSavedAgentMemoryRun, J as normalizeSavedReportMemoryDocuments, K as appendUnfinishedCleaningNotice, L as getReportsList, M as createChatMessage, N as navigateToCard, O as buildColumnRegistry, P as duckDbWorkerClient, Q as DUCKDB_INIT_TIMEOUT_MS, R as profileDataWithWorker, S as createBindingDuckDbSessionStatus, T as getOriginalData, U as getTranslation, V as getAllowedColumns, W as createProgressMessage, X as trimProgressMessages, Y as isDuckDbSessionStatusEqual, Z as primeDuckDbDataset, $ as createDuckDbSessionStatusFromBinding, a0 as captureHistoryAnalysisSnapshot, a1 as getRestoredHistoryAnalysisState, a2 as buildEffectiveColumnRegistryFromState, a3 as createWorkerDiagnosticsTelemetryReporter, a4 as parseCardMentions, a5 as buildCorrelationFields, a6 as toSerializable, a7 as normalizeAgentActivityEvent, a8 as LATEST_REPORT_MANIFEST_PATH, a9 as hasOpenableLatestReport, aa as getCurrentAnalysisDatasetVersion, ab as LATEST_REPORT_HTML_PATH, ac as generateAnalystReportArtifacts, ad as saveReportArtifacts, ae as buildPersistedReportRecord, af as isRuntimeAbortError, ag as recordLocalDiagnosticBestEffort, ah as projectToolLogToActivity, ai as projectRuntimeEventToActivity, aj as getSettings, ak as configureCloudAiConsentRuntime, al as configureLocalDiagnosticContext, am as shouldShowNewSessionButton, an as shouldShowHistoryButton, ao as shouldShowDatabaseButton, ap as shouldShowWorkflowButton, aq as shouldShowLogsButton, ar as shouldShowChangeGoalButton, as as shouldShowAssistantToggleButton, at as buildPersistedAppStateSignature, au as checkStorageHealth, av as persistCurrentAppSessionSnapshot, aw as APP_HEADER_HIDE_FOR_CARD_NAVIGATION_EVENT, ax as shouldShowAgentThinkingModal, ay as shouldShowLongTermMemory, az as formatUserError } from "./csv_data_analysis_app-agent-BflOCG34.js";
 import { c as createWithEqualityFn, s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
 import "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
@@ -169,7 +169,7 @@ const createSettingsSlice = (set, get) => ({
   isApiKeySet: false,
   handleSaveSettings: async (newSettings) => {
     if (!_isProviderConfigured$1) {
-      const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+      const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       _isProviderConfigured$1 = mod.isProviderConfigured;
     }
     const normalizedSettings = {
@@ -179,7 +179,7 @@ const createSettingsSlice = (set, get) => ({
     };
     const previousSettings = get().settings;
     set({ settings: normalizedSettings, isApiKeySet: _isProviderConfigured$1(normalizedSettings) });
-    const providerConfig = await __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+    const providerConfig = await __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     const connectionChanged = previousSettings.provider !== normalizedSettings.provider || previousSettings.simpleModel !== normalizedSettings.simpleModel || providerConfig.resolveProviderApiKey(previousSettings) !== providerConfig.resolveProviderApiKey(normalizedSettings);
     if (connectionChanged) {
       providerConfig.invalidateProviderHealthCache();
@@ -216,14 +216,14 @@ const writeTabSessionId = (sessionId) => {
 const createAndStoreTabSessionId = () => writeTabSessionId(generateSessionId());
 const discardPiSessionCheckpoint = async (sessionId) => {
   const { discardPiInitialAnalysisCheckpoint } = await __vitePreload(async () => {
-    const { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cH);
+    const { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cH);
     return { discardPiInitialAnalysisCheckpoint: discardPiInitialAnalysisCheckpoint2 };
   }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
   discardPiInitialAnalysisCheckpoint(sessionId);
 };
 const purgeInactivePiCheckpoints = async (activeSessionId) => {
   const { purgePiInitialAnalysisCheckpoints } = await __vitePreload(async () => {
-    const { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cH);
+    const { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cH);
     return { purgePiInitialAnalysisCheckpoints: purgePiInitialAnalysisCheckpoints2 };
   }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
   purgePiInitialAnalysisCheckpoints([activeSessionId]);
@@ -253,8 +253,8 @@ const createHistorySlice = (set, get) => ({
     get().addProgress(`Loading report ${id}...`);
     const [report, { normalizeDataPreparationPlan }, { updateCleaningRun }] = await Promise.all([
       getReport(id),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     if (report) {
       await discardPiSessionCheckpoint(get().sessionId);
@@ -345,7 +345,7 @@ const createHistorySlice = (set, get) => ({
           }
         })();
       } else {
-        void __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+        void __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
           (m) => m.rebuildVectorMemoryFromState({ getState: get, setState: set }, {
             reset: true,
             includeDatasetDocs: true,
@@ -434,11 +434,11 @@ const createHistorySlice = (set, get) => ({
       await vectorStore.clear();
       await deleteReport(CURRENT_SESSION_KEY);
       void __vitePreload(async () => {
-        const { removeOpfsDatasetSession } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.ct);
+        const { removeOpfsDatasetSession } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.ct);
         return { removeOpfsDatasetSession };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ removeOpfsDatasetSession }) => removeOpfsDatasetSession(get().sessionId)).catch((error) => console.warn("[History] Could not clear temporary OPFS data.", error));
       void __vitePreload(async () => {
-        const { clearSandboxTableRows } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cA);
+        const { clearSandboxTableRows } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cA);
         return { clearSandboxTableRows };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ clearSandboxTableRows }) => {
         var _a;
@@ -660,7 +660,7 @@ const createCardSlice = (set, get) => ({
     const card = get().analysisCards.find((item) => item.id === cardId);
     if (!card) return;
     invalidateChart(cardId);
-    void __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+    void __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
       (m) => m.removeCardMemoryDocument({ getState: get, setState: set }, cardId)
     );
     (_b = (_a = get()).addProgress) == null ? void 0 : _b.call(_a, `Removed card "${card.plan.title}".`);
@@ -770,7 +770,7 @@ const createCardSlice = (set, get) => ({
       }
     });
     if (didUpdate) {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.upsertCardMemoryDocument({ getState: get, setState: set }, cardId)
       );
     }
@@ -834,8 +834,8 @@ const createDataSlice = (set, get) => {
         { buildPersistedReportRecord: buildPersistedReportRecord2 },
         { CURRENT_SESSION_KEY: CURRENT_SESSION_KEY2, saveReport: saveReport2 }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cs), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cs), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const currentReport = buildPersistedReportRecord2(state2, {
         id: state2.sessionId,
@@ -858,8 +858,8 @@ const createDataSlice = (set, get) => {
   };
   const getDuckDbRefreshHelpers = async () => {
     duckDbRefreshHelpersPromise ?? (duckDbRefreshHelpersPromise = Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]).then(([
       { getPreferredAnalysisDataset },
       { resolveDatasetBindingTarget, isDuckDbSessionCurrentForDataset }
@@ -970,9 +970,9 @@ const createDataSlice = (set, get) => {
       { getPreferredAnalysisDataset },
       { buildSemanticDatasetVersion }
     ] = await Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cC), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cC), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     const state2 = get();
     const artifacts = await resolveReportStructureArtifactsWithProposal({
@@ -1019,7 +1019,7 @@ const createDataSlice = (set, get) => {
       currentView: "file_upload"
     }));
     const { orchestrateFileUpload } = await __vitePreload(async () => {
-      const { orchestrateFileUpload: orchestrateFileUpload2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cJ);
+      const { orchestrateFileUpload: orchestrateFileUpload2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cJ);
       return { orchestrateFileUpload: orchestrateFileUpload2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     try {
@@ -1059,14 +1059,14 @@ const createDataSlice = (set, get) => {
     },
     handleInitialAnalysis: async (dataForAnalysis, goal, options) => {
       const { handleInitialAnalysis } = await __vitePreload(async () => {
-        const { handleInitialAnalysis: handleInitialAnalysis2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cK);
+        const { handleInitialAnalysis: handleInitialAnalysis2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cK);
         return { handleInitialAnalysis: handleInitialAnalysis2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       return handleInitialAnalysis(dataForAnalysis, goal, storeApi, options);
     },
     proposeAnalysisGoals: async (dataForAnalysis) => {
       const { proposeAnalysisGoals: proposeGoals } = await __vitePreload(async () => {
-        const { proposeAnalysisGoals: proposeGoals2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cL);
+        const { proposeAnalysisGoals: proposeGoals2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cL);
         return { proposeAnalysisGoals: proposeGoals2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       return proposeGoals(dataForAnalysis, storeApi);
@@ -1104,14 +1104,14 @@ const createDataSlice = (set, get) => {
     },
     regenerateAnalyses: async (newData) => {
       const { regenerateAnalysesWithNewData } = await __vitePreload(async () => {
-        const { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cM);
+        const { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cM);
         return { regenerateAnalysesWithNewData: regenerateAnalysesWithNewData2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await regenerateAnalysesWithNewData(newData, storeApi);
     },
     reproposeAnalysisGoals: async () => {
       const { reproposeAnalysisGoals: reproposeGoalsService } = await __vitePreload(async () => {
-        const { reproposeAnalysisGoals: reproposeGoalsService2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cM);
+        const { reproposeAnalysisGoals: reproposeGoalsService2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cM);
         return { reproposeAnalysisGoals: reproposeGoalsService2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       reproposeGoalsService(storeApi);
@@ -1123,10 +1123,10 @@ const createDataSlice = (set, get) => {
         { resolveAnalysisDatasetProfiles },
         { annotateDatasetSemantics }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cN), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cm), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cN), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const targetDataset = dataset ?? getPreferredAnalysisDataset(get());
       if (!targetDataset) {
@@ -1262,10 +1262,10 @@ const createDataSlice = (set, get) => {
         { compileWorkspaceDataQuery },
         { executeStructuredDataQuery }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cO), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cE), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cD), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cO), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cE), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const resolveCurrentWorkspaceTarget = () => {
         const currentState = get();
@@ -1366,10 +1366,10 @@ const createDataSlice = (set, get) => {
         { getPreferredAnalysisDataset },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       updateAgentTaskStatus(storeApi, {
         status: "thinking",
@@ -1435,8 +1435,8 @@ const createDataSlice = (set, get) => {
         { createCleaningRun },
         { WORKSPACE_DATASET_CLEAN_CSV, WORKSPACE_DATASET_RAW_CSV, buildWorkspaceCsv }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const sessionId = get().sessionId;
       let originalData = sessionId ? await getOriginalData(sessionId) : null;
@@ -1503,12 +1503,12 @@ const createDataSlice = (set, get) => {
         { getPreferredAnalysisDataset },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.ci), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cu), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cB), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const rawCsvData = get().rawCsvData;
       if (!rawCsvData) {
@@ -1630,9 +1630,9 @@ const createDataSlice = (set, get) => {
         { resolveAnalysisDatasetProfiles },
         { DEFAULT_AUTO_ANALYSIS_GOAL }
       ] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cr), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cy), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cI), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       await rebuildStructureArtifacts(boundary);
       get().setIsReportBoundaryConfirmModalOpen(false);
@@ -1696,7 +1696,7 @@ const createDataSlice = (set, get) => {
           })
         };
       });
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.upsertColumnAnnotationDoc(storeApi, annotation)
       );
     },
@@ -1717,7 +1717,7 @@ const createDataSlice = (set, get) => {
           })
         };
       });
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
         (m) => m.removeColumnAnnotationDoc(storeApi, columnName)
       );
     }
@@ -1744,7 +1744,7 @@ const createChatSlice = (set, get) => {
       ]
     }));
     void __vitePreload(async () => {
-      const { upsertAcceptedDecisionDoc } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cx);
+      const { upsertAcceptedDecisionDoc } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cx);
       return { upsertAcceptedDecisionDoc };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ upsertAcceptedDecisionDoc }) => upsertAcceptedDecisionDoc(storeApi, entry)).catch((error) => {
       console.warn(`${LOG_PREFIX} Failed to retain accepted decision (non-blocking):`, error);
@@ -1757,7 +1757,7 @@ const createChatSlice = (set, get) => {
     isRefreshingContext = true;
     try {
       const { shouldRefreshContextualSummary, generateContextualSummary, markContextualSummaryRefreshed } = await __vitePreload(async () => {
-        const { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cw);
+        const { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cw);
         return { shouldRefreshContextualSummary: shouldRefreshContextualSummary2, generateContextualSummary: generateContextualSummary2, markContextualSummaryRefreshed: markContextualSummaryRefreshed2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const state2 = get();
@@ -1850,7 +1850,7 @@ const createChatSlice = (set, get) => {
     set({ isBusy: true, chatLifecycleState: "running", pendingClarification: null });
     try {
       const { handleAiAction } = await __vitePreload(async () => {
-        const { handleAiAction: handleAiAction2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cG);
+        const { handleAiAction: handleAiAction2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cG);
         return { handleAiAction: handleAiAction2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const result = await handleAiAction(action, storeApi, { spreadsheetFilterOrigin: origin });
@@ -1888,7 +1888,7 @@ const createChatSlice = (set, get) => {
     }
     if (!_isProviderConfigured) return false;
     const { validateProviderHealth } = await __vitePreload(async () => {
-      const { validateProviderHealth: validateProviderHealth2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cp);
+      const { validateProviderHealth: validateProviderHealth2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cp);
       return { validateProviderHealth: validateProviderHealth2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     const health = await validateProviderHealth(settings);
@@ -1924,7 +1924,7 @@ const createChatSlice = (set, get) => {
     }
     try {
       const { orchestrateChatResponse } = await __vitePreload(async () => {
-        const { orchestrateChatResponse: orchestrateChatResponse2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cP);
+        const { orchestrateChatResponse: orchestrateChatResponse2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cP);
         return { orchestrateChatResponse: orchestrateChatResponse2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await orchestrateChatResponse(message, storeApi);
@@ -1975,7 +1975,7 @@ const createChatSlice = (set, get) => {
     clearStreamingMessage: () => set({ streamingMessage: null }),
     confirmGoal: async (goalTitle) => {
       const { confirmAnalysisGoal } = await __vitePreload(async () => {
-        const { confirmAnalysisGoal: confirmAnalysisGoal2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cM);
+        const { confirmAnalysisGoal: confirmAnalysisGoal2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cM);
         return { confirmAnalysisGoal: confirmAnalysisGoal2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       await confirmAnalysisGoal(goalTitle, storeApi);
@@ -1990,9 +1990,9 @@ const createChatSlice = (set, get) => {
       }
       if (!_resolveEffectivePendingClarification || !_isProviderConfigured) {
         const [clarificationMod, providerMod] = await Promise.all([
-          __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-          __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-          __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cP), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+          __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+          __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+          __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cP), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
         ]);
         _resolveEffectivePendingClarification = clarificationMod.resolveEffectivePendingClarification;
         _isProviderConfigured = providerMod.isProviderConfigured;
@@ -2014,11 +2014,11 @@ const createChatSlice = (set, get) => {
           pendingClarificationInStore: Boolean(get().pendingClarification)
         });
         const { buildClarificationFollowUpPrompt, handleClarificationResponse: processClarificationResponse } = await __vitePreload(async () => {
-          const { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cF);
+          const { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cF);
           return { buildClarificationFollowUpPrompt: buildClarificationFollowUpPrompt2, handleClarificationResponse: processClarificationResponse2 };
         }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async (clarMod) => {
           const { handleClarificationResponse: procClarResp } = await __vitePreload(async () => {
-            const { handleClarificationResponse: procClarResp2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cP);
+            const { handleClarificationResponse: procClarResp2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cP);
             return { handleClarificationResponse: procClarResp2 };
           }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
           return { ...clarMod, handleClarificationResponse: procClarResp };
@@ -2090,7 +2090,7 @@ const createChatSlice = (set, get) => {
       });
       try {
         if (!_resolveEffectivePendingClarification) {
-          const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
+          const mod = await __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cF), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
           _resolveEffectivePendingClarification = mod.resolveEffectivePendingClarification;
         }
         const pendingClarification = getEffectivePendingClarification();
@@ -2098,7 +2098,7 @@ const createChatSlice = (set, get) => {
           storeResolvedClarification(pendingClarification, userChoice.value || userChoice.label);
         }
         const { handleClarificationResponse: processClarificationResponse } = await __vitePreload(async () => {
-          const { handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cP);
+          const { handleClarificationResponse: processClarificationResponse2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cP);
           return { handleClarificationResponse: processClarificationResponse2 };
         }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
         await processClarificationResponse(userChoice, storeApi);
@@ -2719,8 +2719,8 @@ const createAgentSlice = (set, get) => ({
       return;
     }
     const [{ abortRuntimeTurn }, { buildRuntimeContractDetail }] = await Promise.all([
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.co), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cq), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.co), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cq), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     set({ cancelRequestedTurnId: activeTurn.turnId });
     abortRuntimeTurn(activeTurn.turnId);
@@ -2743,7 +2743,7 @@ const createAgentSlice = (set, get) => ({
     const researchRun = get().activeAnalysisSession;
     if (!researchRun || researchRun.status !== "running") return;
     const { requestDataResearchCancellation } = await __vitePreload(async () => {
-      const { requestDataResearchCancellation: requestDataResearchCancellation2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cv);
+      const { requestDataResearchCancellation: requestDataResearchCancellation2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cv);
       return { requestDataResearchCancellation: requestDataResearchCancellation2 };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
     requestDataResearchCancellation(researchRun.runId);
@@ -2816,7 +2816,7 @@ const createAgentSlice = (set, get) => ({
     set({ isCardReviewInProgress: true });
     try {
       const { generateCardEnhancementSuggestions } = await __vitePreload(async () => {
-        const { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cQ);
+        const { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cQ);
         return { generateCardEnhancementSuggestions: generateCardEnhancementSuggestions2 };
       }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
       const cardContext = analysisCards.map((card) => ({
@@ -3196,9 +3196,9 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
       { updateCleaningRun }
     ] = await Promise.all([
       getSettings(),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-      __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cp), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cn), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+      __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cz), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
     ]);
     const persistedSettings = {
       ...rawPersistedSettings,
@@ -3215,11 +3215,11 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
     }
     set({ sessionId: activeSessionId });
     void __vitePreload(async () => {
-      const { cleanupStaleOpfsSessions } = await import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.ct);
+      const { cleanupStaleOpfsSessions } = await import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.ct);
       return { cleanupStaleOpfsSessions };
     }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(({ cleanupStaleOpfsSessions }) => cleanupStaleOpfsSessions([activeSessionId])).catch((error) => console.warn("[Init] Could not clean abandoned OPFS imports.", error));
     if (typeof indexedDB !== "undefined") {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then((storage) => "pruneExpiredLocalDiagnostics" in storage && typeof storage.pruneExpiredLocalDiagnostics === "function" ? storage.pruneExpiredLocalDiagnostics() : 0).catch((error) => console.warn("[Init] Could not prune expired local diagnostics.", error));
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cj), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then((storage) => "pruneExpiredLocalDiagnostics" in storage && typeof storage.pruneExpiredLocalDiagnostics === "function" ? storage.pruneExpiredLocalDiagnostics() : 0).catch((error) => console.warn("[Init] Could not prune expired local diagnostics.", error));
     }
     try {
       const idbStart = performance.now();
@@ -3355,7 +3355,7 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
             set({ vectorMemoryState: "queued" });
             get().addProgress("Restored AI long-term memory from local storage.");
           } else {
-            void __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
+            void __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cx), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(
               (m) => m.rebuildVectorMemoryFromState({ getState: get, setState: set }, {
                 reset: true,
                 includeDatasetDocs: true,
@@ -3383,7 +3383,7 @@ const useAppStore = createWithEqualityFn()((set, get, store) => ({
       set({ isAppInitializing: false });
     }
     if (get().csvData) {
-      void __vitePreload(() => import("./csv_data_analysis_app-agent-CRavRYcr.js").then((n) => n.cH), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async ({ recoverPiInitialAnalysisIfNeeded }) => {
+      void __vitePreload(() => import("./csv_data_analysis_app-agent-BflOCG34.js").then((n) => n.cH), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url).then(async ({ recoverPiInitialAnalysisIfNeeded }) => {
         await recoverPiInitialAnalysisIfNeeded(store);
       }).catch((error) => {
         get().addProgress(
@@ -3763,6 +3763,214 @@ const useDialogAccessibility = (isOpen, onClose, options) => {
   }, [isOpen, options == null ? void 0 : options.restoreFocusSelector]);
   return dialogRef;
 };
+let state = {
+  status: typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "idle",
+  checkStatus: "idle",
+  isOnline: typeof navigator === "undefined" || navigator.onLine !== false,
+  version: null,
+  storageUsageBytes: null,
+  storageQuotaBytes: null
+};
+let registration = null;
+let initialized$1 = false;
+let reloadOnControllerChange = false;
+let autoUpdateGuard = () => true;
+const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1e3;
+const INSTALL_WAIT_TIMEOUT_MS = 3e4;
+const listeners$1 = /* @__PURE__ */ new Set();
+const emit = (patch) => {
+  state = { ...state, ...patch };
+  listeners$1.forEach((listener) => listener());
+};
+const getPwaLifecycleState = () => state;
+const subscribePwaLifecycle = (listener) => {
+  listeners$1.add(listener);
+  return () => listeners$1.delete(listener);
+};
+const refreshPwaStorageEstimate = async () => {
+  var _a, _b;
+  try {
+    const estimate = await ((_b = (_a = navigator.storage) == null ? void 0 : _a.estimate) == null ? void 0 : _b.call(_a));
+    emit({
+      storageUsageBytes: (estimate == null ? void 0 : estimate.usage) ?? null,
+      storageQuotaBytes: (estimate == null ? void 0 : estimate.quota) ?? null
+    });
+  } catch {
+    emit({ storageUsageBytes: null, storageQuotaBytes: null });
+  }
+};
+const markWaitingWorker = (worker) => {
+  if (!navigator.serviceWorker.controller) {
+    emit({ status: state.isOnline ? "ready" : "offline" });
+    worker.postMessage({ type: "SKIP_WAITING" });
+    return;
+  }
+  emit({ status: state.isOnline ? "update_available" : "offline" });
+  void autoApplyPwaUpdate();
+};
+const setPwaAutoUpdateGuard = (guard) => {
+  autoUpdateGuard = guard;
+};
+const autoApplyPwaUpdate = async () => {
+  if (!(registration == null ? void 0 : registration.waiting) || !state.isOnline || !autoUpdateGuard()) return false;
+  return applyPwaUpdate();
+};
+const waitForInstalled = (worker) => new Promise((resolve) => {
+  if (worker.state === "installed" || worker.state === "activated") return resolve(true);
+  const timeout = setTimeout(() => resolve(false), INSTALL_WAIT_TIMEOUT_MS);
+  worker.addEventListener("statechange", () => {
+    if (worker.state === "installed") {
+      clearTimeout(timeout);
+      resolve(true);
+    }
+    if (worker.state === "redundant") {
+      clearTimeout(timeout);
+      resolve(false);
+    }
+  });
+});
+const checkForPwaUpdate = async () => {
+  if (!registration) return "error";
+  emit({ checkStatus: "checking" });
+  try {
+    await registration.update();
+    if (!registration.waiting && registration.installing) await waitForInstalled(registration.installing);
+    if (registration.waiting) {
+      emit({ checkStatus: "update_found" });
+      markWaitingWorker(registration.waiting);
+      return "update_found";
+    }
+    emit({ checkStatus: "up_to_date" });
+    return "up_to_date";
+  } catch {
+    emit({ checkStatus: "error" });
+    return "error";
+  }
+};
+const registerPwa = async () => {
+  var _a, _b;
+  if (initialized$1) return;
+  initialized$1 = true;
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+    emit({ status: "unsupported" });
+    return;
+  }
+  const handleOnline = () => {
+    emit({ isOnline: true, status: (registration == null ? void 0 : registration.waiting) ? "update_available" : "ready" });
+    void autoApplyPwaUpdate();
+  };
+  const handleOffline = () => emit({ isOnline: false, status: "offline" });
+  const handleControllerChange = () => {
+    if (reloadOnControllerChange) window.location.reload();
+  };
+  const handleMessage = (event) => {
+    var _a2;
+    if (((_a2 = event.data) == null ? void 0 : _a2.type) === "PWA_VERSION") emit({ version: String(event.data.version) });
+  };
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
+  navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+  navigator.serviceWorker.addEventListener("message", handleMessage);
+  const handleVisible = () => {
+    if (document.visibilityState === "visible" && state.isOnline) void checkForPwaUpdate();
+  };
+  document.addEventListener("visibilitychange", handleVisible);
+  setInterval(() => {
+    if (state.isOnline) void checkForPwaUpdate();
+  }, UPDATE_CHECK_INTERVAL_MS);
+  try {
+    const workerUrl = new URL("service-worker.js", document.baseURI);
+    registration = await navigator.serviceWorker.register(workerUrl.toString(), {
+      scope: new URL("./", workerUrl).pathname,
+      // Always revalidate the worker script so a new release is noticed.
+      updateViaCache: "none"
+    });
+    if (registration.waiting) markWaitingWorker(registration.waiting);
+    registration.addEventListener("updatefound", () => {
+      const installing = registration == null ? void 0 : registration.installing;
+      if (!installing) return;
+      installing.addEventListener("statechange", () => {
+        if (installing.state === "installed") markWaitingWorker(installing);
+      });
+    });
+    (_a = registration.active) == null ? void 0 : _a.postMessage({ type: "GET_VERSION" });
+    void ((_b = navigator.serviceWorker.ready) == null ? void 0 : _b.then((ready) => {
+      var _a2;
+      return (_a2 = ready.active) == null ? void 0 : _a2.postMessage({ type: "GET_VERSION" });
+    }));
+    if (!registration.waiting) emit({ status: state.isOnline ? "ready" : "offline" });
+    await refreshPwaStorageEstimate();
+  } catch {
+    emit({ status: state.isOnline ? "error" : "offline" });
+  }
+};
+const applyPwaUpdate = async () => {
+  if (!registration) return false;
+  if (!registration.waiting) await registration.update();
+  if (!registration.waiting) return false;
+  reloadOnControllerChange = true;
+  emit({ status: "applying_update" });
+  registration.waiting.postMessage({ type: "SKIP_WAITING" });
+  return true;
+};
+const usePwaLifecycle = () => reactExports.useSyncExternalStore(
+  subscribePwaLifecycle,
+  getPwaLifecycleState,
+  getPwaLifecycleState
+);
+const usePwaAutoUpdate = () => {
+  const isRunActive = useAppStore((state2) => {
+    var _a;
+    return state2.isBusy || state2.initialAnalysisStatus === "running" || ((_a = state2.activeTurn) == null ? void 0 : _a.status) === "running" || state2.isGeneratingReport || state2.isSummaryGenerating;
+  }, shallow$1);
+  reactExports.useEffect(() => {
+    setPwaAutoUpdateGuard(() => !isRunActive);
+    if (!isRunActive) void autoApplyPwaUpdate();
+  }, [isRunActive]);
+};
+const IconRefresh = (props) => /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { xmlns: "http://www.w3.org/2000/svg", className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2, "aria-hidden": "true", ...props, children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M4 4v5h5M20 20v-5h-5M5.6 15a7 7 0 0 0 12.3 1.7M18.4 9A7 7 0 0 0 6.1 7.3" }) });
+const RESULT_VISIBLE_MS = 3e3;
+const formatPwaVersion = (version) => {
+  if (!version) return null;
+  const [base, build] = version.split(/-(.+)/);
+  return build ? `v${base} · ${build.slice(0, 7)}` : `v${base}`;
+};
+const PwaUpdateButton = ({ className, language }) => {
+  const pwa = usePwaLifecycle();
+  const [showResult, setShowResult] = reactExports.useState(false);
+  usePwaAutoUpdate();
+  reactExports.useEffect(() => {
+    if (pwa.checkStatus !== "up_to_date" && pwa.checkStatus !== "error") return void 0;
+    setShowResult(true);
+    const timer = setTimeout(() => setShowResult(false), RESULT_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [pwa.checkStatus]);
+  if (pwa.status === "unsupported") return null;
+  const updating = pwa.status === "applying_update" || pwa.checkStatus === "update_found";
+  const checking = pwa.checkStatus === "checking";
+  const versionLabel = formatPwaVersion(pwa.version);
+  let label = versionLabel ?? getTranslation("pwa_check_action", language);
+  if (checking) label = getTranslation("pwa_check_checking", language);
+  else if (updating) label = getTranslation("pwa_check_updating", language);
+  else if (showResult && pwa.checkStatus === "up_to_date") label = getTranslation("pwa_check_up_to_date", language);
+  else if (showResult && pwa.checkStatus === "error") label = getTranslation("pwa_check_failed", language);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "button",
+    {
+      type: "button",
+      "data-pwa-update-trigger": "true",
+      onClick: () => void checkForPwaUpdate(),
+      disabled: !pwa.isOnline || checking || updating,
+      className: `${className} disabled:cursor-not-allowed disabled:opacity-60`,
+      title: getTranslation("pwa_check_title", language),
+      "aria-label": `${getTranslation("pwa_check_action", language)}${versionLabel ? ` (${versionLabel})` : ""}`,
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(IconRefresh, { className: `h-5 w-5 ${checking || updating ? "animate-spin" : ""}` }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { role: "status", "aria-live": "polite", className: "hidden whitespace-nowrap md:inline", children: label })
+      ]
+    }
+  );
+};
 const AppHeader = () => {
   const primaryButtonClass = "flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium leading-none transition-colors md:min-h-0 md:min-w-0 md:py-1.5";
   const secondaryButtonClass = `${primaryButtonClass} border border-slate-300 bg-white text-slate-700 hover:bg-slate-100`;
@@ -3923,6 +4131,7 @@ const AppHeader = () => {
                     ]
                   }
                 ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(PwaUpdateButton, { className: secondaryButtonClass, language }),
                 showDatabaseButton && /* @__PURE__ */ jsxRuntimeExports.jsxs(
                   "button",
                   {
@@ -4218,10 +4427,10 @@ const AutoSaveManager = () => {
   }, []);
   return null;
 };
-const listeners$1 = /* @__PURE__ */ new Set();
+const listeners = /* @__PURE__ */ new Set();
 const seenPayloadIds = /* @__PURE__ */ new Set();
 let lastEvent = null;
-let initialized$1 = false;
+let initialized = false;
 const PENDING_QUERY_KEY = "pendingPayloadKey";
 let hasExternalPayloadPending = false;
 const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
@@ -4251,7 +4460,7 @@ const emitEvent = (event) => {
   }
   seenPayloadIds.add(event.payloadId);
   lastEvent = event;
-  listeners$1.forEach((listener) => listener(event));
+  listeners.forEach((listener) => listener(event));
 };
 const normalizePayload = (data, transport, pendingKey) => {
   if (!data || typeof data !== "object") return null;
@@ -4324,8 +4533,8 @@ const removePendingQueryParam = () => {
   window.history.replaceState({}, document.title, newUrl);
 };
 const initExternalCsvBridge = () => {
-  if (!isBrowser || initialized$1) return;
-  initialized$1 = true;
+  if (!isBrowser || initialized) return;
+  initialized = true;
   const params = new URLSearchParams(window.location.search);
   const pendingKey = params.get(PENDING_QUERY_KEY);
   let recoveredFromStorage = false;
@@ -4350,12 +4559,12 @@ const initExternalCsvBridge = () => {
   }
 };
 const subscribeToExternalCsvPayload = (listener) => {
-  listeners$1.add(listener);
+  listeners.add(listener);
   if (lastEvent) {
     listener(lastEvent);
   }
   return () => {
-    listeners$1.delete(listener);
+    listeners.delete(listener);
   };
 };
 const externalCsvBridge = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
@@ -4688,101 +4897,6 @@ const GlobalErrorToast = ({
     }
   );
 };
-let state = {
-  status: typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "idle",
-  isOnline: typeof navigator === "undefined" || navigator.onLine !== false,
-  version: null,
-  storageUsageBytes: null,
-  storageQuotaBytes: null
-};
-let registration = null;
-let initialized = false;
-let reloadOnControllerChange = false;
-const listeners = /* @__PURE__ */ new Set();
-const emit = (patch) => {
-  state = { ...state, ...patch };
-  listeners.forEach((listener) => listener());
-};
-const getPwaLifecycleState = () => state;
-const subscribePwaLifecycle = (listener) => {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-};
-const refreshPwaStorageEstimate = async () => {
-  var _a, _b;
-  try {
-    const estimate = await ((_b = (_a = navigator.storage) == null ? void 0 : _a.estimate) == null ? void 0 : _b.call(_a));
-    emit({
-      storageUsageBytes: (estimate == null ? void 0 : estimate.usage) ?? null,
-      storageQuotaBytes: (estimate == null ? void 0 : estimate.quota) ?? null
-    });
-  } catch {
-    emit({ storageUsageBytes: null, storageQuotaBytes: null });
-  }
-};
-const markWaitingWorker = (worker) => {
-  if (!navigator.serviceWorker.controller) {
-    emit({ status: state.isOnline ? "ready" : "offline" });
-    worker.postMessage({ type: "SKIP_WAITING" });
-    return;
-  }
-  emit({ status: state.isOnline ? "update_available" : "offline" });
-};
-const registerPwa = async () => {
-  var _a;
-  if (initialized) return;
-  initialized = true;
-  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
-    emit({ status: "unsupported" });
-    return;
-  }
-  const handleOnline = () => emit({ isOnline: true, status: (registration == null ? void 0 : registration.waiting) ? "update_available" : "ready" });
-  const handleOffline = () => emit({ isOnline: false, status: "offline" });
-  const handleControllerChange = () => {
-    if (reloadOnControllerChange) window.location.reload();
-  };
-  const handleMessage = (event) => {
-    var _a2;
-    if (((_a2 = event.data) == null ? void 0 : _a2.type) === "PWA_VERSION") emit({ version: String(event.data.version) });
-  };
-  window.addEventListener("online", handleOnline);
-  window.addEventListener("offline", handleOffline);
-  navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
-  navigator.serviceWorker.addEventListener("message", handleMessage);
-  try {
-    const workerUrl = new URL("service-worker.js", document.baseURI);
-    registration = await navigator.serviceWorker.register(workerUrl.toString(), {
-      scope: new URL("./", workerUrl).pathname
-    });
-    if (registration.waiting) markWaitingWorker(registration.waiting);
-    registration.addEventListener("updatefound", () => {
-      const installing = registration == null ? void 0 : registration.installing;
-      if (!installing) return;
-      installing.addEventListener("statechange", () => {
-        if (installing.state === "installed") markWaitingWorker(installing);
-      });
-    });
-    (_a = registration.active) == null ? void 0 : _a.postMessage({ type: "GET_VERSION" });
-    if (!registration.waiting) emit({ status: state.isOnline ? "ready" : "offline" });
-    await refreshPwaStorageEstimate();
-  } catch {
-    emit({ status: state.isOnline ? "error" : "offline" });
-  }
-};
-const applyPwaUpdate = async () => {
-  if (!registration) return false;
-  if (!registration.waiting) await registration.update();
-  if (!registration.waiting) return false;
-  reloadOnControllerChange = true;
-  emit({ status: "applying_update" });
-  registration.waiting.postMessage({ type: "SKIP_WAITING" });
-  return true;
-};
-const usePwaLifecycle = () => reactExports.useSyncExternalStore(
-  subscribePwaLifecycle,
-  getPwaLifecycleState,
-  getPwaLifecycleState
-);
 const PwaStatusBanner = () => {
   const { language, isRunActive } = useAppStore((state2) => {
     var _a;
@@ -4830,20 +4944,20 @@ const PwaStatusBanner = () => {
     )
   ] });
 };
-const ChatPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ChatPanel-BSTuDSiE.js"), true ? __vite__mapDeps([5,0,1,2,3,4,6,7,8,9,10,11,12,13]) : void 0, import.meta.url).then((m) => ({ default: m.ChatPanel })));
-const AnalysisPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AnalysisPanel-jV7fDlXf.js"), true ? __vite__mapDeps([14,6,7,10,8,9,0,1,2,3,4,15,16,17,18,19,20,11]) : void 0, import.meta.url).then((m) => ({ default: m.AnalysisPanel })));
-const SpreadsheetPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SpreadsheetPanel-DDKBxrQ6.js"), true ? __vite__mapDeps([21,6,17,9,0,1,2,3,4,16,13,20,7,18,10]) : void 0, import.meta.url).then((m) => ({ default: m.SpreadsheetPanel })));
-const SettingsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SettingsModal-B10HtFyX.js"), true ? __vite__mapDeps([22,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.SettingsModal })));
-const HistoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_HistoryPanel-gkTwcDFa.js"), true ? __vite__mapDeps([23,6,7,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.HistoryPanel })));
-const MemoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_MemoryPanel-Dv9HmSgg.js"), true ? __vite__mapDeps([24,6,0,1,2,3,4,16,12,7]) : void 0, import.meta.url).then((module) => ({ default: module.MemoryPanel })));
-const AgentMonitorModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AgentMonitorModal-CbIeTf7L.js"), true ? __vite__mapDeps([25,6,7,16,19,20,11,0,1,2,3,4,26]) : void 0, import.meta.url).then((module) => ({ default: module.AgentMonitorModal })));
-const DatabaseModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DatabaseModal-Crl9eJBU.js"), true ? __vite__mapDeps([27,6,7,17,9,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.DatabaseModal })));
-const WorkspaceModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_WorkspaceModal-YeKwuIWO.js"), true ? __vite__mapDeps([28,0,1,2,3,4,6,7,16]) : void 0, import.meta.url).then((module) => ({ default: module.WorkspaceModal })));
-const DataPreparationWorkflowModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DataPreparationWorkflowModal-BFfYT89I.js"), true ? __vite__mapDeps([29,6,7,0,1,2,3,4,30,16,26,15]) : void 0, import.meta.url).then((module) => ({ default: module.DataPreparationWorkflowModal })));
-const DebugLogsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DebugLogsModal-kW4jmyik.js"), true ? __vite__mapDeps([31,6,7,0,1,2,3,4,30,16]) : void 0, import.meta.url).then((module) => ({ default: module.DebugLogsModal })));
-const ReportBoundaryConfirmModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ReportBoundaryConfirmModal-w2TgpQxq.js"), true ? __vite__mapDeps([32,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ReportBoundaryConfirmModal })));
-const ApiKeyRequiredModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ApiKeyRequiredModal-p2RxIDUT.js"), true ? __vite__mapDeps([33,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ApiKeyRequiredModal })));
-const CloudAiConsentModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_CloudAiConsentModal-BXaH8POT.js"), true ? __vite__mapDeps([34,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.CloudAiConsentModal })));
+const ChatPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ChatPanel-D1DylxPv.js"), true ? __vite__mapDeps([5,0,1,2,3,4,6,7,8,9,10,11,12,13]) : void 0, import.meta.url).then((m) => ({ default: m.ChatPanel })));
+const AnalysisPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AnalysisPanel-DKEP9xGi.js"), true ? __vite__mapDeps([14,6,7,10,8,9,0,1,2,3,4,15,16,17,18,19,20,11]) : void 0, import.meta.url).then((m) => ({ default: m.AnalysisPanel })));
+const SpreadsheetPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SpreadsheetPanel-RS6ayDeL.js"), true ? __vite__mapDeps([21,6,17,9,0,1,2,3,4,16,13,20,7,18,10]) : void 0, import.meta.url).then((m) => ({ default: m.SpreadsheetPanel })));
+const SettingsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_SettingsModal-DsGeQpkv.js"), true ? __vite__mapDeps([22,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.SettingsModal })));
+const HistoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_HistoryPanel-CzkCm0Db.js"), true ? __vite__mapDeps([23,6,7,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.HistoryPanel })));
+const MemoryPanel = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_MemoryPanel-D863NFVS.js"), true ? __vite__mapDeps([24,6,0,1,2,3,4,16,12,7]) : void 0, import.meta.url).then((module) => ({ default: module.MemoryPanel })));
+const AgentMonitorModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_AgentMonitorModal-CTqy5x2-.js"), true ? __vite__mapDeps([25,6,7,16,19,20,11,0,1,2,3,4,26]) : void 0, import.meta.url).then((module) => ({ default: module.AgentMonitorModal })));
+const DatabaseModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DatabaseModal-B897q1zM.js"), true ? __vite__mapDeps([27,6,7,17,9,0,1,2,3,4,16]) : void 0, import.meta.url).then((module) => ({ default: module.DatabaseModal })));
+const WorkspaceModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_WorkspaceModal-DDN1R539.js"), true ? __vite__mapDeps([28,0,1,2,3,4,6,7,16]) : void 0, import.meta.url).then((module) => ({ default: module.WorkspaceModal })));
+const DataPreparationWorkflowModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DataPreparationWorkflowModal-BXtNTDIF.js"), true ? __vite__mapDeps([29,6,7,0,1,2,3,4,30,16,26,15]) : void 0, import.meta.url).then((module) => ({ default: module.DataPreparationWorkflowModal })));
+const DebugLogsModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_DebugLogsModal-CurzfTpj.js"), true ? __vite__mapDeps([31,6,7,0,1,2,3,4,30,16]) : void 0, import.meta.url).then((module) => ({ default: module.DebugLogsModal })));
+const ReportBoundaryConfirmModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ReportBoundaryConfirmModal-NwzwyjHp.js"), true ? __vite__mapDeps([32,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ReportBoundaryConfirmModal })));
+const ApiKeyRequiredModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_ApiKeyRequiredModal-QG8QipR1.js"), true ? __vite__mapDeps([33,6,0,1,2,3,4,7]) : void 0, import.meta.url).then((module) => ({ default: module.ApiKeyRequiredModal })));
+const CloudAiConsentModal = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_CloudAiConsentModal-CiPuzcHx.js"), true ? __vite__mapDeps([34,6,7,0,1,2,3,4]) : void 0, import.meta.url).then((module) => ({ default: module.CloudAiConsentModal })));
 const SpreadsheetPanelGate = We.memo(({ isVisible }) => {
   const isPipelineActive = useAppStore((state2) => {
     const task = state2.aiTaskStatus;

@@ -2302,6 +2302,42 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Kemas kini belum bersedia. Sila cuba lagi sebentar lagi.',
         'Japanese': '更新の準備がまだできていません。しばらくしてから再試行してください。',
     },
+    'pwa_check_title': {
+        'English': 'Check for updates. Updates install automatically when you are idle.',
+        'Mandarin': '检查更新。空闲时会自动安装更新。',
+        'Malay': 'Semak kemas kini. Kemas kini dipasang secara automatik apabila anda tidak aktif.',
+        'Japanese': '更新を確認します。操作していないときは自動で更新されます。',
+    },
+    'pwa_check_action': {
+        'English': 'Check update',
+        'Mandarin': '检查更新',
+        'Malay': 'Semak kemas kini',
+        'Japanese': '更新を確認',
+    },
+    'pwa_check_checking': {
+        'English': 'Checking…',
+        'Mandarin': '检查中…',
+        'Malay': 'Menyemak…',
+        'Japanese': '確認中…',
+    },
+    'pwa_check_up_to_date': {
+        'English': 'Up to date',
+        'Mandarin': '已是最新',
+        'Malay': 'Terkini',
+        'Japanese': '最新です',
+    },
+    'pwa_check_updating': {
+        'English': 'Updating…',
+        'Mandarin': '正在更新…',
+        'Malay': 'Mengemas kini…',
+        'Japanese': '更新中…',
+    },
+    'pwa_check_failed': {
+        'English': 'Check failed',
+        'Mandarin': '检查失败',
+        'Malay': 'Semakan gagal',
+        'Japanese': '確認に失敗',
+    },
     'settings_clear_local_data': {
         'English': 'Clear all local data',
         'Mandarin': '清除全部本地资料',
