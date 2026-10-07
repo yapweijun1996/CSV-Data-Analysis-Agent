@@ -1,9 +1,9 @@
 import { j as jsxRuntimeExports, a as reactExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
-import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-CRUEaweO.js";
-import { u as useAppStore, e as useDialogAccessibility } from "./csv_data_analysis_index-owxy8Znm.js";
+import { T as TabulatorTable } from "./csv_data_analysis_TabulatorTable-CqkFg5hJ.js";
+import { u as useAppStore, e as useDialogAccessibility } from "./csv_data_analysis_index-i6t6jQCM.js";
 import { I as IconClose } from "./csv_data_analysis_IconClose-DoCpdGZg.js";
-import { bR as summarizeTraceContract, U as getTranslation, bS as WORKSPACE_QUERY_LIMIT_OPTIONS, bT as DEFAULT_WORKSPACE_QUERY_LIMIT, bU as WORKSPACE_QUERY_TEMPLATE_OPTIONS, a2 as buildEffectiveColumnRegistryFromState, bV as createDefaultWorkspaceQueryDrafts, q as createIdleDuckDbSessionStatus } from "./csv_data_analysis_app-agent-Dh58Ubpl.js";
+import { bR as summarizeTraceContract, U as getTranslation, bS as WORKSPACE_QUERY_LIMIT_OPTIONS, bT as DEFAULT_WORKSPACE_QUERY_LIMIT, bU as WORKSPACE_QUERY_TEMPLATE_OPTIONS, a2 as buildEffectiveColumnRegistryFromState, bV as createDefaultWorkspaceQueryDrafts, q as createIdleDuckDbSessionStatus } from "./csv_data_analysis_app-agent-CT0vsnX5.js";
 import "./csv_data_analysis_vendor-ui-BoCHqsEI.js";
 import "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";

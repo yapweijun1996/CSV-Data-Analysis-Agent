@@ -23,6 +23,11 @@ import { runPiResearchPlanner } from './piResearchPlanner';
 const STAGES = createInitialAnalysisStageToolManifests();
 const CHECKPOINT_PREFIX = 'pi-initial-analysis-v1:';
 const INITIAL_ANALYSIS_BUDGET_MS = 240_000;
+// Pi may skip these when the earlier stages show the data needs no cleaning. Every other stage is
+// required, so the host never lets a run reach evidence without a prepared, validated dataset.
+const OPTIONAL_STAGE_NAMES: ReadonlySet<string> = new Set(['dataset.suggestCleaningPlan', 'dataset.applyTransform']);
+const MAX_INVALID_STAGE_REQUESTS = 2;
+
 const activeRuns = new Map<string, { agent: Agent; controller: AbortController; runtimeRunId: string; cancelledByUser: boolean }>();
 
 /** Stops the running initial analysis for a session; returns false when none is running. */
@@ -91,6 +96,30 @@ const hasCommittedState = (checkpoint: PiInitialCheckpoint, store: StoreApi): bo
         && checkpoint.cardFingerprints.every(value => cardFingerprints.has(value));
 };
 
+/** The stage Pi must run next and the optional stages it may skip to get there. */
+const describeStageChoices = (fromIndex: number): { required: string | null; skippable: string[] } => {
+    const skippable: string[] = [];
+    for (let index = fromIndex; index < STAGES.length; index += 1) {
+        if (!OPTIONAL_STAGE_NAMES.has(STAGES[index].name)) return { required: STAGES[index].name, skippable };
+        skippable.push(STAGES[index].name);
+    }
+    return { required: null, skippable };
+};
+
+/** Real facts Pi can base its stage choices on; no row values. */
+const readStageFacts = (store: StoreApi): Record<string, number | string | null> => {
+    const state = store.getState();
+    const inspection = state.reportStructureResolution?.rowInspection;
+    return {
+        rows: readCurrentRowCount(store),
+        columns: state.columnProfiles?.length ?? null,
+        residualNoiseCandidates: inspection
+            ? inspection.residualUnknownRowIndexes.length + inspection.residualSummaryLikeRowIndexes.length
+            : null,
+        dataQualityNotes: state.dataQualityIssues?.length ?? null,
+    };
+};
+
 const createIdentity = (prefix: string): string =>
     `${prefix}-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
 
@@ -127,6 +156,7 @@ const run = async (
     const executors = createInitialAnalysisStageExecutors();
     let recoveryEnabled = !store.getState().csvData?.backing?.ephemeral;
     let providerTurns = 0;
+    let invalidStageRequests = 0;
     const timer = setTimeout(() => controller.abort(new Error('The Pi initial-analysis time budget expired.')),
         INITIAL_ANALYSIS_BUDGET_MS);
     const persistCheckpoint = async (pendingStageIndex: number | null) => {
@@ -156,16 +186,50 @@ const run = async (
     const tool: AgentTool = {
         name: 'run_next_analysis_stage',
         label: 'Run next analysis stage',
-        description: 'Run the next app-governed CSV analysis stage. Call repeatedly until all nine stages are complete. The host chooses the stage and arguments; no raw rows are sent to this tool.',
-        parameters: Type.Object({}),
+        description: 'Run an app-governed CSV analysis stage. With no arguments it runs the next required stage. Pass `stage` only to skip the optional cleaning stages (dataset.suggestCleaningPlan, dataset.applyTransform) when the earlier results show the data needs no cleaning. The host validates the request and owns all arguments; no raw rows are sent to this tool.',
+        parameters: Type.Object({
+            stage: Type.Optional(Type.String({ description: 'Stage name to run next; later than the next stage only when every stage in between is optional.' })),
+            reason: Type.Optional(Type.String({ description: 'One short sentence on why.' })),
+        }),
         executionMode: 'sequential',
         replay: 'never',
-        execute: async (_id, _args, signal) => {
+        execute: async (_id, args, signal) => {
             if (nextStageIndex >= STAGES.length) {
                 return { details: undefined, content: [{ type: 'text', text: 'All stages are complete.' }], terminate: true };
             }
             if (signal?.aborted || controller.signal.aborted) {
                 throw signal?.reason ?? controller.signal.reason;
+            }
+            const requestedName = typeof (args as { stage?: unknown })?.stage === 'string'
+                ? ((args as { stage: string }).stage).trim() : '';
+            if (requestedName) {
+                const choices = describeStageChoices(nextStageIndex);
+                const requestedIndex = STAGES.findIndex(candidate => candidate.name === requestedName);
+                const allowed = requestedIndex === nextStageIndex
+                    || (requestedIndex > nextStageIndex && choices.skippable.length > 0
+                        && requestedName === choices.required)
+                    || (requestedIndex > nextStageIndex && choices.skippable.includes(requestedName));
+                if (allowed) {
+                    invalidStageRequests = 0;
+                    if (requestedIndex > nextStageIndex) {
+                        emitAgentEvent(store, {
+                            runId: runtimeRunId,
+                            phase: 'execution',
+                            step: 'pi_skipped_optional_stages',
+                            status: 'done',
+                            message: `Pi skipped ${STAGES.slice(nextStageIndex, requestedIndex).map(item => item.name).join(', ')}.`,
+                            detail: { runtimeOwner: 'pi', reason: String((args as { reason?: unknown }).reason ?? '').slice(0, 200) },
+                        });
+                        nextStageIndex = requestedIndex;
+                    }
+                } else {
+                    invalidStageRequests += 1;
+                    // After repeated invalid requests the host runs the next required stage itself, so a
+                    // confused model cannot stall the run.
+                    if (invalidStageRequests <= MAX_INVALID_STAGE_REQUESTS) {
+                        throw new Error(`Stage "${requestedName}" cannot run now. Next required stage: ${choices.required ?? 'none'}; optional stages you may skip first: ${choices.skippable.join(', ') || 'none'}.`);
+                    }
+                }
             }
             const stageIndex = nextStageIndex;
             const stage = STAGES[stageIndex];
@@ -231,6 +295,9 @@ const run = async (
                     summary: result.summary,
                     warningCodes: result.warningCodes,
                     remainingStages: STAGES.length - nextStageIndex,
+                    nextRequired: describeStageChoices(nextStageIndex).required,
+                    optionalStagesYouMaySkip: describeStageChoices(nextStageIndex).skippable,
+                    facts: readStageFacts(store),
                 }) }],
                 terminate: result.decision === 'fail' || nextStageIndex === STAGES.length,
             };
@@ -242,7 +309,9 @@ const run = async (
                 'You coordinate the app-governed CSV analysis lifecycle.',
                 `Dataset: ${request.datasetId}; version: ${request.datasetVersion}.`,
                 `Research goal: ${request.researchGoal}`,
-                'Call run_next_analysis_stage repeatedly. The host enforces the exact stage order and owns all data and mutations.',
+                'Stages in order: ' + STAGES.map(item => item.name).join(', ') + '.',
+                'Call run_next_analysis_stage repeatedly. With no arguments it runs the next required stage. The host owns all data and mutations and validates every request.',
+                `You may skip ${[...OPTIONAL_STAGE_NAMES].join(' and ')} (pass stage = the stage you want next, and a short reason) only when the facts returned after dataset.detectNoiseRows show clean data: no residual noise candidates and no data quality notes. When unsure, do not skip. Every other stage is required.`,
                 'Use no raw CSV rows, credentials, web access, or undeclared actions.',
                 'Do not answer before the host says every stage is complete.',
             ].join('\n'),

@@ -5,6 +5,7 @@ import { DATA_ANALYSIS_MAX_STEPS } from '../config/agentDefaults';
 
 const {
     generateAnalysisTopicsMock,
+    runPiEvidencePlannerMock,
     callSmallAiStepMock,
     processSingleTopicMock,
     buildDatasetContextMock,
@@ -20,6 +21,7 @@ const {
     handleAiActionMock,
 } = vi.hoisted(() => ({
     generateAnalysisTopicsMock: vi.fn(),
+    runPiEvidencePlannerMock: vi.fn(),
     callSmallAiStepMock: vi.fn(),
     processSingleTopicMock: vi.fn(),
     buildDatasetContextMock: vi.fn(),
@@ -59,6 +61,10 @@ vi.mock('../services/agent/runtimeSemanticUnderstanding', () => ({
 vi.mock('../services/agent/monitoring/agentMonitor', () => ({
     emitAgentEvent: emitAgentEventMock,
     updateAgentTaskStatus: vi.fn(),
+}));
+
+vi.mock('../services/agent/runtime/pi/piEvidencePlanner', () => ({
+    runPiEvidencePlanner: runPiEvidencePlannerMock,
 }));
 
 vi.mock('../services/agent/datasetBinding', () => ({
@@ -188,6 +194,7 @@ describe('dataAnalysisSessionRunner', () => {
             businessGrainConfidence: 'medium',
             unsafeForBusinessNarrative: false,
         });
+        runPiEvidencePlannerMock.mockResolvedValue(null);
         resolveDatasetBindingTargetMock.mockReturnValue(null);
         ensureDuckDbSessionSyncMock.mockResolvedValue({
             engine: 'duckdb',
@@ -240,6 +247,37 @@ describe('dataAnalysisSessionRunner', () => {
         // Later gap rounds may still ask for topics; the first round must come from the plan.
         expect(JSON.stringify(processSingleTopicMock.mock.calls[0])).toContain('Typical value by code (median of Value by Code)');
         expect(state.initialAnalysisPlan.consumed).toBe(true);
+    });
+
+    it('uses the evidence plan Pi designed instead of the stepped planner', async () => {
+        const { getCurrentAnalysisDatasetVersion } = await import('../services/agent/artifactProvenance');
+        const { store, state } = createStore();
+        state.initialAnalysisPlan = {
+            datasetVersion: getCurrentAnalysisDatasetVersion(state as never),
+            consumed: false,
+            rejected: [],
+            questions: [
+                { title: 'Typical value by code', rationale: 'r', dimension: 'Code', metric: 'Value', aggregation: 'median', comparison: null },
+                { title: 'Total value', rationale: 'r', dimension: null, metric: 'Value', aggregation: 'sum', comparison: null },
+            ],
+        };
+        const piPlan = { title: 'Pi plan', queryMode: 'aggregate', intentSummary: 'x', query: { select: ['Code'] } };
+        runPiEvidencePlannerMock.mockResolvedValue(piPlan);
+        const { runDataAnalysisSession } = await import('../services/agent/runtime/dataAnalysisSessionRunner');
+
+        await runDataAnalysisSession({ origin: 'auto_analysis', goal: 'Summarize key patterns', store: store as never });
+
+        expect(runPiEvidencePlannerMock).toHaveBeenCalled();
+        expect(JSON.stringify(processSingleTopicMock.mock.calls[0])).toContain('Pi plan');
+    });
+
+    it('does not run the Pi evidence planner without a research plan', async () => {
+        const { store } = createStore();
+        const { runDataAnalysisSession } = await import('../services/agent/runtime/dataAnalysisSessionRunner');
+
+        await runDataAnalysisSession({ origin: 'auto_analysis', goal: 'Summarize key patterns', store: store as never });
+
+        expect(runPiEvidencePlannerMock).not.toHaveBeenCalled();
     });
 
     it('degrades early without generating business hypotheses when no safe business grain and no candidate metrics exist', async () => {

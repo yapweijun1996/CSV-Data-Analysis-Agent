@@ -271,7 +271,7 @@ export interface PlannerSemanticIntent {
     preferredFilterIntent?: string | null;
 }
 
-const extractSemanticHints = (ctx?: AnalysisDatasetContext | null): TopicAlignmentSemanticHints | undefined => {
+export const extractSemanticHints = (ctx?: AnalysisDatasetContext | null): TopicAlignmentSemanticHints | undefined => {
     if (!ctx) return undefined;
     const hints: TopicAlignmentSemanticHints = {};
     if (ctx.metricColumns?.length) hints.knownMetricColumns = ctx.metricColumns;

@@ -15,6 +15,7 @@ import { emitAgentEvent, updateAgentTaskStatus } from '../monitoring/agentMonito
 import { keepInitialAnalysisStageFrame } from '../monitoring/analysisStageFrame';
 import { getCurrentAnalysisDatasetVersion } from '../artifactProvenance';
 import { applyPlanToHypotheses, buildResearchTopic, getUsableResearchPlan } from './pi/researchPlan';
+import { runPiEvidencePlanner } from './pi/piEvidencePlanner';
 import { emitSilentFailure } from '../monitoring/silentFailureTracker';
 import { recordRuntimeEvent } from './runtimeHelpers';
 import { upsertCardMemoryDocument } from '../memory/vectorMemorySync';
@@ -852,10 +853,25 @@ const runDataAnalysisSessionInternal = async (
         if (plannable.length > 0 && session.status !== 'cancelled') {
             const preGenStart = performance.now();
             console.log(`[Perf:PlanD] Pre-generating ${plannable.length} evidence plans in parallel...`);
+            // Pi designs each query with tools and skills, two at a time to respect the shared gateway's
+            // concurrency limit; a question Pi cannot plan falls back to the stepped planner below.
+            const piPlannerSlots = createSlotLimiter(2);
             const planResults = await Promise.all(
                 plannable.map(async h => {
                     const t0 = performance.now();
                     try {
+                        const piPlan = researchPlan
+                            ? await piPlannerSlots(() => runPiEvidencePlanner({
+                                store,
+                                topic: h.topic,
+                                columns: columnProfiles,
+                                datasetContext,
+                                planningIntent: { preferredGroupBy: h.grain, preferredMetric: h.metric, preferredFilterIntent: h.filterIntent },
+                                harnessSummary,
+                                signal: params.abortSignal,
+                            }))
+                            : null;
+                        if (piPlan) return { id: h.id, plan: piPlan };
                         const plan = await generateEvidenceQueryPlanStepped(
                             h.topic,
                             columnProfiles,
@@ -1498,6 +1514,18 @@ const runDataAnalysisSessionInternal = async (
  * Lifecycle boundary for the research runner. Individual planning/query stages
  * may throw, but the shared store must never retain a false running session.
  */
+/** Runs async tasks with at most `limit` in flight, in call order. */
+const createSlotLimiter = (limit: number) => {
+    let active = 0;
+    const waiting: Array<() => void> = [];
+    return async <T,>(task: () => Promise<T>): Promise<T> => {
+        if (active >= limit) await new Promise<void>(resolve => waiting.push(resolve));
+        active += 1;
+        try { return await task(); }
+        finally { active -= 1; waiting.shift()?.(); }
+    };
+};
+
 export const runDataAnalysisSession = async (
     params: RunDataAnalysisSessionParams,
 ): Promise<import('./analysisSessionHelpers').DataAnalysisSessionRunResult> => {

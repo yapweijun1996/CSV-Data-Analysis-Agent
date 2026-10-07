@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-Cl11HMkj.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-BJtNnorC.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-OQpIzK7y.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-47H64udl.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-B_5qrSTd.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-rgGpcASS.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -80765,6 +80765,1964 @@ const applyPlanToHypotheses = (hypotheses, plan) => {
     };
   });
 };
+const getResolvedToolRegistry = (context) => {
+  const normalizedContext = normalizeToolAvailabilityContext(context);
+  return resolveAllowedTools(buildBuiltinToolRegistry(normalizedContext.columnNames), normalizedContext);
+};
+const buildError = (code, message, toolName) => ({
+  code,
+  message,
+  toolName
+});
+const validateAction = (action, context, registry2 = getResolvedToolRegistry(context)) => {
+  var _a;
+  const normalizedContext = normalizeToolAvailabilityContext(context);
+  if (!action.thought) {
+    const error2 = buildError("invalid_action", "Every action must include a non-empty 'thought'.");
+    return { isValid: false, errors: error2.message, error: error2 };
+  }
+  if (action.type === "assistant_message") {
+    if (!action.message) {
+      const error2 = buildError("invalid_action", "Assistant messages require a 'message'.");
+      return { isValid: false, errors: error2.message, error: error2 };
+    }
+    if (action.cardId && !normalizedContext.cardIds.includes(action.cardId)) {
+      const error2 = buildError("invalid_args", `"cardId" ('${action.cardId}') must reference one of [${normalizedContext.cardIds.join(", ")}].`);
+      return { isValid: false, errors: error2.message, error: error2 };
+    }
+    return { isValid: true, errors: "" };
+  }
+  const descriptor = registry2.descriptorMap.get(action.toolName);
+  if (!descriptor) {
+    const error2 = buildError("invalid_tool_name", `Tool "${action.toolName}" is not registered or not allowed.`, action.toolName);
+    return { isValid: false, errors: error2.message, error: error2 };
+  }
+  const decision = registry2.decisions[action.toolName];
+  if (decision && !decision.allowed) {
+    const error2 = buildError(
+      decision.source === "availability" ? "tool_unavailable" : "blocked_tool",
+      decision.reason,
+      action.toolName
+    );
+    error2.detail = {
+      stage: decision.stage,
+      source: decision.source,
+      category: decision.category,
+      risk: decision.risk
+    };
+    return { isValid: false, errors: error2.message, error: error2 };
+  }
+  const workspaceRuleViolation = getWorkspaceRuleViolation$1(action, normalizedContext.runtimeAccessControl);
+  if (workspaceRuleViolation) {
+    const error2 = buildError("blocked_tool", workspaceRuleViolation.message, action.toolName);
+    error2.detail = {
+      source: "workspace_rule",
+      normalizedPath: workspaceRuleViolation.normalizedPath,
+      matchedPrefix: workspaceRuleViolation.matchedPrefix,
+      field: workspaceRuleViolation.field,
+      stage: registry2.stage
+    };
+    return { isValid: false, errors: error2.message, error: error2 };
+  }
+  const semanticErrors = ((_a = descriptor.validate) == null ? void 0 : _a.call(descriptor, action.args ?? {}, normalizedContext)) ?? [];
+  if (semanticErrors.length > 0) {
+    const error2 = buildError("malformed_tool_payload", semanticErrors.join(" "), action.toolName);
+    return { isValid: false, errors: semanticErrors.join(" "), error: error2 };
+  }
+  return { isValid: true, errors: "" };
+};
+const INTERNAL_ACTION_PREFIXES = [
+  "analysis.",
+  "data.",
+  "card.",
+  "conversation.",
+  "spreadsheet.",
+  "workspace.",
+  "cleaning.",
+  "ui."
+];
+const isInternalSuggestedAction = (value2) => {
+  const normalized = value2.trim();
+  if (!normalized) {
+    return false;
+  }
+  return INTERNAL_ACTION_PREFIXES.some((prefix) => normalized.startsWith(prefix)) || /^[a-z]+(?:\.[a-z0-9_]+)+$/.test(normalized);
+};
+const resolveSuggestedActionPrompt = (entry) => {
+  const label = entry.label.trim();
+  const action = entry.action.trim();
+  if (!action) {
+    return label;
+  }
+  return isInternalSuggestedAction(action) ? label : action;
+};
+const normalizeSuggestedActionEntry = (entry) => {
+  const label = typeof (entry == null ? void 0 : entry.label) === "string" ? entry.label.trim() : "";
+  const action = typeof (entry == null ? void 0 : entry.action) === "string" ? entry.action.trim() : "";
+  if (!label || !action) {
+    return null;
+  }
+  return {
+    label,
+    action: resolveSuggestedActionPrompt({ label, action })
+  };
+};
+const LOG_PREFIX$h = "[ChatAgent]";
+const normalizeSuggestedActions = (suggestedActions) => {
+  if (!Array.isArray(suggestedActions)) {
+    return void 0;
+  }
+  const normalized = suggestedActions.map((action) => normalizeSuggestedActionEntry(action)).filter((action) => Boolean(action)).slice(0, 3);
+  return normalized.length > 0 ? normalized : void 0;
+};
+const handleChatAction = (action, store) => {
+  if (action.type !== "assistant_message" || !action.message) {
+    console.warn(`${LOG_PREFIX$h} assistant_message chunk ignored because it contained no message.`, action);
+    return;
+  }
+  store.setState((prev) => ({
+    chatHistory: [
+      ...prev.chatHistory,
+      createChatMessage({
+        sender: "ai",
+        text: action.message,
+        timestamp: /* @__PURE__ */ new Date(),
+        type: "ai_message",
+        cardId: action.cardId,
+        suggestedActions: normalizeSuggestedActions(action.suggestedActions)
+      })
+    ]
+  }));
+};
+const TEMPORAL_COLUMN_PATTERN = /(?:^|[\s_])(date|time|day|week|month|quarter|year|period)(?:$|[\s_])/i;
+const DERIVED_RATIO_ALIAS_PATTERN = /(?:^|[\s_])(margin|rate|ratio|percent|percentage|pct)(?:$|[\s_])|%/i;
+const RATIO_SOURCE_COLUMN_PATTERN = /(?:^|[\s_])(margin|rate|ratio|percent|percentage|pct)(?:$|[\s_])|%/i;
+const DATE_LIKE_VALUE_PATTERNS = [
+  /^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}(?:[T\s].*)?$/,
+  /^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}(?:[T\s].*)?$/,
+  /^(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2},?\s+\d{2,4}$/i
+];
+const normalize$1 = (value2) => String(value2 ?? "").trim();
+const isDateLike = (value2) => {
+  const normalized = normalize$1(value2);
+  return Boolean(normalized) && DATE_LIKE_VALUE_PATTERNS.some((pattern) => pattern.test(normalized));
+};
+const validateAggregateAliasSemantics = (plan) => {
+  var _a;
+  const misleadingAggregate = (_a = plan.aggregates) == null ? void 0 : _a.find((aggregate2) => DERIVED_RATIO_ALIAS_PATTERN.test(aggregate2.as) && !RATIO_SOURCE_COLUMN_PATTERN.test(aggregate2.column ?? ""));
+  if (!misleadingAggregate) return null;
+  return {
+    code: "derived_ratio_alias_mismatch",
+    column: misleadingAggregate.as,
+    alternativeColumn: misleadingAggregate.column ?? null,
+    message: `The aggregate alias "${misleadingAggregate.as}" implies a derived ratio, but it only applies ${misleadingAggregate.function} to "${misleadingAggregate.column ?? "rows"}". Query the numerator and denominator as separate totals using honest aliases, return the complete grouped result, and calculate or rank the ratio from those totals.`
+  };
+};
+const validateGroupedQuerySemantics = (params) => {
+  var _a;
+  const groupByColumn = (_a = params.plan.groupBy) == null ? void 0 : _a[0];
+  if (!groupByColumn || TEMPORAL_COLUMN_PATTERN.test(groupByColumn)) return null;
+  const values2 = params.resultRows.map((row) => row[groupByColumn]).filter((value2) => normalize$1(value2).length > 0);
+  if (values2.length < 3 || values2.filter(isDateLike).length / values2.length < 0.8) return null;
+  const sectionLabels = params.datasetRows.map((row) => normalize$1(row.SectionLabel)).filter(Boolean);
+  const alternativeColumn = sectionLabels.length >= Math.min(5, params.datasetRows.length) && sectionLabels.filter((value2) => !isDateLike(value2)).length / sectionLabels.length >= 0.8 ? "SectionLabel" : null;
+  return {
+    code: "group_dimension_value_type_mismatch",
+    column: groupByColumn,
+    alternativeColumn,
+    message: `The grouped values for "${groupByColumn}" look like dates, so they cannot support a trustworthy ${groupByColumn} analysis.${alternativeColumn ? ` Use "${alternativeColumn}" for the preserved report group labels instead.` : " Choose a different validated grouping field."}`
+  };
+};
+const getToolGovernanceMeta = (store, toolName) => {
+  const context = buildToolAvailabilityContext(store.getState());
+  const registry2 = resolveAllowedTools(buildBuiltinToolRegistry(context.columnNames), context);
+  return {
+    stage: registry2.stage,
+    descriptor: registry2.descriptorMap.get(toolName),
+    decision: registry2.decisions[toolName]
+  };
+};
+const executeDeterministicMutationPlan = async (plan, store, abortSignal) => {
+  var _a, _b, _c, _d;
+  const { getState, setState } = store;
+  const currentData = getState().csvData;
+  if (!currentData) {
+    throw new Error("No cleaned dataset is available for mutation.");
+  }
+  if (!Array.isArray(plan.operations) || plan.operations.length === 0) {
+    throw new Error("Deterministic mutation plan must include at least one operation.");
+  }
+  const rowCountBefore = currentData.data.length;
+  getState().addProgress(`AI is executing deterministic dataset changes: ${plan.explanation}`);
+  throwIfAborted(abortSignal);
+  const mutationResult = applyDataOperations(currentData.data, plan.operations);
+  const nextData = { ...currentData, data: mutationResult.data };
+  throwIfAborted(abortSignal);
+  const profileResult = await profileDataWithWorker(mutationResult.data, abortSignal);
+  throwIfAborted(abortSignal);
+  const isCleaningRunActive = ((_a = getState().cleaningRun) == null ? void 0 : _a.status) === "running";
+  const isRuntimeTurnActive = ((_b = getState().activeTurn) == null ? void 0 : _b.status) === "running";
+  const existingPlan = getState().dataPreparationPlan;
+  const accumulatedOperations = isCleaningRunActive ? [...(existingPlan == null ? void 0 : existingPlan.operations) ?? [], ...plan.operations] : plan.operations;
+  getState().logAgentToolUsage({
+    tool: "data.mutate",
+    description: plan.explanation,
+    detail: {
+      operations: plan.operations,
+      derivedMetricValidations: plan.derivedMetricValidations ?? [],
+      logs: mutationResult.logs,
+      rowCountBefore,
+      rowCountAfter: mutationResult.data.length
+    }
+  });
+  throwIfAborted(abortSignal);
+  const nextRegistry = buildColumnRegistry({
+    data: nextData,
+    columnProfiles: profileResult.profiles,
+    semanticSnapshot: getState().datasetSemanticSnapshot,
+    userColumnAnnotations: getState().userColumnAnnotations,
+    steering: (_c = getState().latestAnalysisSession) == null ? void 0 : _c.analysisSteering,
+    existingRegistry: getState().columnRegistry
+  });
+  throwIfAborted(abortSignal);
+  setState({
+    csvData: nextData,
+    columnProfiles: profileResult.profiles,
+    columnRegistry: nextRegistry,
+    activeDataQuery: null,
+    activeSpreadsheetFilter: null,
+    spreadsheetFilterFunction: null,
+    aiFilterExplanation: null,
+    dataPreparationPlan: {
+      explanation: plan.explanation,
+      operations: accumulatedOperations,
+      outputColumns: profileResult.profiles,
+      planStatus: "operations",
+      consistencyIssues: [],
+      ...(existingPlan == null ? void 0 : existingPlan.labelNormalization) ? { labelNormalization: existingPlan.labelNormalization } : {},
+      ...((_d = plan.derivedMetricValidations) == null ? void 0 : _d.length) ? { derivedMetricValidations: plan.derivedMetricValidations } : {}
+    }
+  });
+  throwIfAborted(abortSignal);
+  const duckDbSync = await ensureDuckDbSessionSync(store, nextData, createWorkerDiagnosticsTelemetryReporter(store));
+  throwIfAborted(abortSignal);
+  if (duckDbSync.status === "ready") {
+    getState().logAgentToolUsage({
+      tool: "duckdb_query_engine",
+      description: "Synced cleaned dataset into DuckDB after permanent mutation.",
+      detail: {
+        tableName: duckDbSync.tableName,
+        loadVersion: duckDbSync.loadVersion
+      }
+    });
+  } else if (duckDbSync.fallbackStage === "bind_failed" || duckDbSync.fallbackStage === "query_failed") {
+    getState().logAgentToolUsage({
+      tool: "duckdb_query_engine",
+      description: "DuckDB dataset sync failed after permanent mutation.",
+      detail: {
+        tableName: duckDbSync.tableName,
+        loadVersion: duckDbSync.loadVersion,
+        fallbackStage: duckDbSync.fallbackStage,
+        error: duckDbSync.fallbackReason
+      }
+    });
+  }
+  if (!isCleaningRunActive && !isRuntimeTurnActive) {
+    throwIfAborted(abortSignal);
+    await getState().regenerateAnalyses(nextData);
+  }
+  return {
+    data: nextData,
+    logs: mutationResult.logs,
+    rowCountBefore,
+    rowCountAfter: mutationResult.data.length
+  };
+};
+const LOG_PREFIX$g = "[SpreadsheetFilterRuntime]";
+const PREVIEW_ROW_LIMIT$1 = 20;
+const createRequestId = () => createId("spreadsheet-filter");
+const logFlowEvent = (store, requestId, step, message, detail) => {
+  emitAgentEvent(store, {
+    phase: step === "intent" || step === "final_reply" ? "chat" : "execution",
+    step: `spreadsheet_filter_${step}`,
+    status: "done",
+    message,
+    detail: {
+      requestId,
+      flowStage: step,
+      ...detail
+    }
+  });
+};
+const logFlowTool = (store, requestId, step, description, detail) => {
+  store.getState().logAgentToolUsage({
+    tool: "spreadsheet.filter",
+    description,
+    stage: "analysis",
+    category: "spreadsheet",
+    risk: "low",
+    policyDecision: "allowed",
+    policyReason: "Spreadsheet filter executed through controlled runtime.",
+    detail: {
+      requestId,
+      flowStage: step,
+      ...detail
+    }
+  });
+};
+const getSinglePredicate = (operation) => {
+  const predicates = Array.isArray(operation.predicates) ? operation.predicates : [];
+  const hasGroups = Array.isArray(operation.groups) && operation.groups.length > 0;
+  if (hasGroups || predicates.length !== 1) {
+    return null;
+  }
+  return predicates[0] ?? null;
+};
+const quoteValue = (value2) => {
+  if (Array.isArray(value2)) {
+    return value2.map((item) => quoteValue(item)).join(", ");
+  }
+  if (typeof value2 === "string") {
+    return `"${value2}"`;
+  }
+  return String(value2);
+};
+const describeOperator = (operator, language) => getTranslation(`filter_op_${operator}`, language);
+const buildFinalReply = (language, operation, observation) => {
+  const singlePredicate = getSinglePredicate(operation);
+  const matchedCount = observation.matchedRowCount;
+  const matchedLabel = getTranslation(matchedCount === 1 ? "row_label_singular" : "row_label_plural", language);
+  if (!singlePredicate) {
+    return matchedCount === 0 ? getTranslation("spreadsheet_filter_reply_none", language) : getTranslation("spreadsheet_filter_reply_some", language, { count: matchedCount, rowsLabel: matchedLabel });
+  }
+  const operatorText = describeOperator(singlePredicate.operator, language);
+  const hasValue = singlePredicate.value !== void 0;
+  const valueText = hasValue ? ` ${quoteValue(singlePredicate.value)}` : "";
+  return matchedCount === 0 ? getTranslation("spreadsheet_filter_row_none", language, { column: singlePredicate.column, operator: operatorText, value: valueText }) : getTranslation("spreadsheet_filter_row_some", language, { column: singlePredicate.column, operator: operatorText, value: valueText, count: matchedCount, rowsLabel: matchedLabel });
+};
+const buildObservation = async (store, operation, abortSignal) => {
+  throwIfAborted(abortSignal);
+  const queryResult = await executeDataQueryWithWorker(
+    store.getState().csvData.data,
+    createQueryPlanFromFilterOperation(operation, { limit: PREVIEW_ROW_LIMIT$1 }),
+    {
+      allowedColumns: store.getState().columnProfiles.map((profile) => profile.name),
+      maxRows: PREVIEW_ROW_LIMIT$1,
+      maxColumns: Math.max(store.getState().columnProfiles.length, PREVIEW_ROW_LIMIT$1),
+      maxOrderBy: 3,
+      timeoutMs: 1500,
+      abortSignal,
+      reportDiagnostics: createWorkerDiagnosticsTelemetryReporter(store)
+    }
+  );
+  throwIfAborted(abortSignal);
+  const singlePredicate = getSinglePredicate(operation);
+  return {
+    selectedColumn: (singlePredicate == null ? void 0 : singlePredicate.column) ?? null,
+    operator: (singlePredicate == null ? void 0 : singlePredicate.operator) ?? null,
+    value: (singlePredicate == null ? void 0 : singlePredicate.value) ?? null,
+    matchedRowCount: queryResult.totalMatchedRows,
+    previewRows: queryResult.rows.slice(0, PREVIEW_ROW_LIMIT$1)
+  };
+};
+const runSpreadsheetFilter = async (query, store, options2, abortSignal) => {
+  var _a;
+  const { getState, setState } = store;
+  const origin = (options2 == null ? void 0 : options2.origin) ?? "chat";
+  const requestId = createRequestId();
+  const settings2 = getState().settings;
+  if (!isProviderConfigured(settings2) || !getState().csvData) {
+    getState().addProgress("Cannot execute AI query: Missing API Key or data.", "error");
+    throw new Error("Cannot execute spreadsheet.filter without provider configuration and dataset.");
+  }
+  setState({
+    isAiFiltering: true,
+    spreadsheetFilterFunction: null,
+    activeSpreadsheetFilter: null,
+    aiFilterExplanation: null
+  });
+  getState().addProgress(`AI is processing your data query: "${query}"...`, "system", settings2.complexModel);
+  console.log(`${LOG_PREFIX$g} Starting controlled spreadsheet filter request.`, { requestId, origin, query });
+  logFlowEvent(store, requestId, "intent", "Registered spreadsheet filter intent.", { origin, query });
+  logFlowTool(store, requestId, "intent", "Registered spreadsheet filter intent.", { origin, query });
+  try {
+    throwIfAborted(abortSignal);
+    const response = await generateFilterFunction(
+      query,
+      getState().columnProfiles,
+      getState().csvData.data.slice(0, 5),
+      settings2,
+      getState(),
+      abortSignal
+    );
+    throwIfAborted(abortSignal);
+    if (((_a = response.operation) == null ? void 0 : _a.type) !== "filter_rows" || !hasFilterOperationClauses(response.operation)) {
+      throw new Error("AI did not return a deterministic filter_rows operation.");
+    }
+    logFlowEvent(store, requestId, "tool_args", "Generated spreadsheet filter arguments.", {
+      origin,
+      query,
+      toolName: "spreadsheet.filter",
+      args: { query },
+      operation: response.operation,
+      explanation: response.explanation
+    });
+    logFlowTool(store, requestId, "tool_args", "Generated spreadsheet filter arguments.", {
+      origin,
+      query,
+      toolName: "spreadsheet.filter",
+      args: { query },
+      operation: response.operation,
+      explanation: response.explanation
+    });
+    const observation = await buildObservation(store, response.operation, abortSignal);
+    throwIfAborted(abortSignal);
+    const finalReply = buildFinalReply(settings2.language, response.operation, observation);
+    const activeSpreadsheetFilter = {
+      requestId,
+      origin,
+      query,
+      operation: response.operation,
+      observation,
+      finalReply,
+      appliedAt: /* @__PURE__ */ new Date()
+    };
+    throwIfAborted(abortSignal);
+    setState({
+      activeDataQuery: null,
+      activeSpreadsheetFilter,
+      spreadsheetFilterFunction: response.operation,
+      aiFilterExplanation: finalReply,
+      isSpreadsheetVisible: true
+    });
+    throwIfAborted(abortSignal);
+    logFlowEvent(store, requestId, "observation", "Observed spreadsheet filter result.", {
+      origin,
+      observation
+    });
+    logFlowTool(store, requestId, "observation", "Observed spreadsheet filter result.", {
+      origin,
+      observation
+    });
+    throwIfAborted(abortSignal);
+    logFlowEvent(store, requestId, "final_reply", "Built spreadsheet filter final reply.", {
+      origin,
+      finalReply
+    });
+    logFlowTool(store, requestId, "final_reply", "Built spreadsheet filter final reply.", {
+      origin,
+      finalReply
+    });
+    throwIfAborted(abortSignal);
+    getState().addProgress(`AI filter applied: ${finalReply}`);
+    return activeSpreadsheetFilter;
+  } catch (error2) {
+    console.error(`${LOG_PREFIX$g} Controlled spreadsheet filter failed.`, { requestId, origin, query, error: error2 });
+    if (isRuntimeAbortError(error2, abortSignal)) {
+      throw error2;
+    }
+    getState().addProgress(`AI query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, "error");
+    throw error2;
+  } finally {
+    setState({ isAiFiltering: false });
+  }
+};
+const collectMetricDerivationPreflightIssues = ({
+  columnProfiles,
+  csvData,
+  dataPreparationPlan,
+  operation
+}) => {
+  const brief = buildAnalysisIntentBrief({
+    columns: columnProfiles,
+    csvData: csvData ?? null,
+    dataPreparationPlan: dataPreparationPlan ?? null
+  });
+  return validateDeriveMetricOperationAgainstBrief(brief, operation);
+};
+const validateMetricDerivationPreflight = ({
+  columnProfiles,
+  csvData,
+  dataPreparationPlan,
+  operation
+}) => {
+  const validationIssues = collectMetricDerivationPreflightIssues({
+    columnProfiles,
+    csvData,
+    dataPreparationPlan,
+    operation
+  });
+  const blockingIssues = validationIssues.filter((issue) => issue.severity === "error");
+  if (blockingIssues.length === 0) {
+    return null;
+  }
+  const summary = blockingIssues.map((issue) => issue.message).join(" ");
+  const artifactMetadata = {
+    artifactType: "dataset_mutation_attempt",
+    validationIssues,
+    targetMetric: operation.outputMetricLabel
+  };
+  return {
+    status: "blocked",
+    toolName: "data.mutate",
+    message: summary,
+    shouldStop: false,
+    retryHint: "Repair the metric mapping, label/value columns, or grouping grain before retrying derive_metric_by_label.",
+    artifactMetadata,
+    observation: {
+      type: "tool_result",
+      status: "blocked",
+      summary,
+      toolName: "data.mutate",
+      code: "validation_failed",
+      retryHint: "Repair the metric mapping, label/value columns, or grouping grain before retrying derive_metric_by_label.",
+      detail: {
+        validationIssues,
+        artifactMetadata
+      }
+    }
+  };
+};
+const normalizeColumnIdentifier = (value2) => (value2 == null ? void 0 : value2.trim().toLowerCase()) ?? "";
+const resolveSourceColumnReference = (column, columnRegistry2) => resolveColumnReference(column, columnRegistry2) ?? column;
+const buildAggregateAliasSet = (plan) => new Set(
+  (plan.aggregates ?? []).map((aggregate2) => normalizeColumnIdentifier(aggregate2.as)).filter(Boolean)
+);
+const resolveAggregateOutputReference = (column, columnRegistry2, aggregateAliases) => aggregateAliases.has(normalizeColumnIdentifier(column)) ? column : resolveSourceColumnReference(column, columnRegistry2);
+const canonicalizeWhereClause = (where, columnRegistry2) => {
+  if (!where) {
+    return where;
+  }
+  return {
+    ...where.predicates ? {
+      predicates: where.predicates.map((predicate) => ({
+        ...predicate,
+        column: resolveSourceColumnReference(predicate.column, columnRegistry2)
+      }))
+    } : {},
+    ...where.groups ? {
+      groups: where.groups.map((group) => ({
+        predicates: group.predicates.map((predicate) => ({
+          ...predicate,
+          column: resolveSourceColumnReference(predicate.column, columnRegistry2)
+        }))
+      }))
+    } : {}
+  };
+};
+const canonicalizeQueryPlan = (plan, columnRegistry2) => {
+  const aggregateAliases = buildAggregateAliasSet(plan);
+  return {
+    ...plan,
+    ...plan.select ? {
+      select: plan.select.map((column) => resolveAggregateOutputReference(column, columnRegistry2, aggregateAliases))
+    } : {},
+    ...plan.where ? { where: canonicalizeWhereClause(plan.where, columnRegistry2) } : {},
+    ...plan.groupBy ? {
+      groupBy: plan.groupBy.map((column) => resolveSourceColumnReference(column, columnRegistry2))
+    } : {},
+    ...plan.aggregates ? {
+      aggregates: plan.aggregates.map((aggregate2) => ({
+        ...aggregate2,
+        ...aggregate2.column ? { column: resolveSourceColumnReference(aggregate2.column, columnRegistry2) } : {},
+        ...aggregate2.where ? { where: canonicalizeWhereClause(aggregate2.where, columnRegistry2) } : {}
+      }))
+    } : {},
+    ...plan.postAggregateFilter ? {
+      postAggregateFilter: {
+        ...plan.postAggregateFilter.predicates ? {
+          predicates: plan.postAggregateFilter.predicates.map((predicate) => ({
+            ...predicate,
+            column: resolveAggregateOutputReference(predicate.column, columnRegistry2, aggregateAliases)
+          }))
+        } : {},
+        ...plan.postAggregateFilter.groups ? {
+          groups: plan.postAggregateFilter.groups.map((group) => ({
+            predicates: group.predicates.map((predicate) => ({
+              ...predicate,
+              column: resolveAggregateOutputReference(predicate.column, columnRegistry2, aggregateAliases)
+            }))
+          }))
+        } : {}
+      }
+    } : {},
+    ...plan.orderBy ? {
+      orderBy: plan.orderBy.map((order) => ({
+        ...order,
+        column: resolveAggregateOutputReference(order.column, columnRegistry2, aggregateAliases)
+      }))
+    } : {}
+  };
+};
+const appendQueryTraceMessage = (store, query, options2) => {
+  const entry = createQueryTraceEntry(query, options2.phase, {
+    origin: options2.origin,
+    templateId: options2.templateId,
+    formSnapshot: options2.formSnapshot,
+    policyReason: options2.policyReason ?? null,
+    toolCategory: options2.toolCategory ?? "data"
+  });
+  store.setState((prev) => ({
+    ...options2.appendChatTrace ? {
+      chatHistory: [
+        ...prev.chatHistory,
+        createChatMessage({
+          sender: "ai",
+          text: `**${getDataQueryTraceLabel(options2.phase, query.plan, query.fallbackFilterOperation)}**
+${query.explanation}
+Rows: ${query.result.returnedRows}/${query.result.totalMatchedRows} | Duration: ${query.result.durationMs}ms${query.fallbackReason ? "\nThe query ran in degraded mode; review technical details if needed." : ""}`,
+          timestamp: /* @__PURE__ */ new Date(),
+          type: "ai_query_trace",
+          queryTrace: {
+            sessionId: entry.sessionId,
+            runId: entry.runId,
+            turnId: entry.turnId,
+            stepId: entry.stepId,
+            toolCallId: entry.toolCallId,
+            phase: options2.phase,
+            engine: query.engine,
+            sqlPreview: query.sqlPreview,
+            returnedRows: query.result.returnedRows,
+            totalMatchedRows: query.result.totalMatchedRows,
+            durationMs: query.result.durationMs,
+            fallbackReason: query.fallbackReason ?? null
+          }
+        })
+      ]
+    } : {},
+    queryHistory: appendQueryHistory(prev.queryHistory ?? [], entry)
+  }));
+  return entry;
+};
+const executeStructuredDataQuery = async (store, options2) => {
+  var _a;
+  const { getState, setState } = store;
+  const dataset = options2.datasetOverride ?? getPreferredAnalysisDataset(getState());
+  const abortSignal = options2.abortSignal;
+  const activeTurn = getState().activeTurn;
+  const activeStep = activeTurn == null ? void 0 : activeTurn.steps.at(-1);
+  if (!dataset) {
+    throw new Error("No dataset is available for read-only data querying.");
+  }
+  const columnRegistry2 = options2.columnRegistryOverride ?? buildEffectiveColumnRegistryFromState(getState(), {
+    datasetOverride: dataset
+  });
+  const canonicalPlan = canonicalizeQueryPlan(options2.plan, columnRegistry2);
+  const normalizedWhere = normalizeQueryWhereClauseLike(canonicalPlan.where);
+  const allowedColumns = options2.allowedColumnsOverride && options2.allowedColumnsOverride.length > 0 ? options2.allowedColumnsOverride : getAllowedColumns(columnRegistry2, "select").length > 0 ? getAllowedColumns(columnRegistry2, "select") : getState().columnProfiles.map((profile) => profile.name);
+  const executionPlan = {
+    ...canonicalPlan,
+    ...normalizedWhere ? { where: normalizedWhere } : {}
+  };
+  if (!normalizedWhere) {
+    delete executionPlan.where;
+  }
+  if (options2.progressMessage) {
+    getState().addProgress(options2.progressMessage);
+  }
+  let execution;
+  const reportDiagnostics = createWorkerDiagnosticsTelemetryReporter(store);
+  const language = getState().settings.language;
+  const onSlowLoad = () => {
+    const message = getTranslation("duckdb_load_slow", language);
+    if (typeof getState().addProgress === "function") {
+      getState().addProgress(message, "warning");
+    }
+  };
+  try {
+    throwIfAborted(abortSignal);
+    execution = await executeManagedDataQuery(
+      dataset,
+      executionPlan,
+      allowedColumns,
+      {
+        allowNativeFallback: options2.allowNativeFallback,
+        abortSignal,
+        reportDiagnostics,
+        columnRegistry: columnRegistry2,
+        onSlowLoad,
+        ...options2.dimensionNormalization ? { dimensionNormalization: options2.dimensionNormalization } : {}
+      }
+    );
+    throwIfAborted(abortSignal);
+  } catch (error2) {
+    if (isRuntimeAbortError(error2, abortSignal)) {
+      throw error2;
+    }
+    setState({
+      duckDbSessionStatus: createDuckDbSessionErrorStatus(error2, getState().duckDbSessionStatus, /* @__PURE__ */ new Date(), "query_failed")
+    });
+    throw error2;
+  }
+  const normalizedPlan = {
+    select: execution.result.selectedColumns,
+    ...executionPlan.where ? { where: executionPlan.where } : {},
+    orderBy: execution.result.appliedOrderBy,
+    limit: execution.result.appliedLimit,
+    ...Array.isArray(executionPlan.groupBy) && executionPlan.groupBy.length > 0 ? { groupBy: executionPlan.groupBy } : {},
+    ...Array.isArray(executionPlan.aggregates) && executionPlan.aggregates.length > 0 ? { aggregates: executionPlan.aggregates } : {}
+  };
+  const activeDataQuery = {
+    ...resolveDatasetScopeBinding(getState().datasetBundle),
+    sessionId: getState().sessionId,
+    runId: activeTurn == null ? void 0 : activeTurn.runId,
+    turnId: activeTurn == null ? void 0 : activeTurn.turnId,
+    stepId: activeStep == null ? void 0 : activeStep.stepId,
+    toolCallId: (activeStep == null ? void 0 : activeStep.toolCallId) ?? (activeStep == null ? void 0 : activeStep.stepId),
+    explanation: options2.explanation,
+    plan: normalizedPlan,
+    result: execution.result,
+    appliedAt: /* @__PURE__ */ new Date(),
+    source: "execute_data_query",
+    engine: execution.engine,
+    sqlPreview: execution.sqlPreview,
+    tableName: execution.tableName,
+    loadVersion: execution.loadVersion,
+    fallbackReason: execution.fallbackReason,
+    fallbackStage: execution.fallbackStage,
+    fallbackFilterOperation: options2.fallbackFilterOperation ?? null
+  };
+  throwIfAborted(abortSignal);
+  const storeCommitStartedAt = getNowMs();
+  setState({
+    activeDataQuery,
+    activeSpreadsheetFilter: null,
+    spreadsheetFilterFunction: null,
+    aiFilterExplanation: null,
+    isSpreadsheetVisible: true,
+    duckDbSessionStatus: createDuckDbSessionStatusFromExecution(execution)
+  });
+  throwIfAborted(abortSignal);
+  const committedTrace = appendQueryTraceMessage(store, activeDataQuery, options2);
+  (_a = options2.onTraceCommitted) == null ? void 0 : _a.call(options2, committedTrace);
+  const storeCommitMs = getNowMs() - storeCommitStartedAt;
+  logQueryStoreCommitDiagnostics(store, {
+    engine: execution.engine,
+    storeCommitMs,
+    returnedRows: execution.result.returnedRows,
+    totalMatchedRows: execution.result.totalMatchedRows,
+    selectedColumnCount: execution.result.selectedColumns.length,
+    truncated: execution.result.truncated,
+    // estimateSerializableBytes is expensive (JSON.stringify); skip in production.
+    resultBytes: 0,
+    fallbackReason: execution.fallbackReason,
+    fallbackStage: execution.fallbackStage
+  });
+  throwIfAborted(abortSignal);
+  getState().logAgentToolUsage({
+    tool: "data.query",
+    description: options2.explanation,
+    detail: {
+      runId: (activeTurn == null ? void 0 : activeTurn.runId) ?? null,
+      toolCallId: (activeStep == null ? void 0 : activeStep.toolCallId) ?? (activeStep == null ? void 0 : activeStep.stepId) ?? null,
+      plan: normalizedPlan,
+      engine: execution.engine,
+      sqlPreview: execution.sqlPreview,
+      tableName: execution.tableName,
+      loadVersion: execution.loadVersion,
+      fallbackReason: execution.fallbackReason,
+      fallbackStage: execution.fallbackStage,
+      totalMatchedRows: execution.result.totalMatchedRows,
+      returnedRows: execution.result.returnedRows,
+      truncated: execution.result.truncated,
+      selectedColumns: execution.result.selectedColumns,
+      appliedOrderBy: execution.result.appliedOrderBy,
+      durationMs: execution.result.durationMs,
+      origin: options2.origin,
+      templateId: options2.templateId ?? null,
+      fallbackAvailable: Boolean(options2.fallbackFilterOperation)
+    }
+  });
+  if (options2.appendCleaningRunTrace) {
+    throwIfAborted(abortSignal);
+    setState((prev) => ({
+      cleaningRun: prev.cleaningRun ? appendCleaningRunStep(prev.cleaningRun, {
+        kind: "verify",
+        toolName: "data.query",
+        path: WORKSPACE_DATASET_CLEAN_CSV,
+        diffSummary: `Verified cleaned dataset with ${execution.engine} query.`,
+        status: "done"
+      }) : prev.cleaningRun
+    }));
+  }
+  if (execution.fallbackStage === "bind_failed" || execution.fallbackStage === "query_failed") {
+    throwIfAborted(abortSignal);
+    getState().logAgentToolUsage({
+      tool: "duckdb_query_engine",
+      description: "DuckDB query execution fell back to native executor.",
+      detail: {
+        fallbackStage: execution.fallbackStage,
+        error: execution.fallbackReason,
+        sqlPreview: execution.sqlPreview,
+        tableName: execution.tableName,
+        loadVersion: execution.loadVersion
+      }
+    });
+  }
+  if (options2.scrollToRawDataExplorer && typeof window !== "undefined" && typeof document !== "undefined") {
+    throwIfAborted(abortSignal);
+    window.setTimeout(() => {
+      var _a2;
+      return (_a2 = document.getElementById("raw-data-explorer")) == null ? void 0 : _a2.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  }
+  return activeDataQuery;
+};
+const dataQueryExecution = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  executeStructuredDataQuery
+}, Symbol.toStringTag, { value: "Module" }));
+const resolveDerivedOperand = (row, operand) => operand.kind === "literal" ? operand.value : row[operand.column] ?? null;
+const deriveRowMetricValue = (row, expression) => {
+  if (expression.kind === "copy") return resolveDerivedOperand(row, expression.source);
+  if (expression.kind === "concat") {
+    return expression.parts.map((part) => resolveDerivedOperand(row, part)).filter((value2) => value2 !== null && value2 !== void 0 && String(value2).length > 0).map(String).join(expression.separator ?? "");
+  }
+  const leftOperand = expression.kind === "ratio" ? expression.numerator : expression.left;
+  const rightOperand = expression.kind === "ratio" ? expression.denominator : expression.right;
+  const left = robustParseFloat(resolveDerivedOperand(row, leftOperand));
+  const right = robustParseFloat(resolveDerivedOperand(row, rightOperand));
+  if (left === null || right === null) return null;
+  if (expression.kind === "ratio") return right === 0 ? null : left / right;
+  if (expression.operator === "add") return left + right;
+  if (expression.operator === "subtract") return left - right;
+  if (expression.operator === "multiply") return left * right;
+  return right === 0 ? null : left / right;
+};
+const getMetricComponentTotal = (rows, labelColumn, valueColumn, component) => {
+  const terms = component.matchAny.map((term) => term.toLowerCase());
+  const matches = rows.filter((row) => {
+    const label = String(row[labelColumn] ?? "").trim().toLowerCase();
+    return terms.some((term) => label.includes(term));
+  });
+  if (matches.length === 0) return null;
+  const parsed = matches.map((row) => robustParseFloat(row[valueColumn] ?? null)).filter((value2) => value2 !== null);
+  if (parsed.length === 0) return null;
+  const total = parsed.reduce((sum, value2) => sum + (component.valueTransform === "absolute" ? Math.abs(value2) : value2), 0);
+  return component.operator === "subtract" ? -total : total;
+};
+const evaluateLabelDerivedMetric = (rows, operation) => {
+  const evaluateComponents = (components) => {
+    const totals = components.map((component) => getMetricComponentTotal(rows, operation.labelColumn, operation.valueColumn, component));
+    return totals.some((total) => total === null) ? null : totals.reduce((sum, total) => sum + (total ?? 0), 0);
+  };
+  if (operation.formula.kind === "linear_combination") {
+    return evaluateComponents(operation.formula.components);
+  }
+  const numerator = evaluateComponents(operation.formula.numerator);
+  const denominator = evaluateComponents(operation.formula.denominator);
+  if (numerator === null || denominator === null || denominator === 0) return null;
+  return numerator / denominator * (Number.isFinite(operation.formula.scale) ? operation.formula.scale : 1);
+};
+const buildDerivedMetricGroups = (rows, columns2) => {
+  const groups = /* @__PURE__ */ new Map();
+  rows.forEach((row) => {
+    const key2 = JSON.stringify(columns2.map((column) => row[column] ?? null));
+    groups.set(key2, [...groups.get(key2) ?? [], row]);
+  });
+  return groups;
+};
+const derivedMetricValuesEqual = (left, right) => {
+  const scale = Math.max(1, Math.abs(left), Math.abs(right));
+  return Math.abs(left - right) <= scale * 1e-9;
+};
+const TIER_RANK = {
+  pass: 0,
+  warn: 1,
+  fail: 2
+};
+const combineTier = (signals) => signals.reduce(
+  (current2, signal) => TIER_RANK[signal.status] > TIER_RANK[current2] ? signal.status : current2,
+  "pass"
+);
+const unique = (values2) => Array.from(new Set(values2.map((value2) => value2.trim()).filter(Boolean)));
+const tierHigherIsBetter = (rate, passThreshold, warnThreshold) => {
+  if (rate >= passThreshold) return "pass";
+  if (rate >= warnThreshold) return "warn";
+  return "fail";
+};
+const tierLowerIsBetter = (rate, passThreshold, warnThreshold) => {
+  if (rate <= passThreshold) return "pass";
+  if (rate <= warnThreshold) return "warn";
+  return "fail";
+};
+const numericBehaviorSignal = (rows, numericColumns) => {
+  const values2 = rows.flatMap(
+    (row) => numericColumns.map((column) => row[column] ?? null).filter((value2) => value2 !== null && value2 !== void 0 && String(value2).trim() !== "")
+  );
+  const parseableCount = values2.filter((value2) => robustParseFloat(value2) !== null).length;
+  const parseRate = values2.length > 0 ? parseableCount / values2.length : 0;
+  return {
+    code: "numeric_behavior",
+    status: tierHigherIsBetter(parseRate, 0.98, 0.9),
+    message: values2.length === 0 ? `No non-empty numeric inputs were found in ${numericColumns.join(", ") || "the declared inputs"}.` : `${(parseRate * 100).toFixed(1)}% of ${values2.length} non-empty metric inputs are numeric.`,
+    measuredRate: parseRate,
+    passThreshold: 0.98,
+    warnThreshold: 0.9
+  };
+};
+const denominatorSafetySignal = (rows, operation) => {
+  let population = 0;
+  let unsafe = 0;
+  if (operation.type === "derive_column") {
+    const denominator = operation.expression.kind === "ratio" ? operation.expression.denominator : operation.expression.kind === "math_binary" && operation.expression.operator === "divide" ? operation.expression.right : null;
+    if (denominator) {
+      population = rows.length;
+      unsafe = rows.filter((row) => {
+        const value2 = robustParseFloat(resolveDerivedOperand(row, denominator));
+        return value2 === null || value2 === 0;
+      }).length;
+    }
+  } else if (operation.formula.kind === "ratio") {
+    const sourceRows = rows.filter((row) => String(row[operation.labelColumn] ?? "").trim().toLowerCase() !== operation.outputMetricLabel.trim().toLowerCase());
+    const groups = buildDerivedMetricGroups(sourceRows, operation.groupByColumns);
+    population = groups.size;
+    unsafe = [...groups.values()].filter((groupRows) => {
+      const denominatorFormula = {
+        kind: "linear_combination",
+        components: operation.formula.kind === "ratio" ? operation.formula.denominator : []
+      };
+      const denominator = evaluateLabelDerivedMetric(groupRows, {
+        ...operation,
+        formula: denominatorFormula
+      });
+      return denominator === null || denominator === 0;
+    }).length;
+  }
+  if (population === 0) {
+    return {
+      code: "denominator_safety",
+      status: "pass",
+      message: "The formula has no denominator, so denominator safety is not applicable.",
+      measuredRate: 0,
+      passThreshold: 0.02,
+      warnThreshold: 0.05
+    };
+  }
+  const unsafeRate = unsafe / population;
+  return {
+    code: "denominator_safety",
+    status: tierLowerIsBetter(unsafeRate, 0.02, 0.05),
+    message: `${unsafe} of ${population} evaluated ${population === rows.length ? "rows" : "groups"} have a missing or zero denominator.`,
+    measuredRate: unsafeRate,
+    passThreshold: 0.02,
+    warnThreshold: 0.05
+  };
+};
+const reconciliationSignal = (inputRows, outputRows, operation) => {
+  if (!outputRows) {
+    return {
+      code: "reconciliation",
+      status: "pass",
+      message: "Execution reconciliation will run against the preview output before commit."
+    };
+  }
+  let expected = 0;
+  let mismatched = 0;
+  if (operation.type === "derive_column") {
+    expected = inputRows.length;
+    outputRows.slice(0, inputRows.length).forEach((row, index2) => {
+      const expectedValue = deriveRowMetricValue(inputRows[index2] ?? {}, operation.expression);
+      const actualValue = row[operation.newColumn] ?? null;
+      const expectedNumber = robustParseFloat(expectedValue);
+      const actualNumber = robustParseFloat(actualValue);
+      const matches = expectedNumber !== null && actualNumber !== null ? derivedMetricValuesEqual(expectedNumber, actualNumber) : expectedValue === actualValue;
+      if (!matches) mismatched += 1;
+    });
+    mismatched += Math.abs(inputRows.length - Math.min(inputRows.length, outputRows.length));
+  } else {
+    const sourceRows = inputRows.filter((row) => String(row[operation.labelColumn] ?? "").trim().toLowerCase() !== operation.outputMetricLabel.trim().toLowerCase());
+    const inputGroups = buildDerivedMetricGroups(sourceRows, operation.groupByColumns);
+    const outputGroups = buildDerivedMetricGroups(
+      outputRows.filter((row) => String(row[operation.labelColumn] ?? "").trim().toLowerCase() === operation.outputMetricLabel.trim().toLowerCase()),
+      operation.groupByColumns
+    );
+    expected = inputGroups.size;
+    inputGroups.forEach((groupRows, key2) => {
+      var _a;
+      const expectedValue = evaluateLabelDerivedMetric(groupRows, operation);
+      const candidates = outputGroups.get(key2) ?? [];
+      const actualValue = candidates.length === 1 ? robustParseFloat(((_a = candidates[0]) == null ? void 0 : _a[operation.valueColumn]) ?? null) : null;
+      if (expectedValue === null || actualValue === null || !derivedMetricValuesEqual(expectedValue, actualValue)) {
+        mismatched += 1;
+      }
+    });
+  }
+  const mismatchRate = expected > 0 ? mismatched / expected : 1;
+  return {
+    code: "reconciliation",
+    status: tierLowerIsBetter(mismatchRate, 0.02, 0.05),
+    message: `${mismatched} of ${expected} derived results failed deterministic reconciliation.`,
+    measuredRate: mismatchRate,
+    passThreshold: 0.02,
+    warnThreshold: 0.05
+  };
+};
+const validateDerivedMetricOperation = ({
+  inputRows,
+  operation,
+  outputRows = null,
+  inputVersionId,
+  outputVersionId
+}) => {
+  const declaration = buildDerivedMetricDeclaration(operation);
+  const availableColumns = new Set(
+    inputRows.flatMap((row) => Object.keys(row)).map((column) => column.toLowerCase())
+  );
+  const requiredSourceColumns = getRequiredDerivedMetricSourceColumns(operation);
+  const declaredSourceKeys = new Set(declaration.sourceColumns.map((column) => column.toLowerCase()));
+  const undeclaredColumns = requiredSourceColumns.filter((column) => !declaredSourceKeys.has(column.toLowerCase()));
+  const missingColumns = unique([...requiredSourceColumns, ...declaration.sourceColumns]).filter((column) => column !== "source row" && !availableColumns.has(column.toLowerCase()));
+  const inputSignal = {
+    code: "input_availability",
+    status: missingColumns.length === 0 && undeclaredColumns.length === 0 ? "pass" : "fail",
+    message: missingColumns.length > 0 ? `Required or declared source columns are missing: ${missingColumns.join(", ")}.` : undeclaredColumns.length > 0 ? `The declaration omits formula source columns: ${undeclaredColumns.join(", ")}.` : `All declared source columns are available: ${declaration.sourceColumns.join(", ")}.`
+  };
+  const numericColumns = getDerivedMetricNumericColumns(operation);
+  const numericSignal = numericColumns.length > 0 ? numericBehaviorSignal(inputRows, numericColumns) : {
+    code: "numeric_behavior",
+    status: "pass",
+    message: "This declaration does not require numeric source behavior."
+  };
+  const signals = [
+    inputSignal,
+    numericSignal,
+    denominatorSafetySignal(inputRows, operation),
+    reconciliationSignal(inputRows, outputRows, operation)
+  ];
+  const status = combineTier(signals);
+  return {
+    artifactType: "derived_metric_validation",
+    operationId: operation.id,
+    declaration,
+    status,
+    requiresConfirmation: status === "warn",
+    signals,
+    evidenceReferences: [
+      { kind: "dataset_version", id: inputVersionId, label: "Input dataset version" },
+      { kind: "operation", id: operation.id, label: declaration.formula },
+      {
+        kind: "validation",
+        id: `derived-metric-validation:${operation.id}`,
+        label: `${status} deterministic validation`
+      },
+      ...outputVersionId ? [{ kind: "dataset_version", id: outputVersionId, label: "Output dataset version" }] : []
+    ]
+  };
+};
+const isDerivedMetricOperation = (operation) => operation.type === "derive_column" || operation.type === "derive_metric_by_label";
+const isDerivedMetricWarningExplicitlyConfirmed = (userMessage) => {
+  const message = (userMessage == null ? void 0 : userMessage.trim()) ?? "";
+  if (!message) return false;
+  return /\b(?:confirm(?:ed)?|approve(?:d)?)\b.*\bwarning\b/i.test(message) || /\baccept(?:ed)?\s+(?:the\s+)?warning\b/i.test(message) || /\bproceed\s+despite\s+(?:the\s+)?warning\b/i.test(message) || /(?:确认|批准|接受).{0,12}警告/.test(message) || /忽略.{0,12}警告.{0,12}继续/.test(message);
+};
+const DERIVED_MARGIN_REQUEST = /\b(?:profit|gross)\s+margin\b|利润率|利潤率|利益率|粗利率|margin\s*(?:percentage|%)/i;
+const DERIVED_COST_PER_RESULT_REQUEST = /\bcost\s+per\s+result\b|每(?:个|個|次)结果成本|每(?:个|個|次)結果成本|結果単価|結果あたりのコスト/i;
+const SHARE_OF_TOTAL_REQUEST = /(?:\b(?:percent(?:age)?|share|proportion)\b[\s\S]{0,80}\b(?:overall|total|whole|full dataset)\b)|(?:\b(?:overall|total|whole|full dataset)\b[\s\S]{0,80}\b(?:percent(?:age)?|share|proportion|represent)\b)|(?:百分比|占比|比例|比率).{0,40}(?:总额|總額|总体|總體|全部|合计|合計)|(?:总额|總額|总体|總體|全部|合计|合計).{0,40}(?:百分比|占比|比例|比率)|(?:全体|合計).{0,40}(?:割合|比率|パーセント)|(?:割合|比率|パーセント).{0,40}(?:全体|合計)/i;
+const isDerivedMarginRequest = (message) => DERIVED_MARGIN_REQUEST.test(message);
+const isDerivedCostPerResultRequest = (message) => DERIVED_COST_PER_RESULT_REQUEST.test(message);
+const isShareOfTotalRequest = (message) => SHARE_OF_TOTAL_REQUEST.test(message);
+const requiresCompleteDerivedMetricEvidence = (message) => isDerivedMarginRequest(message) || isDerivedCostPerResultRequest(message);
+const requiresCompleteAggregateEvidence = (message) => requiresCompleteDerivedMetricEvidence(message) || isShareOfTotalRequest(message);
+const LOG_PREFIX$f = "[ExecutorAgent]";
+const summarizeMutationOperation = (operation) => {
+  switch (operation.type) {
+    case "derive_column":
+      return {
+        type: operation.type,
+        outputColumn: operation.newColumn,
+        expressionKind: operation.expression.kind
+      };
+    case "derive_metric_by_label":
+      return {
+        type: operation.type,
+        outputMetricLabel: operation.outputMetricLabel,
+        labelColumn: operation.labelColumn,
+        valueColumn: operation.valueColumn,
+        groupByColumns: operation.groupByColumns,
+        carryForwardColumns: operation.carryForwardColumns ?? [],
+        formulaKind: operation.formula.kind
+      };
+    default:
+      return null;
+  }
+};
+const buildMutationArtifactMetadata = (normalizedPlan) => ({
+  artifactType: "dataset_mutation",
+  sourceArtifactIds: [],
+  operations: (normalizedPlan == null ? void 0 : normalizedPlan.operations.map((operation) => summarizeMutationOperation(operation)).filter((operation) => operation !== null)) ?? [],
+  derivedMetricValidations: (normalizedPlan == null ? void 0 : normalizedPlan.derivedMetricValidations) ?? []
+});
+const buildDerivedMetricValidationResult = (validations) => {
+  const failed = (validations == null ? void 0 : validations.filter((validation) => validation.status === "fail")) ?? [];
+  const needsConfirmation = (validations == null ? void 0 : validations.filter(
+    (validation) => validation.status === "warn" && validation.requiresConfirmation
+  )) ?? [];
+  if (failed.length === 0 && needsConfirmation.length === 0) return null;
+  const targets = [...failed, ...needsConfirmation].map((validation) => validation.declaration.metricName).join(", ");
+  const requiresConfirmation = failed.length === 0;
+  const summary = requiresConfirmation ? `Derived metric validation needs confirmation before committing: ${targets}.` : `Derived metric validation failed before commit: ${targets}.`;
+  const retryHint = requiresConfirmation ? 'Review the validation signals with the user. Retry with validationMode="warn" only after the user explicitly confirms the ambiguity.' : "Repair the formula, source columns, numeric inputs, denominator behavior, or grouping grain before retrying.";
+  const artifactMetadata = {
+    artifactType: "dataset_mutation_attempt",
+    derivedMetricValidations: validations
+  };
+  return {
+    status: "blocked",
+    toolName: "data.mutate",
+    message: summary,
+    shouldStop: requiresConfirmation,
+    retryHint,
+    artifactMetadata,
+    observation: {
+      type: "tool_result",
+      status: "blocked",
+      summary,
+      toolName: "data.mutate",
+      code: requiresConfirmation ? "confirmation_required" : "validation_failed",
+      retryHint,
+      detail: {
+        derivedMetricValidations: validations,
+        artifactMetadata
+      }
+    }
+  };
+};
+const logDerivedMetricValidationBoundary = (store, result) => {
+  var _a, _b, _c, _d;
+  const validations = Array.isArray((_a = result.artifactMetadata) == null ? void 0 : _a.derivedMetricValidations) ? result.artifactMetadata.derivedMetricValidations : [];
+  (_d = (_c = store.getState()).logAgentToolUsage) == null ? void 0 : _d.call(_c, {
+    tool: "data.mutate",
+    description: result.message,
+    detail: {
+      status: ((_b = result.observation) == null ? void 0 : _b.code) ?? result.status,
+      derivedMetricValidations: validations,
+      retryHint: result.retryHint ?? null
+    }
+  });
+};
+const getWhereColumns = (whereClause) => {
+  const normalizedWhere = normalizeQueryWhereClauseLike(whereClause);
+  if (!normalizedWhere) {
+    return [];
+  }
+  return Array.from(new Set(
+    [
+      ...normalizedWhere.predicates ?? [],
+      ...(normalizedWhere.groups ?? []).flatMap((group) => group.predicates)
+    ].map((predicate) => predicate.column).filter((column) => typeof column === "string" && column.trim().length > 0)
+  ));
+};
+const compareOrderValues = (left, right) => {
+  const leftNumber = robustParseFloat(left);
+  const rightNumber = robustParseFloat(right);
+  if (leftNumber !== null && rightNumber !== null) {
+    return leftNumber - rightNumber;
+  }
+  const leftText = left === null || left === void 0 ? "" : String(left).trim().toLowerCase();
+  const rightText = right === null || right === void 0 ? "" : String(right).trim().toLowerCase();
+  return leftText.localeCompare(rightText, void 0, { numeric: true, sensitivity: "base" });
+};
+const summarizeOrderVerification = (rows, orderBy) => {
+  if (!Array.isArray(orderBy) || orderBy.length === 0) {
+    return [];
+  }
+  return orderBy.map((orderClause) => {
+    const sampleValues = rows.slice(0, 5).map((row) => row[orderClause.column] ?? null);
+    let appearsSorted = true;
+    for (let index2 = 1; index2 < sampleValues.length; index2 += 1) {
+      const comparison = compareOrderValues(sampleValues[index2 - 1], sampleValues[index2]);
+      if (orderClause.direction === "desc" && comparison < 0 || orderClause.direction === "asc" && comparison > 0) {
+        appearsSorted = false;
+        break;
+      }
+    }
+    return {
+      column: orderClause.column,
+      direction: orderClause.direction,
+      sampleValues,
+      appearsSorted
+    };
+  });
+};
+const executeDataOperationsAction = async (action, store, abortSignal) => {
+  var _a, _b, _c, _d, _e;
+  const { getState } = store;
+  if (action.type !== "tool_call" || !getState().csvData) {
+    return {
+      status: "error",
+      toolName: "data.mutate",
+      message: "No dataset available for data mutation.",
+      shouldStop: false,
+      retryHint: "Load a dataset before using data.mutate."
+    };
+  }
+  const mutationDataset = getPreferredAnalysisDataset(getState());
+  if ((_a = mutationDataset == null ? void 0 : mutationDataset.backing) == null ? void 0 : _a.readOnly) {
+    return {
+      status: "blocked",
+      toolName: "data.mutate",
+      message: "This large dataset is open in read-only mode, so source rows cannot be changed.",
+      shouldStop: false,
+      retryHint: "Use data.query for full-dataset analysis, or import a smaller CSV to enable governed cleaning and mutation.",
+      observation: {
+        type: "tool_result",
+        status: "blocked",
+        summary: "Large-file read-only mode blocks data mutation.",
+        toolName: "data.mutate",
+        code: "blocked_tool",
+        detail: { reason: "large_dataset_read_only" }
+      }
+    };
+  }
+  const normalizedPayload = normalizeDataMutatePayload({
+    explanation: (_b = action.args) == null ? void 0 : _b.explanation,
+    operations: Array.isArray((_c = action.args) == null ? void 0 : _c.operations) ? action.args.operations : action.args && "operation" in action.args && action.args.operation !== void 0 ? [action.args.operation] : void 0,
+    outputColumns: (_d = action.args) == null ? void 0 : _d.outputColumns,
+    planStatus: "operations",
+    consistencyIssues: []
+  });
+  const normalizedPlan = normalizedPayload.plan;
+  if (!normalizedPlan) {
+    throw new Error("data.mutate payload is invalid after pre-validation.");
+  }
+  const deriveMetricOperations = normalizedPlan.operations.filter(isDerivedMetricOperation);
+  const deriveMetricByLabelOperations = deriveMetricOperations.filter(
+    (operation) => operation.type === "derive_metric_by_label"
+  );
+  for (const deriveMetricOperation of deriveMetricByLabelOperations) {
+    const state2 = getState();
+    const preflightFailure = validateMetricDerivationPreflight({
+      columnProfiles: state2.columnProfiles,
+      csvData: state2.csvData ?? null,
+      dataPreparationPlan: state2.dataPreparationPlan ?? null,
+      operation: deriveMetricOperation
+    });
+    if (preflightFailure) {
+      return preflightFailure;
+    }
+  }
+  if (deriveMetricOperations.length > 0) {
+    const currentData = getState().csvData;
+    const inputVersionId = buildDatasetVersionId(currentData.fileName, currentData.data);
+    const warningConfirmed = isDerivedMetricWarningExplicitlyConfirmed(
+      (_e = getState().activeTurn) == null ? void 0 : _e.userMessage
+    );
+    let previewRows = currentData.data;
+    const postflightValidations = [];
+    for (const operation of normalizedPlan.operations) {
+      const operationInputRows = previewRows;
+      if (isDerivedMetricOperation(operation)) {
+        const preflightValidation = validateDerivedMetricOperation({
+          inputRows: operationInputRows,
+          operation,
+          inputVersionId
+        });
+        const preflightBlock = buildDerivedMetricValidationResult([{
+          ...preflightValidation,
+          requiresConfirmation: preflightValidation.requiresConfirmation && !(operation.validationMode === "warn" && warningConfirmed)
+        }]);
+        if (preflightBlock) {
+          logDerivedMetricValidationBoundary(store, preflightBlock);
+          return preflightBlock;
+        }
+      }
+      previewRows = applyDataOperations(previewRows, [operation]).data;
+      if (isDerivedMetricOperation(operation)) {
+        const postflightValidation = validateDerivedMetricOperation({
+          inputRows: operationInputRows,
+          outputRows: previewRows,
+          operation,
+          inputVersionId
+        });
+        const postflightBlock = buildDerivedMetricValidationResult([{
+          ...postflightValidation,
+          requiresConfirmation: postflightValidation.requiresConfirmation && !(operation.validationMode === "warn" && warningConfirmed)
+        }]);
+        if (postflightBlock) {
+          logDerivedMetricValidationBoundary(store, postflightBlock);
+          return postflightBlock;
+        }
+        postflightValidations.push(postflightValidation);
+      }
+    }
+    const outputVersionId = buildDatasetVersionId(currentData.fileName, previewRows);
+    normalizedPlan.derivedMetricValidations = postflightValidations.map((validation) => ({
+      ...validation,
+      evidenceReferences: [
+        ...validation.evidenceReferences,
+        {
+          kind: "dataset_version",
+          id: outputVersionId,
+          label: "Output dataset version"
+        }
+      ]
+    }));
+  }
+  console.log(`${LOG_PREFIX$f} Running deterministic data operations: ${normalizedPlan.explanation}`);
+  throwIfAborted(abortSignal);
+  await executeDeterministicMutationPlan(normalizedPlan, store, abortSignal);
+  const artifactMetadata = buildMutationArtifactMetadata(normalizedPlan);
+  return {
+    status: "success",
+    toolName: "data.mutate",
+    message: normalizedPlan.explanation,
+    shouldStop: false,
+    artifactMetadata,
+    observation: {
+      type: "tool_result",
+      status: "success",
+      summary: normalizedPlan.explanation,
+      toolName: "data.mutate",
+      detail: {
+        operationCount: normalizedPlan.operations.length,
+        derivedMetrics: normalizedPlan.operations.map(summarizeMutationOperation).filter((operation) => operation !== null),
+        artifactMetadata
+      }
+    }
+  };
+};
+const executeDataQueryAction = async (action, store, abortSignal) => {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o;
+  const { getState, setState } = store;
+  const state2 = getState();
+  const preferredDataset = getPreferredAnalysisDataset(state2);
+  if (action.type !== "tool_call" || !((_a = action.args) == null ? void 0 : _a.plan) || !preferredDataset) {
+    return {
+      status: "error",
+      toolName: "data.query",
+      message: "data.query requires a structured plan and a loaded dataset.",
+      shouldStop: false,
+      retryHint: "Return data.query with a valid plan object."
+    };
+  }
+  const normalizedPayload = normalizeDataQueryPayload(action.args);
+  const queryInput = preferredDataset.data;
+  const fallbackOperation = normalizedPayload.fallbackFilterOperation;
+  const phase = state2.cleaningRun && state2.cleaningRun.status !== "completed" ? "verify" : "analysis";
+  const governance = getToolGovernanceMeta(store, "data.query");
+  const activeTurn = state2.activeTurn;
+  const activeStep = activeTurn == null ? void 0 : activeTurn.steps.at(-1);
+  const columnRegistry2 = buildEffectiveColumnRegistryFromState(state2, {
+    datasetOverride: preferredDataset
+  });
+  const steering = (_b = state2.latestAnalysisSession) == null ? void 0 : _b.analysisSteering;
+  let augmentedPlan = normalizedPayload.plan;
+  const actualDataColumns = getAllowedColumns(columnRegistry2, "select").length > 0 ? getAllowedColumns(columnRegistry2, "select") : state2.columnProfiles.map((profile) => profile.name);
+  const canonicalizeColumns = (columns2) => columns2 == null ? void 0 : columns2.map((column) => resolveColumnReference(column, columnRegistry2) ?? column);
+  augmentedPlan = {
+    ...augmentedPlan,
+    ...augmentedPlan.select ? { select: canonicalizeColumns(augmentedPlan.select) ?? augmentedPlan.select } : {},
+    ...augmentedPlan.groupBy ? { groupBy: canonicalizeColumns(augmentedPlan.groupBy) ?? augmentedPlan.groupBy } : {},
+    ...augmentedPlan.orderBy ? {
+      orderBy: augmentedPlan.orderBy.map((order) => ({
+        ...order,
+        column: resolveColumnReference(order.column, columnRegistry2) ?? order.column
+      }))
+    } : {}
+  };
+  if (steering) {
+    const steeringFilter = steering.detailRowFilter ?? null;
+    const shouldInheritAnalysisScopeFilters = ((_d = (_c = state2.activeTurn) == null ? void 0 : _c.runtimeStepContract) == null ? void 0 : _d.taskMode) === "reconciliation" && ((_e = state2.activeTurn.runtimeStepContract.reconciliation) == null ? void 0 : _e.inheritPriorFilters) === true;
+    if (steeringFilter) {
+      console.log(
+        `${LOG_PREFIX$f} Directive injection: detailRowFilter="${steeringFilter.column}" = "${steeringFilter.value}", hierarchyColumn="${steering.hierarchyColumn ?? "none"}", excludeFromAggregation=[${(steering.excludeFromAggregation ?? []).length}], preferGroupBy=[${(steering.preferGroupBy ?? []).join(", ")}], blockGroupBy=[${(steering.blockGroupBy ?? []).join(", ")}], actualDataColumns=[${actualDataColumns.length}]: ${actualDataColumns.slice(0, 8).join(", ")}${actualDataColumns.length > 8 ? "..." : ""}`
+      );
+    }
+    const injectionResult = injectDirectivesIntoQueryPlan(augmentedPlan, {
+      directives: {
+        detailRowColumn: steering.detailRowColumn ?? null,
+        detailRowValue: steering.detailRowValue ?? null,
+        detailRowFilter: steeringFilter,
+        hierarchyColumn: shouldInheritAnalysisScopeFilters ? steering.hierarchyColumn ?? null : null,
+        excludeFromAggregation: shouldInheritAnalysisScopeFilters ? steering.excludeFromAggregation ?? [] : [],
+        preferGroupBy: steering.preferGroupBy ?? [],
+        blockGroupBy: steering.blockGroupBy ?? [],
+        recommendedTopN: null
+        // Do not enforce topN for user-initiated queries
+      },
+      availableColumns: actualDataColumns,
+      columnRegistry: columnRegistry2
+    });
+    augmentedPlan = injectionResult.plan;
+    if (injectionResult.warnings.length > 0) {
+      console.warn(`${LOG_PREFIX$f} Directive injection warnings:`, injectionResult.warnings);
+    }
+    if (injectionResult.validationError) {
+      throw new Error(injectionResult.validationError);
+    }
+  }
+  const needsCompleteDerivedEvidence = requiresCompleteAggregateEvidence(
+    (activeTurn == null ? void 0 : activeTurn.userMessage) ?? ""
+  ) && (((_f = augmentedPlan.groupBy) == null ? void 0 : _f.length) ?? 0) > 0 && (((_g = augmentedPlan.aggregates) == null ? void 0 : _g.length) ?? 0) >= 1;
+  if (needsCompleteDerivedEvidence && (augmentedPlan.limit ?? 0) < 500) {
+    augmentedPlan = {
+      ...augmentedPlan,
+      limit: 500
+    };
+  }
+  const aggregateAliasMismatch = validateAggregateAliasSemantics(augmentedPlan);
+  if (aggregateAliasMismatch) {
+    return {
+      status: "error",
+      toolName: "data.query",
+      message: aggregateAliasMismatch.message,
+      shouldStop: false,
+      retryHint: aggregateAliasMismatch.message,
+      observation: {
+        type: "tool_result",
+        status: "error",
+        summary: aggregateAliasMismatch.message,
+        toolName: "data.query",
+        code: "validation_failed",
+        detail: {
+          semanticCode: aggregateAliasMismatch.code,
+          column: aggregateAliasMismatch.column,
+          alternativeColumn: aggregateAliasMismatch.alternativeColumn
+        }
+      }
+    };
+  }
+  try {
+    throwIfAborted(abortSignal);
+    if (augmentedPlan.rawSql) {
+      console.log(`${LOG_PREFIX$f} Raw SQL passthrough detected, bypassing structured compilation.`);
+      const rawExecution = await executeRawSqlQuery(
+        preferredDataset,
+        augmentedPlan.rawSql,
+        augmentedPlan.select ?? [],
+        {
+          limit: augmentedPlan.limit ?? 500,
+          abortSignal,
+          reportDiagnostics: createWorkerDiagnosticsTelemetryReporter(store),
+          columnRegistry: columnRegistry2
+        }
+      );
+      throwIfAborted(abortSignal);
+      const rawActiveDataQuery = {
+        ...resolveDatasetScopeBinding(getState().datasetBundle),
+        explanation: normalizedPayload.explanation,
+        plan: augmentedPlan,
+        result: rawExecution.result,
+        appliedAt: /* @__PURE__ */ new Date(),
+        source: "execute_data_query",
+        engine: rawExecution.engine,
+        sqlPreview: rawExecution.sqlPreview ?? augmentedPlan.rawSql,
+        tableName: rawExecution.tableName ?? "session_clean_dataset",
+        loadVersion: rawExecution.loadVersion ?? null
+      };
+      setState({ activeDataQuery: rawActiveDataQuery });
+      return {
+        status: "success",
+        toolName: "data.query",
+        message: normalizedPayload.explanation,
+        shouldStop: false,
+        artifactMetadata: {
+          type: "data_query",
+          engine: rawExecution.engine,
+          queryMode: "raw_sql",
+          rowCount: rawExecution.result.returnedRows,
+          columnCount: rawExecution.result.selectedColumns.length,
+          selectedColumns: rawExecution.result.selectedColumns,
+          truncated: rawExecution.result.truncated,
+          sqlPreview: rawExecution.sqlPreview ?? null
+        },
+        artifacts: { activeDataQuery: rawActiveDataQuery }
+      };
+    }
+    if (normalizedPayload.unpivotParams) {
+      console.log(`${LOG_PREFIX$f} Structured unpivot detected.`);
+      const { executeUnifiedQuery: executeUnifiedQuery2 } = await __vitePreload(async () => {
+        const { executeUnifiedQuery: executeUnifiedQuery3 } = await Promise.resolve().then(() => unifiedQueryExecutor);
+        return { executeUnifiedQuery: executeUnifiedQuery3 };
+      }, true ? void 0 : void 0, import.meta.url);
+      const { primeDuckDbDataset: primeDuckDbDataset2 } = await __vitePreload(async () => {
+        const { primeDuckDbDataset: primeDuckDbDataset3 } = await Promise.resolve().then(() => queryEngine);
+        return { primeDuckDbDataset: primeDuckDbDataset3 };
+      }, true ? void 0 : void 0, import.meta.url);
+      const prime = await primeDuckDbDataset2(preferredDataset, abortSignal);
+      if (prime.engine !== "duckdb") {
+        throw new Error("UNPIVOT requires DuckDB to be available.");
+      }
+      const unpivotResult = await executeUnifiedQuery2(
+        {
+          kind: "unpivot",
+          purpose: normalizedPayload.explanation,
+          unpivotParams: normalizedPayload.unpivotParams
+        },
+        {
+          binding: { tableName: prime.tableName, loadVersion: prime.loadVersion },
+          allowedColumns: actualDataColumns,
+          columnRegistry: columnRegistry2,
+          directives: steering ? {
+            detailRowColumn: steering.detailRowColumn ?? null,
+            detailRowValue: steering.detailRowValue ?? null,
+            detailRowFilter: steering.detailRowFilter ?? null,
+            hierarchyColumn: steering.hierarchyColumn ?? null,
+            excludeFromAggregation: steering.excludeFromAggregation ?? [],
+            preferGroupBy: steering.preferGroupBy ?? [],
+            blockGroupBy: steering.blockGroupBy ?? [],
+            recommendedTopN: null
+          } : null
+        }
+      );
+      throwIfAborted(abortSignal);
+      const unpivotActiveDataQuery = {
+        ...resolveDatasetScopeBinding(getState().datasetBundle),
+        explanation: normalizedPayload.explanation,
+        plan: augmentedPlan,
+        result: {
+          rows: unpivotResult.rows,
+          totalMatchedRows: unpivotResult.totalMatchedRows,
+          returnedRows: unpivotResult.returnedRows,
+          truncated: false,
+          selectedColumns: unpivotResult.selectedColumns,
+          appliedOrderBy: [],
+          appliedLimit: normalizedPayload.unpivotParams.limit ?? 500,
+          durationMs: unpivotResult.durationMs
+        },
+        appliedAt: /* @__PURE__ */ new Date(),
+        source: "execute_data_query",
+        engine: unpivotResult.engine,
+        sqlPreview: unpivotResult.sqlPreview,
+        tableName: prime.tableName,
+        loadVersion: prime.loadVersion
+      };
+      setState({ activeDataQuery: unpivotActiveDataQuery });
+      return {
+        status: "success",
+        toolName: "data.query",
+        message: normalizedPayload.explanation,
+        shouldStop: false,
+        artifactMetadata: {
+          type: "data_query",
+          engine: unpivotResult.engine,
+          queryMode: "unpivot",
+          rowCount: unpivotResult.returnedRows,
+          columnCount: unpivotResult.selectedColumns.length,
+          selectedColumns: unpivotResult.selectedColumns,
+          truncated: false,
+          sqlPreview: unpivotResult.sqlPreview ?? null
+        },
+        artifacts: { activeDataQuery: unpivotActiveDataQuery }
+      };
+    }
+    const activeDataQuery = await executeStructuredDataQuery(store, {
+      datasetOverride: preferredDataset,
+      explanation: normalizedPayload.explanation,
+      plan: augmentedPlan,
+      phase,
+      origin: "chat",
+      fallbackFilterOperation: fallbackOperation ?? null,
+      allowedColumnsOverride: actualDataColumns,
+      columnRegistryOverride: columnRegistry2,
+      policyReason: ((_h = governance.decision) == null ? void 0 : _h.reason) ?? null,
+      toolCategory: ((_i = governance.descriptor) == null ? void 0 : _i.category) ?? "data",
+      appendChatTrace: true,
+      appendCleaningRunTrace: true,
+      scrollToRawDataExplorer: true,
+      allowNativeFallback: true,
+      progressMessage: `AI is running a read-only data query: ${normalizedPayload.explanation}`,
+      abortSignal,
+      dimensionNormalization: {
+        ...DEFAULT_DIMENSION_NORMALIZATION,
+        shouldNormalize: buildColumnTypeGate(state2.columnProfiles)
+      }
+    });
+    throwIfAborted(abortSignal);
+    const semanticMismatch = validateGroupedQuerySemantics({
+      plan: activeDataQuery.plan,
+      resultRows: activeDataQuery.result.rows,
+      datasetRows: preferredDataset.data
+    });
+    if (semanticMismatch) {
+      setState({ activeDataQuery: null });
+      return {
+        status: "error",
+        toolName: "data.query",
+        message: semanticMismatch.message,
+        shouldStop: false,
+        retryHint: semanticMismatch.message,
+        observation: {
+          type: "tool_result",
+          status: "error",
+          summary: semanticMismatch.message,
+          toolName: "data.query",
+          code: "validation_failed",
+          detail: {
+            semanticCode: semanticMismatch.code,
+            column: semanticMismatch.column,
+            alternativeColumn: semanticMismatch.alternativeColumn
+          }
+        }
+      };
+    }
+    const queryMode = ((_j = activeDataQuery.plan.groupBy) == null ? void 0 : _j.length) || ((_k = activeDataQuery.plan.aggregates) == null ? void 0 : _k.length) ? "aggregate" : activeDataQuery.plan.where ? "filtered" : "preview";
+    const orderVerification = summarizeOrderVerification(
+      activeDataQuery.result.rows,
+      activeDataQuery.result.appliedOrderBy
+    );
+    return {
+      status: "success",
+      toolName: "data.query",
+      message: activeDataQuery.explanation,
+      shouldStop: false,
+      artifactMetadata: {
+        artifactType: "data_query",
+        metricDefinition: ((_l = normalizedPayload.plan.aggregates) == null ? void 0 : _l.map((aggregate2) => aggregate2.as)) ?? [],
+        grain: normalizedPayload.plan.groupBy ?? [],
+        sourceArtifactIds: []
+      },
+      observation: {
+        type: "tool_result",
+        status: "success",
+        summary: `${queryMode} data.query returned ${activeDataQuery.result.returnedRows} of ${activeDataQuery.result.totalMatchedRows} rows.`,
+        toolName: "data.query",
+        queryMode,
+        detail: {
+          engine: activeDataQuery.engine,
+          sqlPreview: activeDataQuery.sqlPreview,
+          queryMode,
+          returnedRows: activeDataQuery.result.returnedRows,
+          totalMatchedRows: activeDataQuery.result.totalMatchedRows,
+          selectedColumns: activeDataQuery.result.selectedColumns,
+          truncated: activeDataQuery.result.truncated,
+          whereColumns: getWhereColumns(activeDataQuery.plan.where),
+          orderVerification,
+          artifactMetadata: {
+            artifactType: "data_query",
+            metricDefinition: ((_m = normalizedPayload.plan.aggregates) == null ? void 0 : _m.map((aggregate2) => aggregate2.as)) ?? [],
+            grain: normalizedPayload.plan.groupBy ?? [],
+            sourceArtifactIds: []
+          }
+        }
+      },
+      artifacts: {
+        activeDataQuery
+      }
+    };
+  } catch (error2) {
+    if (isRuntimeAbortError(error2, abortSignal)) {
+      throw error2;
+    }
+    const errorMessage = error2 instanceof Error ? error2.message : String(error2);
+    if (fallbackOperation && !((_n = preferredDataset.backing) == null ? void 0 : _n.readOnly)) {
+      const fallbackPlan = createQueryPlanFromFilterOperation(fallbackOperation, { limit: action.args.plan.limit });
+      throwIfAborted(abortSignal);
+      const fallbackResult = await executeDataQueryWithWorker(queryInput, fallbackPlan, {
+        allowedColumns: actualDataColumns,
+        maxRows: 500,
+        maxColumns: 50,
+        maxOrderBy: 3,
+        timeoutMs: 1500,
+        abortSignal,
+        reportDiagnostics: createWorkerDiagnosticsTelemetryReporter(store)
+      });
+      throwIfAborted(abortSignal);
+      const activeDataQuery = {
+        ...resolveDatasetScopeBinding(getState().datasetBundle),
+        sessionId: getState().sessionId,
+        turnId: activeTurn == null ? void 0 : activeTurn.turnId,
+        stepId: activeStep == null ? void 0 : activeStep.stepId,
+        explanation: `${action.args.explanation} (fallback filter)`,
+        plan: {
+          select: fallbackResult.selectedColumns,
+          where: fallbackPlan.where,
+          orderBy: fallbackResult.appliedOrderBy,
+          limit: fallbackResult.appliedLimit
+        },
+        result: fallbackResult,
+        appliedAt: /* @__PURE__ */ new Date(),
+        source: "execute_data_query",
+        engine: "native",
+        sqlPreview: null,
+        tableName: null,
+        loadVersion: null,
+        fallbackReason: errorMessage,
+        fallbackFilterOperation: fallbackOperation
+      };
+      throwIfAborted(abortSignal);
+      setState({
+        activeDataQuery,
+        activeSpreadsheetFilter: null,
+        spreadsheetFilterFunction: null,
+        aiFilterExplanation: null,
+        isSpreadsheetVisible: true
+      });
+      throwIfAborted(abortSignal);
+      setState((prev) => {
+        var _a2, _b2;
+        return {
+          chatHistory: [
+            ...prev.chatHistory,
+            createChatMessage({
+              sender: "ai",
+              text: `**${getDataQueryTraceLabel(phase, activeDataQuery.plan, activeDataQuery.fallbackFilterOperation)}**
+${activeDataQuery.explanation}
+Engine: \`${activeDataQuery.engine}\` | Rows: ${activeDataQuery.result.returnedRows}/${activeDataQuery.result.totalMatchedRows} | Duration: ${activeDataQuery.result.durationMs}ms${activeDataQuery.fallbackReason ? `
+Fallback: ${activeDataQuery.fallbackReason}` : ""}`,
+              timestamp: /* @__PURE__ */ new Date(),
+              type: "ai_query_trace",
+              queryTrace: {
+                sessionId: activeDataQuery.sessionId,
+                turnId: activeDataQuery.turnId,
+                stepId: activeDataQuery.stepId,
+                phase,
+                engine: activeDataQuery.engine,
+                sqlPreview: activeDataQuery.sqlPreview,
+                returnedRows: activeDataQuery.result.returnedRows,
+                totalMatchedRows: activeDataQuery.result.totalMatchedRows,
+                durationMs: activeDataQuery.result.durationMs,
+                fallbackReason: activeDataQuery.fallbackReason ?? null
+              }
+            })
+          ],
+          queryHistory: appendQueryHistory(prev.queryHistory ?? [], createQueryTraceEntry(activeDataQuery, phase, {
+            origin: "chat",
+            policyReason: ((_a2 = governance.decision) == null ? void 0 : _a2.reason) ?? null,
+            toolCategory: ((_b2 = governance.descriptor) == null ? void 0 : _b2.category) ?? "data"
+          }))
+        };
+      });
+      throwIfAborted(abortSignal);
+      getState().logAgentToolUsage({
+        tool: "data.query",
+        description: `${action.args.explanation} (fallback filter)`,
+        detail: {
+          error: errorMessage,
+          fallbackOperation,
+          totalMatchedRows: fallbackResult.totalMatchedRows,
+          returnedRows: fallbackResult.returnedRows,
+          truncated: fallbackResult.truncated
+        }
+      });
+      throwIfAborted(abortSignal);
+      getState().addProgress(`Read-only query fell back to compatibility filter: ${errorMessage}`, "system");
+      return {
+        status: "success",
+        toolName: "data.query",
+        message: `${normalizedPayload.explanation} (fallback filter)`,
+        shouldStop: false,
+        observation: {
+          type: "tool_result",
+          status: "success",
+          summary: `filtered data.query fallback returned ${fallbackResult.returnedRows} of ${fallbackResult.totalMatchedRows} rows.`,
+          toolName: "data.query",
+          queryMode: "filtered",
+          detail: {
+            fallbackReason: errorMessage,
+            queryMode: "filtered",
+            returnedRows: fallbackResult.returnedRows,
+            totalMatchedRows: fallbackResult.totalMatchedRows,
+            selectedColumns: fallbackResult.selectedColumns,
+            truncated: fallbackResult.truncated,
+            whereColumns: getWhereColumns(fallbackPlan.where),
+            orderVerification: summarizeOrderVerification(
+              fallbackResult.rows,
+              fallbackResult.appliedOrderBy
+            )
+          }
+        }
+      };
+    }
+    getState().logAgentToolUsage({
+      tool: "data.query",
+      description: normalizedPayload.explanation,
+      detail: {
+        error: errorMessage,
+        plan: normalizedPayload.plan
+      }
+    });
+    const repairGuidance = getDataQueryRepairGuidance(errorMessage, {
+      availableColumns: (_o = getState().columnProfiles) == null ? void 0 : _o.map((p) => p.name)
+    });
+    const isRecoverableQueryShapeError = repairGuidance.repairHintCategories.length > 0;
+    getState().addProgress(
+      `AI data query failed: ${errorMessage}`,
+      isRecoverableQueryShapeError ? "system" : "error"
+    );
+    return {
+      status: isRecoverableQueryShapeError ? "blocked" : "error",
+      toolName: "data.query",
+      message: errorMessage,
+      shouldStop: false,
+      retryHint: isRecoverableQueryShapeError ? repairGuidance.repairHint : errorMessage,
+      observation: {
+        type: isRecoverableQueryShapeError ? "runtime_error" : "tool_result",
+        status: isRecoverableQueryShapeError ? "blocked" : "error",
+        summary: errorMessage,
+        toolName: "data.query",
+        code: isRecoverableQueryShapeError ? "validation_failed" : void 0,
+        retryHint: isRecoverableQueryShapeError ? repairGuidance.repairHint : errorMessage,
+        detail: isRecoverableQueryShapeError ? {
+          repairHint: repairGuidance.repairHint,
+          repairHintCategory: repairGuidance.repairHintCategory,
+          repairHintCategories: repairGuidance.repairHintCategories
+        } : void 0
+      }
+    };
+  }
+};
+const executeFilterAction = async (query, store, origin = "chat", abortSignal) => {
+  const { getState, setState } = store;
+  console.log(`${LOG_PREFIX$f} Filtering spreadsheet with query: ${query}`);
+  getState().addProgress("AI is filtering data explorer.");
+  throwIfAborted(abortSignal);
+  const activeSpreadsheetFilter = await runSpreadsheetFilter(query, store, { origin }, abortSignal);
+  throwIfAborted(abortSignal);
+  setState({ isSpreadsheetVisible: true });
+  if (typeof document !== "undefined") {
+    setTimeout(() => {
+      var _a;
+      return (_a = document.getElementById("raw-data-explorer")) == null ? void 0 : _a.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  }
+  return {
+    status: "success",
+    toolName: "spreadsheet.filter",
+    message: activeSpreadsheetFilter.finalReply,
+    shouldStop: false,
+    observation: {
+      type: "tool_result",
+      status: "success",
+      summary: activeSpreadsheetFilter.finalReply,
+      toolName: "spreadsheet.filter",
+      queryMode: "filtered",
+      detail: {
+        matchedRowCount: activeSpreadsheetFilter.observation.matchedRowCount,
+        selectedColumn: activeSpreadsheetFilter.observation.selectedColumn,
+        operator: activeSpreadsheetFilter.observation.operator,
+        value: activeSpreadsheetFilter.observation.value
+      }
+    },
+    artifacts: {
+      activeSpreadsheetFilter
+    }
+  };
+};
+const executeCorrelationAction = async (action, store) => {
+  var _a, _b;
+  if (action.type !== "tool_call" || !action.args) {
+    return {
+      status: "error",
+      toolName: "analysis.correlation",
+      message: "Correlation analysis payload is missing.",
+      shouldStop: false
+    };
+  }
+  if ((_b = (_a = getPreferredAnalysisDataset(store.getState())) == null ? void 0 : _a.backing) == null ? void 0 : _b.readOnly) {
+    return {
+      status: "blocked",
+      toolName: "analysis.correlation",
+      message: "Correlation is unavailable in large-file read-only mode because it would otherwise run only on the preview sample.",
+      shouldStop: false,
+      retryHint: "Use governed SQL aggregations on the complete dataset, or import a smaller CSV for row-level statistical analysis."
+    };
+  }
+  return executeStatisticalAnalysis(action.args, store);
+};
+const executeReshapeAction = async (action, store, abortSignal) => {
+  var _a;
+  const { getState } = store;
+  const csvData = getState().csvData;
+  if (!csvData) {
+    return {
+      status: "error",
+      toolName: "data.reshape",
+      message: "No dataset available for reshape.",
+      shouldStop: false
+    };
+  }
+  const args = (action.type === "tool_call" ? action.args : null) ?? {};
+  const sourceColumns = args.sourceColumns ?? [];
+  const keepColumns = args.keepColumns ?? [];
+  const keyColumn = args.keyColumn ?? "Period";
+  const valueColumn = args.valueColumn ?? "Value";
+  const reason = args.reason ?? "";
+  const rowCountBefore = csvData.data.length;
+  const reshapeAction = {
+    type: "tool_call",
+    args: {
+      explanation: `Reshape wide-format dataset into long format: ${reason}`,
+      operations: [{
+        id: "agent_reshape_wide_pivot",
+        type: "unpivot_columns",
+        reason,
+        sourceColumns,
+        keyColumn,
+        valueColumn,
+        keepColumns,
+        sourceColumnNameColumn: "SourceColumnName"
+      }]
+    }
+  };
+  const result = await executeDataOperationsAction(reshapeAction, store, abortSignal);
+  const rowCountAfter = ((_a = getState().csvData) == null ? void 0 : _a.data.length) ?? 0;
+  const retentionRatio = rowCountBefore > 0 ? rowCountAfter / rowCountBefore : 1;
+  console.log(
+    `${LOG_PREFIX$f} data.reshape: ${rowCountBefore} → ${rowCountAfter} rows (${(retentionRatio * 100).toFixed(1)}% retention)`
+  );
+  return {
+    ...result,
+    toolName: "data.reshape",
+    observation: {
+      type: "tool_result",
+      status: result.status === "success" ? "success" : result.status,
+      summary: `Reshaped dataset from ${rowCountBefore} to ${rowCountAfter} rows (${sourceColumns.length} columns unpivoted). Retention: ${(retentionRatio * 100).toFixed(1)}%.`,
+      toolName: "data.reshape",
+      detail: {
+        rowCountBefore,
+        rowCountAfter,
+        retentionRatio,
+        sourceColumns,
+        keepColumns,
+        keyColumn,
+        valueColumn,
+        reshapeQuality: retentionRatio < 0.01 ? "catastrophic_loss" : retentionRatio < 0.1 ? "severe_loss" : "normal"
+      }
+    }
+  };
+};
+const executeKeepWideAction = (action, store) => {
+  var _a;
+  const reason = (action.type === "tool_call" ? (_a = action.args) == null ? void 0 : _a.reason : null) ?? "Agent decided to keep wide format.";
+  console.log(`${LOG_PREFIX$f} data.keep_wide: ${reason}`);
+  const state2 = store.getState();
+  const session = state2.latestAnalysisSession;
+  if (session == null ? void 0 : session.analysisSteering) {
+    store.setState((prev) => {
+      const updatedSession = prev.latestAnalysisSession;
+      if (!(updatedSession == null ? void 0 : updatedSession.analysisSteering)) return {};
+      return {
+        latestAnalysisSession: {
+          ...updatedSession,
+          analysisSteering: {
+            ...updatedSession.analysisSteering,
+            reshapeDecision: null,
+            reshapeDecisionReasons: [
+              ...updatedSession.analysisSteering.reshapeDecisionReasons ?? [],
+              "agent_decided_keep_wide",
+              reason
+            ]
+          }
+        }
+      };
+    });
+  }
+  return {
+    status: "success",
+    toolName: "data.keep_wide",
+    message: `Dataset kept in wide format: ${reason}`,
+    shouldStop: false,
+    observation: {
+      type: "tool_result",
+      status: "success",
+      summary: `Agent decided to keep dataset in wide format. Reason: ${reason}. Analysis will use existing columns directly.`,
+      toolName: "data.keep_wide",
+      detail: { reason }
+    }
+  };
+};
 const quoteId = (value2) => `"${value2.replace(/"/g, '""')}"`;
 const quoteLit = (value2) => `'${value2.replace(/'/g, "''")}'`;
 const buildNumericExpr = (column) => {
@@ -80986,7 +82944,7 @@ const TEMPLATES = /* @__PURE__ */ new Map([
   ["cross_column", crossColumnTemplate]
 ]);
 const resolveDiagnosticTemplate = (kind) => TEMPLATES.get(kind) ?? null;
-const LOG_PREFIX$h = "[UnifiedQuery]";
+const LOG_PREFIX$e = "[UnifiedQuery]";
 const DEFAULT_DIAGNOSTIC_TIMEOUT_MS = 8e3;
 const DEFAULT_DIAGNOSTIC_MAX_ROWS = 500;
 const executeStructuredQuery = async (plan, options2, intentOptions) => {
@@ -81176,7 +83134,7 @@ const executeUnpivotQuery = async (intent, options2) => {
   };
 };
 const executeUnifiedQuery = async (intent, options2) => {
-  console.log(`${LOG_PREFIX$h} Executing: kind=${intent.kind}, purpose="${intent.purpose}"`);
+  console.log(`${LOG_PREFIX$e} Executing: kind=${intent.kind}, purpose="${intent.purpose}"`);
   try {
     if (intent.kind === "structured") {
       if (!intent.plan) {
@@ -81190,7 +83148,7 @@ const executeUnifiedQuery = async (intent, options2) => {
     return await executeDiagnosticQuery(intent, options2);
   } catch (error2) {
     const msg = error2 instanceof Error ? error2.message : String(error2);
-    console.error(`${LOG_PREFIX$h} Failed: kind=${intent.kind}, purpose="${intent.purpose}", error=${msg}`);
+    console.error(`${LOG_PREFIX$e} Failed: kind=${intent.kind}, purpose="${intent.purpose}", error=${msg}`);
     throw error2;
   }
 };
@@ -81198,6 +83156,4357 @@ const unifiedQueryExecutor = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Objec
   __proto__: null,
   executeUnifiedQuery
 }, Symbol.toStringTag, { value: "Module" }));
+const LOG_PREFIX$d = "[DiagnosticData]";
+const QUERY_TIMEOUT_MS$1 = 8e3;
+const resolveBinding = (store) => {
+  const state2 = store.getState();
+  const preferredDataset = getPreferredAnalysisDataset(state2);
+  const binding = resolveCurrentDuckDbBinding({
+    mode: "analysis",
+    csvData: preferredDataset,
+    snapshot: state2.datasetSemanticSnapshot,
+    semanticDatasetVersion: state2.semanticDatasetVersion,
+    sessionStatus: state2.duckDbSessionStatus,
+    activeDataQuery: state2.activeDataQuery ?? null
+  });
+  if (!(binding == null ? void 0 : binding.tableName)) return null;
+  return binding;
+};
+const numericTypes = /* @__PURE__ */ new Set(["numerical", "currency", "percentage"]);
+const getNumericColumns = (profiles, requested) => {
+  const numeric = profiles.filter((c) => numericTypes.has(c.type));
+  if (!requested || requested.length === 0) return numeric;
+  return numeric.filter((c) => requested.includes(c.name));
+};
+const executeDataDescribeAction = async (action, store) => {
+  const state2 = store.getState();
+  if (action.type !== "tool_call" || !state2.csvData) {
+    return { status: "error", toolName: "data.describe", message: "No dataset loaded.", shouldStop: false };
+  }
+  const binding = resolveBinding(store);
+  if (!binding) {
+    return { status: "error", toolName: "data.describe", message: "DuckDB binding unavailable.", shouldStop: false };
+  }
+  const args = action.args ?? {};
+  const cols = getNumericColumns(state2.columnProfiles, args.columns);
+  if (cols.length === 0) {
+    return { status: "error", toolName: "data.describe", message: "No numeric columns found to describe.", shouldStop: false };
+  }
+  const intent = {
+    kind: "describe",
+    purpose: `Summary statistics for ${cols.length} numeric column(s)`,
+    params: { columns: cols.map((c) => c.name) },
+    options: { timeout: QUERY_TIMEOUT_MS$1 }
+  };
+  try {
+    const queryResult = await executeUnifiedQuery(intent, {
+      binding,
+      columnProfiles: state2.columnProfiles
+    });
+    const explanation = args.explanation || `Summary statistics for ${cols.length} numeric column(s).`;
+    console.log(`${LOG_PREFIX$d} data.describe returned ${queryResult.returnedRows} column stats.`);
+    return {
+      status: "success",
+      toolName: "data.describe",
+      message: explanation,
+      shouldStop: false,
+      observation: {
+        type: "tool_result",
+        status: "success",
+        summary: `Computed summary statistics for ${queryResult.returnedRows} numeric column(s): ${cols.map((c) => c.name).join(", ")}.`,
+        toolName: "data.describe",
+        detail: { columns: cols.map((c) => c.name), rowCount: queryResult.returnedRows }
+      },
+      artifacts: {
+        activeDataQuery: {
+          explanation,
+          result: {
+            rows: queryResult.rows,
+            totalMatchedRows: queryResult.totalMatchedRows,
+            returnedRows: queryResult.returnedRows,
+            truncated: false,
+            selectedColumns: queryResult.selectedColumns,
+            appliedOrderBy: [],
+            appliedLimit: cols.length,
+            durationMs: queryResult.durationMs
+          },
+          plan: {}
+        }
+      }
+    };
+  } catch (error2) {
+    return { status: "error", toolName: "data.describe", message: `Describe query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, shouldStop: false };
+  }
+};
+const executeDataValueCountsAction = async (action, store) => {
+  const state2 = store.getState();
+  if (action.type !== "tool_call" || !state2.csvData) {
+    return { status: "error", toolName: "data.value_counts", message: "No dataset loaded.", shouldStop: false };
+  }
+  const binding = resolveBinding(store);
+  if (!binding) {
+    return { status: "error", toolName: "data.value_counts", message: "DuckDB binding unavailable.", shouldStop: false };
+  }
+  const args = action.args ?? {};
+  const column = String(args.column ?? "").trim();
+  if (!column) {
+    return { status: "error", toolName: "data.value_counts", message: '"column" is required.', shouldStop: false, retryHint: "Provide a column name." };
+  }
+  if (!state2.columnProfiles.some((c) => c.name === column)) {
+    return { status: "error", toolName: "data.value_counts", message: `Column "${column}" not found.`, shouldStop: false };
+  }
+  const limit = Math.min(Math.max(Number(args.limit) || 20, 1), 100);
+  const intent = {
+    kind: "value_counts",
+    purpose: `Value counts for "${column}" (top ${limit})`,
+    params: { column, limit },
+    options: { timeout: QUERY_TIMEOUT_MS$1 }
+  };
+  try {
+    const queryResult = await executeUnifiedQuery(intent, {
+      binding,
+      allowedColumns: state2.columnProfiles.map((c) => c.name),
+      columnProfiles: state2.columnProfiles
+    });
+    const explanation = args.explanation || `Value counts for "${column}" (top ${limit}).`;
+    console.log(`${LOG_PREFIX$d} data.value_counts returned ${queryResult.returnedRows} values for "${column}".`);
+    return {
+      status: "success",
+      toolName: "data.value_counts",
+      message: explanation,
+      shouldStop: false,
+      observation: {
+        type: "tool_result",
+        status: "success",
+        summary: `Top ${queryResult.returnedRows} values for "${column}".`,
+        toolName: "data.value_counts",
+        detail: { column, rowCount: queryResult.returnedRows }
+      },
+      artifacts: {
+        activeDataQuery: {
+          explanation,
+          result: {
+            rows: queryResult.rows,
+            totalMatchedRows: queryResult.totalMatchedRows,
+            returnedRows: queryResult.returnedRows,
+            truncated: false,
+            selectedColumns: queryResult.selectedColumns,
+            appliedOrderBy: [{ column: "count", direction: "desc" }],
+            appliedLimit: limit,
+            durationMs: queryResult.durationMs
+          },
+          plan: {}
+        }
+      }
+    };
+  } catch (error2) {
+    return { status: "error", toolName: "data.value_counts", message: `Value counts query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, shouldStop: false };
+  }
+};
+const executeDataOutliersAction = async (action, store) => {
+  const state2 = store.getState();
+  if (action.type !== "tool_call" || !state2.csvData) {
+    return { status: "error", toolName: "data.outliers", message: "No dataset loaded.", shouldStop: false };
+  }
+  const binding = resolveBinding(store);
+  if (!binding) {
+    return { status: "error", toolName: "data.outliers", message: "DuckDB binding unavailable.", shouldStop: false };
+  }
+  const args = action.args ?? {};
+  const column = String(args.column ?? "").trim();
+  if (!column) {
+    return { status: "error", toolName: "data.outliers", message: '"column" is required.', shouldStop: false, retryHint: "Provide a numeric column name." };
+  }
+  const profile = state2.columnProfiles.find((c) => c.name === column);
+  if (!profile || !numericTypes.has(profile.type)) {
+    return { status: "error", toolName: "data.outliers", message: `Column "${column}" is not numeric.`, shouldStop: false };
+  }
+  const intent = {
+    kind: "outliers",
+    purpose: `IQR outlier detection for "${column}"`,
+    params: { column },
+    options: { timeout: QUERY_TIMEOUT_MS$1 }
+  };
+  try {
+    const queryResult = await executeUnifiedQuery(intent, {
+      binding,
+      columnProfiles: state2.columnProfiles
+    });
+    const explanation = args.explanation || `IQR outlier detection for "${column}".`;
+    const statsRow = queryResult.rows[0];
+    const q1 = statsRow ? Number(statsRow["__q1"]) : 0;
+    const q3 = statsRow ? Number(statsRow["__q3"]) : 0;
+    const iqr = statsRow ? Number(statsRow["__iqr"]) : 0;
+    console.log(`${LOG_PREFIX$d} data.outliers found ${queryResult.returnedRows} outlier(s) in "${column}" (Q1=${q1}, Q3=${q3}, IQR=${iqr}).`);
+    return {
+      status: "success",
+      toolName: "data.outliers",
+      message: explanation,
+      shouldStop: false,
+      observation: {
+        type: "tool_result",
+        status: "success",
+        summary: `Found ${queryResult.returnedRows} outlier(s) in "${column}". Q1=${q1.toFixed(2)}, Q3=${q3.toFixed(2)}, IQR=${iqr.toFixed(2)}, fences=[${(q1 - 1.5 * iqr).toFixed(2)}, ${(q3 + 1.5 * iqr).toFixed(2)}].`,
+        toolName: "data.outliers",
+        detail: { column, outlierCount: queryResult.returnedRows, q1, q3, iqr }
+      },
+      artifacts: {
+        activeDataQuery: {
+          explanation,
+          result: {
+            rows: queryResult.rows,
+            totalMatchedRows: queryResult.totalMatchedRows,
+            returnedRows: queryResult.returnedRows,
+            truncated: false,
+            selectedColumns: queryResult.selectedColumns,
+            appliedOrderBy: [],
+            appliedLimit: 50,
+            durationMs: queryResult.durationMs
+          },
+          plan: {}
+        }
+      }
+    };
+  } catch (error2) {
+    return { status: "error", toolName: "data.outliers", message: `Outlier query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, shouldStop: false };
+  }
+};
+const executeDataMissingAction = async (action, store) => {
+  const state2 = store.getState();
+  if (action.type !== "tool_call" || !state2.csvData) {
+    return { status: "error", toolName: "data.missing", message: "No dataset loaded.", shouldStop: false };
+  }
+  const binding = resolveBinding(store);
+  if (!binding) {
+    return { status: "error", toolName: "data.missing", message: "DuckDB binding unavailable.", shouldStop: false };
+  }
+  const args = action.args ?? {};
+  const requestedCols = args.columns;
+  const targetCols = requestedCols && requestedCols.length > 0 ? state2.columnProfiles.filter((c) => requestedCols.includes(c.name)) : state2.columnProfiles;
+  if (targetCols.length === 0) {
+    return { status: "error", toolName: "data.missing", message: "No matching columns found.", shouldStop: false };
+  }
+  const intent = {
+    kind: "missing",
+    purpose: `Missing data profile for ${targetCols.length} column(s)`,
+    params: { columns: targetCols.map((c) => c.name) },
+    options: { timeout: QUERY_TIMEOUT_MS$1 }
+  };
+  try {
+    const queryResult = await executeUnifiedQuery(intent, {
+      binding,
+      columnProfiles: state2.columnProfiles
+    });
+    const explanation = args.explanation || `Missing data profile for ${targetCols.length} column(s).`;
+    const issueCount = queryResult.rows.filter((r) => Number(r["null_rate"]) + Number(r["blank_rate"]) > 0.05).length;
+    console.log(`${LOG_PREFIX$d} data.missing profiled ${queryResult.returnedRows} columns, ${issueCount} with >5% missing.`);
+    return {
+      status: "success",
+      toolName: "data.missing",
+      message: explanation,
+      shouldStop: false,
+      observation: {
+        type: "tool_result",
+        status: "success",
+        summary: `Profiled ${queryResult.returnedRows} column(s). ${issueCount} column(s) have >5% missing values.`,
+        toolName: "data.missing",
+        detail: { columnCount: queryResult.returnedRows, issueCount }
+      },
+      artifacts: {
+        activeDataQuery: {
+          explanation,
+          result: {
+            rows: queryResult.rows,
+            totalMatchedRows: queryResult.totalMatchedRows,
+            returnedRows: queryResult.returnedRows,
+            truncated: false,
+            selectedColumns: queryResult.selectedColumns,
+            appliedOrderBy: [],
+            appliedLimit: targetCols.length,
+            durationMs: queryResult.durationMs
+          },
+          plan: {}
+        }
+      }
+    };
+  } catch (error2) {
+    return { status: "error", toolName: "data.missing", message: `Missing data query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, shouldStop: false };
+  }
+};
+const buildCreatePlanRetryHint = (code) => {
+  switch (code) {
+    case "empty_result":
+      return "Retry analysis.create_plan with broader filters, a less specific slice, or a wider grouping so the query returns rows.";
+    case "duckdb_unavailable":
+      return "Retry analysis.create_plan only after a cleaned dataset is loaded into DuckDB, or use a non-SQL plan path.";
+    default:
+      return "Choose a different analysis plan or ask for clarification.";
+  }
+};
+const buildCreatePlanExecutionResult = (plan, createdCard, failure) => {
+  const displayPlan = resolveDisplayPlanLabels(plan);
+  const detail = {
+    requestedTitle: displayPlan.title,
+    chartType: plan.chartType,
+    groupByColumn: plan.groupByColumn ?? null,
+    valueColumn: plan.valueColumn ?? plan.yValueColumn ?? null
+  };
+  if (!createdCard) {
+    const message = (failure == null ? void 0 : failure.message) || `Plan "${displayPlan.title}" did not create a card.`;
+    const retryHint = buildCreatePlanRetryHint(failure == null ? void 0 : failure.code);
+    return {
+      status: "blocked",
+      toolName: "analysis.create_plan",
+      message,
+      shouldStop: false,
+      retryHint,
+      artifacts: detail,
+      artifactMetadata: {
+        artifactType: "analysis_card_attempt",
+        metricDefinition: plan.valueColumn ?? plan.yValueColumn ?? null,
+        grain: plan.groupByColumn ?? null,
+        sourceArtifactIds: []
+      },
+      observation: {
+        type: "tool_result",
+        status: "blocked",
+        summary: message,
+        toolName: "analysis.create_plan",
+        code: failure == null ? void 0 : failure.code,
+        retryHint,
+        detail: {
+          ...detail,
+          ...(failure == null ? void 0 : failure.detail) ?? {},
+          artifactMetadata: {
+            artifactType: "analysis_card_attempt",
+            metricDefinition: plan.valueColumn ?? plan.yValueColumn ?? null,
+            grain: plan.groupByColumn ?? null,
+            sourceArtifactIds: []
+          }
+        }
+      }
+    };
+  }
+  const successDetail = {
+    ...detail,
+    createdCardId: createdCard.id,
+    createdCardTitle: displayPlan.title,
+    rowCount: createdCard.aggregatedData.length
+  };
+  return {
+    status: "success",
+    toolName: "analysis.create_plan",
+    message: `Created analysis card "${displayPlan.title}".`,
+    shouldStop: true,
+    artifacts: successDetail,
+    artifactMetadata: {
+      artifactType: "analysis_card",
+      metricDefinition: plan.valueColumn ?? plan.yValueColumn ?? null,
+      grain: plan.groupByColumn ?? null,
+      sourceArtifactIds: [createdCard.id]
+    },
+    observation: {
+      type: "tool_result",
+      status: "success",
+      summary: `Created analysis card "${displayPlan.title}" with ${createdCard.aggregatedData.length} rows.`,
+      toolName: "analysis.create_plan",
+      detail: {
+        ...successDetail,
+        artifactMetadata: {
+          artifactType: "analysis_card",
+          metricDefinition: plan.valueColumn ?? plan.yValueColumn ?? null,
+          grain: plan.groupByColumn ?? null,
+          sourceArtifactIds: [createdCard.id]
+        }
+      }
+    }
+  };
+};
+const MAX_CARD_SAMPLE_ROWS = 12;
+const MAX_RELEVANT_LOGS = 24;
+const cloneRows = (rows, limit) => rows.slice(0, limit).map((row) => JSON.parse(JSON.stringify(row)));
+const filterChartEvents = (events) => events.filter((event) => ["planning", "execution", "evaluation", "chat"].includes(event.phase)).slice(-MAX_RELEVANT_LOGS);
+const filterChartTelemetry = (events) => events.filter((event) => {
+  var _a;
+  return ["summary", "planner", "chat", "insight", "next_step"].includes(String(((_a = event.meta) == null ? void 0 : _a.callType) ?? ""));
+}).slice(0, MAX_RELEVANT_LOGS);
+const buildChartReviewBundle = (state2) => {
+  var _a, _b, _c;
+  const inspection = buildCleaningInspectionBundle(state2);
+  const cards = state2.analysisCards.map((card) => ({
+    id: card.id,
+    title: card.plan.title,
+    description: card.plan.description,
+    isFallback: Boolean(card.plan.isFallback),
+    chartType: card.plan.chartType,
+    displayChartType: card.displayChartType,
+    aggregation: card.plan.aggregation ?? null,
+    groupByColumn: card.plan.groupByColumn ?? null,
+    valueColumn: card.plan.valueColumn ?? null,
+    secondaryValueColumn: card.plan.secondaryValueColumn ?? null,
+    rowCount: card.aggregatedData.length,
+    aggregatedDataSample: cloneRows(card.aggregatedData, MAX_CARD_SAMPLE_ROWS),
+    summary: card.summary.text,
+    summaryLanguage: card.summary.language,
+    topN: card.topN,
+    hideOthers: card.hideOthers,
+    hiddenLabels: [...card.hiddenLabels ?? []],
+    cardFilter: card.filter ? { column: card.filter.column, values: [...card.filter.values] } : null,
+    isDataVisible: card.isDataVisible
+  }));
+  return {
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    session: {
+      sessionId: state2.sessionId,
+      datasetId: state2.currentDatasetId,
+      activeGoal: state2.confirmedAnalysisGoal,
+      provider: state2.settings.provider,
+      model: state2.settings.complexModel
+    },
+    dataset: {
+      fileName: ((_a = state2.csvData) == null ? void 0 : _a.fileName) ?? ((_b = state2.rawCsvData) == null ? void 0 : _b.fileName) ?? null,
+      rawRowCount: inspection.importFacts.rawRowCount,
+      cleanedRowCount: inspection.importFacts.cleanedRowCount,
+      columnCount: state2.columnProfiles.length,
+      qualityIssues: [...inspection.verification.warnings]
+    },
+    cleaning: {
+      status: inspection.cleaning.status,
+      planStatus: inspection.cleaning.planStatus,
+      consistencyIssues: [...inspection.cleaning.consistencyIssues],
+      explanation: inspection.cleaning.explanation,
+      operationCount: inspection.cleaning.operationCount,
+      baselineNoiseRowsRemoved: inspection.cleaning.baselineNoiseRowsRemoved,
+      operations: cloneRows(inspection.cleaning.operations, inspection.cleaning.operations.length)
+    },
+    verification: {
+      datasetSafetyStatus: inspection.verification.datasetSafetyStatus,
+      cleaningConsistencyStatus: inspection.verification.cleaningConsistencyStatus,
+      overallStatus: inspection.verification.overallStatus,
+      downstreamAnalysisBlocked: inspection.verification.downstreamAnalysisBlocked
+    },
+    spreadsheetFilter: inspection.spreadsheetFilter,
+    cards,
+    chartReviewHints: {
+      totalCards: cards.length,
+      cardsWithNoRows: cards.filter((card) => card.rowCount === 0).map((card) => card.title),
+      cardsWithSingleRow: cards.filter((card) => card.rowCount === 1).map((card) => card.title),
+      cardsUsingFallbackChartType: cards.filter((card) => card.displayChartType !== card.chartType).map((card) => card.title),
+      fallbackCardTitles: cards.filter((card) => card.isFallback).map((card) => card.title),
+      allCardsAreFallback: cards.length > 0 && cards.every((card) => card.isFallback)
+    },
+    relevantLogs: {
+      agentEvents: filterChartEvents(inspection.logs.pipeline),
+      telemetry: filterChartTelemetry(inspection.logs.telemetry)
+    },
+    finalSummary: ((_c = state2.finalSummary) == null ? void 0 : _c.text) ?? null
+  };
+};
+const toIso$2 = (value2) => {
+  if (!value2) return "";
+  if (value2 instanceof Date) return value2.toISOString();
+  const parsed = new Date(value2);
+  return Number.isNaN(parsed.getTime()) ? String(value2) : parsed.toISOString();
+};
+const formatJson = (value2) => JSON.stringify(value2, null, 2);
+const formatNdjson = (rows) => rows.map((row) => JSON.stringify(row)).join("\n");
+const createFile = (path, language, content, group, badges = ["virtual"]) => ({
+  path,
+  label: path.split("/").filter(Boolean).slice(-1)[0] ?? path,
+  language,
+  content,
+  group,
+  badges
+});
+const getWorkspaceFileGroup = (path) => {
+  if (path.startsWith("/dataset/")) return "dataset";
+  if (path.startsWith("/workspace/")) return "workspace";
+  return "debug";
+};
+const buildWorkspaceBundle = (state2) => {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
+  const inspection = buildCleaningInspectionBundle(state2);
+  const chartReviewBundle = buildChartReviewBundle(state2);
+  const workflow = buildDataPreparationWorkflowBundle(state2);
+  const files = [];
+  const workspaceSnapshot = { ...state2.workspaceFiles ?? {} };
+  const intakeIrSidecar = state2.rawIntakeIr ? formatJson({
+    fileName: state2.rawIntakeIr.fileName,
+    columnCount: state2.rawIntakeIr.columnCount,
+    provisionalTable: state2.rawIntakeIr.provisionalTable,
+    diagnostics: state2.rawIntakeIr.diagnostics,
+    segmentCount: state2.rawIntakeIr.segments.length
+  }) : null;
+  const runtimeAssessmentSidecar = ((_a = state2.cleaningRun) == null ? void 0 : _a.runtimeTableAssessment) ? formatJson(state2.cleaningRun.runtimeTableAssessment) : null;
+  const datasetFiles = [
+    {
+      path: WORKSPACE_DATASET_RAW_CSV,
+      content: buildWorkspaceCsv(state2.rawCsvData ?? state2.csvData)
+    },
+    {
+      path: WORKSPACE_DATASET_CLEAN_CSV,
+      content: buildWorkspaceCsv(state2.csvData)
+    },
+    {
+      path: WORKSPACE_REPORT_CONTEXT_JSON,
+      content: formatJson(inspection.reportContext)
+    },
+    ...intakeIrSidecar ? [{
+      path: WORKSPACE_INTAKE_IR_JSON,
+      content: intakeIrSidecar
+    }] : [],
+    ...runtimeAssessmentSidecar ? [{
+      path: WORKSPACE_RUNTIME_TABLE_ASSESSMENT_JSON,
+      content: runtimeAssessmentSidecar
+    }] : []
+  ];
+  datasetFiles.forEach((file) => {
+    if (file.content) {
+      workspaceSnapshot[file.path] = file.content;
+    }
+  });
+  const chatActions = state2.chatHistory.slice(-40).map((message) => ({
+    timestamp: toIso$2(message.timestamp),
+    sender: message.sender,
+    type: message.type,
+    text: message.text
+  }));
+  const safeWorkspaceHistory = [...state2.workspaceActionHistory ?? []].slice(-WORKSPACE_HISTORY_LIMIT).map((entry) => ({
+    ...entry,
+    timestamp: entry.timestamp instanceof Date ? entry.timestamp.toISOString() : String(entry.timestamp)
+  }));
+  const cardSummaries = state2.analysisCards.map((card) => ({
+    id: card.id,
+    title: card.plan.title,
+    description: card.plan.description,
+    summary: card.summary.text,
+    summaryLanguage: card.summary.language,
+    chartType: card.displayChartType,
+    rowCount: card.aggregatedData.length,
+    groupByColumn: card.plan.groupByColumn ?? null,
+    valueColumn: card.plan.valueColumn ?? null,
+    aggregation: card.plan.aggregation ?? null,
+    previewRows: card.aggregatedData.slice(0, 10)
+  }));
+  const queryHistory = (state2.queryHistory ?? []).slice(-10).map((entry) => {
+    var _a2;
+    return {
+      id: entry.id,
+      correlation: {
+        ...toCorrelationRecord(entry),
+        datasetId: state2.currentDatasetId ?? null,
+        cleaningRunId: ((_a2 = state2.cleaningRun) == null ? void 0 : _a2.runId) ?? null,
+        requestId: null
+      },
+      phase: entry.phase,
+      explanation: entry.explanation,
+      engine: entry.engine,
+      sqlPreview: entry.sqlPreview,
+      tableName: entry.tableName,
+      loadVersion: entry.loadVersion,
+      fallbackReason: entry.fallbackReason ?? null,
+      appliedAt: toIso$2(entry.appliedAt),
+      toolCategory: entry.toolCategory ?? "data",
+      policyDecision: entry.policyDecision ?? "allowed",
+      policyReason: entry.policyReason ?? null,
+      result: entry.result
+    };
+  });
+  const contextTelemetry = state2.telemetryEvents.filter((event) => {
+    var _a2, _b2;
+    return ((_a2 = event.meta) == null ? void 0 : _a2.callType) === "data_prep" || ((_b2 = event.meta) == null ? void 0 : _b2.callType) === "chat";
+  }).slice(-40).map((event) => ({
+    id: event.id,
+    timestamp: toIso$2(event.timestamp),
+    correlation: toCorrelationRecord(event),
+    stage: event.stage,
+    responseType: event.responseType,
+    detail: event.detail,
+    meta: event.meta ?? null
+  }));
+  const toolContext = buildToolAvailabilityContext(state2, {
+    toolStage: !state2.cleaningRun || state2.cleaningRun.status === "completed" ? "analysis" : "cleaning"
+  });
+  const resolvedRegistry = resolveAllowedTools(buildBuiltinToolRegistry(toolContext.columnNames), toolContext);
+  const toolPolicySnapshot = buildToolGovernanceSnapshot({
+    stage: resolvedRegistry.stage,
+    allowedTools: resolvedRegistry.allowedTools,
+    blockedTools: resolvedRegistry.blockedTools,
+    diagnostics: resolvedRegistry.diagnostics
+  });
+  files.push(createFile("/cleaning/session-summary.json", "json", formatJson({
+    explanation: inspection.cleaning.explanation,
+    status: inspection.cleaning.status,
+    planStatus: inspection.cleaning.planStatus,
+    consistencyIssues: inspection.cleaning.consistencyIssues,
+    outputColumns: inspection.cleaning.outputColumns,
+    loopCount: ((_b = state2.cleaningRun) == null ? void 0 : _b.loopCount) ?? 0,
+    inspectionStatus: inspection.rowInspection.inspectionStatus,
+    residualUnknownRowCount: inspection.rowInspection.residualUnknownRowCount,
+    residualSummaryLikeRowCount: inspection.rowInspection.residualSummaryLikeRowCount
+  }), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/cleaning/intake-diagnostics.json", "json", formatJson(inspection.intakeDiagnostics), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/cleaning/report-shape.json", "json", formatJson(inspection.reportShape.profile), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/cleaning/reshape-hypotheses.json", "json", formatJson(inspection.reportShape.hypotheses), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/cleaning/row-inspection.json", "json", formatJson(inspection.rowInspection.latest), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/cleaning/row-classification.json", "json", formatJson(((_c = inspection.rowInspection.latest) == null ? void 0 : _c.rows) ?? []), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/cleaning/cleaning-loop-history.json", "json", formatJson(inspection.loopHistory), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/cleaning/verification-signals.json", "json", formatJson(inspection.verification.shapeVerification), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/chat/actions.ndjson", "ndjson", formatNdjson(chatActions), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/chat/spreadsheet-filter.json", "json", formatJson({
+    active: Boolean(state2.activeSpreadsheetFilter ?? state2.spreadsheetFilterFunction),
+    correlation: {
+      ...toCorrelationRecord({
+        sessionId: state2.sessionId,
+        datasetId: state2.currentDatasetId,
+        turnId: (_d = state2.activeTurn) == null ? void 0 : _d.turnId,
+        stepId: (_f = (_e = state2.activeTurn) == null ? void 0 : _e.steps.at(-1)) == null ? void 0 : _f.stepId,
+        cleaningRunId: (_g = state2.cleaningRun) == null ? void 0 : _g.runId,
+        requestId: (_h = state2.activeSpreadsheetFilter) == null ? void 0 : _h.requestId
+      })
+    },
+    requestId: ((_i = state2.activeSpreadsheetFilter) == null ? void 0 : _i.requestId) ?? null,
+    origin: ((_j = state2.activeSpreadsheetFilter) == null ? void 0 : _j.origin) ?? null,
+    query: ((_k = state2.activeSpreadsheetFilter) == null ? void 0 : _k.query) ?? null,
+    finalReply: ((_l = state2.activeSpreadsheetFilter) == null ? void 0 : _l.finalReply) ?? state2.aiFilterExplanation ?? null,
+    operation: ((_m = state2.activeSpreadsheetFilter) == null ? void 0 : _m.operation) ?? state2.spreadsheetFilterFunction ?? null,
+    observation: ((_n = state2.activeSpreadsheetFilter) == null ? void 0 : _n.observation) ?? null,
+    appliedAt: toIso$2((_o = state2.activeSpreadsheetFilter) == null ? void 0 : _o.appliedAt)
+  }), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/chat/data-query.json", "json", formatJson({
+    active: Boolean(state2.activeDataQuery),
+    correlation: {
+      ...toCorrelationRecord(state2.activeDataQuery),
+      datasetId: state2.currentDatasetId ?? null,
+      cleaningRunId: ((_p = state2.cleaningRun) == null ? void 0 : _p.runId) ?? null,
+      requestId: null
+    },
+    explanation: ((_q = state2.activeDataQuery) == null ? void 0 : _q.explanation) ?? null,
+    engine: ((_r = state2.activeDataQuery) == null ? void 0 : _r.engine) ?? null,
+    sqlPreview: ((_s = state2.activeDataQuery) == null ? void 0 : _s.sqlPreview) ?? null,
+    tableName: ((_t = state2.activeDataQuery) == null ? void 0 : _t.tableName) ?? null,
+    loadVersion: ((_u = state2.activeDataQuery) == null ? void 0 : _u.loadVersion) ?? null,
+    fallbackReason: ((_v = state2.activeDataQuery) == null ? void 0 : _v.fallbackReason) ?? null,
+    toolCategory: "data",
+    policyDecision: "allowed",
+    policyReason: null,
+    plan: ((_w = state2.activeDataQuery) == null ? void 0 : _w.plan) ?? null,
+    result: ((_x = state2.activeDataQuery) == null ? void 0 : _x.result) ? {
+      totalMatchedRows: state2.activeDataQuery.result.totalMatchedRows,
+      returnedRows: state2.activeDataQuery.result.returnedRows,
+      truncated: state2.activeDataQuery.result.truncated,
+      selectedColumns: state2.activeDataQuery.result.selectedColumns,
+      appliedOrderBy: state2.activeDataQuery.result.appliedOrderBy,
+      appliedLimit: state2.activeDataQuery.result.appliedLimit,
+      durationMs: state2.activeDataQuery.result.durationMs,
+      previewRows: state2.activeDataQuery.result.rows.slice(0, 20)
+    } : null
+  }), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/chat/query-history.json", "json", formatJson(queryHistory), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/analysis/cards.json", "json", formatJson(cardSummaries.map((card) => ({
+    id: card.id,
+    title: card.title,
+    chartType: card.chartType,
+    rowCount: card.rowCount,
+    groupByColumn: card.groupByColumn,
+    valueColumn: card.valueColumn,
+    aggregation: card.aggregation
+  }))), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/analysis/card-snapshot.json", "json", formatJson(cardSummaries), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/analysis/chart-review-bundle.json", "json", formatJson(chartReviewBundle), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/context/data-prep-context.ndjson", "ndjson", formatNdjson(contextTelemetry.filter((event) => {
+    var _a2;
+    return ((_a2 = event.meta) == null ? void 0 : _a2.callType) === "data_prep";
+  })), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/context/chat-context.ndjson", "ndjson", formatNdjson(contextTelemetry.filter((event) => {
+    var _a2;
+    return ((_a2 = event.meta) == null ? void 0 : _a2.callType) === "chat";
+  })), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/context/tool-policy.json", "json", formatJson(toolPolicySnapshot), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/context/tool-diagnostics.json", "json", formatJson(resolvedRegistry.diagnostics), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/logs/agent-events.ndjson", "ndjson", formatNdjson(inspection.logs.pipeline), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/logs/agent-tool-logs.ndjson", "ndjson", formatNdjson(inspection.logs.toolLogs), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/logs/telemetry.ndjson", "ndjson", formatNdjson(inspection.logs.telemetry), "debug", ["virtual", "generated", "debug"]));
+  files.push(createFile("/workspace/actions.ndjson", "ndjson", formatNdjson(safeWorkspaceHistory), "debug", ["virtual", "generated", "debug"]));
+  Object.entries(workspaceSnapshot).forEach(([path, content]) => {
+    if (!path || !isWorkspaceReadablePath(path)) return;
+    const group = getWorkspaceFileGroup(path);
+    const badges = [
+      "virtual",
+      ...path.startsWith("/dataset/") ? ["generated"] : [],
+      ...isWorkspaceWritablePath(path) ? ["editable"] : [],
+      ...group === "debug" ? ["debug"] : []
+    ];
+    const existingIndex = files.findIndex((file) => file.path === path);
+    const nextFile = {
+      path,
+      label: path.split("/").filter(Boolean).slice(-1)[0] ?? path,
+      language: getWorkspaceFileLanguage(path),
+      content: String(content),
+      group,
+      badges
+    };
+    if (existingIndex >= 0) {
+      files[existingIndex] = nextFile;
+    } else {
+      files.push(nextFile);
+    }
+  });
+  const summary = {
+    sessionId: state2.sessionId,
+    datasetId: state2.currentDatasetId,
+    reportTitle: inspection.reportContext.effective.reportTitle,
+    activeGoal: state2.confirmedAnalysisGoal,
+    provider: state2.settings.provider,
+    model: state2.settings.complexModel,
+    rawRowCount: inspection.importFacts.rawRowCount,
+    cleanedRowCount: inspection.importFacts.cleanedRowCount,
+    rawColumnCount: inspection.profiling.originalSchema.length || inspection.samples.rawSample.columns.length,
+    cleanedColumnCount: inspection.profiling.outputSchema.length || inspection.samples.cleanedSample.columns.length,
+    latestMutationStatus: inspection.cleaning.status,
+    preparationState: workflow.summary.preparationState,
+    overallStatus: workflow.verification.overallStatus,
+    analysisState: workflow.summary.analysisState,
+    availableFiles: []
+  };
+  files.unshift(createFile("/session/summary.json", "json", formatJson(summary), "debug", ["virtual", "generated", "debug"]));
+  summary.availableFiles = files.map((file) => file.path);
+  files[0] = createFile("/session/summary.json", "json", formatJson(summary), "debug", ["virtual", "generated", "debug"]);
+  const primaryFiles = files.filter((file) => file.group !== "debug");
+  const debugFiles = files.filter((file) => file.group === "debug");
+  const editableFiles = files.filter((file) => isWorkspaceWritablePath(file.path));
+  return {
+    summary,
+    files,
+    primaryFiles,
+    debugFiles,
+    editableFiles
+  };
+};
+const normalizePath = (path) => path.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+const splitLines = (content) => content.replace(/\r\n/g, "\n").split("\n");
+const getScopedFiles = (files, basePath) => {
+  const scope = normalizePath(basePath);
+  if (scope === "/") return files;
+  return files.filter((file) => file.path === scope || file.path.startsWith(`${scope}/`));
+};
+const buildWorkspaceTree = (files, basePath = "/") => {
+  const root = { children: [] };
+  getScopedFiles(files, basePath).forEach((file) => {
+    const parts = normalizePath(file.path).split("/").filter(Boolean);
+    let current2 = root;
+    let currentPath = "";
+    parts.forEach((part, index2) => {
+      var _a, _b;
+      currentPath = `${currentPath}/${part}`;
+      const isFile = index2 === parts.length - 1;
+      let next = (_a = current2.children) == null ? void 0 : _a.find((child) => child.name === part);
+      if (!next) {
+        next = {
+          name: part,
+          path: currentPath,
+          type: isFile ? "file" : "directory",
+          children: isFile ? void 0 : []
+        };
+        (_b = current2.children) == null ? void 0 : _b.push(next);
+      }
+      current2 = next;
+    });
+  });
+  const sortNodes = (nodes) => {
+    nodes.sort((left, right) => {
+      if (left.type !== right.type) {
+        return left.type === "directory" ? -1 : 1;
+      }
+      return left.name.localeCompare(right.name);
+    });
+    nodes.forEach((node) => {
+      if (node.children) sortNodes(node.children);
+    });
+  };
+  sortNodes(root.children ?? []);
+  return root.children ?? [];
+};
+const grepWorkspaceFiles = (files, basePath, query, limit, caseSensitive) => {
+  const needle = caseSensitive ? query : query.toLowerCase();
+  const matches = [];
+  for (const file of getScopedFiles(files, basePath)) {
+    const lines = splitLines(file.content);
+    for (let index2 = 0; index2 < lines.length; index2 += 1) {
+      const line = lines[index2];
+      const haystack = caseSensitive ? line : line.toLowerCase();
+      if (!haystack.includes(needle)) continue;
+      matches.push({
+        path: file.path,
+        line: index2 + 1,
+        snippet: line.trim().slice(0, 240)
+      });
+      if (matches.length >= limit) {
+        return matches;
+      }
+    }
+  }
+  return matches;
+};
+const headWorkspaceFile = (file, limit) => {
+  const lines = splitLines(file.content);
+  return {
+    path: file.path,
+    totalLines: lines.length,
+    lines: lines.slice(0, Math.max(1, limit)).map((line, index2) => ({
+      line: index2 + 1,
+      content: line
+    }))
+  };
+};
+const diffWorkspaceFiles = (leftPath, leftContent, rightPath, rightContent, limit = 20) => {
+  const leftLines = splitLines(leftContent);
+  const rightLines = splitLines(rightContent);
+  const maxLines = Math.max(leftLines.length, rightLines.length);
+  const hunks = [];
+  for (let index2 = 0; index2 < maxLines; index2 += 1) {
+    const left = leftLines[index2] ?? "";
+    const right = rightLines[index2] ?? "";
+    if (left === right) continue;
+    hunks.push({
+      line: index2 + 1,
+      left,
+      right
+    });
+    if (hunks.length >= limit) break;
+  }
+  return {
+    leftPath,
+    rightPath,
+    changedLines: hunks.length,
+    hunks
+  };
+};
+const buildWorkspaceEntry = (action, details) => ({
+  timestamp: /* @__PURE__ */ new Date(),
+  operation: action.type === "tool_call" && action.toolName.startsWith("workspace.") ? action.toolName.replace("workspace.", "") : "read",
+  path: details.path || "unknown",
+  success: details.success,
+  message: details.message,
+  output: details.output ?? "",
+  durationMs: details.durationMs,
+  stage: details.stage,
+  toolCategory: details.toolCategory,
+  policyDecision: details.policyDecision,
+  policyReason: details.policyReason
+});
+const parseWorkspaceWriteDataSet = (_path, content, currentData) => ({
+  fileName: (currentData == null ? void 0 : currentData.fileName) ?? "cleaned.csv",
+  data: parseWorkspaceCsv(content),
+  metadataRows: (currentData == null ? void 0 : currentData.metadataRows) ?? [],
+  headerLayers: (currentData == null ? void 0 : currentData.headerLayers) ?? [],
+  summaryRows: (currentData == null ? void 0 : currentData.summaryRows) ?? [],
+  headerDepth: currentData == null ? void 0 : currentData.headerDepth,
+  summaryRowCount: currentData == null ? void 0 : currentData.summaryRowCount
+});
+const normalizeWorkspaceOutput = (value2) => truncateWorkspaceOutput(typeof value2 === "string" ? value2 : JSON.stringify(value2));
+const resolveWorkspaceSearchLimit = (requested) => !Number.isFinite(requested) || requested == null ? WORKSPACE_SEARCH_DEFAULT_LIMIT : Math.min(WORKSPACE_SEARCH_MAX_LIMIT, Math.max(1, Math.floor(requested)));
+const resolveWorkspaceListLimit = (requested) => !Number.isFinite(requested) || requested == null ? WORKSPACE_LIST_LIMIT : Math.min(WORKSPACE_LIST_LIMIT, Math.max(1, Math.floor(requested)));
+const appendWorkspaceTraceMessage = (store, detail) => {
+  store.setState((prev) => ({
+    chatHistory: [
+      ...prev.chatHistory,
+      createChatMessage({
+        sender: "ai",
+        text: detail.text,
+        timestamp: /* @__PURE__ */ new Date(),
+        type: "ai_cleaning_step",
+        isError: detail.isError,
+        cleaningStep: {
+          stepId: createId(detail.toolName),
+          kind: detail.kind,
+          toolName: detail.toolName,
+          path: detail.path,
+          diffSummary: detail.diffSummary,
+          status: detail.status
+        }
+      })
+    ],
+    cleaningRun: prev.cleaningRun ? appendCleaningRunStep(prev.cleaningRun, { kind: detail.kind, toolName: detail.toolName, path: detail.path, diffSummary: detail.diffSummary, status: detail.status }) : prev.cleaningRun
+  }));
+};
+const resolveCleaningFailureCards = (chatHistory, runId) => chatHistory.map((message) => message.type === "ai_cleaning_failure" && message.resolved !== true && (!runId || !message.cleaningRunId || message.cleaningRunId === runId) ? { ...message, resolved: true, isError: false, suggestedActions: [] } : message);
+const toPath = (rawPath) => rawPath.replace(/\\/g, "/");
+const toWorkspaceOperation = (toolName) => toolName.replace("workspace.", "");
+const withActionHistory = async (store, action, path, run2, abortSignal) => {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r;
+  const start = Date.now();
+  const toolName = action.type === "tool_call" ? action.toolName : "workspace.read";
+  const governance = getToolGovernanceMeta(store, toolName);
+  const kind = ["workspace.read", "workspace.list", "workspace.tree", "workspace.search", "workspace.grep", "workspace.head", "workspace.diff"].includes(toolName) ? "inspect" : "edit";
+  try {
+    throwIfAborted(abortSignal);
+    const result = await run2();
+    throwIfAborted(abortSignal);
+    const entry = buildWorkspaceEntry(action, { path, success: true, message: result.successMessage, output: result.output, durationMs: Date.now() - start, stage: governance.stage, toolCategory: ((_a = governance.descriptor) == null ? void 0 : _a.category) ?? "unknown", policyDecision: ((_b = governance.decision) == null ? void 0 : _b.allowed) === false ? "blocked" : "allowed", policyReason: ((_c = governance.decision) == null ? void 0 : _c.reason) ?? null });
+    const current2 = store.getState().workspaceActionHistory ?? [];
+    store.setState({ workspaceActionHistory: [...current2, entry].slice(-WORKSPACE_HISTORY_LIMIT) });
+    store.getState().logAgentToolUsage({ tool: toolName, description: `workspace success: ${entry.operation} ${entry.path}`, stage: governance.stage, category: ((_d = governance.descriptor) == null ? void 0 : _d.category) ?? "unknown", risk: ((_e = governance.descriptor) == null ? void 0 : _e.risk) ?? "unknown", policyDecision: ((_f = governance.decision) == null ? void 0 : _f.allowed) === false ? "blocked" : "allowed", policyReason: ((_g = governance.decision) == null ? void 0 : _g.reason) ?? null, detail: { path: entry.path, operation: entry.operation, success: entry.success, stage: governance.stage, policyDecision: ((_h = governance.decision) == null ? void 0 : _h.allowed) === false ? "blocked" : "allowed", policyReason: ((_i = governance.decision) == null ? void 0 : _i.reason) ?? null } });
+    appendWorkspaceTraceMessage(store, { toolName, path, kind, status: "done", diffSummary: result.diffSummary, text: `**${toolName}** \`${path}\`
+${result.diffSummary ?? result.successMessage}` });
+    return result;
+  } catch (error2) {
+    if (isRuntimeAbortError(error2, abortSignal)) {
+      throw error2;
+    }
+    const entry = buildWorkspaceEntry(action, { path, success: false, message: error2 instanceof Error ? error2.message : String(error2), durationMs: Date.now() - start, stage: governance.stage, toolCategory: ((_j = governance.descriptor) == null ? void 0 : _j.category) ?? "unknown", policyDecision: ((_k = governance.decision) == null ? void 0 : _k.allowed) === false ? "blocked" : "allowed", policyReason: ((_l = governance.decision) == null ? void 0 : _l.reason) ?? null });
+    const current2 = store.getState().workspaceActionHistory ?? [];
+    store.setState({ workspaceActionHistory: [...current2, entry].slice(-WORKSPACE_HISTORY_LIMIT) });
+    store.getState().logAgentToolUsage({ tool: toolName, description: `workspace failed: ${entry.operation} ${entry.path}`, stage: governance.stage, category: ((_m = governance.descriptor) == null ? void 0 : _m.category) ?? "unknown", risk: ((_n = governance.descriptor) == null ? void 0 : _n.risk) ?? "unknown", policyDecision: ((_o = governance.decision) == null ? void 0 : _o.allowed) === false ? "blocked" : "allowed", policyReason: ((_p = governance.decision) == null ? void 0 : _p.reason) ?? entry.message, detail: { path: entry.path, operation: entry.operation, error: entry.message, stage: governance.stage, policyDecision: ((_q = governance.decision) == null ? void 0 : _q.allowed) === false ? "blocked" : "allowed", policyReason: ((_r = governance.decision) == null ? void 0 : _r.reason) ?? null } });
+    appendWorkspaceTraceMessage(store, { toolName, path, kind, status: "error", text: `**${toolName}** \`${path}\`
+Failed: ${entry.message}`, isError: true });
+    throw error2;
+  }
+};
+const executeWorkspaceFileAction = async (action, store, options2) => {
+  const { getState, setState } = store;
+  if (action.type !== "tool_call" || !action.toolName.startsWith("workspace.")) return;
+  const workspaceAction = {
+    ...action.args ?? {},
+    operation: toWorkspaceOperation(action.toolName)
+  };
+  const operation = workspaceAction.operation;
+  const defaultPath = ["list", "tree", "search", "grep"].includes(operation) ? "/" : operation === "diff" ? WORKSPACE_DATASET_CLEAN_CSV : "/workspace";
+  const normalizedPath = (() => {
+    const path = toPath(String(workspaceAction.path || defaultPath));
+    return path.startsWith("/") ? path : `/${path}`;
+  })();
+  const currentData = getState().csvData;
+  if (!isWorkspaceReadablePath(normalizedPath) && !["list", "tree"].includes(operation)) throw new Error(`Workspace path not allowed: ${normalizedPath}`);
+  return withActionHistory(store, action, normalizedPath, async () => {
+    var _a;
+    throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+    const bundle = buildWorkspaceBundle(getState());
+    const allFiles = bundle.files;
+    const exactMatch = allFiles.find((file) => file.path === normalizedPath);
+    if (operation === "list") {
+      const base = normalizedPath === "/" || normalizedPath === "" ? "/" : normalizedPath;
+      const recursive = Boolean(workspaceAction.recursive);
+      const limit = resolveWorkspaceListLimit(workspaceAction.limit);
+      const matched = allFiles.filter((file) => {
+        if (!file.path.startsWith(base === "/" ? "/" : `${base}/`)) return false;
+        if (!recursive) {
+          const relative = file.path.slice(base === "/" ? 1 : base.length + 1);
+          return relative.length > 0 && !relative.includes("/");
+        }
+        return true;
+      }).map((file) => ({ path: file.path, pathType: "file" }));
+      return { successMessage: `Listed ${matched.length} workspace file(s).`, output: normalizeWorkspaceOutput({ operation, path: base, recursive, files: matched.slice(0, limit) }), payload: { workspace: { operation, path: base, changed: false, affectsCleanedDataset: false } } };
+    }
+    if (operation === "tree") {
+      const base = normalizedPath === "/" || normalizedPath === "" ? "/" : normalizedPath;
+      return { successMessage: `Built workspace tree for ${base}.`, output: normalizeWorkspaceOutput({ operation, path: base, tree: buildWorkspaceTree(allFiles, base) }), payload: { workspace: { operation, path: base, changed: false, affectsCleanedDataset: false } } };
+    }
+    if (operation === "read") {
+      if (!exactMatch) throw new Error(`File not found: ${normalizedPath}`);
+      return { successMessage: `Read ${normalizedPath}.`, output: truncateWorkspaceOutput(exactMatch.content, WORKSPACE_ACTION_OUTPUT_LIMIT), payload: { workspace: { operation, path: normalizedPath, changed: false, affectsCleanedDataset: false } } };
+    }
+    if (operation === "search") {
+      const query = String(workspaceAction.query || "");
+      if (!query) throw new Error("search requires a non-empty query.");
+      const caseSensitive = Boolean(workspaceAction.caseSensitive);
+      const queryNeedle = caseSensitive ? query : query.toLowerCase();
+      const limit = resolveWorkspaceSearchLimit(workspaceAction.limit);
+      const scope = normalizedPath === "/" || normalizedPath === "" ? "/" : normalizedPath;
+      const matches = allFiles.filter((file) => file.path.startsWith(scope === "/" ? "/" : `${scope}/`)).map((file) => (caseSensitive ? file.content : file.content.toLowerCase()).includes(queryNeedle) ? { path: file.path, match: true, pathPreview: file.path } : null).filter((item) => item !== null).slice(0, limit);
+      return { successMessage: `Search completed for "${query}"`, output: normalizeWorkspaceOutput(matches), payload: { workspace: { operation, path: scope, changed: false, affectsCleanedDataset: false } } };
+    }
+    if (operation === "grep") {
+      const query = String(workspaceAction.query || "");
+      if (!query) throw new Error("grep requires a non-empty query.");
+      const scope = normalizedPath === "/" || normalizedPath === "" ? "/" : normalizedPath;
+      return { successMessage: `Grep completed for "${query}".`, output: normalizeWorkspaceOutput({ operation, path: scope, matches: grepWorkspaceFiles(allFiles, scope, query, resolveWorkspaceSearchLimit(workspaceAction.limit), Boolean(workspaceAction.caseSensitive)) }), payload: { workspace: { operation, path: scope, changed: false, affectsCleanedDataset: false } } };
+    }
+    if (operation === "head") {
+      if (!exactMatch) throw new Error(`File not found: ${normalizedPath}`);
+      const head = headWorkspaceFile(exactMatch, Math.min(50, Math.max(1, Number(workspaceAction.limit ?? 10))));
+      return { successMessage: `Read the first ${head.lines.length} line(s) from ${normalizedPath}.`, output: normalizeWorkspaceOutput(head), payload: { workspace: { operation, path: normalizedPath, changed: false, affectsCleanedDataset: false } } };
+    }
+    if (operation === "diff") {
+      if (!exactMatch) throw new Error(`File not found: ${normalizedPath}`);
+      const compareNormalizedPath = (() => {
+        const comparePath = toPath(String(workspaceAction.comparePath || WORKSPACE_DATASET_RAW_CSV));
+        return comparePath.startsWith("/") ? comparePath : `/${comparePath}`;
+      })();
+      if (!isWorkspaceReadablePath(compareNormalizedPath)) throw new Error(`Workspace path not allowed: ${compareNormalizedPath}`);
+      const compareFile = allFiles.find((file) => file.path === compareNormalizedPath);
+      if (!compareFile) throw new Error(`Compare file not found: ${compareNormalizedPath}`);
+      const diff = diffWorkspaceFiles(compareNormalizedPath, compareFile.content, normalizedPath, exactMatch.content, Math.min(40, Math.max(1, Number(workspaceAction.limit ?? 20))));
+      return { successMessage: `Diff completed between ${compareNormalizedPath} and ${normalizedPath}.`, output: normalizeWorkspaceOutput(diff), payload: { workspace: { operation, path: normalizedPath, comparePath: compareNormalizedPath, changedLines: diff.changedLines, changed: false, affectsCleanedDataset: false } } };
+    }
+    if (!isWorkspaceWritablePath(normalizedPath)) throw new Error(`Write permission denied for ${normalizedPath}`);
+    if (operation === "write" && workspaceAction.content === void 0) throw new Error("write requires content.");
+    if (operation === "append" && workspaceAction.content === void 0) throw new Error("append requires content.");
+    if (operation === "replace" && (workspaceAction.oldText == null || workspaceAction.newText == null)) throw new Error("replace requires oldText and newText.");
+    const existingContent = (exactMatch == null ? void 0 : exactMatch.content) ?? "";
+    let nextContent = existingContent;
+    if (operation === "write") nextContent = String(workspaceAction.content || "");
+    if (operation === "append") nextContent = `${existingContent}${String(workspaceAction.content || "")}`;
+    if (operation === "replace") {
+      const oldText = String(workspaceAction.oldText);
+      const newText = String(workspaceAction.newText);
+      if (!existingContent.includes(oldText)) throw new Error(`replace target not found in ${normalizedPath}`);
+      nextContent = Boolean(workspaceAction.replaceAll) ? existingContent.split(oldText).join(newText) : existingContent.replace(oldText, newText);
+    }
+    const nextWorkspaceFiles = { ...getState().workspaceFiles ?? {}, [normalizedPath]: nextContent };
+    const lineCountBefore = existingContent.length === 0 ? 0 : existingContent.split("\n").length;
+    const lineCountAfter = nextContent.length === 0 ? 0 : nextContent.split("\n").length;
+    const diffSummary = operation === "replace" ? `Updated ${normalizedPath} with targeted replacements. ${lineCountBefore} -> ${lineCountAfter} lines.` : operation === "append" ? `Appended new content to ${normalizedPath}. ${lineCountBefore} -> ${lineCountAfter} lines.` : `Overwrote ${normalizedPath}. ${lineCountBefore} -> ${lineCountAfter} lines.`;
+    if (isWorkspaceDatasetWritePath(normalizedPath)) {
+      if (!currentData) throw new Error("No cleaned dataset loaded. Cannot apply cleaned dataset edit.");
+      const nextData = parseWorkspaceWriteDataSet(normalizedPath, nextContent, currentData);
+      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+      const profileResult = await profileDataWithWorker(nextData.data, options2 == null ? void 0 : options2.abortSignal);
+      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+      setState({
+        csvData: { ...currentData, ...nextData },
+        workspaceFiles: nextWorkspaceFiles,
+        columnProfiles: profileResult.profiles,
+        activeDataQuery: null,
+        activeSpreadsheetFilter: null,
+        spreadsheetFilterFunction: null,
+        aiFilterExplanation: null,
+        dataPreparationPlan: getState().dataPreparationPlan ? { ...getState().dataPreparationPlan, explanation: "AI workspace cleaning edited cleaned.csv.", outputColumns: profileResult.profiles, planStatus: "operations", consistencyIssues: [] } : { explanation: "AI workspace cleaning edited cleaned.csv.", operations: [], outputColumns: profileResult.profiles, planStatus: "operations", consistencyIssues: [] },
+        chatHistory: resolveCleaningFailureCards(getState().chatHistory, (_a = getState().cleaningRun) == null ? void 0 : _a.runId)
+      });
+      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+      const duckDbSync = await ensureDuckDbSessionSync(store, { ...currentData, ...nextData }, createWorkerDiagnosticsTelemetryReporter(store));
+      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+      if (duckDbSync.status === "ready") {
+        getState().logAgentToolUsage({ tool: "duckdb_query_engine", description: "Synced cleaned dataset after workspace_file edit.", detail: { tableName: duckDbSync.tableName, loadVersion: duckDbSync.loadVersion } });
+      } else if (duckDbSync.fallbackStage === "bind_failed" || duckDbSync.fallbackStage === "query_failed") {
+        getState().logAgentToolUsage({ tool: "duckdb_query_engine", description: "DuckDB dataset sync failed after workspace edit.", detail: { tableName: duckDbSync.tableName, loadVersion: duckDbSync.loadVersion, fallbackStage: duckDbSync.fallbackStage, error: duckDbSync.fallbackReason } });
+      }
+      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+      await getState().regenerateAnalyses({ ...currentData, ...nextData });
+    } else {
+      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+      setState({ workspaceFiles: nextWorkspaceFiles });
+    }
+    return { successMessage: `${operation} completed on ${normalizedPath}`, output: normalizeWorkspaceOutput({ path: normalizedPath, content: nextContent }), diffSummary, payload: { workspace: { operation, path: normalizedPath, changed: nextContent !== existingContent, affectsCleanedDataset: isWorkspaceDatasetWritePath(normalizedPath), lineCountBefore, lineCountAfter } } };
+  }, options2 == null ? void 0 : options2.abortSignal);
+};
+const dedupeIssues = (issues) => issues.filter((issue, index2, entries2) => entries2.findIndex(
+  (candidate) => candidate.code === issue.code && candidate.metricName === issue.metricName && candidate.message === issue.message
+) === index2);
+const buildLinearCombinationFormula = (metricName) => {
+  if (metricName === "profit") {
+    return {
+      kind: "linear_combination",
+      components: [
+        { operator: "add", matchAny: ["revenue"] },
+        { operator: "subtract", matchAny: ["cost"] }
+      ]
+    };
+  }
+  if (metricName === "variance") {
+    return {
+      kind: "linear_combination",
+      components: [
+        { operator: "add", matchAny: ["actual"] },
+        { operator: "subtract", matchAny: ["budget"] }
+      ]
+    };
+  }
+  if (metricName === "margin") {
+    return {
+      kind: "ratio",
+      numerator: [
+        { operator: "add", matchAny: ["revenue"] },
+        { operator: "subtract", matchAny: ["cost"] }
+      ],
+      denominator: [
+        { operator: "add", matchAny: ["revenue"] }
+      ],
+      scale: 100
+    };
+  }
+  return null;
+};
+const buildDerivedTemplate = (metricName, definition, brief) => {
+  if (!(definition == null ? void 0 : definition.requiresDerivation)) {
+    return null;
+  }
+  const rowBinding = definition.bindings.find((binding) => binding.source === "row_label");
+  const formula = buildLinearCombinationFormula(metricName);
+  if (!(rowBinding == null ? void 0 : rowBinding.labelColumn) || !rowBinding.valueColumn || !formula) {
+    return null;
+  }
+  const groupByColumns = definition.grainCandidates.length > 0 ? definition.grainCandidates.slice(0, 3) : brief.grainCandidates.slice(0, 3);
+  return {
+    groupByColumns,
+    labelColumn: rowBinding.labelColumn,
+    valueColumn: rowBinding.valueColumn,
+    expectedInputs: rowBinding.matchedValues ?? [],
+    outputMetricLabel: metricName.charAt(0).toUpperCase() + metricName.slice(1),
+    formula
+  };
+};
+const validateProposedColumnMapping = (definition, request) => {
+  const proposedMapping = request.proposedMapping;
+  if (!proposedMapping || proposedMapping.sourceKind !== "column") {
+    return [];
+  }
+  const columnBindings = (definition == null ? void 0 : definition.bindings.filter((binding) => binding.source === "column")) ?? [];
+  if (columnBindings.length === 0) {
+    return [{
+      code: "metric_definition_missing",
+      severity: "error",
+      metricName: request.metricName,
+      message: `${request.metricName} is not modeled as a direct column metric in this dataset.`
+    }];
+  }
+  if (!columnBindings.some((binding) => binding.column === proposedMapping.column)) {
+    return [{
+      code: "metric_definition_missing",
+      severity: "error",
+      metricName: request.metricName,
+      message: `The proposed column "${proposedMapping.column}" does not match the detected ${request.metricName} metric binding.`
+    }];
+  }
+  return [];
+};
+const validateProposedRowLabelMapping = (request, brief, template) => {
+  var _a;
+  const proposedMapping = request.proposedMapping;
+  if (!proposedMapping || proposedMapping.sourceKind !== "row_label" || !template) {
+    return [];
+  }
+  const operation = {
+    metricName: request.metricName,
+    groupByColumns: ((_a = request.requestedGrain) == null ? void 0 : _a.length) ? request.requestedGrain : template.groupByColumns,
+    labelColumn: proposedMapping.labelColumn ?? template.labelColumn,
+    valueColumn: proposedMapping.valueColumn ?? template.valueColumn,
+    outputMetricLabel: template.outputMetricLabel,
+    expectedInputs: proposedMapping.expectedInputs ?? template.expectedInputs,
+    formula: template.formula
+  };
+  return validateDeriveMetricOperationAgainstBrief(brief, operation);
+};
+const validateRequestedGrain = (request, definition) => {
+  var _a;
+  if (!((_a = request.requestedGrain) == null ? void 0 : _a.length) || !definition) {
+    return [];
+  }
+  const unsupported = request.requestedGrain.filter((column) => !definition.grainCandidates.includes(column));
+  if (unsupported.length === 0) {
+    return [];
+  }
+  return [{
+    code: "grain_ambiguous",
+    severity: "warn",
+    metricName: request.metricName,
+    message: `The requested grain (${unsupported.join(", ")}) is outside the likely grain candidates for ${request.metricName}.`
+  }];
+};
+const chooseRecommendation = ({
+  request,
+  definition,
+  blockers
+}) => {
+  var _a;
+  if (blockers.length > 0) {
+    return {
+      recommendedAction: "clarify",
+      suggestedNextTool: "conversation.request_clarification"
+    };
+  }
+  if (request.validationKind === "derived" && (definition == null ? void 0 : definition.requiresDerivation)) {
+    return {
+      recommendedAction: "derive_metric",
+      suggestedNextTool: "data.mutate"
+    };
+  }
+  if (((_a = request.requestedGrain) == null ? void 0 : _a.length) || request.proposedMapping) {
+    return {
+      recommendedAction: "visualize",
+      suggestedNextTool: "analysis.create_plan"
+    };
+  }
+  return {
+    recommendedAction: "answer",
+    suggestedNextTool: "assistant_message"
+  };
+};
+const executeMetricMappingValidationAction = (request, store) => {
+  var _a, _b, _c, _d;
+  const state2 = store.getState();
+  if (!state2.csvData || state2.columnProfiles.length === 0) {
+    return {
+      status: "error",
+      toolName: "analysis.validate_metric_mapping",
+      message: "No dataset is loaded for metric mapping validation.",
+      shouldStop: false,
+      retryHint: "Load a dataset before validating business metric mappings."
+    };
+  }
+  const brief = buildAnalysisIntentBrief({
+    columns: state2.columnProfiles,
+    csvData: state2.csvData,
+    dataPreparationPlan: state2.dataPreparationPlan ?? null,
+    datasetSemanticSnapshot: state2.datasetSemanticSnapshot ?? null,
+    semanticDatasetVersion: state2.semanticDatasetVersion ?? null
+  });
+  const metricDefinition = brief.metricDefinitions.find((metric) => metric.name === request.metricName) ?? null;
+  const deriveMetricTemplate = request.validationKind === "derived" ? buildDerivedTemplate(request.metricName, metricDefinition, brief) : null;
+  const requestMessage = ((_b = (_a = state2.activeTurn) == null ? void 0 : _a.userMessage) == null ? void 0 : _b.trim()) || request.metricName;
+  const requestFingerprint = buildRuntimeRequestFingerprint(requestMessage, {
+    sessionId: state2.sessionId,
+    datasetId: state2.currentDatasetId
+  });
+  const validationIssues = dedupeIssues([
+    ...validateAnalysisBrief(brief, [request.metricName]),
+    ...validateRequestedGrain(request, metricDefinition),
+    ...validateProposedColumnMapping(metricDefinition, request),
+    ...validateProposedRowLabelMapping(request, brief, deriveMetricTemplate)
+  ]);
+  const blockers = validationIssues.filter((issue) => issue.severity === "error").map((issue) => issue.message);
+  const { recommendedAction, suggestedNextTool } = chooseRecommendation({
+    request,
+    definition: metricDefinition,
+    blockers
+  });
+  const artifactMetadata = {
+    artifactType: "metric_mapping_validation",
+    metricName: request.metricName,
+    validationKind: request.validationKind,
+    metricDefinition,
+    validationIssues,
+    blockers,
+    recommendedAction,
+    recommendedPath: brief.recommendedPath,
+    suggestedNextTool,
+    deriveMetricTemplate: deriveMetricTemplate ?? void 0,
+    grain: (metricDefinition == null ? void 0 : metricDefinition.grainCandidates) ?? brief.grainCandidates,
+    sourceArtifactIds: [],
+    originRunId: ((_c = state2.activeTurn) == null ? void 0 : _c.runId) ?? null,
+    originTurnId: ((_d = state2.activeTurn) == null ? void 0 : _d.turnId) ?? null,
+    requestFingerprint,
+    requestMessage
+  };
+  store.setState({
+    activeMetricMappingValidation: artifactMetadata
+  });
+  const summary = blockers.length > 0 ? blockers.join(" ") : `Validated the ${request.metricName} metric mapping. Recommended next step: ${recommendedAction}.`;
+  const retryHint = blockers.length > 0 ? "Resolve the metric blockers with clarification before deriving or charting this business metric." : null;
+  return {
+    status: blockers.length > 0 ? "blocked" : "success",
+    toolName: "analysis.validate_metric_mapping",
+    message: summary,
+    shouldStop: false,
+    artifactMetadata,
+    observation: {
+      type: "tool_result",
+      status: blockers.length > 0 ? "blocked" : "success",
+      summary,
+      toolName: "analysis.validate_metric_mapping",
+      code: blockers.length > 0 ? "validation_failed" : void 0,
+      retryHint,
+      detail: {
+        artifactMetadata,
+        validationIssues,
+        blockers
+      }
+    }
+  };
+};
+const ANALYSIS_TOOLS = [
+  "analysis.create_plan",
+  "analysis.pivot_matrix",
+  "analysis.period_compare",
+  "analysis.cohort_retention",
+  "analysis.root_cause_breakdown",
+  "analysis.correlation",
+  "analysis.validate_metric_mapping",
+  "card.review",
+  "card.delete",
+  "ui.change_chart_type",
+  "ui.highlight_card",
+  "ui.show_card_data",
+  "ui.filter_card",
+  "data.query",
+  "data.mutate",
+  "spreadsheet.filter",
+  "conversation.request_clarification"
+];
+const RUNTIME_TOOL_POLICY = [
+  {
+    phase: "converse",
+    label: "Conversational with card refinement + deletion",
+    tools: ["conversation.request_clarification", "card.refine", "card.delete", "data.query"]
+  },
+  {
+    phase: "explore",
+    label: "Read-only evidence inspection + card refinement + deletion",
+    tools: [
+      "data.query",
+      "spreadsheet.filter",
+      "analysis.validate_metric_mapping",
+      "conversation.request_clarification",
+      "card.refine",
+      "card.delete"
+    ]
+  },
+  {
+    phase: "analyze",
+    label: "Full analysis, card creation, and data mutation",
+    tools: [...ANALYSIS_TOOLS]
+  }
+];
+const policyMap = new Map(
+  RUNTIME_TOOL_POLICY.map((entry) => [entry.phase, entry])
+);
+const getToolsForPhase = (phase) => {
+  const entry = policyMap.get(phase);
+  return entry ? [...entry.tools] : [];
+};
+const ALL_RUNTIME_TOOLS = [
+  "analysis.create_plan",
+  "analysis.correlation",
+  "analysis.pivot_matrix",
+  "analysis.period_compare",
+  "analysis.cohort_retention",
+  "analysis.root_cause_breakdown",
+  "analysis.validate_metric_mapping",
+  "card.aggregate_table",
+  "card.add_calculated_column",
+  "card.delete",
+  "card.review",
+  "card.suggestion.apply",
+  "card.suggestion.dismiss",
+  "ui.highlight_card",
+  "ui.change_chart_type",
+  "ui.show_card_data",
+  "ui.filter_card",
+  "cleaning.resume",
+  "cleaning.restart",
+  "data.mutate",
+  "data.query",
+  "spreadsheet.filter",
+  "workspace.list",
+  "workspace.tree",
+  "workspace.read",
+  "workspace.search",
+  "workspace.grep",
+  "workspace.head",
+  "workspace.diff",
+  "workspace.replace",
+  "workspace.write",
+  "workspace.append",
+  "conversation.request_clarification"
+];
+getToolsForPhase("explore");
+getToolsForPhase("explore");
+getToolsForPhase("analyze");
+const CLARIFICATION_RESUME_MARKER = "Continue the original request using the user clarification below.";
+const PLACEHOLDER_ORIGINAL_REQUEST_VALUES = /* @__PURE__ */ new Set(["?", "？"]);
+new Set([
+  ...ALL_RUNTIME_TOOLS,
+  "assistant_message"
+].map((value2) => value2.toLowerCase()));
+const extractClarificationResumeField = (message, label) => {
+  var _a;
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match2 = message.match(new RegExp(`^${escapedLabel}:\\s*(.+)$`, "mi"));
+  return ((_a = match2 == null ? void 0 : match2[1]) == null ? void 0 : _a.trim()) ?? "";
+};
+const unwrapClarificationResumeMessage = (message) => {
+  const clarificationResume = parseClarificationResumeMessage(message);
+  if (!(clarificationResume == null ? void 0 : clarificationResume.originalUserRequest)) {
+    const trimmed = message.trim();
+    return trimmed || null;
+  }
+  if (clarificationResume.originalUserRequest.includes(CLARIFICATION_RESUME_MARKER)) {
+    return unwrapClarificationResumeMessage(clarificationResume.originalUserRequest);
+  }
+  return clarificationResume.originalUserRequest.trim() || null;
+};
+const normalizeClarificationOriginalUserRequest = (message) => {
+  const trimmed = (message == null ? void 0 : message.trim()) ?? "";
+  if (!trimmed || PLACEHOLDER_ORIGINAL_REQUEST_VALUES.has(trimmed)) {
+    return null;
+  }
+  const unwrapped = unwrapClarificationResumeMessage(trimmed) ?? trimmed;
+  const normalized = unwrapped.trim();
+  if (!normalized || PLACEHOLDER_ORIGINAL_REQUEST_VALUES.has(normalized)) {
+    return null;
+  }
+  return normalized;
+};
+const resolveClarificationOriginalUserRequest = (...candidates) => {
+  for (const candidate of candidates) {
+    const normalized = normalizeClarificationOriginalUserRequest(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return "";
+};
+const parseClarificationResumeMessage = (message) => {
+  if (!message.includes(CLARIFICATION_RESUME_MARKER)) {
+    return null;
+  }
+  const originalUserRequest = extractClarificationResumeField(message, "Original user request");
+  const clarificationQuestion = extractClarificationResumeField(message, "Clarification question");
+  const selectedOption = extractClarificationResumeField(message, "Selected option");
+  const selectedPath = extractClarificationResumeField(message, "Selected path");
+  const mustPreserveOutcome = extractClarificationResumeField(message, "Must preserve outcome");
+  const clarificationAssessment = extractClarificationResumeField(message, "Clarification assessment");
+  const assumptionSummary = extractClarificationResumeField(message, "Assumption summary");
+  const clarificationQuestionFingerprint = extractClarificationResumeField(message, "Clarification question fingerprint");
+  const blockedReason = extractClarificationResumeField(message, "Blocked reason");
+  const priorQueryEvidence = extractClarificationResumeField(message, "Prior query evidence");
+  const priorQueryColumnsRaw = extractClarificationResumeField(message, "Prior query columns");
+  const priorQueryTrace = extractClarificationResumeField(message, "Prior query trace");
+  const priorSampleRowsRaw = extractClarificationResumeField(message, "Prior sample rows");
+  const priorQualityContext = extractClarificationResumeField(message, "Prior quality context");
+  if (!originalUserRequest || !selectedOption) {
+    return null;
+  }
+  const priorQueryColumns = priorQueryColumnsRaw ? priorQueryColumnsRaw.split(",").map((c) => c.trim()).filter(Boolean) : void 0;
+  let priorSampleRows;
+  if (priorSampleRowsRaw) {
+    try {
+      const parsed = JSON.parse(priorSampleRowsRaw);
+      if (Array.isArray(parsed) && parsed.every((row) => row && typeof row === "object" && !Array.isArray(row))) {
+        priorSampleRows = parsed;
+      }
+    } catch {
+    }
+  }
+  return {
+    originalUserRequest,
+    clarificationQuestion,
+    selectedOption,
+    selectedPath: selectedPath || void 0,
+    mustPreserveOutcome: mustPreserveOutcome === "table" || mustPreserveOutcome === "card" || mustPreserveOutcome === "derived_metric" || mustPreserveOutcome === "answer" ? mustPreserveOutcome : void 0,
+    clarificationAssessment: clarificationAssessment === "best_effort_continue" || clarificationAssessment === "still_ambiguous" ? clarificationAssessment : "resolved",
+    assumptionSummary: assumptionSummary || void 0,
+    clarificationQuestionFingerprint: clarificationQuestionFingerprint || void 0,
+    blockedReason: blockedReason || void 0,
+    priorQueryEvidence: priorQueryEvidence || void 0,
+    priorQueryColumns: (priorQueryColumns == null ? void 0 : priorQueryColumns.length) ? priorQueryColumns : void 0,
+    priorQueryTrace: priorQueryTrace || void 0,
+    priorSampleRows: (priorSampleRows == null ? void 0 : priorSampleRows.length) ? priorSampleRows : void 0,
+    priorQualityContext: priorQualityContext || void 0
+  };
+};
+const normalizeFingerprint = (value2) => value2.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 160);
+const buildClarificationQuestionFingerprint = (question) => {
+  const normalized = typeof question === "string" ? normalizeFingerprint(question) : "";
+  return normalized || null;
+};
+const LOG_PREFIX$c = "[ExecutorAgent]";
+const requestClarification = (action, store) => {
+  var _a;
+  if (action.type !== "tool_call" || !action.args) {
+    return {
+      status: "error",
+      toolName: "conversation.request_clarification",
+      message: "Clarification payload is missing.",
+      shouldStop: false,
+      retryHint: "Return a clarification payload with question and options."
+    };
+  }
+  const clarificationRequest = action.args;
+  if (!clarificationRequest.question || !clarificationRequest.question.trim()) {
+    const userMessage = ((_a = store.getState().activeTurn) == null ? void 0 : _a.userMessage) ?? "";
+    clarificationRequest.question = userMessage ? getTranslation("clarification_follow_up_prompt", store.getState().settings.language, { question: userMessage }) : getTranslation("chat_placeholder_clarification", store.getState().settings.language);
+  }
+  const validationErrors = validateClarification(clarificationRequest);
+  if (validationErrors.length > 0) {
+    return {
+      status: "blocked",
+      toolName: "conversation.request_clarification",
+      message: validationErrors.join(" "),
+      shouldStop: false,
+      retryHint: "Return a clarification question with 1-3 labeled options, or provide a question-only free-text clarification.",
+      observation: {
+        type: "tool_result",
+        status: "blocked",
+        summary: validationErrors.join(" "),
+        toolName: "conversation.request_clarification",
+        code: "validation_failed",
+        retryHint: "Return a clarification question with 1-3 labeled options, or provide a question-only free-text clarification."
+      }
+    };
+  }
+  console.log(`${LOG_PREFIX$c} Clarification requested.`);
+  store.setState((prev) => {
+    var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _A, _B, _C, _D, _E, _F;
+    return {
+      pendingClarification: {
+        ...clarificationRequest,
+        resumeContext: {
+          ...clarificationRequest.resumeContext,
+          originalUserRequest: resolveClarificationOriginalUserRequest(
+            (_a2 = clarificationRequest.resumeContext) == null ? void 0 : _a2.originalUserRequest,
+            (_b = clarificationRequest.resumeContext) == null ? void 0 : _b.resumeOriginalUserMessage,
+            (_c = prev.activeTurn) == null ? void 0 : _c.userMessage
+          ),
+          resumeOriginalUserMessage: resolveClarificationOriginalUserRequest(
+            (_d = clarificationRequest.resumeContext) == null ? void 0 : _d.resumeOriginalUserMessage,
+            (_e = clarificationRequest.resumeContext) == null ? void 0 : _e.originalUserRequest,
+            (_f = prev.activeTurn) == null ? void 0 : _f.userMessage
+          ),
+          selectedPath: ((_g = clarificationRequest.resumeContext) == null ? void 0 : _g.selectedPath) ?? ((_i = (_h = prev.activeTurn) == null ? void 0 : _h.runtimeCommitment) == null ? void 0 : _i.selectedPath) ?? void 0,
+          mustPreserveOutcome: ((_j = clarificationRequest.resumeContext) == null ? void 0 : _j.mustPreserveOutcome) ?? ((_l = (_k = prev.activeTurn) == null ? void 0 : _k.runtimeCommitment) == null ? void 0 : _l.mustPreserveOutcome) ?? "answer",
+          clarificationQuestionFingerprint: ((_m = clarificationRequest.resumeContext) == null ? void 0 : _m.clarificationQuestionFingerprint) ?? buildClarificationQuestionFingerprint(clarificationRequest.question) ?? void 0,
+          blockedReason: ((_n = clarificationRequest.resumeContext) == null ? void 0 : _n.blockedReason) ?? ((_p = (_o = prev.activeTurn) == null ? void 0 : _o.recoveryState) == null ? void 0 : _p.lastBlockedReason) ?? void 0,
+          resumeTargetRunId: ((_q = clarificationRequest.resumeContext) == null ? void 0 : _q.resumeTargetRunId) ?? ((_r = prev.activeTurn) == null ? void 0 : _r.runId) ?? "",
+          resumeTargetTurnId: ((_s = clarificationRequest.resumeContext) == null ? void 0 : _s.resumeTargetTurnId) ?? ((_t = prev.activeTurn) == null ? void 0 : _t.turnId) ?? void 0,
+          // AGENT-107: Capture structured evidence at clarification time
+          priorEvidence: ((_u = clarificationRequest.resumeContext) == null ? void 0 : _u.priorEvidence) ?? {
+            queryExplanation: ((_v = prev.activeDataQuery) == null ? void 0 : _v.explanation) ?? null,
+            queryColumns: ((_x = (_w = prev.activeDataQuery) == null ? void 0 : _w.result) == null ? void 0 : _x.selectedColumns) ?? null,
+            sampleRows: ((_A = (_z = (_y = prev.activeDataQuery) == null ? void 0 : _y.result) == null ? void 0 : _z.rows) == null ? void 0 : _A.slice(0, 5)) ?? null,
+            queryTraceSummary: prev.activeDataQuery ? `${prev.activeDataQuery.engine} | ${((_B = prev.activeDataQuery.result) == null ? void 0 : _B.returnedRows) ?? 0}/${((_C = prev.activeDataQuery.result) == null ? void 0 : _C.totalMatchedRows) ?? 0} rows | columns: ${(((_D = prev.activeDataQuery.result) == null ? void 0 : _D.selectedColumns) ?? []).join(", ")}` : null,
+            qualityContext: ((_F = (_E = prev.activeTurn) == null ? void 0 : _E.lastObservation) == null ? void 0 : _F.summary) ?? null
+          }
+        }
+      },
+      chatHistory: [
+        ...prev.chatHistory,
+        createChatMessage({
+          sender: "ai",
+          text: clarificationRequest.question,
+          timestamp: /* @__PURE__ */ new Date(),
+          type: "ai_clarification",
+          clarificationRequest
+        })
+      ],
+      isBusy: false
+    };
+  });
+  return {
+    status: "success",
+    toolName: action.toolName,
+    message: "Clarification requested.",
+    shouldStop: true,
+    observation: {
+      type: "clarification",
+      status: "success",
+      summary: clarificationRequest.question,
+      toolName: action.toolName
+    }
+  };
+};
+const executeCleaningControl = async (toolName, store) => {
+  if (toolName === "cleaning.resume") {
+    await store.getState().resumeCleaningRun();
+    return {
+      status: "success",
+      toolName,
+      message: "Resumed the cleaning runtime.",
+      shouldStop: true,
+      observation: {
+        type: "tool_result",
+        status: "success",
+        summary: "Resumed the cleaning runtime.",
+        toolName
+      }
+    };
+  }
+  await store.getState().restartCleaningRun();
+  return {
+    status: "success",
+    toolName,
+    message: "Restarted the cleaning runtime.",
+    shouldStop: true,
+    observation: {
+      type: "tool_result",
+      status: "success",
+      summary: "Restarted the cleaning runtime.",
+      toolName
+    }
+  };
+};
+const executeSuggestionAction = async (toolName, suggestionId, store) => {
+  if (!suggestionId) {
+    return {
+      status: "error",
+      toolName,
+      message: "Suggestion id is missing.",
+      shouldStop: false,
+      retryHint: "Return suggestionId for the target suggestion."
+    };
+  }
+  if (toolName === "card.suggestion.apply") {
+    await store.getState().applyCardEnhancementSuggestion(suggestionId);
+    return {
+      status: "success",
+      toolName,
+      message: "Applied the requested card suggestion.",
+      shouldStop: false,
+      observation: {
+        type: "tool_result",
+        status: "success",
+        summary: "Applied the requested card suggestion.",
+        toolName,
+        detail: { suggestionId }
+      }
+    };
+  }
+  store.getState().dismissCardEnhancementSuggestion(suggestionId);
+  return {
+    status: "success",
+    toolName,
+    message: "Dismissed the requested card suggestion.",
+    shouldStop: false,
+    observation: {
+      type: "tool_result",
+      status: "success",
+      summary: "Dismissed the requested card suggestion.",
+      toolName,
+      detail: { suggestionId }
+    }
+  };
+};
+const executeCardRefineAction = (action, store) => {
+  var _a, _b, _c;
+  if (action.type !== "tool_call" || !action.args) {
+    return {
+      status: "error",
+      toolName: "card.refine",
+      message: "card.refine payload is missing.",
+      shouldStop: false,
+      retryHint: "Provide cardId and a changes object."
+    };
+  }
+  let { cardId, changes } = action.args;
+  const { getState, setState } = store;
+  const state2 = getState();
+  if (!cardId) {
+    const mentionedIds = extractMentionedCardIds(((_a = state2.activeTurn) == null ? void 0 : _a.userMessage) ?? "");
+    if (mentionedIds.length === 1) {
+      cardId = mentionedIds[0];
+      console.log(`${LOG_PREFIX$c} card.refine: auto-injected cardId from @mention: ${cardId}`);
+    }
+  }
+  const cardIndex = state2.analysisCards.findIndex((c) => c.id === cardId);
+  if (cardIndex === -1) {
+    return {
+      status: "error",
+      toolName: "card.refine",
+      message: `Card "${cardId}" not found.`,
+      shouldStop: false,
+      retryHint: `Use one of the current cardIds: [${state2.analysisCards.map((c) => c.id).join(", ")}].`
+    };
+  }
+  const appliedChanges = [];
+  setState((prev) => {
+    var _a2;
+    const newCards = [...prev.analysisCards];
+    const card = { ...newCards[cardIndex] };
+    if (changes.topN !== void 0) {
+      card.topN = changes.topN;
+      appliedChanges.push(`topN → ${changes.topN}`);
+    }
+    if (changes.chartType !== void 0) {
+      card.displayChartType = changes.chartType;
+      appliedChanges.push(`chartType → ${changes.chartType}`);
+    }
+    if (changes.filter !== void 0) {
+      card.filter = changes.filter.values.length > 0 ? { column: changes.filter.column, values: changes.filter.values } : void 0;
+      appliedChanges.push(changes.filter.values.length > 0 ? `filter → ${changes.filter.column} in [${changes.filter.values.join(", ")}]` : "filter cleared");
+    }
+    if (changes.isDataVisible !== void 0) {
+      card.isDataVisible = changes.isDataVisible;
+      appliedChanges.push(`isDataVisible → ${changes.isDataVisible}`);
+    }
+    if (changes.summary !== void 0) {
+      const lang = ((_a2 = prev.settings) == null ? void 0 : _a2.language) ?? card.summary.language ?? "English";
+      card.summary = { language: lang, text: changes.summary };
+      appliedChanges.push("summary updated");
+    }
+    newCards[cardIndex] = card;
+    return { analysisCards: newCards };
+  });
+  const cardTitle = ((_c = (_b = state2.analysisCards[cardIndex]) == null ? void 0 : _b.plan) == null ? void 0 : _c.title) ?? cardId;
+  const changeDesc = appliedChanges.join(", ");
+  const friendlyMessage = appliedChanges.length > 0 ? `Updated "${cardTitle}" — ${changeDesc}.` : `No changes applied to "${cardTitle}".`;
+  console.log(`${LOG_PREFIX$c} card.refine: ${friendlyMessage}`);
+  if (appliedChanges.length > 0) {
+    if (changes.summary !== void 0) {
+      navigateToCardNarrative(cardId);
+    } else {
+      getState().handleShowCardFromChat(cardId);
+    }
+  }
+  return {
+    status: "success",
+    toolName: "card.refine",
+    message: friendlyMessage,
+    shouldStop: true,
+    observation: {
+      type: "tool_result",
+      status: "success",
+      summary: friendlyMessage,
+      toolName: "card.refine",
+      detail: { cardId, changes }
+    }
+  };
+};
+const isSqlAnalysisPlanLike = (plan) => {
+  if (!plan || typeof plan !== "object" || Array.isArray(plan)) {
+    return false;
+  }
+  const candidate = plan;
+  return (candidate.queryMode === "aggregate" || candidate.queryMode === "rowset") && Boolean(candidate.query && typeof candidate.query === "object" && !Array.isArray(candidate.query));
+};
+const resolveSqlBinding = (store) => {
+  const state2 = store.getState();
+  return resolveCurrentDuckDbBinding({
+    mode: "analysis",
+    csvData: state2.csvData,
+    snapshot: state2.datasetSemanticSnapshot,
+    semanticDatasetVersion: state2.semanticDatasetVersion,
+    sessionStatus: state2.duckDbSessionStatus,
+    activeDataQuery: state2.activeDataQuery ?? null
+  });
+};
+const executePlanAction = async (plan, store, options2) => {
+  const { getState, setState } = store;
+  if (!getState().csvData) return null;
+  console.log(`${LOG_PREFIX$c} Executing plan: "${plan.title}"`);
+  const precomputed = getState().pendingPrecomputedCardData;
+  if (precomputed && precomputed.length > 0) {
+    setState({ pendingPrecomputedCardData: null });
+    console.log(`${LOG_PREFIX$c} Using precomputed data (${precomputed.length} rows) from GroupByTest for "${plan.title}".`);
+    const normalizedPlan = isSqlAnalysisPlanLike(plan) ? mapSqlAnalysisPlanToAnalysisPlan(plan) : plan;
+    return createNewCard(normalizedPlan, precomputed, store);
+  }
+  if (isSqlAnalysisPlanLike(plan)) {
+    const binding = resolveSqlBinding(store);
+    return executeSqlPlanAndCreateCard(plan, store, binding);
+  }
+  return executePlanAndCreateCard(plan, getState().csvData, store, options2);
+};
+const executeAggregateTableAction = async (action, store) => {
+  const { getState } = store;
+  if (action.type !== "tool_call") return;
+  const tableAction = action.args;
+  if (!tableAction) return;
+  if (!getState().csvData) {
+    throw new Error("No dataset available for aggregation.");
+  }
+  const baseCard = tableAction.cardId ? getState().analysisCards.find((card) => card.id === tableAction.cardId) : null;
+  const fallbackTitle = tableAction.title || (baseCard == null ? void 0 : baseCard.plan.title) || "AI Aggregate Result";
+  const derivedPlan = {
+    chartType: tableAction.chartType || (baseCard == null ? void 0 : baseCard.plan.chartType) || "bar",
+    title: fallbackTitle,
+    description: tableAction.description || (baseCard == null ? void 0 : baseCard.plan.description) || `Quick aggregation for ${fallbackTitle}`,
+    aggregation: tableAction.aggregation || (baseCard == null ? void 0 : baseCard.plan.aggregation) || (tableAction.valueColumn ? "sum" : "count"),
+    groupByColumn: tableAction.groupByColumn || (baseCard == null ? void 0 : baseCard.plan.groupByColumn),
+    valueColumn: tableAction.valueColumn || (baseCard == null ? void 0 : baseCard.plan.valueColumn),
+    xValueColumn: baseCard == null ? void 0 : baseCard.plan.xValueColumn,
+    yValueColumn: baseCard == null ? void 0 : baseCard.plan.yValueColumn,
+    secondaryValueColumn: baseCard == null ? void 0 : baseCard.plan.secondaryValueColumn,
+    secondaryAggregation: baseCard == null ? void 0 : baseCard.plan.secondaryAggregation,
+    defaultTopN: baseCard == null ? void 0 : baseCard.plan.defaultTopN,
+    defaultHideOthers: baseCard == null ? void 0 : baseCard.plan.defaultHideOthers,
+    preFilter: tableAction.preFilter || (baseCard == null ? void 0 : baseCard.plan.preFilter),
+    isFallback: false
+  };
+  console.log(`${LOG_PREFIX$c} Quick aggregate requested for card ${tableAction.cardId ?? "n/a"}.`);
+  await executePlanAndCreateCard(derivedPlan, getState().csvData, store);
+};
+const executeDomAction = (toolName, args, store) => {
+  const { getState, setState } = store;
+  console.log(`${LOG_PREFIX$c} DOM action: ${toolName}`, args);
+  getState().addProgress(`AI is performing action: ${toolName}...`);
+  setState((prev) => {
+    const cardIndex = prev.analysisCards.findIndex((c) => c.id === args.cardId);
+    if (cardIndex === -1) {
+      console.warn(`${LOG_PREFIX$c} Card "${args.cardId}" not found.`);
+      return {};
+    }
+    const newCards = [...prev.analysisCards];
+    switch (toolName) {
+      case "ui.highlight_card": {
+        navigateToCard(args.cardId);
+        break;
+      }
+      case "ui.change_chart_type":
+        newCards[cardIndex].displayChartType = args.newType;
+        break;
+      case "ui.show_card_data":
+        newCards[cardIndex].isDataVisible = args.visible;
+        break;
+      case "ui.filter_card":
+        newCards[cardIndex].filter = args.values.length > 0 ? { column: args.column, values: args.values } : void 0;
+        break;
+    }
+    return { analysisCards: newCards };
+  });
+};
+const handleExecutorAction = async (action, store, options2) => {
+  var _a, _b, _c, _d, _e, _f, _g, _h;
+  if (action.type !== "tool_call") {
+    return {
+      status: "error",
+      toolName: "assistant_message",
+      message: "Executor received a non-tool action.",
+      shouldStop: false
+    };
+  }
+  switch (action.toolName) {
+    case "analysis.create_plan":
+      if ((_a = action.args) == null ? void 0 : _a.plan) {
+        const rawPlan = action.args.plan;
+        const createdCard = await executePlanAction(rawPlan, store);
+        return buildCreatePlanExecutionResult(
+          isSqlAnalysisPlanLike(rawPlan) ? mapSqlAnalysisPlanToAnalysisPlan(rawPlan) : rawPlan,
+          createdCard
+        );
+      }
+      break;
+    case "analysis.correlation":
+      if (action.args) {
+        return executeCorrelationAction(action, store);
+      }
+      break;
+    case "analysis.pivot_matrix":
+      if (action.args) {
+        return executePivotMatrixAnalysis(action.args, store);
+      }
+      break;
+    case "analysis.period_compare":
+      if (action.args) {
+        return executePeriodCompareAnalysis(action.args, store);
+      }
+      break;
+    case "analysis.cohort_retention":
+      if (action.args) {
+        return executeCohortRetentionAnalysis(action.args, store);
+      }
+      break;
+    case "analysis.root_cause_breakdown":
+      if (action.args) {
+        return executeRootCauseBreakdownAnalysis(action.args, store);
+      }
+      break;
+    case "analysis.validate_metric_mapping":
+      if ((_b = action.args) == null ? void 0 : _b.metricName) {
+        return executeMetricMappingValidationAction(action.args, store);
+      }
+      break;
+    case "analysis.presentation_upgrade":
+      if ((_c = action.args) == null ? void 0 : _c.cardId) {
+        return executePresentationUpgrade({ cardId: action.args.cardId }, store);
+      }
+      break;
+    case "card.refine":
+      return executeCardRefineAction(action, store);
+    case "card.aggregate_table":
+      await executeAggregateTableAction(action, store);
+      break;
+    case "card.add_calculated_column":
+      if (action.args) {
+        const { cardId, newColumnName, formula, updateChart } = action.args;
+        store.getState().addCalculatedColumnToCard(cardId, newColumnName, formula, updateChart);
+      }
+      break;
+    case "card.delete":
+      if ((_d = action.args) == null ? void 0 : _d.cardId) {
+        store.getState().deleteAnalysisCard(action.args.cardId);
+      }
+      break;
+    case "card.review":
+      if (typeof store.getState().runCardEnhancementReview === "function") {
+        await store.getState().runCardEnhancementReview();
+      } else {
+        console.warn(`${LOG_PREFIX$c} runCardEnhancementReview not found on store.`);
+      }
+      break;
+    case "card.suggestion.apply":
+    case "card.suggestion.dismiss":
+      return executeSuggestionAction(action.toolName, (_e = action.args) == null ? void 0 : _e.suggestionId, store);
+    case "ui.highlight_card":
+    case "ui.change_chart_type":
+    case "ui.show_card_data":
+    case "ui.filter_card":
+      executeDomAction(action.toolName, action.args ?? {}, store);
+      break;
+    case "cleaning.resume":
+    case "cleaning.restart":
+      return executeCleaningControl(action.toolName, store);
+    case "data.mutate":
+      return executeDataOperationsAction(action, store, options2 == null ? void 0 : options2.abortSignal);
+    case "data.reshape":
+      return executeReshapeAction(action, store, options2 == null ? void 0 : options2.abortSignal);
+    case "data.keep_wide":
+      return executeKeepWideAction(action, store);
+    case "data.query":
+      return executeDataQueryAction(action, store, options2 == null ? void 0 : options2.abortSignal);
+    case "data.describe":
+      return executeDataDescribeAction(action, store);
+    case "data.value_counts":
+      return executeDataValueCountsAction(action, store);
+    case "data.outliers":
+      return executeDataOutliersAction(action, store);
+    case "data.missing":
+      return executeDataMissingAction(action, store);
+    case "spreadsheet.filter": {
+      const query = ((_g = (_f = action.args) == null ? void 0 : _f.query) == null ? void 0 : _g.trim()) || ((_h = action.thought) == null ? void 0 : _h.trim());
+      if (query) {
+        return executeFilterAction(query, store, (options2 == null ? void 0 : options2.spreadsheetFilterOrigin) ?? "chat", options2 == null ? void 0 : options2.abortSignal);
+      }
+      console.warn(`${LOG_PREFIX$c} spreadsheet.filter action missing query and thought.`);
+      store.getState().addProgress("AI tried to filter the data explorer but did not specify a query.", "error");
+      return {
+        status: "error",
+        toolName: "spreadsheet.filter",
+        message: "spreadsheet.filter action missing query.",
+        shouldStop: false,
+        retryHint: "Provide args.query for spreadsheet.filter."
+      };
+    }
+    case "workspace.list":
+    case "workspace.tree":
+    case "workspace.read":
+    case "workspace.search":
+    case "workspace.grep":
+    case "workspace.head":
+    case "workspace.diff":
+    case "workspace.replace":
+    case "workspace.write":
+    case "workspace.append": {
+      const workspaceResult = await executeWorkspaceFileAction(action, store, { abortSignal: options2 == null ? void 0 : options2.abortSignal });
+      return {
+        status: "success",
+        toolName: action.toolName,
+        message: `Executed ${action.toolName}`,
+        shouldStop: false,
+        payload: workspaceResult == null ? void 0 : workspaceResult.payload,
+        observation: {
+          type: "tool_result",
+          status: "success",
+          summary: `Executed ${action.toolName}.`,
+          toolName: action.toolName,
+          detail: workspaceResult == null ? void 0 : workspaceResult.payload
+        }
+      };
+    }
+    case "conversation.request_clarification":
+      return requestClarification(action, store);
+  }
+  return {
+    status: "success",
+    toolName: action.toolName,
+    message: `Executed ${action.toolName}`,
+    shouldStop: false,
+    observation: {
+      type: "tool_result",
+      status: "success",
+      summary: `Executed ${action.toolName}.`,
+      toolName: action.toolName
+    }
+  };
+};
+const CHART_TYPE_MAP = {
+  bar: "bar",
+  line: "line",
+  pie: "pie",
+  doughnut: "doughnut",
+  donut: "doughnut",
+  scatter: "scatter",
+  combo: "combo",
+  radar: "radar",
+  bubble: "bubble",
+  stacked_bar: "stacked_bar",
+  stacked_column: "stacked_column"
+};
+const AGGREGATION_MAP = {
+  sum: "sum",
+  count: "count",
+  avg: "avg"
+};
+const normalizeString = (value2) => typeof value2 === "string" && value2.trim().length > 0 ? value2.trim() : void 0;
+const normalizeChartType = (value2) => {
+  var _a;
+  const normalized = (_a = normalizeString(value2)) == null ? void 0 : _a.toLowerCase();
+  return normalized ? CHART_TYPE_MAP[normalized] : void 0;
+};
+const normalizeStringList = (value2) => Array.isArray(value2) ? value2.filter((entry) => typeof entry === "string" && entry.trim().length > 0).map((entry) => entry.trim()) : [];
+const dedupeStrings = (values2) => Array.from(new Set(values2));
+const getLooseBindings = (plan) => plan.bindings && typeof plan.bindings === "object" && !Array.isArray(plan.bindings) ? plan.bindings : {};
+const getQuerySelectColumns = (plan) => {
+  const query = plan.query;
+  if (!query || typeof query !== "object" || Array.isArray(query)) {
+    return [];
+  }
+  return normalizeStringList(query.select);
+};
+const buildMetricAliases = (plan, groupByColumn) => {
+  const bindings = getLooseBindings(plan);
+  const aliases = dedupeStrings([
+    normalizeString(bindings.valueColumn),
+    normalizeString(bindings.secondaryValueColumn),
+    ...normalizeStringList(plan.valueColumns),
+    ...normalizeStringList(plan.values),
+    ...normalizeStringList(plan.metrics),
+    ...normalizeStringList(plan.yAxis),
+    ...normalizeStringList(plan.columns).filter((column) => column !== groupByColumn),
+    ...getQuerySelectColumns(plan).filter((column) => column !== groupByColumn)
+  ].filter((value2) => typeof value2 === "string" && value2.length > 0));
+  return aliases;
+};
+const resolveAggregationForAlias = (activeDataQuery, alias) => {
+  if (!alias) {
+    return void 0;
+  }
+  const aggregate2 = (activeDataQuery.plan.aggregates ?? []).find(
+    (candidate) => {
+      var _a;
+      return ((_a = normalizeString(candidate.as)) == null ? void 0 : _a.toLowerCase()) === alias.toLowerCase();
+    }
+  );
+  if (!aggregate2) {
+    return void 0;
+  }
+  return AGGREGATION_MAP[aggregate2.function];
+};
+const resolveGroupByColumn = (plan, activeDataQuery) => {
+  var _a;
+  const bindings = getLooseBindings(plan);
+  const direct = normalizeString(plan.groupByColumn) ?? normalizeString(bindings.groupByColumn) ?? normalizeString(plan.xAxis) ?? (() => {
+    const groupBy = plan.groupBy;
+    if (typeof groupBy === "string" && groupBy.trim()) {
+      return groupBy.trim();
+    }
+    if (Array.isArray(groupBy)) {
+      return normalizeString(groupBy[0]);
+    }
+    return void 0;
+  })();
+  if (direct) {
+    return direct;
+  }
+  return normalizeString((_a = activeDataQuery == null ? void 0 : activeDataQuery.plan.groupBy) == null ? void 0 : _a[0]);
+};
+const canBindToActiveQuery = (activeDataQuery, groupByColumn, metricAliases) => {
+  if (!activeDataQuery || !groupByColumn || metricAliases.length === 0) {
+    return false;
+  }
+  const selectedColumns = new Set((activeDataQuery.result.selectedColumns ?? []).map((column) => column.toLowerCase()));
+  if (!selectedColumns.has(groupByColumn.toLowerCase())) {
+    return false;
+  }
+  return metricAliases.every((alias) => selectedColumns.has(alias.toLowerCase()));
+};
+const buildSqlPlanFromActiveQuery = (plan, activeDataQuery, groupByColumn, metricAliases) => {
+  var _a, _b;
+  const requestedChartType = normalizeChartType(plan.chartType) ?? normalizeChartType(plan.chart) ?? "bar";
+  const chartType = metricAliases.length > 1 && (requestedChartType === "bar" || requestedChartType === "line") ? "combo" : requestedChartType;
+  return {
+    chartType,
+    title: normalizeString(plan.title) ?? "AI Generated Analysis",
+    description: normalizeString(plan.description) ?? "Analysis of the active query result.",
+    queryMode: (((_a = activeDataQuery.plan.groupBy) == null ? void 0 : _a.length) ?? 0) > 0 || (((_b = activeDataQuery.plan.aggregates) == null ? void 0 : _b.length) ?? 0) > 0 ? "aggregate" : "rowset",
+    query: activeDataQuery.plan,
+    bindings: {
+      groupByColumn,
+      valueColumn: metricAliases[0],
+      secondaryValueColumn: metricAliases[1]
+    },
+    aggregation: resolveAggregationForAlias(activeDataQuery, metricAliases[0]),
+    secondaryAggregation: resolveAggregationForAlias(activeDataQuery, metricAliases[1]),
+    defaultTopN: typeof plan.defaultTopN === "number" ? plan.defaultTopN : void 0,
+    defaultHideOthers: typeof plan.defaultHideOthers === "boolean" ? plan.defaultHideOthers : void 0
+  };
+};
+const adaptCreatePlanFromContext = (rawPlan, state2) => {
+  var _a;
+  if (isSqlAnalysisPlanLike(rawPlan)) {
+    return rawPlan;
+  }
+  const loosePlan = rawPlan;
+  const activeDataQuery = state2.activeDataQuery ?? null;
+  const groupByColumn = resolveGroupByColumn(loosePlan, activeDataQuery);
+  const metricAliases = buildMetricAliases(loosePlan, groupByColumn);
+  const datasetColumns = new Set((state2.columnProfiles ?? []).map((profile) => profile.name.toLowerCase()));
+  if (canBindToActiveQuery(activeDataQuery, groupByColumn, metricAliases)) {
+    return buildSqlPlanFromActiveQuery(loosePlan, activeDataQuery, groupByColumn, metricAliases);
+  }
+  const groupByIsPhantom = groupByColumn && !datasetColumns.has(groupByColumn.toLowerCase()) && !((activeDataQuery == null ? void 0 : activeDataQuery.result.selectedColumns) ?? []).some((c) => c.toLowerCase() === groupByColumn.toLowerCase());
+  if (activeDataQuery && (!groupByColumn || groupByIsPhantom)) {
+    const queryColumns = activeDataQuery.result.selectedColumns ?? [];
+    const hasAggregates = (((_a = activeDataQuery.plan.aggregates) == null ? void 0 : _a.length) ?? 0) > 0;
+    if (hasAggregates && queryColumns.length >= 3) {
+      const requestedChartType2 = normalizeChartType(loosePlan.chartType) ?? normalizeChartType(loosePlan.chart) ?? "bar";
+      return {
+        chartType: queryColumns.length > 2 ? "combo" : requestedChartType2,
+        title: normalizeString(loosePlan.title) ?? "AI Generated Analysis",
+        description: normalizeString(loosePlan.description) ?? "Analysis of query result.",
+        queryMode: "aggregate",
+        query: activeDataQuery.plan,
+        bindings: {
+          groupByColumn: queryColumns[0],
+          valueColumn: queryColumns[1],
+          secondaryValueColumn: queryColumns[2]
+        },
+        aggregation: resolveAggregationForAlias(activeDataQuery, queryColumns[1]),
+        secondaryAggregation: resolveAggregationForAlias(activeDataQuery, queryColumns[2])
+      };
+    }
+  }
+  const valueColumn = normalizeString(loosePlan.valueColumn) ?? metricAliases.find((alias) => datasetColumns.has(alias.toLowerCase()));
+  const secondaryValueColumn = normalizeString(loosePlan.secondaryValueColumn) ?? metricAliases.find((alias) => alias !== valueColumn && datasetColumns.has(alias.toLowerCase()));
+  const requestedChartType = normalizeChartType(loosePlan.chartType) ?? normalizeChartType(loosePlan.chart) ?? "bar";
+  return {
+    ...rawPlan,
+    chartType: secondaryValueColumn && (requestedChartType === "bar" || requestedChartType === "line") ? "combo" : requestedChartType,
+    title: normalizeString(loosePlan.title) ?? "AI Generated Analysis",
+    description: normalizeString(loosePlan.description) ?? "Analysis of AI generated chart.",
+    groupByColumn,
+    valueColumn,
+    secondaryValueColumn,
+    secondaryAggregation: secondaryValueColumn ? "sum" : void 0
+  };
+};
+const DERIVED_PATHS = /* @__PURE__ */ new Set(["derive_metric_by_label_then_plan", "derive_column_then_plan"]);
+const DERIVED_ALIAS_TERMS = [
+  { metric: "profit", pattern: /\bprofit(?:ability)?\b/i },
+  { metric: "margin", pattern: /\bmargin\b/i },
+  { metric: "variance", pattern: /\bvariance\b|\bdelta\b/i }
+];
+const isObject = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
+const normalizeText = (value2) => String(value2 ?? "").replace(/[_-]+/g, " ").trim().toLowerCase();
+const collectStringValues = (value2) => {
+  if (typeof value2 === "string") {
+    return [value2];
+  }
+  if (Array.isArray(value2)) {
+    return value2.flatMap((entry) => collectStringValues(entry));
+  }
+  if (isObject(value2)) {
+    return Object.values(value2).flatMap((entry) => collectStringValues(entry));
+  }
+  return [];
+};
+const getRequestedDerivedMetrics = (userMessage, plan) => {
+  const sources = [
+    userMessage ?? "",
+    ...collectStringValues({
+      title: plan.title,
+      description: plan.description,
+      bindings: plan.bindings,
+      query: {
+        select: plan.query && isObject(plan.query) ? plan.query.select : void 0,
+        aggregates: plan.query && isObject(plan.query) ? plan.query.aggregates : void 0
+      },
+      valueColumn: plan.valueColumn,
+      secondaryValueColumn: plan.secondaryValueColumn
+    })
+  ];
+  const requested = /* @__PURE__ */ new Set();
+  sources.forEach((source2) => {
+    extractRequestedDerivedMetrics(source2).forEach((metric) => requested.add(metric));
+  });
+  return Array.from(requested);
+};
+const collectStructuralMetricRefs = (plan) => {
+  const refs = /* @__PURE__ */ new Set();
+  const rawPlan = plan;
+  [
+    rawPlan.valueColumn,
+    rawPlan.secondaryValueColumn,
+    rawPlan.xValueColumn,
+    rawPlan.yValueColumn,
+    rawPlan.valueColumns,
+    rawPlan.values,
+    rawPlan.metrics,
+    rawPlan.columns,
+    rawPlan.yAxis
+  ].forEach((value2) => {
+    collectStringValues(value2).forEach((entry) => refs.add(normalizeText(entry)));
+  });
+  if (isObject(rawPlan.bindings)) {
+    Object.values(rawPlan.bindings).forEach((value2) => {
+      collectStringValues(value2).forEach((entry) => refs.add(normalizeText(entry)));
+    });
+  }
+  if (isObject(rawPlan.query)) {
+    collectStringValues(rawPlan.query.select).forEach((entry) => refs.add(normalizeText(entry)));
+    const aggregates = Array.isArray(rawPlan.query.aggregates) ? rawPlan.query.aggregates : [];
+    aggregates.forEach((aggregate2) => {
+      if (!isObject(aggregate2)) return;
+      collectStringValues(aggregate2.as).forEach((entry) => refs.add(normalizeText(entry)));
+    });
+  }
+  return Array.from(refs).filter(Boolean);
+};
+const findReferencedDerivedMetrics = (refs) => {
+  const derivedMetrics = /* @__PURE__ */ new Set();
+  refs.forEach((ref2) => {
+    DERIVED_ALIAS_TERMS.forEach(({ metric, pattern }) => {
+      if (pattern.test(ref2)) {
+        derivedMetrics.add(metric);
+      }
+    });
+  });
+  return Array.from(derivedMetrics);
+};
+const cardHasDerivedMetric = (card, metrics) => {
+  var _a;
+  const refs = /* @__PURE__ */ new Set();
+  [
+    card.plan.valueColumn,
+    card.plan.secondaryValueColumn,
+    card.plan.xValueColumn,
+    card.plan.yValueColumn,
+    ...Object.keys(((_a = card.aggregatedData) == null ? void 0 : _a[0]) ?? {})
+  ].forEach((value2) => {
+    if (typeof value2 === "string" && value2.trim()) {
+      refs.add(normalizeText(value2));
+    }
+  });
+  return metrics.some((metric) => Array.from(refs).some((ref2) => DERIVED_ALIAS_TERMS.some((candidate) => candidate.metric === metric && candidate.pattern.test(ref2))));
+};
+const hasVisibleDerivedMetric = (state2, metrics, validationArtifact) => {
+  var _a;
+  if (metrics.length === 0) {
+    return false;
+  }
+  const datasetColumns = new Set((state2.columnProfiles ?? []).map((profile) => normalizeText(profile.name)));
+  if (metrics.some((metric) => Array.from(datasetColumns).some((column) => DERIVED_ALIAS_TERMS.some((candidate) => candidate.metric === metric && candidate.pattern.test(column))))) {
+    return true;
+  }
+  const visibleQueryColumns = new Set((((_a = state2.activeDataQuery) == null ? void 0 : _a.result.selectedColumns) ?? []).map((column) => normalizeText(column)));
+  if (metrics.some((metric) => Array.from(visibleQueryColumns).some((column) => DERIVED_ALIAS_TERMS.some((candidate) => candidate.metric === metric && candidate.pattern.test(column))))) {
+    return true;
+  }
+  if ((state2.analysisCards ?? []).some((card) => cardHasDerivedMetric(card, metrics))) {
+    return true;
+  }
+  return Boolean(
+    validationArtifact && validationArtifact.recommendedAction === "visualize" && metrics.includes(validationArtifact.metricName)
+  );
+};
+const validateCreatePlanPreflight = ({
+  plan,
+  state: state2
+}) => {
+  var _a, _b;
+  if (!((_a = state2.columnProfiles) == null ? void 0 : _a.length)) {
+    return null;
+  }
+  const analysisBrief = buildAnalysisIntentBrief({
+    columns: state2.columnProfiles,
+    csvData: state2.csvData ?? null,
+    dataPreparationPlan: state2.dataPreparationPlan ?? null,
+    datasetSemanticSnapshot: state2.datasetSemanticSnapshot ?? null,
+    semanticDatasetVersion: state2.semanticDatasetVersion ?? null
+  });
+  if (!DERIVED_PATHS.has(analysisBrief.recommendedPath)) {
+    return null;
+  }
+  const requestedDerivedMetrics = getRequestedDerivedMetrics((_b = state2.activeTurn) == null ? void 0 : _b.userMessage, plan);
+  if (requestedDerivedMetrics.length === 0) {
+    return null;
+  }
+  const structuralRefs = collectStructuralMetricRefs(plan);
+  const referencedDerivedMetrics = findReferencedDerivedMetrics(structuralRefs);
+  if (referencedDerivedMetrics.length === 0) {
+    return null;
+  }
+  const validationArtifact = state2.activeMetricMappingValidation ?? null;
+  if (hasVisibleDerivedMetric(state2, referencedDerivedMetrics, validationArtifact)) {
+    return null;
+  }
+  const summaryMetrics = referencedDerivedMetrics.join(", ");
+  const message = (validationArtifact == null ? void 0 : validationArtifact.recommendedAction) === "derive_metric" ? `analysis.create_plan cannot directly generate the derived metric (${summaryMetrics}) before it is materialized. The metric mapping is already validated, but you must derive the metric deterministically before creating this card.` : `analysis.create_plan cannot directly generate the derived metric (${summaryMetrics}) on this label/value financial dataset. Validate the metric mapping and derive the metric before creating this card.`;
+  const retryHint = (validationArtifact == null ? void 0 : validationArtifact.recommendedAction) === "derive_metric" ? "Use analysis.validate_metric_mapping to re-enter the validated derive-metric workflow, then materialize the metric with data.mutate before retrying analysis.create_plan." : "Use analysis.validate_metric_mapping first, then derive the requested metric deterministically before retrying analysis.create_plan.";
+  return {
+    status: "blocked",
+    toolName: "analysis.create_plan",
+    message,
+    shouldStop: false,
+    retryHint,
+    artifactMetadata: {
+      artifactType: "analysis_card_attempt",
+      recommendedPath: analysisBrief.recommendedPath,
+      requestedDerivedMetrics,
+      referencedDerivedMetrics
+    },
+    observation: {
+      type: "tool_result",
+      status: "blocked",
+      summary: message,
+      toolName: "analysis.create_plan",
+      code: "tool_contract",
+      retryHint,
+      detail: {
+        artifactMetadata: {
+          artifactType: "analysis_card_attempt",
+          recommendedPath: analysisBrief.recommendedPath,
+          requestedDerivedMetrics,
+          referencedDerivedMetrics
+        },
+        suggestedNextTool: "analysis.validate_metric_mapping",
+        repairHintCategory: "derived_metric_validation_required",
+        recommendedPath: analysisBrief.recommendedPath,
+        activeValidationRecommendedAction: (validationArtifact == null ? void 0 : validationArtifact.recommendedAction) ?? null
+      }
+    }
+  };
+};
+const PREVIEW_LIMIT = 120;
+const summarizeText = (value2) => {
+  const text = typeof value2 === "string" ? value2 : String(value2 ?? "");
+  const normalizedPreview = text.replace(/\s+/g, " ").trim().slice(0, PREVIEW_LIMIT);
+  return {
+    charCount: text.length,
+    lineCount: text.length === 0 ? 0 : text.split(/\r?\n/).length,
+    preview: normalizedPreview
+  };
+};
+const sanitizeWorkspaceReplace = (args) => {
+  const before = summarizeText(args.oldText);
+  const after = summarizeText(args.newText);
+  return {
+    path: args.path,
+    replaceAll: Boolean(args.replaceAll),
+    diffSummary: `replace ${before.lineCount} line(s) / ${before.charCount} chars with ${after.lineCount} line(s) / ${after.charCount} chars`,
+    oldTextSummary: before,
+    newTextSummary: after
+  };
+};
+const sanitizeWorkspaceWrite = (args, mode) => ({
+  path: args.path,
+  mode,
+  contentSummary: summarizeText(args.content)
+});
+const sanitizeToolLogDetail = (toolName, detail) => {
+  if (!detail) {
+    return detail;
+  }
+  switch (toolName) {
+    case "workspace.replace":
+      return sanitizeWorkspaceReplace(detail);
+    case "workspace.write":
+      return sanitizeWorkspaceWrite(detail, "write");
+    case "workspace.append":
+      return sanitizeWorkspaceWrite(detail, "append");
+    default:
+      return detail;
+  }
+};
+const ROW_DELETE_TYPES = /* @__PURE__ */ new Set([
+  "drop_rows_by_condition",
+  "drop_rows_by_index"
+]);
+const isRowDeleteOperation = (operation) => Boolean(operation) && ROW_DELETE_TYPES.has(operation.type);
+const normalizeMutateOperations = (action) => {
+  var _a, _b, _c, _d;
+  if (action.type !== "tool_call" || action.toolName !== "data.mutate") {
+    return [];
+  }
+  const normalizedPayload = normalizeDataMutatePayload({
+    explanation: (_a = action.args) == null ? void 0 : _a.explanation,
+    operations: Array.isArray((_b = action.args) == null ? void 0 : _b.operations) ? action.args.operations : action.args && "operation" in action.args && action.args.operation !== void 0 ? [action.args.operation] : void 0,
+    outputColumns: (_c = action.args) == null ? void 0 : _c.outputColumns,
+    planStatus: "operations",
+    consistencyIssues: []
+  });
+  return ((_d = normalizedPayload.plan) == null ? void 0 : _d.operations) ?? [];
+};
+const canonicalizePrimitive = (value2) => {
+  if (Array.isArray(value2)) {
+    return value2.map((item) => canonicalizePrimitive(item));
+  }
+  if (!value2 || typeof value2 !== "object") {
+    return value2;
+  }
+  return Object.fromEntries(
+    Object.entries(value2).sort(([left], [right]) => left.localeCompare(right)).map(([key2, item]) => [key2, canonicalizePrimitive(item)])
+  );
+};
+const stableSort = (items, mapItem) => items.map((item) => canonicalizePrimitive(mapItem(item))).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+const canonicalizePredicate = (predicate) => ({
+  column: predicate.column,
+  operator: predicate.operator,
+  ...predicate.value !== void 0 ? { value: canonicalizePrimitive(predicate.value) } : {}
+});
+const canonicalizeGroup = (group) => ({
+  predicates: stableSort(group.predicates, canonicalizePredicate)
+});
+const canonicalizeRowDeleteOperation = (operation) => {
+  var _a, _b;
+  if (operation.type === "drop_rows_by_index") {
+    return {
+      type: operation.type,
+      indices: [...operation.indices].sort((left, right) => left - right)
+    };
+  }
+  return {
+    type: operation.type,
+    ...((_a = operation.predicates) == null ? void 0 : _a.length) ? { predicates: stableSort(operation.predicates, canonicalizePredicate) } : {},
+    ...((_b = operation.groups) == null ? void 0 : _b.length) ? { groups: stableSort(operation.groups, canonicalizeGroup) } : {}
+  };
+};
+const getDestructiveRowDeleteSignature = (action) => {
+  const operations = normalizeMutateOperations(action);
+  if (operations.length === 0) {
+    return null;
+  }
+  const primaryOperation = operations[0];
+  const allRowDeletes = operations.every(isRowDeleteOperation);
+  if (!isRowDeleteOperation(primaryOperation) && !allRowDeletes) {
+    return null;
+  }
+  const rowDeleteOperations = operations.filter(isRowDeleteOperation);
+  if (rowDeleteOperations.length === 0) {
+    return null;
+  }
+  return JSON.stringify(rowDeleteOperations.map(canonicalizeRowDeleteOperation));
+};
+const isDestructiveRowDeleteAction = (action) => getDestructiveRowDeleteSignature(action) !== null;
+const buildClarificationAssessmentPrompt = (clarificationQuestion, userReply, availableOptions) => ({
+  system: `You assess whether a user's reply to a clarification question provides enough information to proceed.
+
+Context: A data analysis app asked the user a clarification question. The user replied. You decide the outcome.
+
+Categories:
+
+resolved — The user's reply directly answers the question or selects a specific option/value.
+Examples: "use March 2025", "the second one", "Campaign name column", "TRF_CBE_2025"
+
+best_effort_continue — The user wants to proceed without giving a precise answer. They delegate the decision to the system, express impatience, confirm generically, or provide vague direction.
+Examples: "just do it", "you decide", "whatever works", "ok la", "go check yourself", "idk", "don't care", "sure", "yes", "ha? you go check la", "just pick one", "anything", "can", "proceed"
+
+still_ambiguous — The user's reply is ONLY pure punctuation (e.g. "?" "..." "!") with zero meaningful content. This should be very rare — when in doubt, prefer best_effort_continue over still_ambiguous. Never block the user from proceeding.
+
+IMPORTANT:
+- Prefer best_effort_continue over still_ambiguous. Only use still_ambiguous for replies that are literally empty or pure punctuation.
+- Any reply with words — even vague, impatient, or colloquial — should be best_effort_continue or resolved.
+- The goal is to NEVER trap the user in a clarification loop.
+${availableOptions.length > 0 ? `
+Available options were: ${availableOptions.join(", ")}` : ""}
+
+Reply with ONLY the category name (resolved, best_effort_continue, or still_ambiguous). Nothing else.`,
+  user: `Clarification question: ${clarificationQuestion}
+User reply: ${userReply}`
+});
+const LOG_PREFIX$b = "[ClarificationAssessment]";
+const AI_TIMEOUT_MS = 1e4;
+const normalizeOption = (option) => {
+  if (!option || typeof option !== "object") {
+    return null;
+  }
+  const record = option;
+  const label = typeof record.label === "string" ? record.label.trim() : "";
+  const value2 = typeof record.value === "string" ? record.value.trim() : "";
+  return label && value2 ? { label, value: value2 } : null;
+};
+const normalizeQuestion = (value2, fallbacks) => {
+  if (typeof value2 === "string" && value2.trim()) {
+    return value2.trim();
+  }
+  for (const fallback of fallbacks) {
+    if (typeof fallback === "string" && fallback.trim()) {
+      return fallback.trim();
+    }
+  }
+  return "";
+};
+const normalizeReplyText = (userChoice) => {
+  const normalizedLabel = userChoice.label.trim();
+  const normalizedValue = userChoice.value.trim();
+  if (normalizedValue && normalizedValue !== normalizedLabel) {
+    return `${normalizedLabel} ${normalizedValue}`.trim();
+  }
+  return normalizedLabel || normalizedValue;
+};
+const cleanOptionText = (value2) => value2.replace(/^\*\*|\*\*$/g, "").replace(/^(\d+[.)、]|[-*])\s*/u, "").replace(/\s+/g, " ").trim().replace(/[;,]+$/g, "").trim();
+const OPTION_LINE_PATTERN = /^(\d+[.)、]|[-*])\s*/u;
+const normalizeExtractedOption = (value2) => {
+  const cleaned = cleanOptionText(value2);
+  return cleaned ? { label: cleaned, value: cleaned } : null;
+};
+const extractMultilineOptions = (question) => {
+  const rawLines = question.split("\n").map((line) => line.trim()).filter(Boolean);
+  const optionLines = rawLines.filter((line) => OPTION_LINE_PATTERN.test(line));
+  if (optionLines.length < 2 || optionLines.length > 5) {
+    return null;
+  }
+  const options2 = optionLines.map((line) => line.replace(OPTION_LINE_PATTERN, "")).map(normalizeExtractedOption).filter((option) => Boolean(option));
+  if (options2.length < 2) {
+    return null;
+  }
+  const questionStem = rawLines.filter((line) => !OPTION_LINE_PATTERN.test(line)).join(" ").replace(/[:：]\s*$/u, "").trim();
+  return {
+    question: questionStem || question,
+    options: options2
+  };
+};
+const extractInlineNumberedOptions = (question) => {
+  var _a;
+  const matches = Array.from(
+    question.matchAll(/(?:^|[\s:：;；,，(（\[])(\d+)([.)、])\s*(.+?)(?=(?:[\s:：;；,，(（\[]\d+[.)、]\s*)|$)/gsu)
+  );
+  if (matches.length < 2 || matches.length > 5) {
+    return null;
+  }
+  const options2 = matches.map((match2) => normalizeExtractedOption(match2[3] ?? "")).filter((option) => Boolean(option));
+  if (options2.length < 2) {
+    return null;
+  }
+  const firstMatchIndex = ((_a = matches[0]) == null ? void 0 : _a.index) ?? 0;
+  const questionStem = question.slice(0, firstMatchIndex).replace(/[:：]\s*$/u, "").trim();
+  return {
+    question: questionStem || question,
+    options: options2
+  };
+};
+const extractStructuredOptions = (question) => extractMultilineOptions(question) ?? extractInlineNumberedOptions(question);
+const buildCandidatePhrases = (clarification) => Array.from(new Set(clarification.options.flatMap((option) => [option.label, option.value]).filter(Boolean)));
+const findReferencedValues = (reply, candidates) => {
+  const normalizedReply = reply.toLowerCase();
+  return candidates.filter((candidate) => normalizedReply.includes(candidate.toLowerCase()));
+};
+const countMeaningfulWords = (reply) => reply.trim().split(/\s+/).map((token) => token.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")).filter(Boolean).length;
+const normalizeClarificationRequest = (request, fallbackQuestionSources = []) => {
+  const normalizedQuestion = normalizeQuestion(request == null ? void 0 : request.question, fallbackQuestionSources);
+  const normalizedOptions = Array.isArray(request == null ? void 0 : request.options) ? request.options.map(normalizeOption).filter((option) => Boolean(option)) : [];
+  const extractedOptions = normalizedOptions.length === 0 && normalizedQuestion ? extractStructuredOptions(normalizedQuestion) : null;
+  const finalOptions = (extractedOptions == null ? void 0 : extractedOptions.options) ?? normalizedOptions;
+  const allowFreeText = Boolean(request == null ? void 0 : request.allowFreeText) || finalOptions.length === 0;
+  return {
+    question: (extractedOptions == null ? void 0 : extractedOptions.question) ?? normalizedQuestion,
+    options: finalOptions,
+    allowFreeText,
+    clarificationMode: allowFreeText ? "free_text" : "options",
+    interactionKind: request == null ? void 0 : request.interactionKind,
+    pendingPlan: request == null ? void 0 : request.pendingPlan,
+    targetProperty: request == null ? void 0 : request.targetProperty,
+    resumeContext: request == null ? void 0 : request.resumeContext
+  };
+};
+const resolveEffectivePendingClarification = (state2) => {
+  var _a;
+  const pendingClarification = state2.pendingClarification ?? ((_a = state2.activeTurn) == null ? void 0 : _a.pendingClarificationRequest) ?? null;
+  return pendingClarification ? normalizeClarificationRequest(pendingClarification) : null;
+};
+const isPurePunctuation = (reply) => /^[?!.…\s]+$/u.test(reply);
+const extractStructuralSignals$1 = (normalizedReply, clarification, availableColumns) => ({
+  referencedColumns: findReferencedValues(normalizedReply, availableColumns),
+  referencedCandidates: findReferencedValues(normalizedReply, buildCandidatePhrases(clarification)),
+  isPurePunctuation: isPurePunctuation(normalizedReply),
+  meaningfulWordCount: countMeaningfulWords(normalizedReply)
+});
+const parseAiAssessment = (text) => {
+  const trimmed = text.trim().toLowerCase().replace(/[^a-z_]/g, "");
+  const valid = ["resolved", "best_effort_continue", "still_ambiguous"];
+  return valid.find((v) => trimmed.includes(v)) ?? null;
+};
+const classifyWithAi = async (clarificationQuestion, userReply, availableOptions, settings2) => {
+  try {
+    if (!(settings2 == null ? void 0 : settings2.provider) || !isProviderConfigured(settings2)) return null;
+  } catch {
+    return null;
+  }
+  try {
+    const { model, modelId } = createProviderModel(settings2, settings2.simpleModel);
+    const prompt = buildClarificationAssessmentPrompt(clarificationQuestion, userReply, availableOptions);
+    const result = await withTransientRetry(
+      (fb) => streamGenerateText({
+        model: fb ?? model,
+        messages: [
+          { role: "system", content: prompt.system },
+          { role: "user", content: prompt.user }
+        ],
+        activityTimeoutMs: AI_TIMEOUT_MS
+      }),
+      { settings: settings2, primaryModelId: modelId, label: "runtimeClarification" }
+    );
+    const assessment = parseAiAssessment(result.text);
+    if (assessment) {
+      console.log(`${LOG_PREFIX$b} AI: ${assessment} (model: ${modelId})`);
+      return assessment;
+    }
+    console.warn(`${LOG_PREFIX$b} AI returned unparseable assessment: "${result.text}" (model: ${modelId})`);
+    return null;
+  } catch (error2) {
+    const msg = error2 instanceof Error ? error2.message : String(error2);
+    console.warn(`${LOG_PREFIX$b} AI classification failed: ${msg}`);
+    return null;
+  }
+};
+const tryDeterministicAssessment = (normalizedReply, signals) => {
+  if (!normalizedReply) return "still_ambiguous";
+  if (signals.referencedCandidates.length > 0) return "resolved";
+  if (signals.referencedColumns.length > 0) return "resolved";
+  if (signals.isPurePunctuation) return "best_effort_continue";
+  return null;
+};
+const structuralFallback = (signals, hasOptions) => {
+  if (hasOptions) {
+    return signals.meaningfulWordCount >= 2 ? "resolved" : "still_ambiguous";
+  }
+  return "best_effort_continue";
+};
+const buildAssumptionSummary = (status) => {
+  if (status === "best_effort_continue") {
+    return "The user did not provide a precise constraint. Continue with the most defensible assumption and state it explicitly before giving the answer.";
+  }
+  return void 0;
+};
+const evaluateClarificationResponse = async ({
+  clarification,
+  userChoice,
+  availableColumns,
+  settings: settings2
+}) => {
+  const normalizedReply = normalizeReplyText(userChoice).trim();
+  const signals = extractStructuralSignals$1(normalizedReply, clarification, availableColumns);
+  const deterministicResult = tryDeterministicAssessment(normalizedReply, signals);
+  if (deterministicResult) {
+    console.log(`${LOG_PREFIX$b} Deterministic: ${deterministicResult}`);
+    return {
+      status: deterministicResult,
+      normalizedReply,
+      ...deterministicResult === "still_ambiguous" ? { missingInfoSummary: clarification.question } : {},
+      assumptionSummary: buildAssumptionSummary(deterministicResult)
+    };
+  }
+  const optionLabels = clarification.options.map((o) => o.label);
+  const aiStatus = await classifyWithAi(clarification.question, normalizedReply, optionLabels, settings2);
+  if (aiStatus) {
+    return {
+      status: aiStatus,
+      normalizedReply,
+      ...aiStatus === "still_ambiguous" ? { missingInfoSummary: clarification.question } : {},
+      assumptionSummary: buildAssumptionSummary(aiStatus)
+    };
+  }
+  const hasOptions = clarification.options.length > 0;
+  const fallbackStatus = structuralFallback(signals, hasOptions);
+  console.log(`${LOG_PREFIX$b} Structural fallback: ${fallbackStatus}`);
+  return {
+    status: fallbackStatus,
+    normalizedReply,
+    ...fallbackStatus === "still_ambiguous" ? { missingInfoSummary: clarification.question } : {},
+    assumptionSummary: buildAssumptionSummary(fallbackStatus)
+  };
+};
+const buildClarificationFollowUpPrompt = (clarification, language) => getTranslation("clarification_follow_up_prompt", language, { question: clarification.question });
+const runtimeClarification = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  buildClarificationFollowUpPrompt,
+  evaluateClarificationResponse,
+  normalizeClarificationRequest,
+  resolveEffectivePendingClarification
+}, Symbol.toStringTag, { value: "Module" }));
+const EXPLICIT_METRIC_VALIDATION_PATTERN = /\b(validate|validation|verify|verified|confirm|check|mapping|map|mapped|binding|bindings|label|labels)\b/i;
+const BASE_VALIDATION_METRICS = ["revenue", "cost", "budget", "actual"];
+const DERIVED_VALIDATION_METRICS = ["profit", "margin", "variance"];
+const extractRequestedMetricValidationTargets = (message) => {
+  const requested = new Set(extractRequestedDerivedMetrics(message));
+  Object.entries(METRIC_PATTERNS).forEach(([metric, patterns]) => {
+    if (patterns.some((pattern) => pattern.test(message))) {
+      requested.add(metric);
+    }
+  });
+  if (/\bbudget\b/i.test(message) && /\bactual\b/i.test(message) || /\bbudget\s+vs\.?\s+actual\b/i.test(message)) {
+    requested.add("variance");
+  }
+  const baseMetrics = BASE_VALIDATION_METRICS.filter((metric) => requested.has(metric));
+  const derivedMetrics = DERIVED_VALIDATION_METRICS.filter((metric) => requested.has(metric));
+  const explicitValidation = EXPLICIT_METRIC_VALIDATION_PATTERN.test(message);
+  return {
+    baseMetrics,
+    derivedMetrics,
+    explicitValidation,
+    needsValidation: explicitValidation || derivedMetrics.length > 0
+  };
+};
+const resolveSingleRequestedValidationMetric = (message) => {
+  const targets = extractRequestedMetricValidationTargets(message);
+  const prioritizedDerivedMetrics = Object.entries(EXPLICIT_DERIVED_PRIORITY_PATTERNS).filter(([, patterns]) => patterns.some((pattern) => pattern.test(message))).map(([metric]) => metric).filter((metric) => targets.derivedMetrics.includes(metric));
+  if (prioritizedDerivedMetrics.length === 1) {
+    return {
+      metricName: prioritizedDerivedMetrics[0],
+      validationKind: "derived"
+    };
+  }
+  if (targets.derivedMetrics.length === 1) {
+    return {
+      metricName: targets.derivedMetrics[0],
+      validationKind: "derived"
+    };
+  }
+  if (targets.baseMetrics.length === 1 && targets.derivedMetrics.length === 0) {
+    return {
+      metricName: targets.baseMetrics[0],
+      validationKind: "base"
+    };
+  }
+  return null;
+};
+const buildValidationRequestFingerprint = (message, state2) => buildRuntimeRequestFingerprint(message, {
+  sessionId: (state2 == null ? void 0 : state2.sessionId) ?? null,
+  datasetId: (state2 == null ? void 0 : state2.currentDatasetId) ?? null
+});
+const LOG_PREFIX$a = "[ActionHandler]";
+const getActionLabel = (action) => action.type === "assistant_message" ? "assistant_message" : typeof action.toolName === "string" && action.toolName.trim() ? action.toolName : "unknown_tool";
+const BLOCKED_VALIDATION_ERROR_CODES = /* @__PURE__ */ new Set([
+  "blocked_tool",
+  "tool_unavailable",
+  "malformed_tool_payload",
+  "invalid_args"
+]);
+const isBlockedValidationError = (error2) => Boolean(error2 && BLOCKED_VALIDATION_ERROR_CODES.has(error2.code));
+const isMissingThoughtValidationError = (error2, message) => (error2 == null ? void 0 : error2.code) === "invalid_action" && Boolean(message == null ? void 0 : message.includes("Every action must include a non-empty 'thought'."));
+const getValidationObservationCode = (error2) => (error2 == null ? void 0 : error2.code) === "blocked_tool" ? "blocked_tool" : (error2 == null ? void 0 : error2.code) === "tool_unavailable" ? "tool_unavailable" : (error2 == null ? void 0 : error2.code) === "malformed_tool_payload" || (error2 == null ? void 0 : error2.code) === "invalid_args" || (error2 == null ? void 0 : error2.code) === "invalid_action" ? "validation_failed" : void 0;
+const getWorkspaceRuleViolation = (error2) => {
+  var _a, _b, _c;
+  const normalizedPath = typeof ((_a = error2 == null ? void 0 : error2.detail) == null ? void 0 : _a.normalizedPath) === "string" ? error2.detail.normalizedPath : null;
+  const matchedPrefix = typeof ((_b = error2 == null ? void 0 : error2.detail) == null ? void 0 : _b.matchedPrefix) === "string" ? error2.detail.matchedPrefix : null;
+  if (((_c = error2 == null ? void 0 : error2.detail) == null ? void 0 : _c.source) !== "workspace_rule" || !normalizedPath || !matchedPrefix) {
+    return null;
+  }
+  return { normalizedPath, matchedPrefix };
+};
+const getExecutionMonitorStage = (result) => result.status === "blocked" ? "executor_blocked" : "executor_error";
+const recordSuccessMonitor = (store, action, options2) => {
+  if (options2 == null ? void 0 : options2.deferSuccessMonitor) {
+    return;
+  }
+  recordMonitorEvent(store, { stage: "executor_success", action, phase: mapToolNameToPhase(getActionLabel(action)) });
+};
+const getCleaningStepKind = (action) => {
+  if (action.type === "assistant_message") return "commit";
+  if (["workspace.write", "workspace.replace", "workspace.append", "data.mutate"].includes(action.toolName)) return "edit";
+  if (action.toolName === "data.query") return "verify";
+  return "inspect";
+};
+const describeToolAction = (action) => {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
+  if (action.type === "assistant_message") {
+    return {
+      description: "Assistant message emitted",
+      detail: action.cardId ? { cardId: action.cardId } : void 0
+    };
+  }
+  switch (action.toolName) {
+    case "analysis.create_plan":
+      return {
+        description: `Created plan "${((_b = (_a = action.args) == null ? void 0 : _a.plan) == null ? void 0 : _b.title) || "Untitled Plan"}"`,
+        detail: action.args
+      };
+    case "card.aggregate_table":
+      return {
+        description: `Quick aggregate${((_c = action.args) == null ? void 0 : _c.cardId) ? ` from card ${action.args.cardId}` : ""}`,
+        detail: action.args
+      };
+    case "card.add_calculated_column":
+      return {
+        description: `Added calculated column "${(_d = action.args) == null ? void 0 : _d.newColumnName}"`,
+        detail: action.args
+      };
+    case "card.delete":
+      return {
+        description: `Deleted card "${(_e = action.args) == null ? void 0 : _e.cardId}"`,
+        detail: action.args
+      };
+    case "data.mutate":
+      return {
+        description: `Executed dataset transform: ${((_f = action.args) == null ? void 0 : _f.explanation) || "Deterministic operations"}`,
+        detail: action.args
+      };
+    case "data.query":
+      return {
+        description: `Executed read-only data query: ${((_g = action.args) == null ? void 0 : _g.explanation) || "Bounded query"}`,
+        detail: action.args
+      };
+    case "spreadsheet.filter":
+      return {
+        description: `Filtered raw data with query: "${((_h = action.args) == null ? void 0 : _h.query) || ""}"`,
+        detail: action.args
+      };
+    case "analysis.correlation":
+      return {
+        description: `Statistical analysis (${((_i = action.args) == null ? void 0 : _i.analysisType) || "correlation"})`,
+        detail: action.args
+      };
+    case "analysis.pivot_matrix":
+      return {
+        description: `Created pivot matrix for ${Array.isArray((_j = action.args) == null ? void 0 : _j.rows) ? action.args.rows.join(", ") : "selected dimensions"}`,
+        detail: action.args
+      };
+    case "analysis.period_compare":
+      return {
+        description: `Compared ${((_k = action.args) == null ? void 0 : _k.aggregate) || "metric"} across periods using ${(_l = action.args) == null ? void 0 : _l.dateColumn}`,
+        detail: action.args
+      };
+    case "analysis.cohort_retention":
+      return {
+        description: `Ran cohort analysis for ${((_m = action.args) == null ? void 0 : _m.metricName) || "retention"}`,
+        detail: action.args
+      };
+    case "analysis.root_cause_breakdown":
+      return {
+        description: `Diagnosed change drivers across ${Array.isArray((_n = action.args) == null ? void 0 : _n.dimensionColumns) ? action.args.dimensionColumns.join(", ") : "selected dimensions"}`,
+        detail: action.args
+      };
+    case "analysis.validate_metric_mapping":
+      return {
+        description: `Validated business metric mapping for "${(_o = action.args) == null ? void 0 : _o.metricName}"`,
+        detail: action.args
+      };
+    case "card.review":
+      return { description: "Initiated AI review of analysis cards", detail: action.args };
+    case "conversation.request_clarification":
+      return {
+        description: `Requested clarification: ${((_p = action.args) == null ? void 0 : _p.question) || "unspecified question"}`,
+        detail: action.args
+      };
+    default:
+      return {
+        description: `Executed tool ${action.toolName}`,
+        detail: action.args
+      };
+  }
+};
+const mapToolNameToPhase = (toolName) => {
+  if (toolName === "assistant_message") return "chat";
+  if (toolName === "unknown_tool") return "chat";
+  if (toolName.startsWith("analysis.")) return "planning";
+  if (toolName.startsWith("data.") || toolName.startsWith("workspace.") || toolName.startsWith("card.")) return "execution";
+  return "chat";
+};
+const buildValidationContext = (store, options2) => buildToolAvailabilityContext(store.getState(), {
+  toolStage: options2 == null ? void 0 : options2.toolStage,
+  allowOverrides: options2 == null ? void 0 : options2.allowOverrides,
+  denyOverrides: options2 == null ? void 0 : options2.denyOverrides
+});
+const stringifySpreadsheetFilterValue = (value2) => {
+  if (Array.isArray(value2)) {
+    return value2.map((item) => stringifySpreadsheetFilterValue(item)).filter(Boolean).join(", ");
+  }
+  if (value2 === null || value2 === void 0) {
+    return "";
+  }
+  const text = String(value2).trim();
+  return /\s/.test(text) ? `'${text}'` : text;
+};
+const inferMetricValidationArgs = (store, action) => {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i;
+  if (action.type !== "tool_call" || action.toolName !== "analysis.validate_metric_mapping") {
+    return null;
+  }
+  const currentMetricName = typeof ((_a = action.args) == null ? void 0 : _a.metricName) === "string" ? action.args.metricName.trim().toLowerCase() : "";
+  const currentValidationKind = typeof ((_b = action.args) == null ? void 0 : _b.validationKind) === "string" ? action.args.validationKind.trim().toLowerCase() : "";
+  if (currentMetricName && (currentValidationKind === "base" || currentValidationKind === "derived")) {
+    return null;
+  }
+  const state2 = store.getState();
+  const sources = [
+    String(action.thought ?? ""),
+    String(((_c = state2.activeTurn) == null ? void 0 : _c.userMessage) ?? "")
+  ];
+  for (const source2 of sources) {
+    const inferred = resolveSingleRequestedValidationMetric(source2);
+    if (inferred) {
+      return inferred;
+    }
+  }
+  const resumeOriginalUserMessage = (_f = (_e = (_d = state2.pendingClarification) == null ? void 0 : _d.resumeContext) == null ? void 0 : _e.resumeOriginalUserMessage) == null ? void 0 : _f.trim();
+  const resumeTargetRunId = (_i = (_h = (_g = state2.pendingClarification) == null ? void 0 : _g.resumeContext) == null ? void 0 : _h.resumeTargetRunId) == null ? void 0 : _i.trim();
+  const activeArtifact = state2.activeMetricMappingValidation;
+  if (resumeOriginalUserMessage && resumeTargetRunId && (activeArtifact == null ? void 0 : activeArtifact.requestFingerprint)) {
+    const resumeFingerprint = buildValidationRequestFingerprint(resumeOriginalUserMessage, state2);
+    if (activeArtifact.originRunId === resumeTargetRunId && activeArtifact.requestFingerprint === resumeFingerprint && activeArtifact.metricName && activeArtifact.validationKind) {
+      return {
+        metricName: activeArtifact.metricName,
+        validationKind: activeArtifact.validationKind
+      };
+    }
+  }
+  return null;
+};
+const normalizeToolActionPayload = (action, store) => {
+  var _a, _b, _c, _d, _e;
+  if (action.type !== "tool_call") {
+    return action;
+  }
+  if (action.toolName === "conversation.request_clarification") {
+    const rawArgs = action.args && typeof action.args === "object" ? action.args : {};
+    const thoughtFallback = typeof action.thought === "string" && /[?？]$/.test(action.thought.trim()) ? action.thought.trim() : "";
+    return {
+      ...action,
+      args: normalizeClarificationRequest(rawArgs, [
+        rawArgs.question,
+        rawArgs.message,
+        rawArgs.text,
+        thoughtFallback
+      ])
+    };
+  }
+  if (action.toolName === "analysis.validate_metric_mapping") {
+    const inferredArgs = inferMetricValidationArgs(store, action);
+    if (!inferredArgs) {
+      return action;
+    }
+    return {
+      ...action,
+      args: {
+        ...action.args ?? {},
+        metricName: inferredArgs.metricName,
+        validationKind: inferredArgs.validationKind
+      }
+    };
+  }
+  if (action.toolName !== "spreadsheet.filter") {
+    return action;
+  }
+  if (typeof ((_a = action.args) == null ? void 0 : _a.query) === "string" && action.args.query.trim()) {
+    return action;
+  }
+  const normalizedWhere = normalizeQueryWhereClauseLike(((_b = action.args) == null ? void 0 : _b.filter) ?? ((_c = action.args) == null ? void 0 : _c.filters) ?? ((_d = action.args) == null ? void 0 : _d.where));
+  if (!((_e = normalizedWhere == null ? void 0 : normalizedWhere.predicates) == null ? void 0 : _e.length)) {
+    return action;
+  }
+  const query = normalizedWhere.predicates.map((predicate) => {
+    const operator = predicate.operator === "eq" ? "=" : predicate.operator;
+    const value2 = predicate.operator === "is_null" || predicate.operator === "not_null" ? "" : ` ${stringifySpreadsheetFilterValue(predicate.value)}`;
+    return `${predicate.column} ${operator}${value2}`.trim();
+  }).join(" AND ");
+  if (!query) {
+    return action;
+  }
+  return {
+    ...action,
+    args: {
+      ...action.args ?? {},
+      query
+    }
+  };
+};
+const logToolUsage = (action, store, options2) => {
+  const logger = store.getState().logAgentToolUsage;
+  if (typeof logger !== "function") return;
+  const summary = describeToolAction(action);
+  if (!summary) return;
+  if (action.type === "assistant_message") {
+    logger({
+      tool: "assistant_message",
+      description: summary.description,
+      detail: summary.detail
+    });
+    return;
+  }
+  const registry2 = getResolvedToolRegistry(buildValidationContext(store, options2));
+  const descriptor = registry2.descriptorMap.get(action.toolName);
+  const decision = registry2.decisions[action.toolName];
+  logger({
+    tool: action.toolName,
+    description: summary.description,
+    stage: decision == null ? void 0 : decision.stage,
+    category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
+    risk: (descriptor == null ? void 0 : descriptor.risk) ?? "unknown",
+    policyDecision: (decision == null ? void 0 : decision.allowed) === false ? "blocked" : "allowed",
+    policyReason: (decision == null ? void 0 : decision.reason) ?? null,
+    detail: {
+      ...sanitizeToolLogDetail(action.toolName, summary.detail),
+      risk: (descriptor == null ? void 0 : descriptor.risk) ?? "unknown",
+      category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
+      stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
+      policyDecision: (decision == null ? void 0 : decision.allowed) === false ? "blocked" : "allowed",
+      policyReason: (decision == null ? void 0 : decision.reason) ?? null
+    }
+  });
+};
+const appendBlockedWorkspaceHistory = (params) => {
+  if (params.action.type !== "tool_call" || !params.action.toolName.startsWith("workspace.")) {
+    return;
+  }
+  const current2 = params.store.getState().workspaceActionHistory ?? [];
+  const blockedEntry = {
+    timestamp: /* @__PURE__ */ new Date(),
+    operation: params.action.toolName.replace("workspace.", ""),
+    path: params.normalizedPath,
+    success: false,
+    message: params.reason,
+    durationMs: 0,
+    stage: params.stage,
+    toolCategory: params.category,
+    policyDecision: "blocked",
+    policyReason: params.reason
+  };
+  params.store.setState({
+    workspaceActionHistory: [...current2, blockedEntry].slice(-WORKSPACE_HISTORY_LIMIT)
+  });
+};
+const validateRestrictedDataMutateAction = (action, policy) => {
+  var _a, _b, _c;
+  if (action.type !== "tool_call" || action.toolName !== "data.mutate") {
+    return null;
+  }
+  if (policy !== "quality_repair_fill_missing_only") {
+    return null;
+  }
+  const normalizedPayload = normalizeDataMutatePayload({
+    explanation: (_a = action.args) == null ? void 0 : _a.explanation,
+    operations: Array.isArray((_b = action.args) == null ? void 0 : _b.operations) ? action.args.operations : action.args && "operation" in action.args && action.args.operation !== void 0 ? [action.args.operation] : void 0,
+    outputColumns: (_c = action.args) == null ? void 0 : _c.outputColumns,
+    planStatus: "operations",
+    consistencyIssues: []
+  });
+  const normalizedPlan = normalizedPayload.plan;
+  const buildBlockedResult2 = (message, retryHint) => ({
+    status: "blocked",
+    toolName: "data.mutate",
+    message,
+    shouldStop: false,
+    retryHint,
+    observation: {
+      type: "tool_result",
+      status: "blocked",
+      summary: message,
+      toolName: "data.mutate",
+      code: "tool_contract",
+      retryHint
+    }
+  });
+  if (!normalizedPlan || normalizedPayload.rawOperationCount !== normalizedPlan.operations.length) {
+    return buildBlockedResult2(
+      "Analysis-stage quality repair rejected a malformed data.mutate payload.",
+      "Return exactly one valid fill_missing operation with a constant replacement value."
+    );
+  }
+  if (normalizedPlan.operations.length !== 1) {
+    return buildBlockedResult2(
+      "Analysis-stage quality repair only allows one conservative fill_missing operation per proposal.",
+      "Return exactly one fill_missing operation. Do not batch multiple edits."
+    );
+  }
+  const operation = normalizedPlan.operations[0];
+  if (operation.type !== "fill_missing") {
+    return buildBlockedResult2(
+      `Analysis-stage quality repair blocked unsupported mutation "${operation.type}".`,
+      "Only fill_missing with a constant replacement value is allowed during pre-analysis quality repair."
+    );
+  }
+  if (operation.strategy !== "constant") {
+    return buildBlockedResult2(
+      'Analysis-stage quality repair only allows fill_missing with strategy="constant".',
+      'Return fill_missing with strategy "constant" and a concrete replacement value.'
+    );
+  }
+  if (operation.value === void 0 || operation.value === null) {
+    return buildBlockedResult2(
+      "Analysis-stage quality repair requires a concrete replacement value.",
+      "Return fill_missing with a non-null constant replacement value."
+    );
+  }
+  return null;
+};
+const handleAiAction = async (action, store, options2) => {
+  var _a, _b, _c, _d, _e;
+  const { setState } = store;
+  throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+  const normalizedAction = normalizeToolActionPayload(action, store);
+  const actionLabel = getActionLabel(normalizedAction);
+  const actionPhase = mapToolNameToPhase(actionLabel);
+  console.log(`${LOG_PREFIX$a} Handling action: ${actionLabel}`);
+  recordMonitorEvent(store, { stage: "received", action: normalizedAction, phase: actionPhase });
+  if (normalizedAction.type !== "assistant_message" && actionLabel === "unknown_tool") {
+    const detail = "Ignored malformed tool_call with missing toolName.";
+    recordMonitorEvent(store, { stage: "executor_error", action: normalizedAction, detail, isError: true, phase: actionPhase });
+    return {
+      status: "error",
+      toolName: "assistant_message",
+      message: detail,
+      shouldStop: false,
+      retryHint: "Return a valid registered tool name.",
+      observation: {
+        type: "runtime_error",
+        status: "error",
+        summary: detail,
+        toolName: "assistant_message",
+        retryHint: "Return a valid registered tool name."
+      }
+    };
+  }
+  if ((options2 == null ? void 0 : options2.requireRowDeleteConfirmation) && isDestructiveRowDeleteAction(normalizedAction)) {
+    const detail = "Permanent row deletion from chat requires preflight confirmation before executing data.mutate.";
+    recordMonitorEvent(store, { stage: "executor_blocked", action: normalizedAction, detail, phase: actionPhase });
+    return {
+      status: "blocked",
+      toolName: "data.mutate",
+      message: detail,
+      shouldStop: false,
+      retryHint: "Use the row-delete preflight confirmation flow first. Do not execute permanent row deletion directly from chat.",
+      observation: {
+        type: "tool_result",
+        status: "blocked",
+        summary: detail,
+        toolName: "data.mutate",
+        retryHint: "Use the row-delete preflight confirmation flow first. Do not execute permanent row deletion directly from chat."
+      }
+    };
+  }
+  throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+  if (normalizedAction.thought) {
+    setState((prev) => ({
+      cleaningRun: prev.cleaningRun ? appendCleaningRunStep(prev.cleaningRun, {
+        kind: getCleaningStepKind(normalizedAction),
+        thought: normalizedAction.thought,
+        toolName: normalizedAction.type === "tool_call" ? normalizedAction.toolName : "assistant_message",
+        status: "in_progress"
+      }) : prev.cleaningRun
+    }));
+    emitAgentEvent(store, {
+      phase: mapToolNameToPhase(actionLabel),
+      step: "thought",
+      status: "in_progress",
+      message: normalizedAction.thought,
+      detail: { action: actionLabel }
+    });
+  }
+  const validationContext = buildValidationContext(store, options2);
+  const registry2 = getResolvedToolRegistry(validationContext);
+  const validation = validateAction(normalizedAction, validationContext, registry2);
+  if (!validation.isValid) {
+    const decision = normalizedAction.type === "tool_call" ? registry2.decisions[normalizedAction.toolName] : void 0;
+    const descriptor = normalizedAction.type === "tool_call" ? registry2.descriptorMap.get(normalizedAction.toolName) : void 0;
+    const workspaceRuleViolation = getWorkspaceRuleViolation(validation.error);
+    const isValidationBlocked = isBlockedValidationError(validation.error) || isMissingThoughtValidationError(validation.error, validation.errors) || Boolean(decision && !decision.allowed);
+    const dataQueryRepairGuidance = normalizedAction.type === "tool_call" && normalizedAction.toolName === "data.query" && ((_a = validation.error) == null ? void 0 : _a.code) === "malformed_tool_payload" ? getDataQueryRepairGuidance(validation.errors, {
+      availableColumns: (_b = store.getState().columnProfiles) == null ? void 0 : _b.map((p) => p.name)
+    }) : null;
+    const dataMutateRepairGuidance = normalizedAction.type === "tool_call" && normalizedAction.toolName === "data.mutate" && ((_c = validation.error) == null ? void 0 : _c.code) === "malformed_tool_payload" ? getDataMutateRepairGuidance(validation.errors) : null;
+    const pivotMatrixRepairGuidance = normalizedAction.type === "tool_call" && normalizedAction.toolName === "analysis.pivot_matrix" && ((_d = validation.error) == null ? void 0 : _d.code) === "malformed_tool_payload" ? getPivotMatrixRepairGuidance(validation.errors) : null;
+    const validationRepairGuidance = dataQueryRepairGuidance ?? dataMutateRepairGuidance ?? pivotMatrixRepairGuidance;
+    const validationRetryHint = (validationRepairGuidance == null ? void 0 : validationRepairGuidance.repairHint) ?? validation.errors;
+    const validationDetail = validation.error ? {
+      error: validation.error,
+      ...validationRepairGuidance ? {
+        repairHint: validationRepairGuidance.repairHint,
+        repairHintCategory: validationRepairGuidance.repairHintCategory,
+        repairHintCategories: validationRepairGuidance.repairHintCategories
+      } : {}
+    } : void 0;
+    recordMonitorEvent(store, {
+      stage: isValidationBlocked ? "executor_blocked" : "executor_error",
+      action: normalizedAction,
+      isError: !isValidationBlocked,
+      detail: validation.errors,
+      phase: actionPhase
+    });
+    if (workspaceRuleViolation && normalizedAction.type === "tool_call") {
+      appendBlockedWorkspaceHistory({
+        action: normalizedAction,
+        store,
+        stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
+        category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
+        reason: validation.errors,
+        normalizedPath: workspaceRuleViolation.normalizedPath
+      });
+    }
+    store.getState().logAgentToolUsage({
+      tool: "tool_registry",
+      description: `Blocked action ${actionLabel}`,
+      stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
+      category: (decision == null ? void 0 : decision.category) ?? "unknown",
+      risk: (decision == null ? void 0 : decision.risk) ?? "unknown",
+      policyDecision: "blocked",
+      policyReason: (decision == null ? void 0 : decision.reason) ?? validation.errors,
+      detail: validation.error ? {
+        error: validation.error,
+        action: actionLabel,
+        allowedTools: registry2.allowedToolNames,
+        blockedTools: registry2.blockedTools.map((entry) => ({
+          toolName: entry.toolName,
+          source: entry.source,
+          reason: entry.reason,
+          overrideOrigin: entry.overrideOrigin
+        })),
+        stage: registry2.stage
+      } : {
+        message: validation.errors,
+        action: actionLabel,
+        stage: registry2.stage
+      }
+    });
+    if ((decision == null ? void 0 : decision.source) === "deny_override") {
+      console.log("[ChatDebug] Runtime tool override blocked action.", {
+        action: actionLabel,
+        toolName: normalizedAction.type === "tool_call" ? normalizedAction.toolName : "assistant_message",
+        overrideOrigin: decision.overrideOrigin ?? null,
+        allowedTools: registry2.allowedToolNames,
+        blockedTools: registry2.blockedTools.map((entry) => ({
+          toolName: entry.toolName,
+          source: entry.source,
+          overrideOrigin: entry.overrideOrigin ?? null
+        }))
+      });
+    }
+    return {
+      status: isValidationBlocked ? "blocked" : "error",
+      toolName: normalizedAction.type === "tool_call" ? normalizedAction.toolName : "assistant_message",
+      message: validation.errors,
+      shouldStop: false,
+      diagnostics: validation.error ? [validation.error] : void 0,
+      policyDecision: decision && !decision.allowed ? decision : void 0,
+      retryHint: validationRetryHint,
+      observation: {
+        type: "tool_result",
+        status: isValidationBlocked ? "blocked" : "error",
+        summary: validation.errors,
+        toolName: normalizedAction.type === "tool_call" ? normalizedAction.toolName : "assistant_message",
+        code: getValidationObservationCode(validation.error),
+        retryHint: validationRetryHint,
+        detail: validationDetail
+      }
+    };
+  }
+  recordMonitorEvent(store, { stage: "validated", action: normalizedAction, phase: actionPhase });
+  logToolUsage(normalizedAction, store, options2);
+  if (options2 == null ? void 0 : options2.dataMutatePolicy) {
+    const policyViolation = validateRestrictedDataMutateAction(normalizedAction, options2.dataMutatePolicy);
+    if (policyViolation) {
+      recordMonitorEvent(store, {
+        stage: "executor_blocked",
+        action: normalizedAction,
+        detail: policyViolation.message,
+        phase: actionPhase
+      });
+      return policyViolation;
+    }
+  }
+  if (normalizedAction.type === "assistant_message") {
+    recordMonitorEvent(store, { stage: "chat", action: normalizedAction, phase: actionPhase });
+    if (!(options2 == null ? void 0 : options2.deferAssistantMessageAppend)) {
+      handleChatAction(normalizedAction, store);
+    }
+    if (store.getState().cleaningRun) {
+      store.setState((prev) => {
+        var _a2;
+        return {
+          cleaningRun: updateCleaningRun(prev.cleaningRun, {
+            status: ((_a2 = prev.cleaningRun) == null ? void 0 : _a2.status) ?? "running"
+          })
+        };
+      });
+    }
+    recordSuccessMonitor(store, normalizedAction, options2);
+    return {
+      status: "success",
+      toolName: "assistant_message",
+      message: (options2 == null ? void 0 : options2.deferAssistantMessageAppend) ? "Assistant message prepared." : "Assistant message appended.",
+      shouldStop: false,
+      observation: {
+        type: "assistant_message",
+        status: "success",
+        summary: normalizedAction.message,
+        toolName: "assistant_message",
+        detail: {
+          message: normalizedAction.message,
+          deferred: Boolean(options2 == null ? void 0 : options2.deferAssistantMessageAppend)
+        }
+      }
+    };
+  }
+  try {
+    if (normalizedAction.toolName === "analysis.create_plan" && ((_e = normalizedAction.args) == null ? void 0 : _e.plan)) {
+      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+      recordMonitorEvent(store, { stage: "planner_start", action: normalizedAction, phase: actionPhase });
+      const rawPlan = normalizedAction.args.plan;
+      const preflightResult = validateCreatePlanPreflight({
+        plan: rawPlan,
+        state: store.getState()
+      });
+      if (preflightResult) {
+        recordMonitorEvent(store, {
+          stage: "executor_blocked",
+          action: normalizedAction,
+          detail: preflightResult.message,
+          phase: actionPhase
+        });
+        return preflightResult;
+      }
+      const adaptedPlan = adaptCreatePlanFromContext(rawPlan, store.getState());
+      const normalizedPlan = isSqlAnalysisPlanLike(adaptedPlan) ? adaptedPlan : preparePlan(adaptedPlan);
+      recordMonitorEvent(store, { stage: "planner_ready", action: normalizedAction, phase: actionPhase });
+      recordMonitorEvent(store, { stage: "executor_start", action: normalizedAction, phase: actionPhase });
+      const uiPlan = isSqlAnalysisPlanLike(normalizedPlan) ? mapSqlAnalysisPlanToAnalysisPlan(normalizedPlan) : normalizedPlan;
+      let result2;
+      try {
+        const createdCard = await executePlanAction(normalizedPlan, store, { throwOnSoftFailure: true });
+        result2 = buildCreatePlanExecutionResult(uiPlan, createdCard);
+      } catch (error2) {
+        if (isRuntimeAbortError(error2, options2 == null ? void 0 : options2.abortSignal)) {
+          throw error2;
+        }
+        if (isSqlAutoAnalysisError(error2) || isPlanExecutionSoftError(error2)) {
+          const failureCode = error2.code === "empty_result" || error2.code === "no_card_created" || error2.code === "duckdb_unavailable" ? error2.code : void 0;
+          result2 = buildCreatePlanExecutionResult(uiPlan, null, {
+            code: failureCode,
+            message: error2.message,
+            detail: error2.detail
+          });
+        } else {
+          throw error2;
+        }
+      }
+      if (result2.status === "success") {
+        recordSuccessMonitor(store, normalizedAction, options2);
+      } else {
+        recordMonitorEvent(store, {
+          stage: getExecutionMonitorStage(result2),
+          action: normalizedAction,
+          detail: result2.message,
+          isError: result2.status !== "blocked",
+          phase: actionPhase
+        });
+      }
+      return result2;
+    }
+    recordMonitorEvent(store, { stage: "executor_start", action: normalizedAction, phase: actionPhase });
+    throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
+    const result = await handleExecutorAction(normalizedAction, store, options2);
+    if (result.status === "success") {
+      recordSuccessMonitor(store, normalizedAction, options2);
+    } else {
+      recordMonitorEvent(store, {
+        stage: getExecutionMonitorStage(result),
+        action: normalizedAction,
+        detail: result.message,
+        isError: result.status !== "blocked",
+        phase: actionPhase
+      });
+    }
+    return result;
+  } catch (error2) {
+    if (isRuntimeAbortError(error2, options2 == null ? void 0 : options2.abortSignal)) {
+      throw error2;
+    }
+    const detail = error2 instanceof Error ? error2.message : String(error2);
+    const descriptor = registry2.descriptorMap.get(normalizedAction.toolName);
+    const decision = registry2.decisions[normalizedAction.toolName];
+    recordMonitorEvent(store, { stage: "executor_error", action: normalizedAction, detail, isError: true, phase: actionPhase });
+    store.getState().logAgentToolUsage({
+      tool: normalizedAction.toolName,
+      description: `Execution failed for ${normalizedAction.toolName}`,
+      stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
+      category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
+      risk: (descriptor == null ? void 0 : descriptor.risk) ?? "unknown",
+      policyDecision: (decision == null ? void 0 : decision.allowed) === false ? "blocked" : "allowed",
+      policyReason: (decision == null ? void 0 : decision.reason) ?? detail,
+      detail: {
+        error: detail,
+        risk: (descriptor == null ? void 0 : descriptor.risk) ?? "unknown",
+        category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
+        stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
+        policyDecision: (decision == null ? void 0 : decision.allowed) === false ? "blocked" : "allowed",
+        policyReason: (decision == null ? void 0 : decision.reason) ?? null
+      }
+    });
+    return {
+      status: "error",
+      toolName: normalizedAction.toolName,
+      message: detail,
+      shouldStop: false,
+      policyDecision: decision,
+      retryHint: detail,
+      observation: {
+        type: "tool_result",
+        status: "error",
+        summary: detail,
+        toolName: normalizedAction.toolName,
+        retryHint: detail
+      }
+    };
+  }
+};
+const actionHandler = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  handleAiAction
+}, Symbol.toStringTag, { value: "Module" }));
+const deriveLabelFromStepType = (type) => type.split("_").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+const STEP_LABEL_I18N_KEYS = {
+  observe_dataset: "analysis_trace_label_observe_dataset",
+  build_semantic_understanding: "analysis_trace_label_build_semantic_understanding",
+  screen_row_quality: "analysis_trace_label_screen_row_quality",
+  explore_data_with_sql: "analysis_trace_label_explore_data_with_sql",
+  propose_hypotheses: "analysis_trace_label_propose_hypotheses",
+  select_hypothesis: "analysis_trace_label_select_hypothesis",
+  plan_probe_query: "analysis_trace_label_plan_probe_query",
+  execute_probe_query: "analysis_trace_label_execute_probe_query",
+  evaluate_evidence: "analysis_trace_label_evaluate_evidence",
+  refine_hypothesis: "analysis_trace_label_refine_hypothesis",
+  dedupe_candidate: "analysis_trace_label_dedupe_candidate",
+  plan_presentation: "analysis_trace_label_plan_presentation",
+  emit_standard_card: "analysis_trace_label_emit_standard_card",
+  finalize_session: "analysis_trace_label_finalize_session",
+  stop_session: "analysis_trace_label_stop_session"
+};
+const STEP_WHYS_I18N_KEYS = {
+  observe_dataset: "analysis_trace_why_observe_dataset",
+  build_semantic_understanding: "analysis_trace_why_build_semantic_understanding",
+  screen_row_quality: "analysis_trace_why_screen_row_quality",
+  explore_data_with_sql: "analysis_trace_why_explore_data_with_sql",
+  propose_hypotheses: "analysis_trace_why_propose_hypotheses",
+  select_hypothesis: "analysis_trace_why_select_hypothesis",
+  plan_probe_query: "analysis_trace_why_plan_probe_query",
+  execute_probe_query: "analysis_trace_why_execute_probe_query",
+  evaluate_evidence: "analysis_trace_why_evaluate_evidence",
+  refine_hypothesis: "analysis_trace_why_refine_hypothesis",
+  dedupe_candidate: "analysis_trace_why_dedupe_candidate",
+  plan_presentation: "analysis_trace_why_plan_presentation",
+  emit_standard_card: "analysis_trace_why_emit_standard_card",
+  finalize_session: "analysis_trace_why_finalize_session",
+  stop_session: "analysis_trace_why_stop_session"
+};
+const buildVisibleAnalysisTraceEntry = (step) => ({
+  stepId: step.id,
+  stepIndex: step.index,
+  label: deriveLabelFromStepType(step.type),
+  labelI18n: step.labelI18n ?? {
+    key: STEP_LABEL_I18N_KEYS[step.type]
+  },
+  status: step.status,
+  summary: step.inputSummary,
+  summaryI18n: step.inputSummaryI18n,
+  whyThisStep: "",
+  whyI18n: step.whyI18n ?? {
+    key: STEP_WHYS_I18N_KEYS[step.type]
+  },
+  result: step.outputSummary,
+  resultI18n: step.outputSummaryI18n,
+  nextDecision: step.decision ?? null,
+  queryPreview: step.queryRef,
+  reasonCodes: step.reasonCodes,
+  hypothesisId: step.hypothesisId,
+  traceContract: step.traceContract ?? buildSurfaceTraceContract({
+    detail: {
+      stepType: step.type,
+      stepStatus: step.status,
+      hypothesisId: step.hypothesisId ?? null,
+      stage: step.type
+    },
+    reasonCode: step.reasonCodes[0] ?? step.type,
+    source: "analysis_runtime_trace"
+  })
+});
+const DATA_ANALYSIS_MAX_STEPS = DATA_ANALYSIS_MAX_STEPS$1;
+const DATA_ANALYSIS_MAX_HYPOTHESES = DATA_ANALYSIS_MAX_HYPOTHESES$1;
+const DATA_ANALYSIS_MAX_ACCEPTED_CARDS = DATA_ANALYSIS_MAX_ACCEPTED_CARDS$1;
+const DATA_ANALYSIS_FINALIZE_RESERVE_STEPS = DATA_ANALYSIS_FINALIZE_RESERVE_STEPS$1;
+const DATA_ANALYSIS_MIN_HYPOTHESIS_STEPS = DATA_ANALYSIS_MIN_HYPOTHESIS_STEPS$1;
+const DATA_ANALYSIS_MIN_TARGET_CARDS = DATA_ANALYSIS_MIN_TARGET_CARDS$1;
+const DATA_ANALYSIS_MAX_TOPIC_ROUNDS = DATA_ANALYSIS_MAX_TOPIC_ROUNDS$1;
+const getNextPendingHypothesis = (session) => session.hypotheses.filter((hypothesis) => hypothesis.status === "pending").sort((left, right) => right.priority - left.priority)[0] ?? null;
+const computeFinalSessionStatus = (session) => {
+  if (session.acceptedOutputs.length > 0) {
+    return "completed";
+  }
+  if (session.trace.length > 0 || session.rejectedOutputs.length > 0 || session.queryHistory.length > 0) {
+    return "degraded";
+  }
+  return "failed";
+};
+const getRemainingDataAnalysisSteps = (session) => Math.max(0, session.maxSteps - session.stepsUsed);
+const canStartNextHypothesis = (session) => getRemainingDataAnalysisSteps(session) >= DATA_ANALYSIS_MIN_HYPOTHESIS_STEPS + DATA_ANALYSIS_FINALIZE_RESERVE_STEPS;
+const shouldStopDataAnalysisSession = (session) => {
+  if (session.acceptedOutputs.length >= DATA_ANALYSIS_MAX_ACCEPTED_CARDS) {
+    return "accepted_card_limit_reached";
+  }
+  if (session.stepsUsed >= session.maxSteps - DATA_ANALYSIS_FINALIZE_RESERVE_STEPS) {
+    return "step_budget_exhausted";
+  }
+  const hasRemaining = session.hypotheses.some((hypothesis) => hypothesis.status === "pending" || hypothesis.status === "active");
+  if (!hasRemaining) {
+    return "all_hypotheses_exhausted";
+  }
+  return null;
+};
+const createDataAnalysisSessionState = (params) => ({
+  sessionId: params.sessionId,
+  runId: params.runId ?? createId("analysis-run"),
+  origin: params.origin,
+  status: "queued",
+  maxSteps: DATA_ANALYSIS_MAX_STEPS,
+  stepsUsed: 0,
+  currentStepId: null,
+  stopReason: null,
+  semanticUnderstanding: null,
+  analysisMode: "business",
+  analysisModeReason: null,
+  harnessSummary: null,
+  harnessCoverage: null,
+  analysisSteering: null,
+  researchBrief: null,
+  researchFindings: [],
+  cancellationRequestedAt: null,
+  hypotheses: [],
+  acceptedOutputs: [],
+  rejectedOutputs: [],
+  queryHistory: [],
+  trace: [],
+  summary: null
+});
+const appendDataAnalysisStep = (session, params) => {
+  var _a;
+  const step = {
+    id: createId("analysis-step"),
+    index: session.stepsUsed + 1,
+    type: params.type,
+    status: params.status,
+    inputSummary: params.inputSummary,
+    outputSummary: params.outputSummary,
+    inputSummaryI18n: params.inputSummaryI18n,
+    outputSummaryI18n: params.outputSummaryI18n,
+    labelI18n: params.labelI18n,
+    whyI18n: params.whyI18n,
+    decision: params.decision ?? null,
+    queryRef: params.queryRef ?? null,
+    hypothesisId: params.hypothesisId ?? null,
+    reasonCodes: params.reasonCodes ?? [],
+    traceContract: buildSurfaceTraceContract({
+      detail: {
+        stepType: params.type,
+        stepStatus: params.status,
+        hypothesisId: params.hypothesisId ?? null,
+        stage: params.type
+      },
+      reasonCode: ((_a = params.reasonCodes) == null ? void 0 : _a[0]) ?? params.type,
+      source: "analysis_runtime_step"
+    }),
+    startedAt: /* @__PURE__ */ new Date(),
+    endedAt: /* @__PURE__ */ new Date()
+  };
+  return {
+    session: {
+      ...session,
+      status: session.status === "queued" ? "running" : session.status,
+      stepsUsed: session.stepsUsed + 1,
+      currentStepId: step.id,
+      trace: [...session.trace, buildVisibleAnalysisTraceEntry(step)]
+    },
+    step
+  };
+};
+const setDataAnalysisHypotheses = (session, hypotheses) => ({
+  ...session,
+  hypotheses
+});
+const updateDataAnalysisHypothesis = (session, hypothesisId, updater) => ({
+  ...session,
+  hypotheses: session.hypotheses.map(
+    (hypothesis) => hypothesis.id === hypothesisId ? updater(hypothesis) : hypothesis
+  )
+});
+const appendAcceptedAnalysisOutput = (session, output2) => ({
+  ...session,
+  acceptedOutputs: [...session.acceptedOutputs, output2]
+});
+const appendRejectedAnalysisOutput = (session, output2) => ({
+  ...session,
+  rejectedOutputs: [...session.rejectedOutputs, output2]
+});
+const appendAnalysisQueryHistory = (session, entry) => ({
+  ...session,
+  queryHistory: [...session.queryHistory, {
+    ...entry,
+    traceContract: entry.traceContract ?? buildSurfaceTraceContract({
+      detail: {
+        queryMode: entry.queryMode,
+        title: entry.title,
+        hypothesisId: entry.hypothesisId ?? null,
+        stage: "query_history"
+      },
+      reasonCode: entry.querySignature ? "query_recorded" : "query_planned",
+      source: "analysis_query_history"
+    })
+  }]
+});
+const finalizeDataAnalysisSession = (session, status, stopReason) => ({
+  ...session,
+  status,
+  stopReason,
+  currentStepId: null,
+  summary: {
+    acceptedCardCount: session.acceptedOutputs.length,
+    rejectedHypothesisCount: session.rejectedOutputs.length,
+    exhaustedHypothesisCount: session.hypotheses.filter((hypothesis) => hypothesis.status === "exhausted").length,
+    traceCount: session.trace.length
+  }
+});
+const DUCKDB_STALE_ASSET_HINT = "If this happened right after a rebuild, refresh the page or restart preview so the browser loads the latest DuckDB worker asset.";
+const computeCardYieldMetric = (cardsProduced, topicsAttempted, cardsFailed) => {
+  const yieldRate = topicsAttempted > 0 ? cardsProduced / topicsAttempted : 0;
+  return {
+    cardsProduced,
+    topicsAttempted,
+    cardsFailed,
+    yieldRate,
+    /** True when more than half of attempted hypotheses produced no card. */
+    shouldFlagLow: topicsAttempted > 0 && yieldRate < 0.5
+  };
+};
+const explainDuckDbUnavailableReason = (fallbackReason) => {
+  const reason = fallbackReason || "Dataset could not be loaded into DuckDB.";
+  if (/duckdb worker crashed|mime type|corrupted_content|failed to fetch|worker task .* timed out/i.test(reason)) {
+    return `${reason} ${DUCKDB_STALE_ASSET_HINT}`;
+  }
+  return reason;
+};
+const syncSessionState = (store, session, isActive = true) => {
+  store.setState((state2) => ({
+    activeAnalysisSession: isActive ? session : null,
+    latestAnalysisSession: session,
+    visibleAnalysisTrace: session.trace,
+    analysisSessionHistory: isActive ? state2.analysisSessionHistory ?? [] : [
+      ...(state2.analysisSessionHistory ?? []).filter((entry) => entry.runId !== session.runId),
+      session
+    ].slice(-20)
+  }));
+};
+const SEMANTIC_DIAGNOSTIC_REASON = "Semantic screening did not identify a safe business grain for trusted narrative analysis.";
+const buildHarnessCoverageState = (coverageMetric) => {
+  if (!coverageMetric) {
+    return null;
+  }
+  const forcedDiagnostic = coverageMetric.attempted > 0 && coverageMetric.successRate < 0.5;
+  return {
+    ...coverageMetric,
+    forcedDiagnostic,
+    reason: forcedDiagnostic ? `Harness coverage degraded: only ${coverageMetric.succeeded}/${coverageMetric.attempted} phases succeeded (${Math.round(coverageMetric.successRate * 100)}%).` : null
+  };
+};
+const resolveAnalysisMode = (params) => {
+  var _a;
+  if ((_a = params.harnessCoverage) == null ? void 0 : _a.forcedDiagnostic) {
+    return {
+      analysisMode: "diagnostic",
+      analysisModeReason: params.harnessCoverage.reason,
+      effectiveDiagnosticMode: true
+    };
+  }
+  if (params.semanticDiagnosticMode) {
+    return {
+      analysisMode: "diagnostic",
+      analysisModeReason: SEMANTIC_DIAGNOSTIC_REASON,
+      effectiveDiagnosticMode: true
+    };
+  }
+  return {
+    analysisMode: "business",
+    analysisModeReason: null,
+    effectiveDiagnosticMode: false
+  };
+};
+const resolveTopicRoundLimit = (harnessSummary) => {
+  if (!harnessSummary) {
+    return DATA_ANALYSIS_MAX_TOPIC_ROUNDS;
+  }
+  if (harnessSummary.signalConfidence === "low") {
+    return 1;
+  }
+  if (harnessSummary.reportShapeClass === "hierarchical_statement" || harnessSummary.reportShapeClass === "wide_pivot") {
+    return Math.min(2, DATA_ANALYSIS_MAX_TOPIC_ROUNDS);
+  }
+  return DATA_ANALYSIS_MAX_TOPIC_ROUNDS;
+};
+const resolveSuggestedPivotsForDataset = (data2, findings) => {
+  var _a;
+  return ((_a = data2.backing) == null ? void 0 : _a.readOnly) ? [] : (findings == null ? void 0 : findings.runtimeDirectives.suggestedPivots) ?? [];
+};
+const requireDuckDbBinding = async (store, dataForAnalysis) => {
+  store.setState((state2) => ({
+    duckDbSessionStatus: {
+      ...state2.duckDbSessionStatus,
+      status: "binding",
+      fallbackReason: null
+    }
+  }));
+  const sync = await ensureDuckDbSessionSync(store, dataForAnalysis, createWorkerDiagnosticsTelemetryReporter(store));
+  if (sync.engine !== "duckdb" || !sync.tableName || !sync.loadVersion) {
+    throw new SqlAutoAnalysisError(
+      "duckdb_unavailable",
+      `Automatic analysis requires DuckDB. ${explainDuckDbUnavailableReason(sync.fallbackReason)}`,
+      { analysisEngine: "duckdb", duckDbRequired: true }
+    );
+  }
+  return {
+    tableName: sync.tableName,
+    loadVersion: sync.loadVersion
+  };
+};
+const buildSessionTraceRecorder = (store, getSession, setSession, options2) => (record) => {
+  var _a, _b;
+  const session = getSession();
+  if (session.stepsUsed >= session.maxSteps - DATA_ANALYSIS_FINALIZE_RESERVE_STEPS) {
+    return "";
+  }
+  const { session: nextSession, step } = appendDataAnalysisStep(session, {
+    type: record.type,
+    status: record.status,
+    inputSummary: record.inputSummary,
+    outputSummary: record.outputSummary,
+    inputSummaryI18n: record.inputSummaryI18n,
+    outputSummaryI18n: record.outputSummaryI18n,
+    labelI18n: record.labelI18n,
+    whyI18n: record.whyI18n,
+    decision: record.decision,
+    queryRef: record.queryRef ?? null,
+    hypothesisId: record.hypothesisId ?? null,
+    reasonCodes: record.reasonCodes ?? []
+  });
+  let updatedSession = nextSession;
+  if (record.querySignature && record.semanticSignature) {
+    updatedSession = appendAnalysisQueryHistory(updatedSession, {
+      stepId: step.id,
+      hypothesisId: record.hypothesisId ?? null,
+      title: record.queryTitle ?? step.outputSummary,
+      queryMode: record.queryMode ?? "aggregate",
+      sqlPreview: record.queryRef ?? null,
+      querySignature: record.querySignature,
+      semanticSignature: record.semanticSignature
+    });
+  }
+  setSession(updatedSession);
+  if (!(options2 == null ? void 0 : options2.suppressSync)) {
+    syncSessionState(store, updatedSession, true);
+  }
+  (_b = (_a = store.getState()).logTelemetryEvent) == null ? void 0 : _b.call(_a, {
+    stage: "planner_ready",
+    responseType: "analysis_step",
+    detail: `${record.type}:${record.status}`,
+    meta: {
+      runId: updatedSession.runId,
+      stepId: step.id,
+      stepType: record.type,
+      hypothesisId: record.hypothesisId ?? null,
+      decision: record.decision ?? null,
+      reasonCodes: record.reasonCodes ?? []
+    },
+    runId: updatedSession.runId,
+    stepId: step.id
+  });
+  return step.id;
+};
+const getQueryableColumnProfiles = (data2, profiles, rawData) => {
+  var _a, _b;
+  if (((_a = data2.backing) == null ? void 0 : _a.mode) !== "duckdb_file") return profiles;
+  const physicalColumns = ((_b = data2.backing.columnNames) == null ? void 0 : _b.length) ? data2.backing.columnNames : Object.keys((rawData == null ? void 0 : rawData.data[0]) ?? {});
+  if (physicalColumns.length === 0) return [];
+  const available = new Set(physicalColumns.map((column) => column.trim().toLowerCase()));
+  return profiles.filter((profile) => available.has(profile.name.trim().toLowerCase()));
+};
+const applyInvestigationSteering = (datasetContext, semanticUnderstanding, investigationFindings) => {
+  var _a;
+  if (!investigationFindings) {
+    datasetContext.analysisSteering = null;
+    return null;
+  }
+  const d = investigationFindings.runtimeDirectives;
+  const preferredDimensions = d.preferredDimensions ?? d.preferGroupBy ?? [];
+  const blockedDimensions = d.blockedDimensions ?? d.blockGroupBy ?? [];
+  const preferredMetrics = d.preferredMetrics ?? [];
+  const blockedMetrics = d.blockedMetrics ?? [];
+  if ((((_a = d.blockGroupBy) == null ? void 0 : _a.length) ?? 0) > 0) {
+    const existingBlocked = new Set(datasetContext.blockedDimensions ?? []);
+    d.blockGroupBy.forEach((dim) => existingBlocked.add(dim));
+    datasetContext.blockedDimensions = Array.from(existingBlocked);
+    d.blockGroupBy.forEach((dim) => {
+      if (!semanticUnderstanding.blockedDimensions.includes(dim)) {
+        semanticUnderstanding.blockedDimensions.push(dim);
+      }
+    });
+  }
+  if (preferredDimensions.length > 0) {
+    const existing = new Set(datasetContext.preferredGrainColumns ?? []);
+    preferredDimensions.forEach((dim) => existing.add(dim));
+    datasetContext.preferredGrainColumns = Array.from(existing);
+  }
+  if (preferredMetrics.length > 0) {
+    const existing = new Set(datasetContext.preferredMetricTerms ?? []);
+    preferredMetrics.forEach((metric) => existing.add(metric));
+    datasetContext.preferredMetricTerms = Array.from(existing);
+  }
+  if (blockedMetrics.length > 0) {
+    const existing = new Set(datasetContext.avoidMetricColumns ?? []);
+    blockedMetrics.forEach((metric) => existing.add(metric));
+    datasetContext.avoidMetricColumns = Array.from(existing);
+  }
+  const avoidedDimensions = new Set(datasetContext.avoidGrainColumns ?? []);
+  d.excludeFromAggregation.forEach((desc2) => avoidedDimensions.add(desc2));
+  d.softDeprioritizeGroupBy.forEach((dim) => avoidedDimensions.add(dim));
+  investigationFindings.missingDataPatterns.filter((p) => p.severity === "severe" && p.nullRate + p.blankRate >= 0.5).forEach((pattern) => avoidedDimensions.add(pattern.column));
+  investigationFindings.dimensionCompleteness.filter((dimension) => dimension.deprioritize).forEach((dimension) => avoidedDimensions.add(dimension.column));
+  datasetContext.avoidGrainColumns = Array.from(avoidedDimensions);
+  if (investigationFindings.suggestedDerivedTopics.length > 0) {
+    datasetContext.suggestedDerivedTopics = investigationFindings.suggestedDerivedTopics;
+  }
+  if (investigationFindings.metricRelationships.length > 0) {
+    const terms = /* @__PURE__ */ new Set();
+    investigationFindings.metricRelationships.forEach((r) => {
+      terms.add(r.left);
+      terms.add(r.right);
+      terms.add(r.result);
+    });
+    datasetContext.metricRelationshipTerms = Array.from(terms);
+  }
+  const pivotOnly = investigationFindings.crossDimensionCardinality.filter((c) => c.recommendPivotOnly).map((c) => ({ dimA: c.dimA, dimB: c.dimB, product: c.product }));
+  if (pivotOnly.length > 0) {
+    datasetContext.pivotOnlyCombinations = pivotOnly;
+  }
+  const steering = investigationFindings.analysisSteering ? cloneAnalysisSteering(investigationFindings.analysisSteering) : buildCanonicalAnalysisSteering({
+    semanticUnderstanding,
+    reportShapeKind: datasetContext.reportShapeKind ?? null,
+    base: {
+      preferGroupBy: d.preferGroupBy,
+      blockGroupBy: d.blockGroupBy,
+      softDeprioritizeGroupBy: d.softDeprioritizeGroupBy,
+      preferredDimensions,
+      blockedDimensions,
+      preferredMetrics,
+      blockedMetrics,
+      columnRoles: d.columnRoles ?? {},
+      excludeFromAggregation: d.excludeFromAggregation,
+      hierarchyColumn: d.hierarchyColumn,
+      parentDescriptions: investigationFindings.parentDescriptions,
+      duplicateDescriptions: investigationFindings.duplicateLabels.map((pair) => pair.descriptionB),
+      detailRowColumn: d.detailRowColumn,
+      detailRowValue: d.detailRowValue,
+      detailRowFilter: d.detailRowFilter ?? null,
+      promotedChartType: d.promotedChartType,
+      blockedChartTypes: d.blockedChartTypes,
+      suggestedHideOthers: d.suggestedHideOthers,
+      recommendedTopN: d.recommendedTopN,
+      pivotOnlyCombinations: pivotOnly,
+      widePivotShape: d.widePivotShape,
+      periodColumnFamilies: d.periodColumnFamilies,
+      formattedNumberColumns: d.formattedNumberColumns,
+      pairingSignals: d.pairingSignals,
+      duplicateSignatureHints: d.duplicateSignatureHints ?? [],
+      reshapeDecision: d.reshapeDecision ?? null,
+      reshapeDecisionReasons: d.reshapeDecisionReasons ?? [],
+      inferredColumnLabels: d.inferredColumnLabels
+    }
+  });
+  datasetContext.analysisSteering = cloneAnalysisSteering(steering);
+  return steering;
+};
+const refreshAnalysisContext = async (store, origin, inputData, addProgress) => {
+  var _a, _b;
+  await ((_b = (_a = store.getState()).ensureDatasetSemanticSnapshot) == null ? void 0 : _b.call(_a, inputData));
+  const {
+    datasetSemanticSnapshot,
+    semanticDatasetVersion,
+    columnProfiles: storedColumnProfiles,
+    reportContextResolution,
+    dataPreparationPlan
+  } = store.getState();
+  const bindingTarget = resolveDatasetBindingTarget({
+    mode: "analysis",
+    csvData: inputData,
+    snapshot: datasetSemanticSnapshot,
+    semanticDatasetVersion
+  });
+  const semanticDataForAnalysis = (bindingTarget == null ? void 0 : bindingTarget.dataset) ?? inputData;
+  const columnProfiles = getQueryableColumnProfiles(
+    semanticDataForAnalysis,
+    storedColumnProfiles,
+    store.getState().rawCsvData
+  );
+  const hiddenSemanticRows = getSemanticHiddenRowCount(
+    datasetSemanticSnapshot,
+    semanticDatasetVersion,
+    inputData
+  );
+  if (hiddenSemanticRows > 0) {
+    addProgress == null ? void 0 : addProgress(`AI semantic analysis view excluded ${hiddenSemanticRows} non-detail row(s) from automatic analysis.`, "system");
+  }
+  const binding = await requireDuckDbBinding(store, semanticDataForAnalysis);
+  const datasetContext = buildDatasetContext(
+    semanticDataForAnalysis,
+    columnProfiles,
+    reportContextResolution,
+    datasetSemanticSnapshot,
+    semanticDatasetVersion,
+    dataPreparationPlan ?? null,
+    store.getState().rawCsvData ?? inputData
+  );
+  const semanticUnderstanding = buildRuntimeSemanticUnderstanding({
+    columns: columnProfiles,
+    analysisBrief: buildAnalysisIntentBrief({
+      columns: columnProfiles,
+      csvData: semanticDataForAnalysis,
+      dataPreparationPlan: dataPreparationPlan ?? null,
+      datasetSemanticSnapshot,
+      semanticDatasetVersion
+    }),
+    reportContextResolution,
+    datasetSemanticSnapshot
+  });
+  const qualityGovernance = origin === "auto_analysis" ? analyzeDatasetQualityGovernance(
+    columnProfiles,
+    semanticDataForAnalysis,
+    datasetContext
+  ) : null;
+  if (qualityGovernance) {
+    const avoided = new Set(datasetContext.avoidGrainColumns ?? []);
+    qualityGovernance.blockedDimensions.forEach((column) => avoided.add(column));
+    qualityGovernance.avoidDimensions.forEach((column) => avoided.add(column));
+    datasetContext.avoidGrainColumns = Array.from(avoided);
+    datasetContext.qualityBlockedDimensions = [...qualityGovernance.blockedDimensions];
+    const avoidedMetrics = new Set(datasetContext.avoidMetricColumns ?? []);
+    qualityGovernance.avoidMetrics.forEach((column) => avoidedMetrics.add(column));
+    datasetContext.avoidMetricColumns = Array.from(avoidedMetrics);
+    datasetContext.qualityHintsSummary = qualityGovernance.qualityHintsSummary || void 0;
+  }
+  return {
+    inputData,
+    semanticDataForAnalysis,
+    binding,
+    columnProfiles,
+    datasetContext,
+    semanticUnderstanding,
+    qualityGovernance,
+    datasetSemanticSnapshot,
+    semanticDatasetVersion
+  };
+};
+const READ_SKILL_TOOL_NAME = "read_skill";
+const buildSkillsPromptSection = (skills) => {
+  const listing = formatSkillsForSystemPrompt([...skills]);
+  if (!listing) return "";
+  return [
+    listing,
+    `When a task matches a skill description, call ${READ_SKILL_TOOL_NAME} with the skill name before acting, then follow it.`,
+    "Skills are guidance for how to analyse; they never override the data, the user request or app safety rules."
+  ].join("\n");
+};
+const PI_MAX_SKILL_READS_PER_TURN = 2;
+const createPiSkillTool = (store, options2 = {}) => {
+  const maxReads = options2.maxReads ?? PI_MAX_SKILL_READS_PER_TURN;
+  let reads = 0;
+  return {
+    name: READ_SKILL_TOOL_NAME,
+    label: "Read skill",
+    description: "Load the full instructions of one skill listed in <available_skills>. Use it when the task matches that skill.",
+    parameters: _Object_({
+      name: String$1({ description: "The skill name exactly as listed in <available_skills>." })
+    }),
+    executionMode: "sequential",
+    replay: "safe",
+    execute: async (_toolCallId, args) => {
+      const requested = typeof (args == null ? void 0 : args.name) === "string" ? args.name : "";
+      if (reads >= maxReads) {
+        throw new Error(`The limit of ${maxReads} skill reads per request was reached. Continue with what you have loaded.`);
+      }
+      reads += 1;
+      const skills = resolveAvailableSkills(store.getState().workspaceFiles).skills.filter((entry) => !entry.disableModelInvocation);
+      const skill = findSkillByName(skills, requested);
+      if (!skill) {
+        const available = skills.map((entry) => entry.name);
+        throw new Error(`Unknown skill "${requested}". Available skills: ${available.join(", ") || "none"}.`);
+      }
+      return {
+        details: void 0,
+        content: [{ type: "text", text: `<skill name="${skill.name}">
+${skill.content}
+</skill>` }]
+      };
+    }
+  };
+};
+const PI_MAX_TOOL_CALLS_PER_TURN = 3;
+const MAX_TOOL_RESULT_CHARS = 6e3;
+const isCardCreatingTool = (manifest2) => {
+  var _a;
+  return manifest2.name === "analysis.create_plan" || ((_a = manifest2.capabilities) == null ? void 0 : _a.piFollowUpCardCreation) === true;
+};
+const createPiAppTools = (store, datasetVersion, options2 = {}) => {
+  let calls = 0;
+  const maxToolCalls = options2.maxToolCalls ?? PI_MAX_TOOL_CALLS_PER_TURN;
+  const state2 = store.getState();
+  const dataset = getPreferredAnalysisDataset(state2);
+  const columnNames = dataset ? getQueryableColumnProfiles(dataset, state2.columnProfiles ?? [], state2.rawCsvData).map((profile) => profile.name) : [];
+  const manifests = buildBuiltinToolRegistry(columnNames).manifests.filter((manifest2) => {
+    var _a, _b, _c, _d;
+    return manifest2.risk === "low" && ((_a = manifest2.capabilities) == null ? void 0 : _a.readOnly) === true && ((_b = manifest2.capabilities) == null ? void 0 : _b.piFollowUpReadOnly) === true || options2.allowCardCreation && (manifest2.name === "analysis.create_plan" || ((_c = manifest2.capabilities) == null ? void 0 : _c.piFollowUpCardCreation) === true) || manifest2.name === "data.mutate" && ((_d = manifest2.capabilities) == null ? void 0 : _d.piFollowUpMutation) === true;
+  });
+  const manifestTools = manifests.map((manifest2) => {
+    var _a;
+    return {
+      name: manifest2.name.replace(/[^a-zA-Z0-9_-]/g, "_"),
+      label: manifest2.name,
+      description: [manifest2.description, ...manifest2.promptHints ?? []].join(" ").slice(0, 4e3),
+      parameters: Unsafe(manifest2.inputSchema),
+      executionMode: "sequential",
+      replay: ((_a = manifest2.capabilities) == null ? void 0 : _a.mutatesState) || isCardCreatingTool(manifest2) ? "never" : "safe",
+      execute: async (_toolCallId, args, signal) => {
+        var _a2, _b, _c, _d;
+        if ((_a2 = manifest2.capabilities) == null ? void 0 : _a2.mutatesState) {
+          throw new Error("This mutation requires app approval before execution.");
+        }
+        if (getCurrentAnalysisDatasetVersion(store.getState()) !== datasetVersion) {
+          throw new Error("The dataset changed during this turn. Start a new request.");
+        }
+        if (calls >= maxToolCalls) {
+          throw new Error(`The limit of ${maxToolCalls} app tools was reached.`);
+        }
+        calls += 1;
+        const result = await handleAiAction({
+          type: "tool_call",
+          thought: `Execute ${manifest2.name} for the current request.`,
+          toolName: manifest2.name,
+          args
+        }, store, {
+          toolStage: "analysis",
+          abortSignal: signal,
+          requireRowDeleteConfirmation: true
+        });
+        if (isCardCreatingTool(manifest2) && result.status === "success") {
+          const cardId = ((_b = result.artifacts) == null ? void 0 : _b.createdCardId) ?? ((_c = result.artifacts) == null ? void 0 : _c.cardId);
+          if (typeof cardId === "string" && store.getState().analysisCards.some((card) => card.id === cardId)) {
+            (_d = options2.onCardCreated) == null ? void 0 : _d.call(options2, cardId);
+          }
+        }
+        const payload = JSON.stringify({
+          status: result.status,
+          message: result.message,
+          observation: result.observation,
+          artifacts: result.artifacts,
+          retryHint: result.retryHint
+        }).slice(0, MAX_TOOL_RESULT_CHARS);
+        if (result.status === "error") throw new Error(payload);
+        return { details: void 0, content: [{ type: "text", text: payload }] };
+      }
+    };
+  });
+  return options2.includeSkills === false ? manifestTools : [...manifestTools, createPiSkillTool(store)];
+};
+const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-47H64udl.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
+const values$1 = {
+  "google-generative-ai": /* @__PURE__ */ JSON.parse('{"deep-research-max-preview-04-2026":{"id":"deep-research-max-preview-04-2026","name":"Deep Research Max Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"deep-research-preview-04-2026":{"id":"deep-research-preview-04-2026","name":"Deep Research Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-computer-use-preview-10-2025":{"id":"gemini-2.5-computer-use-preview-10-2025","name":"Gemini 2.5 Computer Use Preview 10-2025","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash":{"id":"gemini-2.5-flash","name":"Gemini 2.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash-lite":{"id":"gemini-2.5-flash-lite","name":"Gemini 2.5 Flash-Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.01,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-pro":{"id":"gemini-2.5-pro","name":"Gemini 2.5 Pro","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3-flash-preview":{"id":"gemini-3-flash-preview","name":"Gemini 3 Flash Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.5,"output":3,"cacheRead":0.05,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite":{"id":"gemini-3.1-flash-lite","name":"Gemini 3.1 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-image":{"id":"gemini-3.1-flash-lite-image","name":"Nano Banana 2 Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":null,"medium":null,"high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":65536,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-preview":{"id":"gemini-3.1-flash-lite-preview","name":"Gemini 3.1 Flash Lite Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-live-preview":{"id":"gemini-3.1-flash-live-preview","name":"Gemini 3.1 Flash Live Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview":{"id":"gemini-3.1-pro-preview","name":"Gemini 3.1 Pro Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview-customtools":{"id":"gemini-3.1-pro-preview-customtools","name":"Gemini 3.1 Pro Preview Custom Tools","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash":{"id":"gemini-3.5-flash","name":"Gemini 3.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash-lite":{"id":"gemini-3.5-flash-lite","name":"Gemini 3.5 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.6-flash":{"id":"gemini-3.6-flash","name":"Gemini 3.6 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.7-flash":{"id":"gemini-3.7-flash","name":"Gemini 3.7 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.8-flash":{"id":"gemini-3.8-flash","name":"Gemini 3.8 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-latest":{"id":"gemini-flash-latest","name":"Gemini Flash Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-lite-latest":{"id":"gemini-flash-lite-latest","name":"Gemini Flash-Lite Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-26b-a4b-it":{"id":"gemma-4-26b-a4b-it","name":"Gemma 4 26B A4B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-31b-it":{"id":"gemma-4-31b-it","name":"Gemma 4 31B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
+};
+function flattenModelCatalog(_provider, groups) {
+  return Object.assign({}, ...Object.values(groups));
+}
+const GOOGLE_MODELS = flattenModelCatalog("google", values$1);
+function googleProvider() {
+  return createProvider({
+    id: "google",
+    name: "Google",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    auth: { apiKey: envApiKeyAuth("Gemini API key", ["GEMINI_API_KEY"]) },
+    models: Object.values(GOOGLE_MODELS),
+    api: googleGenerativeAIApi()
+  });
+}
+const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-rgGpcASS.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
+const values = {
+  "openai-responses": /* @__PURE__ */ JSON.parse('{"gpt-4":{"id":"gpt-4","name":"GPT-4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text"],"cost":{"input":30,"output":60,"cacheRead":0,"cacheWrite":0},"contextWindow":8192,"maxTokens":8192,"compat":{"supportsStrictMode":true}},"gpt-4-turbo":{"id":"gpt-4-turbo","name":"GPT-4 Turbo","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":10,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1":{"id":"gpt-4.1","name":"GPT-4.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-mini":{"id":"gpt-4.1-mini","name":"GPT-4.1 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.4,"output":1.6,"cacheRead":0.1,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-nano":{"id":"gpt-4.1-nano","name":"GPT-4.1 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o":{"id":"gpt-4o","name":"GPT-4o","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-05-13":{"id":"gpt-4o-2024-05-13","name":"GPT-4o (2024-05-13)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":5,"output":15,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-08-06":{"id":"gpt-4o-2024-08-06","name":"GPT-4o (2024-08-06)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-11-20":{"id":"gpt-4o-2024-11-20","name":"GPT-4o (2024-11-20)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.15,"output":0.6,"cacheRead":0.075,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5":{"id":"gpt-5","name":"GPT-5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-chat-latest":{"id":"gpt-5-chat-latest","name":"GPT-5 Chat Latest","api":"openai-responses","baseUrl":"https://api.openai.com/v1","provider":"openai","reasoning":false,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-mini":{"id":"gpt-5-mini","name":"GPT-5 Mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.25,"output":2,"cacheRead":0.025,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-nano":{"id":"gpt-5-nano","name":"GPT-5 Nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.05,"output":0.4,"cacheRead":0.005,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-pro":{"id":"gpt-5-pro","name":"GPT-5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":120,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":null,"high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.1":{"id":"gpt-5.1","name":"GPT-5.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2":{"id":"gpt-5.2","name":"GPT-5.2","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-chat-latest":{"id":"gpt-5.2-chat-latest","name":"GPT-5.2 Chat","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":null,"xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-pro":{"id":"gpt-5.2-pro","name":"GPT-5.2 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":21,"output":168,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-chat-latest":{"id":"gpt-5.3-chat-latest","name":"GPT-5.3 Chat (latest)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"xhigh":"xhigh"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex":{"id":"gpt-5.3-codex","name":"GPT-5.3 Codex","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex-spark":{"id":"gpt-5.3-codex-spark","name":"GPT-5.3 Codex Spark","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4":{"id":"gpt-5.4","name":"GPT-5.4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2.5,"output":15,"cacheRead":0.25,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":5,"output":22.5,"cacheRead":0.5,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-mini":{"id":"gpt-5.4-mini","name":"GPT-5.4 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0.075,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-nano":{"id":"gpt-5.4-nano","name":"GPT-5.4 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.25,"cacheRead":0.02,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-pro":{"id":"gpt-5.4-pro","name":"GPT-5.4 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5":{"id":"gpt-5.5","name":"GPT-5.5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":5,"output":30,"cacheRead":0.5,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":10,"output":45,"cacheRead":1,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5-pro":{"id":"gpt-5.5-pro","name":"GPT-5.5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-luna":{"id":"gpt-5.6-luna","name":"GPT-5.6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.2,"cacheRead":0.02,"cacheWrite":0.25,"tiers":[{"inputTokensAbove":272000,"input":0.4,"output":1.8,"cacheRead":0.04,"cacheWrite":0.5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-sol":{"id":"gpt-5.6-sol","name":"GPT-5.6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":20,"cacheRead":0.4,"cacheWrite":5,"tiers":[{"inputTokensAbove":272000,"input":8,"output":30,"cacheRead":0.8,"cacheWrite":10}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-terra":{"id":"gpt-5.6-terra","name":"GPT-5.6 Terra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":18,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-astra":{"id":"gpt-6-astra","name":"GPT-6 Astra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":10,"output":50,"cacheRead":1,"cacheWrite":12.5,"tiers":[{"inputTokensAbove":272000,"input":20,"output":75,"cacheRead":2,"cacheWrite":25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-luna":{"id":"gpt-6-luna","name":"GPT-6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"inputTokensAbove":272000,"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-sol":{"id":"gpt-6-sol","name":"GPT-6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":10,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":15,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-realtime-2.1":{"id":"gpt-realtime-2.1","name":"GPT-Realtime-2.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":24,"cacheRead":0.4,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1":{"id":"o1","name":"o1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":60,"cacheRead":7.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1-pro":{"id":"o1-pro","name":"o1-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":150,"output":600,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3":{"id":"o3","name":"o3","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3-mini":{"id":"o3-mini","name":"o3-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.55,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true}},"o3-pro":{"id":"o3-pro","name":"o3-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":20,"output":80,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o4-mini":{"id":"o4-mini","name":"o4-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.275,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
+};
+const OPENAI_MODELS = flattenModelCatalog("openai", values);
+function openaiProvider() {
+  return createProvider({
+    id: "openai",
+    name: "OpenAI",
+    baseUrl: "https://api.openai.com/v1",
+    auth: { apiKey: envApiKeyAuth("OpenAI API key", ["OPENAI_API_KEY"]) },
+    models: Object.values(OPENAI_MODELS),
+    api: openAIResponsesApi()
+  });
+}
+const estimateVisibleTokens = (value2) => {
+  const serialized = JSON.stringify(value2);
+  let nonAsciiUnits = 0;
+  for (let index2 = 0; index2 < serialized.length; index2 += 1) {
+    if (serialized.charCodeAt(index2) > 127) nonAsciiUnits += 1;
+  }
+  return Math.ceil((serialized.length - nonAsciiUnits) / 3 + nonAsciiUnits * 2);
+};
+const projectedTokens = (messages, hasSummary) => {
+  const visibleTokens = estimateVisibleTokens(messages);
+  return hasSummary ? visibleTokens : Math.max(visibleTokens, estimateContextTokens(messages).tokens);
+};
+const createPiContextCompactor = (contextWindow, summarize, onDegraded) => {
+  if (!Number.isFinite(contextWindow) || contextWindow <= 0) {
+    throw new Error("Pi requires a known context window for automatic compaction.");
+  }
+  const triggerTokens = Math.floor(contextWindow * PI_CONTEXT_COMPACTION_TRIGGER_RATIO);
+  let summary = "";
+  let summarizedThrough = 1;
+  let summaryTimestamp = 0;
+  let retryAboveTokens = 0;
+  const retryGrowthTokens = Math.floor(contextWindow * 0.05);
+  const degrade = (reason, error2, estimatedTokens) => {
+    retryAboveTokens = estimatedTokens + retryGrowthTokens;
+    try {
+      onDegraded == null ? void 0 : onDegraded({ reason, error: error2, estimatedTokens });
+    } catch {
+    }
+  };
+  return async (messages, signal) => {
+    var _a;
+    if (((_a = messages[0]) == null ? void 0 : _a.role) !== "system") return messages;
+    const summaryMessage = () => ({
+      role: "user",
+      content: [{ type: "text", text: `Earlier conversation summary:
+${summary}` }],
+      timestamp: summaryTimestamp
+    });
+    const projected = [
+      messages[0],
+      ...summary ? [summaryMessage()] : [],
+      ...messages.slice(summarizedThrough)
+    ];
+    const estimated = projectedTokens(projected, Boolean(summary));
+    if (estimated < triggerTokens || estimated <= retryAboveTokens) return projected;
+    let cut = projected.length;
+    let recentTokens = 0;
+    while (cut > 1 && recentTokens < PI_CONTEXT_COMPACTION_KEEP_RECENT_TOKENS) {
+      const nextTokens = Math.max(
+        estimateTokens$1(projected[cut - 1]),
+        estimateVisibleTokens(projected[cut - 1])
+      );
+      if (recentTokens > 0 && recentTokens + nextTokens > PI_CONTEXT_COMPACTION_KEEP_RECENT_TOKENS) break;
+      cut -= 1;
+      recentTokens += nextTokens;
+    }
+    while (cut > 1 && projected[cut].role === "toolResult") cut -= 1;
+    if (cut <= (summary ? 2 : 1)) return projected;
+    try {
+      const nextSummary = (await summarize(projected.slice(1, cut), signal)).trim();
+      if (signal == null ? void 0 : signal.aborted) return projected;
+      if (!nextSummary || nextSummary.length > 2e4) {
+        degrade("summary_unusable", new Error(nextSummary ? "Pi summary exceeded the size limit." : "Pi summary was empty."), estimated);
+        return projected;
+      }
+      const nextSummarizedThrough = summarizedThrough + cut - 1 - (summary ? 1 : 0);
+      const nextTimestamp = Date.now();
+      const compacted = [
+        messages[0],
+        { role: "user", content: [{ type: "text", text: `Earlier conversation summary:
+${nextSummary}` }], timestamp: nextTimestamp },
+        ...messages.slice(nextSummarizedThrough)
+      ];
+      if (projectedTokens(compacted, true) >= triggerTokens) {
+        degrade("compaction_ineffective", new Error("Compaction did not bring the history under the trigger."), estimated);
+        return projected;
+      }
+      retryAboveTokens = 0;
+      summary = nextSummary;
+      summarizedThrough = nextSummarizedThrough;
+      summaryTimestamp = nextTimestamp;
+      return compacted;
+    } catch (error2) {
+      if (!(signal == null ? void 0 : signal.aborted)) degrade("summary_failed", error2, estimated);
+      return projected;
+    }
+  };
+};
+const createPiProviderContextCompactor = (model, models2, apiKey, providerFetch, onDegraded) => createPiContextCompactor(model.contextWindow, async (messages, signal) => {
+  const history = serializeConversation(convertToLlm(messages));
+  const response = await models2.completeSimple(model, {
+    systemPrompt: "Summarize earlier Pi agent history for continuation. Preserve the user goal, dataset identity, completed tool results, decisions, and outstanding work. Never invent evidence or include credentials. Keep the summary concise.",
+    messages: [{
+      role: "user",
+      content: [{ type: "text", text: history }],
+      timestamp: Date.now()
+    }]
+  }, {
+    apiKey,
+    fetch: providerFetch,
+    signal,
+    timeoutMs: 45e3,
+    maxRetries: 0
+  });
+  if (response.stopReason === "error" || response.stopReason === "aborted") {
+    throw new Error("Pi context summarization failed.");
+  }
+  return contentText(response.content);
+}, onDegraded);
+const models$1 = createModels();
+models$1.setProvider(openaiProvider());
+models$1.setProvider(googleProvider());
+const resolvePiModel = (settings2) => {
+  const provider = settings2.provider === "google" ? "google" : "openai";
+  const id = resolveProviderModelId(settings2);
+  const catalogModel = models$1.getModel(provider, id);
+  const familyModel = models$1.getModel(
+    provider,
+    provider === "google" ? "gemini-3.1-pro-preview" : "gpt-5.4-mini"
+  );
+  const model = catalogModel ?? familyModel;
+  if (!model) throw new Error(`Pi has no model configuration for ${provider}.`);
+  return {
+    ...model,
+    id,
+    contextWindow: Math.min(model.contextWindow, PROVIDER_CONTEXT_WINDOW_CAP),
+    ...settings2.provider === "default" ? {
+      baseUrl: DEFAULT_GATEWAY_BASE_URL,
+      // The shared demo gateway rejects this optional Responses API field.
+      compat: { ...model.compat, supportsMaxOutputTokens: false }
+    } : {}
+  };
+};
+const resolvePiThinkingLevel = (settings2) => clampThinkingLevel(
+  resolvePiModel(settings2),
+  settings2.reasoningEffort === "off" ? "off" : settings2.reasoningEffort ?? "medium"
+);
+const createPiProviderStream = (settings2) => {
+  const apiKey = resolveProviderApiKey(settings2);
+  if (!apiKey.trim()) throw new Error("The selected AI provider has no API key.");
+  const providerFetch = settings2.provider === "default" ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent;
+  return (model, context, options2) => models$1.streamSimple(model, context, {
+    ...options2,
+    apiKey,
+    fetch: providerFetch,
+    timeoutMs: 45e3,
+    maxRetries: 0
+  });
+};
+const createPiProviderContextTransform = (settings2, onDegraded) => {
+  const apiKey = resolveProviderApiKey(settings2);
+  if (!apiKey.trim()) throw new Error("The selected AI provider has no API key.");
+  return createPiProviderContextCompactor(
+    resolvePiModel(settings2),
+    models$1,
+    apiKey,
+    settings2.provider === "default" ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent,
+    onDegraded
+  );
+};
+const createPiCompactionTelemetry = (store) => ({ reason, error: error2, estimatedTokens }) => emitSilentFailure(store, error2, {
+  component: "PiContextCompaction",
+  recoveryAction: `uncompacted_history_used:${reason}`,
+  userNotified: false,
+  detail: { reason, estimatedTokens }
+});
+const SUBMIT_EVIDENCE_PLAN_TOOL = "submit_evidence_plan";
+const EVIDENCE_MAX_PROVIDER_TURNS = 4;
+const EVIDENCE_MAX_DATA_TOOL_CALLS = 2;
+const EVIDENCE_MAX_SUBMISSIONS = 3;
+const EVIDENCE_TIME_BUDGET_MS = 5e4;
+const MAX_COLUMNS_IN_PROMPT$1 = 80;
+const MAX_HARNESS_CHARS = 1500;
+const describeColumn$1 = (column) => {
+  const parts = [column.type];
+  if (typeof column.uniqueValues === "number") parts.push(`${column.uniqueValues} distinct`);
+  if (column.valueRange) parts.push(`range ${column.valueRange[0]} to ${column.valueRange[1]}`);
+  return `- ${column.name} (${parts.join(", ")})`;
+};
+const buildSystemPrompt$1 = (params) => {
+  var _a, _b;
+  return [
+    "You design one evidence query for a CSV analysis question. The app validates and runs the query; you decide what to measure and how.",
+    `Question: ${params.topic}`,
+    `Columns:
+${params.columns.slice(0, MAX_COLUMNS_IN_PROMPT$1).map(describeColumn$1).join("\n")}`,
+    ((_a = params.intent) == null ? void 0 : _a.preferredGroupBy) ? `Planned grouping: ${params.intent.preferredGroupBy}` : "",
+    ((_b = params.intent) == null ? void 0 : _b.preferredMetric) ? `Planned metric: ${params.intent.preferredMetric}` : "",
+    params.harnessSummary ? `Earlier findings:
+${params.harnessSummary.slice(0, MAX_HARNESS_CHARS)}` : "",
+    params.retryFeedback ? `Previous attempt feedback: ${params.retryFeedback}` : "",
+    "How to work:",
+    '1. Read the choose-metric-and-aggregation skill (and explore-with-data-query if you need to look at the data). Follow the aggregation named in the question, for example "median of price by town".',
+    `2. Look at the data with at most ${EVIDENCE_MAX_DATA_TOOL_CALLS} data tool calls, only when the column choice is unclear.`,
+    `3. Call ${SUBMIT_EVIDENCE_PLAN_TOOL} once with the query plan. Use exact column names. Every aggregate alias must appear in query.select.`,
+    "4. If the tool reports errors, fix them and submit again.",
+    "Do not answer the question yourself."
+  ].filter(Boolean).join("\n");
+};
+const runPiEvidencePlanner = async (params) => {
+  var _a, _b, _c, _d, _e;
+  const { store, topic, columns: columns2 } = params;
+  if (columns2.length === 0) return null;
+  const state2 = store.getState();
+  const datasetVersion = getCurrentAnalysisDatasetVersion(state2);
+  const columnNames = columns2.map((column) => column.name);
+  const periodFamilies = detectPeriodColumnFamilies(columnNames);
+  const semanticHints = extractSemanticHints(params.datasetContext);
+  let accepted = null;
+  let providerTurns = 0;
+  const controller = new AbortController();
+  const forwardAbort = () => {
+    var _a2;
+    return controller.abort((_a2 = params.signal) == null ? void 0 : _a2.reason);
+  };
+  (_a = params.signal) == null ? void 0 : _a.addEventListener("abort", forwardAbort, { once: true });
+  if ((_b = params.signal) == null ? void 0 : _b.aborted) forwardAbort();
+  const timer = setTimeout(() => controller.abort(new Error("The evidence planner time budget expired.")), EVIDENCE_TIME_BUDGET_MS);
+  let submissions = 0;
+  const submitTool = {
+    name: SUBMIT_EVIDENCE_PLAN_TOOL,
+    label: "Submit evidence plan",
+    description: "Submit the evidence query plan for the question. Column names must match the dataset exactly.",
+    parameters: Unsafe(createSqlEvidenceQueryPlanSchema(columnNames)),
+    executionMode: "sequential",
+    replay: "never",
+    execute: async (_id, args) => {
+      submissions += 1;
+      if (submissions > EVIDENCE_MAX_SUBMISSIONS) throw new Error("The plan was not accepted after several attempts. Stop planning.");
+      const withShape = { preferredResultShape: inferPreferredResultShape(topic, params.datasetContext ?? void 0), ...args };
+      const { validPlan, errors } = normalizeAndValidateSqlEvidenceQueryPlan(withShape, columns2, {
+        topic,
+        intent: params.planningIntent ?? void 0,
+        semanticHints,
+        lenient: true,
+        periodFamilies
+      });
+      if (!validPlan) throw new Error(`The plan is invalid: ${errors.join("; ")}`);
+      accepted = validPlan;
+      return { details: void 0, content: [{ type: "text", text: "Plan accepted." }], terminate: true };
+    }
+  };
+  const dataTools = createPiAppTools(store, datasetVersion, {
+    allowCardCreation: false,
+    maxToolCalls: EVIDENCE_MAX_DATA_TOOL_CALLS,
+    includeSkills: false
+  }).filter((tool) => tool.name !== "data_mutate");
+  const settings2 = state2.settings;
+  const agent = new Agent({
+    initialState: {
+      systemPrompt: buildSystemPrompt$1(params),
+      model: resolvePiModel(settings2),
+      thinkingLevel: resolvePiThinkingLevel(settings2),
+      tools: [...dataTools, createPiSkillTool(store), submitTool]
+    },
+    streamFn: params.streamFn ?? createPiProviderStream(settings2),
+    transformContext: createPiProviderContextTransform(settings2, createPiCompactionTelemetry(store)),
+    toolExecution: "sequential",
+    finishTurn: () => {
+      providerTurns += 1;
+      return accepted || providerTurns >= EVIDENCE_MAX_PROVIDER_TURNS ? { action: "end" } : void 0;
+    }
+  });
+  const abortAgent = () => agent.abort();
+  controller.signal.addEventListener("abort", abortAgent, { once: true });
+  try {
+    await agent.prompt("Design the evidence query for this question now.");
+    if ((_c = params.signal) == null ? void 0 : _c.aborted) throw params.signal.reason;
+    if (agent.state.errorMessage) throw new Error(agent.state.errorMessage);
+  } catch (error2) {
+    if ((_d = params.signal) == null ? void 0 : _d.aborted) throw error2;
+    emitSilentFailure(store, error2, {
+      component: "PiEvidencePlanner",
+      recoveryAction: "existing_evidence_planner_used",
+      userNotified: false,
+      detail: { providerTurns }
+    });
+    return null;
+  } finally {
+    clearTimeout(timer);
+    (_e = params.signal) == null ? void 0 : _e.removeEventListener("abort", forwardAbort);
+  }
+  return accepted;
+};
 const classifyDuckDbError = (error2) => {
   const msg = String(error2).toLowerCase();
   if (msg.includes("timeout") || msg.includes("timed out") || msg.includes("aborted") || msg.includes("abort")) {
@@ -81336,9 +87645,9 @@ const buildAndRunExplorationQueries = async (columns2, binding, store) => {
     return null;
   }
 };
-const LOG_PREFIX$g = "[ColumnLabelClassifier]";
+const LOG_PREFIX$9 = "[ColumnLabelClassifier]";
 const COLUMN_LABEL_TIMEOUT_MS = 8e3;
-const QUERY_TIMEOUT_MS$1 = 5e3;
+const QUERY_TIMEOUT_MS = 5e3;
 const MAX_SAMPLE_VALUES = 20;
 const UNNAMED_COLUMN_RE = /^_unnamed_column_\d+$/i;
 const classifyUnnamedColumnLabels = async (columns2, binding, settings2) => {
@@ -81354,7 +87663,7 @@ const classifyUnnamedColumnLabels = async (columns2, binding, settings2) => {
     return {};
   }
   if (!settings2 || !isProviderConfigured2(settings2)) {
-    console.log(`${LOG_PREFIX$g} No AI available — skipping label inference for ${unnamedColumns.length} unnamed column(s).`);
+    console.log(`${LOG_PREFIX$9} No AI available — skipping label inference for ${unnamedColumns.length} unnamed column(s).`);
     return {};
   }
   const columnSamples = {};
@@ -81369,7 +87678,7 @@ const classifyUnnamedColumnLabels = async (columns2, binding, settings2) => {
           kind: "value_counts",
           purpose: `Sample values for unnamed column "${col.name}"`,
           params: { column: col.name, limit: MAX_SAMPLE_VALUES },
-          options: { timeout: QUERY_TIMEOUT_MS$1, skipDirectiveInjection: true }
+          options: { timeout: QUERY_TIMEOUT_MS, skipDirectiveInjection: true }
         }, { binding, allowedColumns: [col.name] });
         const values2 = result.rows.map((row) => String(row[col.name] ?? row.value ?? "").trim()).filter((v) => v.length > 0);
         if (values2.length > 0) {
@@ -81447,13 +87756,13 @@ ${columnDescriptions}`;
     }
     const inferredCount = Object.keys(inferredLabels).length;
     console.log(
-      `${LOG_PREFIX$g} Inferred ${inferredCount}/${columnsWithSamples.length} column label(s):`,
+      `${LOG_PREFIX$9} Inferred ${inferredCount}/${columnsWithSamples.length} column label(s):`,
       Object.entries(inferredLabels).map(([k, v]) => `${k} → "${v}"`).join(", ") || "(none)"
     );
     return inferredLabels;
   } catch (error2) {
     const msg = error2 instanceof Error ? error2.message : String(error2);
-    console.warn(`${LOG_PREFIX$g} AI label inference failed: ${msg}`);
+    console.warn(`${LOG_PREFIX$9} AI label inference failed: ${msg}`);
     return {};
   }
 };
@@ -83006,216 +89315,6 @@ const runDataInvestigationHarness = async (columns2, binding, semanticUnderstand
     runtimeDirectives
   };
 };
-const deriveLabelFromStepType = (type) => type.split("_").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
-const STEP_LABEL_I18N_KEYS = {
-  observe_dataset: "analysis_trace_label_observe_dataset",
-  build_semantic_understanding: "analysis_trace_label_build_semantic_understanding",
-  screen_row_quality: "analysis_trace_label_screen_row_quality",
-  explore_data_with_sql: "analysis_trace_label_explore_data_with_sql",
-  propose_hypotheses: "analysis_trace_label_propose_hypotheses",
-  select_hypothesis: "analysis_trace_label_select_hypothesis",
-  plan_probe_query: "analysis_trace_label_plan_probe_query",
-  execute_probe_query: "analysis_trace_label_execute_probe_query",
-  evaluate_evidence: "analysis_trace_label_evaluate_evidence",
-  refine_hypothesis: "analysis_trace_label_refine_hypothesis",
-  dedupe_candidate: "analysis_trace_label_dedupe_candidate",
-  plan_presentation: "analysis_trace_label_plan_presentation",
-  emit_standard_card: "analysis_trace_label_emit_standard_card",
-  finalize_session: "analysis_trace_label_finalize_session",
-  stop_session: "analysis_trace_label_stop_session"
-};
-const STEP_WHYS_I18N_KEYS = {
-  observe_dataset: "analysis_trace_why_observe_dataset",
-  build_semantic_understanding: "analysis_trace_why_build_semantic_understanding",
-  screen_row_quality: "analysis_trace_why_screen_row_quality",
-  explore_data_with_sql: "analysis_trace_why_explore_data_with_sql",
-  propose_hypotheses: "analysis_trace_why_propose_hypotheses",
-  select_hypothesis: "analysis_trace_why_select_hypothesis",
-  plan_probe_query: "analysis_trace_why_plan_probe_query",
-  execute_probe_query: "analysis_trace_why_execute_probe_query",
-  evaluate_evidence: "analysis_trace_why_evaluate_evidence",
-  refine_hypothesis: "analysis_trace_why_refine_hypothesis",
-  dedupe_candidate: "analysis_trace_why_dedupe_candidate",
-  plan_presentation: "analysis_trace_why_plan_presentation",
-  emit_standard_card: "analysis_trace_why_emit_standard_card",
-  finalize_session: "analysis_trace_why_finalize_session",
-  stop_session: "analysis_trace_why_stop_session"
-};
-const buildVisibleAnalysisTraceEntry = (step) => ({
-  stepId: step.id,
-  stepIndex: step.index,
-  label: deriveLabelFromStepType(step.type),
-  labelI18n: step.labelI18n ?? {
-    key: STEP_LABEL_I18N_KEYS[step.type]
-  },
-  status: step.status,
-  summary: step.inputSummary,
-  summaryI18n: step.inputSummaryI18n,
-  whyThisStep: "",
-  whyI18n: step.whyI18n ?? {
-    key: STEP_WHYS_I18N_KEYS[step.type]
-  },
-  result: step.outputSummary,
-  resultI18n: step.outputSummaryI18n,
-  nextDecision: step.decision ?? null,
-  queryPreview: step.queryRef,
-  reasonCodes: step.reasonCodes,
-  hypothesisId: step.hypothesisId,
-  traceContract: step.traceContract ?? buildSurfaceTraceContract({
-    detail: {
-      stepType: step.type,
-      stepStatus: step.status,
-      hypothesisId: step.hypothesisId ?? null,
-      stage: step.type
-    },
-    reasonCode: step.reasonCodes[0] ?? step.type,
-    source: "analysis_runtime_trace"
-  })
-});
-const DATA_ANALYSIS_MAX_STEPS = DATA_ANALYSIS_MAX_STEPS$1;
-const DATA_ANALYSIS_MAX_HYPOTHESES = DATA_ANALYSIS_MAX_HYPOTHESES$1;
-const DATA_ANALYSIS_MAX_ACCEPTED_CARDS = DATA_ANALYSIS_MAX_ACCEPTED_CARDS$1;
-const DATA_ANALYSIS_FINALIZE_RESERVE_STEPS = DATA_ANALYSIS_FINALIZE_RESERVE_STEPS$1;
-const DATA_ANALYSIS_MIN_HYPOTHESIS_STEPS = DATA_ANALYSIS_MIN_HYPOTHESIS_STEPS$1;
-const DATA_ANALYSIS_MIN_TARGET_CARDS = DATA_ANALYSIS_MIN_TARGET_CARDS$1;
-const DATA_ANALYSIS_MAX_TOPIC_ROUNDS = DATA_ANALYSIS_MAX_TOPIC_ROUNDS$1;
-const getNextPendingHypothesis = (session) => session.hypotheses.filter((hypothesis) => hypothesis.status === "pending").sort((left, right) => right.priority - left.priority)[0] ?? null;
-const computeFinalSessionStatus = (session) => {
-  if (session.acceptedOutputs.length > 0) {
-    return "completed";
-  }
-  if (session.trace.length > 0 || session.rejectedOutputs.length > 0 || session.queryHistory.length > 0) {
-    return "degraded";
-  }
-  return "failed";
-};
-const getRemainingDataAnalysisSteps = (session) => Math.max(0, session.maxSteps - session.stepsUsed);
-const canStartNextHypothesis = (session) => getRemainingDataAnalysisSteps(session) >= DATA_ANALYSIS_MIN_HYPOTHESIS_STEPS + DATA_ANALYSIS_FINALIZE_RESERVE_STEPS;
-const shouldStopDataAnalysisSession = (session) => {
-  if (session.acceptedOutputs.length >= DATA_ANALYSIS_MAX_ACCEPTED_CARDS) {
-    return "accepted_card_limit_reached";
-  }
-  if (session.stepsUsed >= session.maxSteps - DATA_ANALYSIS_FINALIZE_RESERVE_STEPS) {
-    return "step_budget_exhausted";
-  }
-  const hasRemaining = session.hypotheses.some((hypothesis) => hypothesis.status === "pending" || hypothesis.status === "active");
-  if (!hasRemaining) {
-    return "all_hypotheses_exhausted";
-  }
-  return null;
-};
-const createDataAnalysisSessionState = (params) => ({
-  sessionId: params.sessionId,
-  runId: params.runId ?? createId("analysis-run"),
-  origin: params.origin,
-  status: "queued",
-  maxSteps: DATA_ANALYSIS_MAX_STEPS,
-  stepsUsed: 0,
-  currentStepId: null,
-  stopReason: null,
-  semanticUnderstanding: null,
-  analysisMode: "business",
-  analysisModeReason: null,
-  harnessSummary: null,
-  harnessCoverage: null,
-  analysisSteering: null,
-  researchBrief: null,
-  researchFindings: [],
-  cancellationRequestedAt: null,
-  hypotheses: [],
-  acceptedOutputs: [],
-  rejectedOutputs: [],
-  queryHistory: [],
-  trace: [],
-  summary: null
-});
-const appendDataAnalysisStep = (session, params) => {
-  var _a;
-  const step = {
-    id: createId("analysis-step"),
-    index: session.stepsUsed + 1,
-    type: params.type,
-    status: params.status,
-    inputSummary: params.inputSummary,
-    outputSummary: params.outputSummary,
-    inputSummaryI18n: params.inputSummaryI18n,
-    outputSummaryI18n: params.outputSummaryI18n,
-    labelI18n: params.labelI18n,
-    whyI18n: params.whyI18n,
-    decision: params.decision ?? null,
-    queryRef: params.queryRef ?? null,
-    hypothesisId: params.hypothesisId ?? null,
-    reasonCodes: params.reasonCodes ?? [],
-    traceContract: buildSurfaceTraceContract({
-      detail: {
-        stepType: params.type,
-        stepStatus: params.status,
-        hypothesisId: params.hypothesisId ?? null,
-        stage: params.type
-      },
-      reasonCode: ((_a = params.reasonCodes) == null ? void 0 : _a[0]) ?? params.type,
-      source: "analysis_runtime_step"
-    }),
-    startedAt: /* @__PURE__ */ new Date(),
-    endedAt: /* @__PURE__ */ new Date()
-  };
-  return {
-    session: {
-      ...session,
-      status: session.status === "queued" ? "running" : session.status,
-      stepsUsed: session.stepsUsed + 1,
-      currentStepId: step.id,
-      trace: [...session.trace, buildVisibleAnalysisTraceEntry(step)]
-    },
-    step
-  };
-};
-const setDataAnalysisHypotheses = (session, hypotheses) => ({
-  ...session,
-  hypotheses
-});
-const updateDataAnalysisHypothesis = (session, hypothesisId, updater) => ({
-  ...session,
-  hypotheses: session.hypotheses.map(
-    (hypothesis) => hypothesis.id === hypothesisId ? updater(hypothesis) : hypothesis
-  )
-});
-const appendAcceptedAnalysisOutput = (session, output2) => ({
-  ...session,
-  acceptedOutputs: [...session.acceptedOutputs, output2]
-});
-const appendRejectedAnalysisOutput = (session, output2) => ({
-  ...session,
-  rejectedOutputs: [...session.rejectedOutputs, output2]
-});
-const appendAnalysisQueryHistory = (session, entry) => ({
-  ...session,
-  queryHistory: [...session.queryHistory, {
-    ...entry,
-    traceContract: entry.traceContract ?? buildSurfaceTraceContract({
-      detail: {
-        queryMode: entry.queryMode,
-        title: entry.title,
-        hypothesisId: entry.hypothesisId ?? null,
-        stage: "query_history"
-      },
-      reasonCode: entry.querySignature ? "query_recorded" : "query_planned",
-      source: "analysis_query_history"
-    })
-  }]
-});
-const finalizeDataAnalysisSession = (session, status, stopReason) => ({
-  ...session,
-  status,
-  stopReason,
-  currentStepId: null,
-  summary: {
-    acceptedCardCount: session.acceptedOutputs.length,
-    rejectedHypothesisCount: session.rejectedOutputs.length,
-    exhaustedHypothesisCount: session.hypotheses.filter((hypothesis) => hypothesis.status === "exhausted").length,
-    traceCount: session.trace.length
-  }
-});
 const createCorrelationId = (prefix) => createId(prefix);
 const normalizeTopicText = (value2) => value2.trim().toLowerCase().replace(/\bno\.\b/g, "number ").replace(/[%()[\]{}]/g, " ").replace(/[_/.-]+/g, " ").replace(/\s+/g, " ").trim();
 const normalizeColumnToWords = (column) => column.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2").replace(/([a-zA-Z])(\d)/g, "$1 $2").replace(/(\d)([a-zA-Z])/g, "$1 $2").toLowerCase().replace(/\s+/g, " ").trim();
@@ -83393,5494 +89492,6 @@ const buildHypotheses = (topics, semanticUnderstanding, datasetContext, suggeste
     };
   });
   return [...sqlHypotheses, ...pivotHypotheses];
-};
-const getResolvedToolRegistry = (context) => {
-  const normalizedContext = normalizeToolAvailabilityContext(context);
-  return resolveAllowedTools(buildBuiltinToolRegistry(normalizedContext.columnNames), normalizedContext);
-};
-const buildError = (code, message, toolName) => ({
-  code,
-  message,
-  toolName
-});
-const validateAction = (action, context, registry2 = getResolvedToolRegistry(context)) => {
-  var _a;
-  const normalizedContext = normalizeToolAvailabilityContext(context);
-  if (!action.thought) {
-    const error2 = buildError("invalid_action", "Every action must include a non-empty 'thought'.");
-    return { isValid: false, errors: error2.message, error: error2 };
-  }
-  if (action.type === "assistant_message") {
-    if (!action.message) {
-      const error2 = buildError("invalid_action", "Assistant messages require a 'message'.");
-      return { isValid: false, errors: error2.message, error: error2 };
-    }
-    if (action.cardId && !normalizedContext.cardIds.includes(action.cardId)) {
-      const error2 = buildError("invalid_args", `"cardId" ('${action.cardId}') must reference one of [${normalizedContext.cardIds.join(", ")}].`);
-      return { isValid: false, errors: error2.message, error: error2 };
-    }
-    return { isValid: true, errors: "" };
-  }
-  const descriptor = registry2.descriptorMap.get(action.toolName);
-  if (!descriptor) {
-    const error2 = buildError("invalid_tool_name", `Tool "${action.toolName}" is not registered or not allowed.`, action.toolName);
-    return { isValid: false, errors: error2.message, error: error2 };
-  }
-  const decision = registry2.decisions[action.toolName];
-  if (decision && !decision.allowed) {
-    const error2 = buildError(
-      decision.source === "availability" ? "tool_unavailable" : "blocked_tool",
-      decision.reason,
-      action.toolName
-    );
-    error2.detail = {
-      stage: decision.stage,
-      source: decision.source,
-      category: decision.category,
-      risk: decision.risk
-    };
-    return { isValid: false, errors: error2.message, error: error2 };
-  }
-  const workspaceRuleViolation = getWorkspaceRuleViolation$1(action, normalizedContext.runtimeAccessControl);
-  if (workspaceRuleViolation) {
-    const error2 = buildError("blocked_tool", workspaceRuleViolation.message, action.toolName);
-    error2.detail = {
-      source: "workspace_rule",
-      normalizedPath: workspaceRuleViolation.normalizedPath,
-      matchedPrefix: workspaceRuleViolation.matchedPrefix,
-      field: workspaceRuleViolation.field,
-      stage: registry2.stage
-    };
-    return { isValid: false, errors: error2.message, error: error2 };
-  }
-  const semanticErrors = ((_a = descriptor.validate) == null ? void 0 : _a.call(descriptor, action.args ?? {}, normalizedContext)) ?? [];
-  if (semanticErrors.length > 0) {
-    const error2 = buildError("malformed_tool_payload", semanticErrors.join(" "), action.toolName);
-    return { isValid: false, errors: semanticErrors.join(" "), error: error2 };
-  }
-  return { isValid: true, errors: "" };
-};
-const INTERNAL_ACTION_PREFIXES = [
-  "analysis.",
-  "data.",
-  "card.",
-  "conversation.",
-  "spreadsheet.",
-  "workspace.",
-  "cleaning.",
-  "ui."
-];
-const isInternalSuggestedAction = (value2) => {
-  const normalized = value2.trim();
-  if (!normalized) {
-    return false;
-  }
-  return INTERNAL_ACTION_PREFIXES.some((prefix) => normalized.startsWith(prefix)) || /^[a-z]+(?:\.[a-z0-9_]+)+$/.test(normalized);
-};
-const resolveSuggestedActionPrompt = (entry) => {
-  const label = entry.label.trim();
-  const action = entry.action.trim();
-  if (!action) {
-    return label;
-  }
-  return isInternalSuggestedAction(action) ? label : action;
-};
-const normalizeSuggestedActionEntry = (entry) => {
-  const label = typeof (entry == null ? void 0 : entry.label) === "string" ? entry.label.trim() : "";
-  const action = typeof (entry == null ? void 0 : entry.action) === "string" ? entry.action.trim() : "";
-  if (!label || !action) {
-    return null;
-  }
-  return {
-    label,
-    action: resolveSuggestedActionPrompt({ label, action })
-  };
-};
-const LOG_PREFIX$f = "[ChatAgent]";
-const normalizeSuggestedActions = (suggestedActions) => {
-  if (!Array.isArray(suggestedActions)) {
-    return void 0;
-  }
-  const normalized = suggestedActions.map((action) => normalizeSuggestedActionEntry(action)).filter((action) => Boolean(action)).slice(0, 3);
-  return normalized.length > 0 ? normalized : void 0;
-};
-const handleChatAction = (action, store) => {
-  if (action.type !== "assistant_message" || !action.message) {
-    console.warn(`${LOG_PREFIX$f} assistant_message chunk ignored because it contained no message.`, action);
-    return;
-  }
-  store.setState((prev) => ({
-    chatHistory: [
-      ...prev.chatHistory,
-      createChatMessage({
-        sender: "ai",
-        text: action.message,
-        timestamp: /* @__PURE__ */ new Date(),
-        type: "ai_message",
-        cardId: action.cardId,
-        suggestedActions: normalizeSuggestedActions(action.suggestedActions)
-      })
-    ]
-  }));
-};
-const TEMPORAL_COLUMN_PATTERN = /(?:^|[\s_])(date|time|day|week|month|quarter|year|period)(?:$|[\s_])/i;
-const DERIVED_RATIO_ALIAS_PATTERN = /(?:^|[\s_])(margin|rate|ratio|percent|percentage|pct)(?:$|[\s_])|%/i;
-const RATIO_SOURCE_COLUMN_PATTERN = /(?:^|[\s_])(margin|rate|ratio|percent|percentage|pct)(?:$|[\s_])|%/i;
-const DATE_LIKE_VALUE_PATTERNS = [
-  /^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}(?:[T\s].*)?$/,
-  /^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}(?:[T\s].*)?$/,
-  /^(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2},?\s+\d{2,4}$/i
-];
-const normalize$1 = (value2) => String(value2 ?? "").trim();
-const isDateLike = (value2) => {
-  const normalized = normalize$1(value2);
-  return Boolean(normalized) && DATE_LIKE_VALUE_PATTERNS.some((pattern) => pattern.test(normalized));
-};
-const validateAggregateAliasSemantics = (plan) => {
-  var _a;
-  const misleadingAggregate = (_a = plan.aggregates) == null ? void 0 : _a.find((aggregate2) => DERIVED_RATIO_ALIAS_PATTERN.test(aggregate2.as) && !RATIO_SOURCE_COLUMN_PATTERN.test(aggregate2.column ?? ""));
-  if (!misleadingAggregate) return null;
-  return {
-    code: "derived_ratio_alias_mismatch",
-    column: misleadingAggregate.as,
-    alternativeColumn: misleadingAggregate.column ?? null,
-    message: `The aggregate alias "${misleadingAggregate.as}" implies a derived ratio, but it only applies ${misleadingAggregate.function} to "${misleadingAggregate.column ?? "rows"}". Query the numerator and denominator as separate totals using honest aliases, return the complete grouped result, and calculate or rank the ratio from those totals.`
-  };
-};
-const validateGroupedQuerySemantics = (params) => {
-  var _a;
-  const groupByColumn = (_a = params.plan.groupBy) == null ? void 0 : _a[0];
-  if (!groupByColumn || TEMPORAL_COLUMN_PATTERN.test(groupByColumn)) return null;
-  const values2 = params.resultRows.map((row) => row[groupByColumn]).filter((value2) => normalize$1(value2).length > 0);
-  if (values2.length < 3 || values2.filter(isDateLike).length / values2.length < 0.8) return null;
-  const sectionLabels = params.datasetRows.map((row) => normalize$1(row.SectionLabel)).filter(Boolean);
-  const alternativeColumn = sectionLabels.length >= Math.min(5, params.datasetRows.length) && sectionLabels.filter((value2) => !isDateLike(value2)).length / sectionLabels.length >= 0.8 ? "SectionLabel" : null;
-  return {
-    code: "group_dimension_value_type_mismatch",
-    column: groupByColumn,
-    alternativeColumn,
-    message: `The grouped values for "${groupByColumn}" look like dates, so they cannot support a trustworthy ${groupByColumn} analysis.${alternativeColumn ? ` Use "${alternativeColumn}" for the preserved report group labels instead.` : " Choose a different validated grouping field."}`
-  };
-};
-const getToolGovernanceMeta = (store, toolName) => {
-  const context = buildToolAvailabilityContext(store.getState());
-  const registry2 = resolveAllowedTools(buildBuiltinToolRegistry(context.columnNames), context);
-  return {
-    stage: registry2.stage,
-    descriptor: registry2.descriptorMap.get(toolName),
-    decision: registry2.decisions[toolName]
-  };
-};
-const executeDeterministicMutationPlan = async (plan, store, abortSignal) => {
-  var _a, _b, _c, _d;
-  const { getState, setState } = store;
-  const currentData = getState().csvData;
-  if (!currentData) {
-    throw new Error("No cleaned dataset is available for mutation.");
-  }
-  if (!Array.isArray(plan.operations) || plan.operations.length === 0) {
-    throw new Error("Deterministic mutation plan must include at least one operation.");
-  }
-  const rowCountBefore = currentData.data.length;
-  getState().addProgress(`AI is executing deterministic dataset changes: ${plan.explanation}`);
-  throwIfAborted(abortSignal);
-  const mutationResult = applyDataOperations(currentData.data, plan.operations);
-  const nextData = { ...currentData, data: mutationResult.data };
-  throwIfAborted(abortSignal);
-  const profileResult = await profileDataWithWorker(mutationResult.data, abortSignal);
-  throwIfAborted(abortSignal);
-  const isCleaningRunActive = ((_a = getState().cleaningRun) == null ? void 0 : _a.status) === "running";
-  const isRuntimeTurnActive = ((_b = getState().activeTurn) == null ? void 0 : _b.status) === "running";
-  const existingPlan = getState().dataPreparationPlan;
-  const accumulatedOperations = isCleaningRunActive ? [...(existingPlan == null ? void 0 : existingPlan.operations) ?? [], ...plan.operations] : plan.operations;
-  getState().logAgentToolUsage({
-    tool: "data.mutate",
-    description: plan.explanation,
-    detail: {
-      operations: plan.operations,
-      derivedMetricValidations: plan.derivedMetricValidations ?? [],
-      logs: mutationResult.logs,
-      rowCountBefore,
-      rowCountAfter: mutationResult.data.length
-    }
-  });
-  throwIfAborted(abortSignal);
-  const nextRegistry = buildColumnRegistry({
-    data: nextData,
-    columnProfiles: profileResult.profiles,
-    semanticSnapshot: getState().datasetSemanticSnapshot,
-    userColumnAnnotations: getState().userColumnAnnotations,
-    steering: (_c = getState().latestAnalysisSession) == null ? void 0 : _c.analysisSteering,
-    existingRegistry: getState().columnRegistry
-  });
-  throwIfAborted(abortSignal);
-  setState({
-    csvData: nextData,
-    columnProfiles: profileResult.profiles,
-    columnRegistry: nextRegistry,
-    activeDataQuery: null,
-    activeSpreadsheetFilter: null,
-    spreadsheetFilterFunction: null,
-    aiFilterExplanation: null,
-    dataPreparationPlan: {
-      explanation: plan.explanation,
-      operations: accumulatedOperations,
-      outputColumns: profileResult.profiles,
-      planStatus: "operations",
-      consistencyIssues: [],
-      ...(existingPlan == null ? void 0 : existingPlan.labelNormalization) ? { labelNormalization: existingPlan.labelNormalization } : {},
-      ...((_d = plan.derivedMetricValidations) == null ? void 0 : _d.length) ? { derivedMetricValidations: plan.derivedMetricValidations } : {}
-    }
-  });
-  throwIfAborted(abortSignal);
-  const duckDbSync = await ensureDuckDbSessionSync(store, nextData, createWorkerDiagnosticsTelemetryReporter(store));
-  throwIfAborted(abortSignal);
-  if (duckDbSync.status === "ready") {
-    getState().logAgentToolUsage({
-      tool: "duckdb_query_engine",
-      description: "Synced cleaned dataset into DuckDB after permanent mutation.",
-      detail: {
-        tableName: duckDbSync.tableName,
-        loadVersion: duckDbSync.loadVersion
-      }
-    });
-  } else if (duckDbSync.fallbackStage === "bind_failed" || duckDbSync.fallbackStage === "query_failed") {
-    getState().logAgentToolUsage({
-      tool: "duckdb_query_engine",
-      description: "DuckDB dataset sync failed after permanent mutation.",
-      detail: {
-        tableName: duckDbSync.tableName,
-        loadVersion: duckDbSync.loadVersion,
-        fallbackStage: duckDbSync.fallbackStage,
-        error: duckDbSync.fallbackReason
-      }
-    });
-  }
-  if (!isCleaningRunActive && !isRuntimeTurnActive) {
-    throwIfAborted(abortSignal);
-    await getState().regenerateAnalyses(nextData);
-  }
-  return {
-    data: nextData,
-    logs: mutationResult.logs,
-    rowCountBefore,
-    rowCountAfter: mutationResult.data.length
-  };
-};
-const LOG_PREFIX$e = "[SpreadsheetFilterRuntime]";
-const PREVIEW_ROW_LIMIT$1 = 20;
-const createRequestId = () => createId("spreadsheet-filter");
-const logFlowEvent = (store, requestId, step, message, detail) => {
-  emitAgentEvent(store, {
-    phase: step === "intent" || step === "final_reply" ? "chat" : "execution",
-    step: `spreadsheet_filter_${step}`,
-    status: "done",
-    message,
-    detail: {
-      requestId,
-      flowStage: step,
-      ...detail
-    }
-  });
-};
-const logFlowTool = (store, requestId, step, description, detail) => {
-  store.getState().logAgentToolUsage({
-    tool: "spreadsheet.filter",
-    description,
-    stage: "analysis",
-    category: "spreadsheet",
-    risk: "low",
-    policyDecision: "allowed",
-    policyReason: "Spreadsheet filter executed through controlled runtime.",
-    detail: {
-      requestId,
-      flowStage: step,
-      ...detail
-    }
-  });
-};
-const getSinglePredicate = (operation) => {
-  const predicates = Array.isArray(operation.predicates) ? operation.predicates : [];
-  const hasGroups = Array.isArray(operation.groups) && operation.groups.length > 0;
-  if (hasGroups || predicates.length !== 1) {
-    return null;
-  }
-  return predicates[0] ?? null;
-};
-const quoteValue = (value2) => {
-  if (Array.isArray(value2)) {
-    return value2.map((item) => quoteValue(item)).join(", ");
-  }
-  if (typeof value2 === "string") {
-    return `"${value2}"`;
-  }
-  return String(value2);
-};
-const describeOperator = (operator, language) => getTranslation(`filter_op_${operator}`, language);
-const buildFinalReply = (language, operation, observation) => {
-  const singlePredicate = getSinglePredicate(operation);
-  const matchedCount = observation.matchedRowCount;
-  const matchedLabel = getTranslation(matchedCount === 1 ? "row_label_singular" : "row_label_plural", language);
-  if (!singlePredicate) {
-    return matchedCount === 0 ? getTranslation("spreadsheet_filter_reply_none", language) : getTranslation("spreadsheet_filter_reply_some", language, { count: matchedCount, rowsLabel: matchedLabel });
-  }
-  const operatorText = describeOperator(singlePredicate.operator, language);
-  const hasValue = singlePredicate.value !== void 0;
-  const valueText = hasValue ? ` ${quoteValue(singlePredicate.value)}` : "";
-  return matchedCount === 0 ? getTranslation("spreadsheet_filter_row_none", language, { column: singlePredicate.column, operator: operatorText, value: valueText }) : getTranslation("spreadsheet_filter_row_some", language, { column: singlePredicate.column, operator: operatorText, value: valueText, count: matchedCount, rowsLabel: matchedLabel });
-};
-const buildObservation = async (store, operation, abortSignal) => {
-  throwIfAborted(abortSignal);
-  const queryResult = await executeDataQueryWithWorker(
-    store.getState().csvData.data,
-    createQueryPlanFromFilterOperation(operation, { limit: PREVIEW_ROW_LIMIT$1 }),
-    {
-      allowedColumns: store.getState().columnProfiles.map((profile) => profile.name),
-      maxRows: PREVIEW_ROW_LIMIT$1,
-      maxColumns: Math.max(store.getState().columnProfiles.length, PREVIEW_ROW_LIMIT$1),
-      maxOrderBy: 3,
-      timeoutMs: 1500,
-      abortSignal,
-      reportDiagnostics: createWorkerDiagnosticsTelemetryReporter(store)
-    }
-  );
-  throwIfAborted(abortSignal);
-  const singlePredicate = getSinglePredicate(operation);
-  return {
-    selectedColumn: (singlePredicate == null ? void 0 : singlePredicate.column) ?? null,
-    operator: (singlePredicate == null ? void 0 : singlePredicate.operator) ?? null,
-    value: (singlePredicate == null ? void 0 : singlePredicate.value) ?? null,
-    matchedRowCount: queryResult.totalMatchedRows,
-    previewRows: queryResult.rows.slice(0, PREVIEW_ROW_LIMIT$1)
-  };
-};
-const runSpreadsheetFilter = async (query, store, options2, abortSignal) => {
-  var _a;
-  const { getState, setState } = store;
-  const origin = (options2 == null ? void 0 : options2.origin) ?? "chat";
-  const requestId = createRequestId();
-  const settings2 = getState().settings;
-  if (!isProviderConfigured(settings2) || !getState().csvData) {
-    getState().addProgress("Cannot execute AI query: Missing API Key or data.", "error");
-    throw new Error("Cannot execute spreadsheet.filter without provider configuration and dataset.");
-  }
-  setState({
-    isAiFiltering: true,
-    spreadsheetFilterFunction: null,
-    activeSpreadsheetFilter: null,
-    aiFilterExplanation: null
-  });
-  getState().addProgress(`AI is processing your data query: "${query}"...`, "system", settings2.complexModel);
-  console.log(`${LOG_PREFIX$e} Starting controlled spreadsheet filter request.`, { requestId, origin, query });
-  logFlowEvent(store, requestId, "intent", "Registered spreadsheet filter intent.", { origin, query });
-  logFlowTool(store, requestId, "intent", "Registered spreadsheet filter intent.", { origin, query });
-  try {
-    throwIfAborted(abortSignal);
-    const response = await generateFilterFunction(
-      query,
-      getState().columnProfiles,
-      getState().csvData.data.slice(0, 5),
-      settings2,
-      getState(),
-      abortSignal
-    );
-    throwIfAborted(abortSignal);
-    if (((_a = response.operation) == null ? void 0 : _a.type) !== "filter_rows" || !hasFilterOperationClauses(response.operation)) {
-      throw new Error("AI did not return a deterministic filter_rows operation.");
-    }
-    logFlowEvent(store, requestId, "tool_args", "Generated spreadsheet filter arguments.", {
-      origin,
-      query,
-      toolName: "spreadsheet.filter",
-      args: { query },
-      operation: response.operation,
-      explanation: response.explanation
-    });
-    logFlowTool(store, requestId, "tool_args", "Generated spreadsheet filter arguments.", {
-      origin,
-      query,
-      toolName: "spreadsheet.filter",
-      args: { query },
-      operation: response.operation,
-      explanation: response.explanation
-    });
-    const observation = await buildObservation(store, response.operation, abortSignal);
-    throwIfAborted(abortSignal);
-    const finalReply = buildFinalReply(settings2.language, response.operation, observation);
-    const activeSpreadsheetFilter = {
-      requestId,
-      origin,
-      query,
-      operation: response.operation,
-      observation,
-      finalReply,
-      appliedAt: /* @__PURE__ */ new Date()
-    };
-    throwIfAborted(abortSignal);
-    setState({
-      activeDataQuery: null,
-      activeSpreadsheetFilter,
-      spreadsheetFilterFunction: response.operation,
-      aiFilterExplanation: finalReply,
-      isSpreadsheetVisible: true
-    });
-    throwIfAborted(abortSignal);
-    logFlowEvent(store, requestId, "observation", "Observed spreadsheet filter result.", {
-      origin,
-      observation
-    });
-    logFlowTool(store, requestId, "observation", "Observed spreadsheet filter result.", {
-      origin,
-      observation
-    });
-    throwIfAborted(abortSignal);
-    logFlowEvent(store, requestId, "final_reply", "Built spreadsheet filter final reply.", {
-      origin,
-      finalReply
-    });
-    logFlowTool(store, requestId, "final_reply", "Built spreadsheet filter final reply.", {
-      origin,
-      finalReply
-    });
-    throwIfAborted(abortSignal);
-    getState().addProgress(`AI filter applied: ${finalReply}`);
-    return activeSpreadsheetFilter;
-  } catch (error2) {
-    console.error(`${LOG_PREFIX$e} Controlled spreadsheet filter failed.`, { requestId, origin, query, error: error2 });
-    if (isRuntimeAbortError(error2, abortSignal)) {
-      throw error2;
-    }
-    getState().addProgress(`AI query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, "error");
-    throw error2;
-  } finally {
-    setState({ isAiFiltering: false });
-  }
-};
-const collectMetricDerivationPreflightIssues = ({
-  columnProfiles,
-  csvData,
-  dataPreparationPlan,
-  operation
-}) => {
-  const brief = buildAnalysisIntentBrief({
-    columns: columnProfiles,
-    csvData: csvData ?? null,
-    dataPreparationPlan: dataPreparationPlan ?? null
-  });
-  return validateDeriveMetricOperationAgainstBrief(brief, operation);
-};
-const validateMetricDerivationPreflight = ({
-  columnProfiles,
-  csvData,
-  dataPreparationPlan,
-  operation
-}) => {
-  const validationIssues = collectMetricDerivationPreflightIssues({
-    columnProfiles,
-    csvData,
-    dataPreparationPlan,
-    operation
-  });
-  const blockingIssues = validationIssues.filter((issue) => issue.severity === "error");
-  if (blockingIssues.length === 0) {
-    return null;
-  }
-  const summary = blockingIssues.map((issue) => issue.message).join(" ");
-  const artifactMetadata = {
-    artifactType: "dataset_mutation_attempt",
-    validationIssues,
-    targetMetric: operation.outputMetricLabel
-  };
-  return {
-    status: "blocked",
-    toolName: "data.mutate",
-    message: summary,
-    shouldStop: false,
-    retryHint: "Repair the metric mapping, label/value columns, or grouping grain before retrying derive_metric_by_label.",
-    artifactMetadata,
-    observation: {
-      type: "tool_result",
-      status: "blocked",
-      summary,
-      toolName: "data.mutate",
-      code: "validation_failed",
-      retryHint: "Repair the metric mapping, label/value columns, or grouping grain before retrying derive_metric_by_label.",
-      detail: {
-        validationIssues,
-        artifactMetadata
-      }
-    }
-  };
-};
-const normalizeColumnIdentifier = (value2) => (value2 == null ? void 0 : value2.trim().toLowerCase()) ?? "";
-const resolveSourceColumnReference = (column, columnRegistry2) => resolveColumnReference(column, columnRegistry2) ?? column;
-const buildAggregateAliasSet = (plan) => new Set(
-  (plan.aggregates ?? []).map((aggregate2) => normalizeColumnIdentifier(aggregate2.as)).filter(Boolean)
-);
-const resolveAggregateOutputReference = (column, columnRegistry2, aggregateAliases) => aggregateAliases.has(normalizeColumnIdentifier(column)) ? column : resolveSourceColumnReference(column, columnRegistry2);
-const canonicalizeWhereClause = (where, columnRegistry2) => {
-  if (!where) {
-    return where;
-  }
-  return {
-    ...where.predicates ? {
-      predicates: where.predicates.map((predicate) => ({
-        ...predicate,
-        column: resolveSourceColumnReference(predicate.column, columnRegistry2)
-      }))
-    } : {},
-    ...where.groups ? {
-      groups: where.groups.map((group) => ({
-        predicates: group.predicates.map((predicate) => ({
-          ...predicate,
-          column: resolveSourceColumnReference(predicate.column, columnRegistry2)
-        }))
-      }))
-    } : {}
-  };
-};
-const canonicalizeQueryPlan = (plan, columnRegistry2) => {
-  const aggregateAliases = buildAggregateAliasSet(plan);
-  return {
-    ...plan,
-    ...plan.select ? {
-      select: plan.select.map((column) => resolveAggregateOutputReference(column, columnRegistry2, aggregateAliases))
-    } : {},
-    ...plan.where ? { where: canonicalizeWhereClause(plan.where, columnRegistry2) } : {},
-    ...plan.groupBy ? {
-      groupBy: plan.groupBy.map((column) => resolveSourceColumnReference(column, columnRegistry2))
-    } : {},
-    ...plan.aggregates ? {
-      aggregates: plan.aggregates.map((aggregate2) => ({
-        ...aggregate2,
-        ...aggregate2.column ? { column: resolveSourceColumnReference(aggregate2.column, columnRegistry2) } : {},
-        ...aggregate2.where ? { where: canonicalizeWhereClause(aggregate2.where, columnRegistry2) } : {}
-      }))
-    } : {},
-    ...plan.postAggregateFilter ? {
-      postAggregateFilter: {
-        ...plan.postAggregateFilter.predicates ? {
-          predicates: plan.postAggregateFilter.predicates.map((predicate) => ({
-            ...predicate,
-            column: resolveAggregateOutputReference(predicate.column, columnRegistry2, aggregateAliases)
-          }))
-        } : {},
-        ...plan.postAggregateFilter.groups ? {
-          groups: plan.postAggregateFilter.groups.map((group) => ({
-            predicates: group.predicates.map((predicate) => ({
-              ...predicate,
-              column: resolveAggregateOutputReference(predicate.column, columnRegistry2, aggregateAliases)
-            }))
-          }))
-        } : {}
-      }
-    } : {},
-    ...plan.orderBy ? {
-      orderBy: plan.orderBy.map((order) => ({
-        ...order,
-        column: resolveAggregateOutputReference(order.column, columnRegistry2, aggregateAliases)
-      }))
-    } : {}
-  };
-};
-const appendQueryTraceMessage = (store, query, options2) => {
-  const entry = createQueryTraceEntry(query, options2.phase, {
-    origin: options2.origin,
-    templateId: options2.templateId,
-    formSnapshot: options2.formSnapshot,
-    policyReason: options2.policyReason ?? null,
-    toolCategory: options2.toolCategory ?? "data"
-  });
-  store.setState((prev) => ({
-    ...options2.appendChatTrace ? {
-      chatHistory: [
-        ...prev.chatHistory,
-        createChatMessage({
-          sender: "ai",
-          text: `**${getDataQueryTraceLabel(options2.phase, query.plan, query.fallbackFilterOperation)}**
-${query.explanation}
-Rows: ${query.result.returnedRows}/${query.result.totalMatchedRows} | Duration: ${query.result.durationMs}ms${query.fallbackReason ? "\nThe query ran in degraded mode; review technical details if needed." : ""}`,
-          timestamp: /* @__PURE__ */ new Date(),
-          type: "ai_query_trace",
-          queryTrace: {
-            sessionId: entry.sessionId,
-            runId: entry.runId,
-            turnId: entry.turnId,
-            stepId: entry.stepId,
-            toolCallId: entry.toolCallId,
-            phase: options2.phase,
-            engine: query.engine,
-            sqlPreview: query.sqlPreview,
-            returnedRows: query.result.returnedRows,
-            totalMatchedRows: query.result.totalMatchedRows,
-            durationMs: query.result.durationMs,
-            fallbackReason: query.fallbackReason ?? null
-          }
-        })
-      ]
-    } : {},
-    queryHistory: appendQueryHistory(prev.queryHistory ?? [], entry)
-  }));
-  return entry;
-};
-const executeStructuredDataQuery = async (store, options2) => {
-  var _a;
-  const { getState, setState } = store;
-  const dataset = options2.datasetOverride ?? getPreferredAnalysisDataset(getState());
-  const abortSignal = options2.abortSignal;
-  const activeTurn = getState().activeTurn;
-  const activeStep = activeTurn == null ? void 0 : activeTurn.steps.at(-1);
-  if (!dataset) {
-    throw new Error("No dataset is available for read-only data querying.");
-  }
-  const columnRegistry2 = options2.columnRegistryOverride ?? buildEffectiveColumnRegistryFromState(getState(), {
-    datasetOverride: dataset
-  });
-  const canonicalPlan = canonicalizeQueryPlan(options2.plan, columnRegistry2);
-  const normalizedWhere = normalizeQueryWhereClauseLike(canonicalPlan.where);
-  const allowedColumns = options2.allowedColumnsOverride && options2.allowedColumnsOverride.length > 0 ? options2.allowedColumnsOverride : getAllowedColumns(columnRegistry2, "select").length > 0 ? getAllowedColumns(columnRegistry2, "select") : getState().columnProfiles.map((profile) => profile.name);
-  const executionPlan = {
-    ...canonicalPlan,
-    ...normalizedWhere ? { where: normalizedWhere } : {}
-  };
-  if (!normalizedWhere) {
-    delete executionPlan.where;
-  }
-  if (options2.progressMessage) {
-    getState().addProgress(options2.progressMessage);
-  }
-  let execution;
-  const reportDiagnostics = createWorkerDiagnosticsTelemetryReporter(store);
-  const language = getState().settings.language;
-  const onSlowLoad = () => {
-    const message = getTranslation("duckdb_load_slow", language);
-    if (typeof getState().addProgress === "function") {
-      getState().addProgress(message, "warning");
-    }
-  };
-  try {
-    throwIfAborted(abortSignal);
-    execution = await executeManagedDataQuery(
-      dataset,
-      executionPlan,
-      allowedColumns,
-      {
-        allowNativeFallback: options2.allowNativeFallback,
-        abortSignal,
-        reportDiagnostics,
-        columnRegistry: columnRegistry2,
-        onSlowLoad,
-        ...options2.dimensionNormalization ? { dimensionNormalization: options2.dimensionNormalization } : {}
-      }
-    );
-    throwIfAborted(abortSignal);
-  } catch (error2) {
-    if (isRuntimeAbortError(error2, abortSignal)) {
-      throw error2;
-    }
-    setState({
-      duckDbSessionStatus: createDuckDbSessionErrorStatus(error2, getState().duckDbSessionStatus, /* @__PURE__ */ new Date(), "query_failed")
-    });
-    throw error2;
-  }
-  const normalizedPlan = {
-    select: execution.result.selectedColumns,
-    ...executionPlan.where ? { where: executionPlan.where } : {},
-    orderBy: execution.result.appliedOrderBy,
-    limit: execution.result.appliedLimit,
-    ...Array.isArray(executionPlan.groupBy) && executionPlan.groupBy.length > 0 ? { groupBy: executionPlan.groupBy } : {},
-    ...Array.isArray(executionPlan.aggregates) && executionPlan.aggregates.length > 0 ? { aggregates: executionPlan.aggregates } : {}
-  };
-  const activeDataQuery = {
-    ...resolveDatasetScopeBinding(getState().datasetBundle),
-    sessionId: getState().sessionId,
-    runId: activeTurn == null ? void 0 : activeTurn.runId,
-    turnId: activeTurn == null ? void 0 : activeTurn.turnId,
-    stepId: activeStep == null ? void 0 : activeStep.stepId,
-    toolCallId: (activeStep == null ? void 0 : activeStep.toolCallId) ?? (activeStep == null ? void 0 : activeStep.stepId),
-    explanation: options2.explanation,
-    plan: normalizedPlan,
-    result: execution.result,
-    appliedAt: /* @__PURE__ */ new Date(),
-    source: "execute_data_query",
-    engine: execution.engine,
-    sqlPreview: execution.sqlPreview,
-    tableName: execution.tableName,
-    loadVersion: execution.loadVersion,
-    fallbackReason: execution.fallbackReason,
-    fallbackStage: execution.fallbackStage,
-    fallbackFilterOperation: options2.fallbackFilterOperation ?? null
-  };
-  throwIfAborted(abortSignal);
-  const storeCommitStartedAt = getNowMs();
-  setState({
-    activeDataQuery,
-    activeSpreadsheetFilter: null,
-    spreadsheetFilterFunction: null,
-    aiFilterExplanation: null,
-    isSpreadsheetVisible: true,
-    duckDbSessionStatus: createDuckDbSessionStatusFromExecution(execution)
-  });
-  throwIfAborted(abortSignal);
-  const committedTrace = appendQueryTraceMessage(store, activeDataQuery, options2);
-  (_a = options2.onTraceCommitted) == null ? void 0 : _a.call(options2, committedTrace);
-  const storeCommitMs = getNowMs() - storeCommitStartedAt;
-  logQueryStoreCommitDiagnostics(store, {
-    engine: execution.engine,
-    storeCommitMs,
-    returnedRows: execution.result.returnedRows,
-    totalMatchedRows: execution.result.totalMatchedRows,
-    selectedColumnCount: execution.result.selectedColumns.length,
-    truncated: execution.result.truncated,
-    // estimateSerializableBytes is expensive (JSON.stringify); skip in production.
-    resultBytes: 0,
-    fallbackReason: execution.fallbackReason,
-    fallbackStage: execution.fallbackStage
-  });
-  throwIfAborted(abortSignal);
-  getState().logAgentToolUsage({
-    tool: "data.query",
-    description: options2.explanation,
-    detail: {
-      runId: (activeTurn == null ? void 0 : activeTurn.runId) ?? null,
-      toolCallId: (activeStep == null ? void 0 : activeStep.toolCallId) ?? (activeStep == null ? void 0 : activeStep.stepId) ?? null,
-      plan: normalizedPlan,
-      engine: execution.engine,
-      sqlPreview: execution.sqlPreview,
-      tableName: execution.tableName,
-      loadVersion: execution.loadVersion,
-      fallbackReason: execution.fallbackReason,
-      fallbackStage: execution.fallbackStage,
-      totalMatchedRows: execution.result.totalMatchedRows,
-      returnedRows: execution.result.returnedRows,
-      truncated: execution.result.truncated,
-      selectedColumns: execution.result.selectedColumns,
-      appliedOrderBy: execution.result.appliedOrderBy,
-      durationMs: execution.result.durationMs,
-      origin: options2.origin,
-      templateId: options2.templateId ?? null,
-      fallbackAvailable: Boolean(options2.fallbackFilterOperation)
-    }
-  });
-  if (options2.appendCleaningRunTrace) {
-    throwIfAborted(abortSignal);
-    setState((prev) => ({
-      cleaningRun: prev.cleaningRun ? appendCleaningRunStep(prev.cleaningRun, {
-        kind: "verify",
-        toolName: "data.query",
-        path: WORKSPACE_DATASET_CLEAN_CSV,
-        diffSummary: `Verified cleaned dataset with ${execution.engine} query.`,
-        status: "done"
-      }) : prev.cleaningRun
-    }));
-  }
-  if (execution.fallbackStage === "bind_failed" || execution.fallbackStage === "query_failed") {
-    throwIfAborted(abortSignal);
-    getState().logAgentToolUsage({
-      tool: "duckdb_query_engine",
-      description: "DuckDB query execution fell back to native executor.",
-      detail: {
-        fallbackStage: execution.fallbackStage,
-        error: execution.fallbackReason,
-        sqlPreview: execution.sqlPreview,
-        tableName: execution.tableName,
-        loadVersion: execution.loadVersion
-      }
-    });
-  }
-  if (options2.scrollToRawDataExplorer && typeof window !== "undefined" && typeof document !== "undefined") {
-    throwIfAborted(abortSignal);
-    window.setTimeout(() => {
-      var _a2;
-      return (_a2 = document.getElementById("raw-data-explorer")) == null ? void 0 : _a2.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
-  }
-  return activeDataQuery;
-};
-const dataQueryExecution = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  executeStructuredDataQuery
-}, Symbol.toStringTag, { value: "Module" }));
-const resolveDerivedOperand = (row, operand) => operand.kind === "literal" ? operand.value : row[operand.column] ?? null;
-const deriveRowMetricValue = (row, expression) => {
-  if (expression.kind === "copy") return resolveDerivedOperand(row, expression.source);
-  if (expression.kind === "concat") {
-    return expression.parts.map((part) => resolveDerivedOperand(row, part)).filter((value2) => value2 !== null && value2 !== void 0 && String(value2).length > 0).map(String).join(expression.separator ?? "");
-  }
-  const leftOperand = expression.kind === "ratio" ? expression.numerator : expression.left;
-  const rightOperand = expression.kind === "ratio" ? expression.denominator : expression.right;
-  const left = robustParseFloat(resolveDerivedOperand(row, leftOperand));
-  const right = robustParseFloat(resolveDerivedOperand(row, rightOperand));
-  if (left === null || right === null) return null;
-  if (expression.kind === "ratio") return right === 0 ? null : left / right;
-  if (expression.operator === "add") return left + right;
-  if (expression.operator === "subtract") return left - right;
-  if (expression.operator === "multiply") return left * right;
-  return right === 0 ? null : left / right;
-};
-const getMetricComponentTotal = (rows, labelColumn, valueColumn, component) => {
-  const terms = component.matchAny.map((term) => term.toLowerCase());
-  const matches = rows.filter((row) => {
-    const label = String(row[labelColumn] ?? "").trim().toLowerCase();
-    return terms.some((term) => label.includes(term));
-  });
-  if (matches.length === 0) return null;
-  const parsed = matches.map((row) => robustParseFloat(row[valueColumn] ?? null)).filter((value2) => value2 !== null);
-  if (parsed.length === 0) return null;
-  const total = parsed.reduce((sum, value2) => sum + (component.valueTransform === "absolute" ? Math.abs(value2) : value2), 0);
-  return component.operator === "subtract" ? -total : total;
-};
-const evaluateLabelDerivedMetric = (rows, operation) => {
-  const evaluateComponents = (components) => {
-    const totals = components.map((component) => getMetricComponentTotal(rows, operation.labelColumn, operation.valueColumn, component));
-    return totals.some((total) => total === null) ? null : totals.reduce((sum, total) => sum + (total ?? 0), 0);
-  };
-  if (operation.formula.kind === "linear_combination") {
-    return evaluateComponents(operation.formula.components);
-  }
-  const numerator = evaluateComponents(operation.formula.numerator);
-  const denominator = evaluateComponents(operation.formula.denominator);
-  if (numerator === null || denominator === null || denominator === 0) return null;
-  return numerator / denominator * (Number.isFinite(operation.formula.scale) ? operation.formula.scale : 1);
-};
-const buildDerivedMetricGroups = (rows, columns2) => {
-  const groups = /* @__PURE__ */ new Map();
-  rows.forEach((row) => {
-    const key2 = JSON.stringify(columns2.map((column) => row[column] ?? null));
-    groups.set(key2, [...groups.get(key2) ?? [], row]);
-  });
-  return groups;
-};
-const derivedMetricValuesEqual = (left, right) => {
-  const scale = Math.max(1, Math.abs(left), Math.abs(right));
-  return Math.abs(left - right) <= scale * 1e-9;
-};
-const TIER_RANK = {
-  pass: 0,
-  warn: 1,
-  fail: 2
-};
-const combineTier = (signals) => signals.reduce(
-  (current2, signal) => TIER_RANK[signal.status] > TIER_RANK[current2] ? signal.status : current2,
-  "pass"
-);
-const unique = (values2) => Array.from(new Set(values2.map((value2) => value2.trim()).filter(Boolean)));
-const tierHigherIsBetter = (rate, passThreshold, warnThreshold) => {
-  if (rate >= passThreshold) return "pass";
-  if (rate >= warnThreshold) return "warn";
-  return "fail";
-};
-const tierLowerIsBetter = (rate, passThreshold, warnThreshold) => {
-  if (rate <= passThreshold) return "pass";
-  if (rate <= warnThreshold) return "warn";
-  return "fail";
-};
-const numericBehaviorSignal = (rows, numericColumns) => {
-  const values2 = rows.flatMap(
-    (row) => numericColumns.map((column) => row[column] ?? null).filter((value2) => value2 !== null && value2 !== void 0 && String(value2).trim() !== "")
-  );
-  const parseableCount = values2.filter((value2) => robustParseFloat(value2) !== null).length;
-  const parseRate = values2.length > 0 ? parseableCount / values2.length : 0;
-  return {
-    code: "numeric_behavior",
-    status: tierHigherIsBetter(parseRate, 0.98, 0.9),
-    message: values2.length === 0 ? `No non-empty numeric inputs were found in ${numericColumns.join(", ") || "the declared inputs"}.` : `${(parseRate * 100).toFixed(1)}% of ${values2.length} non-empty metric inputs are numeric.`,
-    measuredRate: parseRate,
-    passThreshold: 0.98,
-    warnThreshold: 0.9
-  };
-};
-const denominatorSafetySignal = (rows, operation) => {
-  let population = 0;
-  let unsafe = 0;
-  if (operation.type === "derive_column") {
-    const denominator = operation.expression.kind === "ratio" ? operation.expression.denominator : operation.expression.kind === "math_binary" && operation.expression.operator === "divide" ? operation.expression.right : null;
-    if (denominator) {
-      population = rows.length;
-      unsafe = rows.filter((row) => {
-        const value2 = robustParseFloat(resolveDerivedOperand(row, denominator));
-        return value2 === null || value2 === 0;
-      }).length;
-    }
-  } else if (operation.formula.kind === "ratio") {
-    const sourceRows = rows.filter((row) => String(row[operation.labelColumn] ?? "").trim().toLowerCase() !== operation.outputMetricLabel.trim().toLowerCase());
-    const groups = buildDerivedMetricGroups(sourceRows, operation.groupByColumns);
-    population = groups.size;
-    unsafe = [...groups.values()].filter((groupRows) => {
-      const denominatorFormula = {
-        kind: "linear_combination",
-        components: operation.formula.kind === "ratio" ? operation.formula.denominator : []
-      };
-      const denominator = evaluateLabelDerivedMetric(groupRows, {
-        ...operation,
-        formula: denominatorFormula
-      });
-      return denominator === null || denominator === 0;
-    }).length;
-  }
-  if (population === 0) {
-    return {
-      code: "denominator_safety",
-      status: "pass",
-      message: "The formula has no denominator, so denominator safety is not applicable.",
-      measuredRate: 0,
-      passThreshold: 0.02,
-      warnThreshold: 0.05
-    };
-  }
-  const unsafeRate = unsafe / population;
-  return {
-    code: "denominator_safety",
-    status: tierLowerIsBetter(unsafeRate, 0.02, 0.05),
-    message: `${unsafe} of ${population} evaluated ${population === rows.length ? "rows" : "groups"} have a missing or zero denominator.`,
-    measuredRate: unsafeRate,
-    passThreshold: 0.02,
-    warnThreshold: 0.05
-  };
-};
-const reconciliationSignal = (inputRows, outputRows, operation) => {
-  if (!outputRows) {
-    return {
-      code: "reconciliation",
-      status: "pass",
-      message: "Execution reconciliation will run against the preview output before commit."
-    };
-  }
-  let expected = 0;
-  let mismatched = 0;
-  if (operation.type === "derive_column") {
-    expected = inputRows.length;
-    outputRows.slice(0, inputRows.length).forEach((row, index2) => {
-      const expectedValue = deriveRowMetricValue(inputRows[index2] ?? {}, operation.expression);
-      const actualValue = row[operation.newColumn] ?? null;
-      const expectedNumber = robustParseFloat(expectedValue);
-      const actualNumber = robustParseFloat(actualValue);
-      const matches = expectedNumber !== null && actualNumber !== null ? derivedMetricValuesEqual(expectedNumber, actualNumber) : expectedValue === actualValue;
-      if (!matches) mismatched += 1;
-    });
-    mismatched += Math.abs(inputRows.length - Math.min(inputRows.length, outputRows.length));
-  } else {
-    const sourceRows = inputRows.filter((row) => String(row[operation.labelColumn] ?? "").trim().toLowerCase() !== operation.outputMetricLabel.trim().toLowerCase());
-    const inputGroups = buildDerivedMetricGroups(sourceRows, operation.groupByColumns);
-    const outputGroups = buildDerivedMetricGroups(
-      outputRows.filter((row) => String(row[operation.labelColumn] ?? "").trim().toLowerCase() === operation.outputMetricLabel.trim().toLowerCase()),
-      operation.groupByColumns
-    );
-    expected = inputGroups.size;
-    inputGroups.forEach((groupRows, key2) => {
-      var _a;
-      const expectedValue = evaluateLabelDerivedMetric(groupRows, operation);
-      const candidates = outputGroups.get(key2) ?? [];
-      const actualValue = candidates.length === 1 ? robustParseFloat(((_a = candidates[0]) == null ? void 0 : _a[operation.valueColumn]) ?? null) : null;
-      if (expectedValue === null || actualValue === null || !derivedMetricValuesEqual(expectedValue, actualValue)) {
-        mismatched += 1;
-      }
-    });
-  }
-  const mismatchRate = expected > 0 ? mismatched / expected : 1;
-  return {
-    code: "reconciliation",
-    status: tierLowerIsBetter(mismatchRate, 0.02, 0.05),
-    message: `${mismatched} of ${expected} derived results failed deterministic reconciliation.`,
-    measuredRate: mismatchRate,
-    passThreshold: 0.02,
-    warnThreshold: 0.05
-  };
-};
-const validateDerivedMetricOperation = ({
-  inputRows,
-  operation,
-  outputRows = null,
-  inputVersionId,
-  outputVersionId
-}) => {
-  const declaration = buildDerivedMetricDeclaration(operation);
-  const availableColumns = new Set(
-    inputRows.flatMap((row) => Object.keys(row)).map((column) => column.toLowerCase())
-  );
-  const requiredSourceColumns = getRequiredDerivedMetricSourceColumns(operation);
-  const declaredSourceKeys = new Set(declaration.sourceColumns.map((column) => column.toLowerCase()));
-  const undeclaredColumns = requiredSourceColumns.filter((column) => !declaredSourceKeys.has(column.toLowerCase()));
-  const missingColumns = unique([...requiredSourceColumns, ...declaration.sourceColumns]).filter((column) => column !== "source row" && !availableColumns.has(column.toLowerCase()));
-  const inputSignal = {
-    code: "input_availability",
-    status: missingColumns.length === 0 && undeclaredColumns.length === 0 ? "pass" : "fail",
-    message: missingColumns.length > 0 ? `Required or declared source columns are missing: ${missingColumns.join(", ")}.` : undeclaredColumns.length > 0 ? `The declaration omits formula source columns: ${undeclaredColumns.join(", ")}.` : `All declared source columns are available: ${declaration.sourceColumns.join(", ")}.`
-  };
-  const numericColumns = getDerivedMetricNumericColumns(operation);
-  const numericSignal = numericColumns.length > 0 ? numericBehaviorSignal(inputRows, numericColumns) : {
-    code: "numeric_behavior",
-    status: "pass",
-    message: "This declaration does not require numeric source behavior."
-  };
-  const signals = [
-    inputSignal,
-    numericSignal,
-    denominatorSafetySignal(inputRows, operation),
-    reconciliationSignal(inputRows, outputRows, operation)
-  ];
-  const status = combineTier(signals);
-  return {
-    artifactType: "derived_metric_validation",
-    operationId: operation.id,
-    declaration,
-    status,
-    requiresConfirmation: status === "warn",
-    signals,
-    evidenceReferences: [
-      { kind: "dataset_version", id: inputVersionId, label: "Input dataset version" },
-      { kind: "operation", id: operation.id, label: declaration.formula },
-      {
-        kind: "validation",
-        id: `derived-metric-validation:${operation.id}`,
-        label: `${status} deterministic validation`
-      },
-      ...outputVersionId ? [{ kind: "dataset_version", id: outputVersionId, label: "Output dataset version" }] : []
-    ]
-  };
-};
-const isDerivedMetricOperation = (operation) => operation.type === "derive_column" || operation.type === "derive_metric_by_label";
-const isDerivedMetricWarningExplicitlyConfirmed = (userMessage) => {
-  const message = (userMessage == null ? void 0 : userMessage.trim()) ?? "";
-  if (!message) return false;
-  return /\b(?:confirm(?:ed)?|approve(?:d)?)\b.*\bwarning\b/i.test(message) || /\baccept(?:ed)?\s+(?:the\s+)?warning\b/i.test(message) || /\bproceed\s+despite\s+(?:the\s+)?warning\b/i.test(message) || /(?:确认|批准|接受).{0,12}警告/.test(message) || /忽略.{0,12}警告.{0,12}继续/.test(message);
-};
-const DERIVED_MARGIN_REQUEST = /\b(?:profit|gross)\s+margin\b|利润率|利潤率|利益率|粗利率|margin\s*(?:percentage|%)/i;
-const DERIVED_COST_PER_RESULT_REQUEST = /\bcost\s+per\s+result\b|每(?:个|個|次)结果成本|每(?:个|個|次)結果成本|結果単価|結果あたりのコスト/i;
-const SHARE_OF_TOTAL_REQUEST = /(?:\b(?:percent(?:age)?|share|proportion)\b[\s\S]{0,80}\b(?:overall|total|whole|full dataset)\b)|(?:\b(?:overall|total|whole|full dataset)\b[\s\S]{0,80}\b(?:percent(?:age)?|share|proportion|represent)\b)|(?:百分比|占比|比例|比率).{0,40}(?:总额|總額|总体|總體|全部|合计|合計)|(?:总额|總額|总体|總體|全部|合计|合計).{0,40}(?:百分比|占比|比例|比率)|(?:全体|合計).{0,40}(?:割合|比率|パーセント)|(?:割合|比率|パーセント).{0,40}(?:全体|合計)/i;
-const isDerivedMarginRequest = (message) => DERIVED_MARGIN_REQUEST.test(message);
-const isDerivedCostPerResultRequest = (message) => DERIVED_COST_PER_RESULT_REQUEST.test(message);
-const isShareOfTotalRequest = (message) => SHARE_OF_TOTAL_REQUEST.test(message);
-const requiresCompleteDerivedMetricEvidence = (message) => isDerivedMarginRequest(message) || isDerivedCostPerResultRequest(message);
-const requiresCompleteAggregateEvidence = (message) => requiresCompleteDerivedMetricEvidence(message) || isShareOfTotalRequest(message);
-const LOG_PREFIX$d = "[ExecutorAgent]";
-const summarizeMutationOperation = (operation) => {
-  switch (operation.type) {
-    case "derive_column":
-      return {
-        type: operation.type,
-        outputColumn: operation.newColumn,
-        expressionKind: operation.expression.kind
-      };
-    case "derive_metric_by_label":
-      return {
-        type: operation.type,
-        outputMetricLabel: operation.outputMetricLabel,
-        labelColumn: operation.labelColumn,
-        valueColumn: operation.valueColumn,
-        groupByColumns: operation.groupByColumns,
-        carryForwardColumns: operation.carryForwardColumns ?? [],
-        formulaKind: operation.formula.kind
-      };
-    default:
-      return null;
-  }
-};
-const buildMutationArtifactMetadata = (normalizedPlan) => ({
-  artifactType: "dataset_mutation",
-  sourceArtifactIds: [],
-  operations: (normalizedPlan == null ? void 0 : normalizedPlan.operations.map((operation) => summarizeMutationOperation(operation)).filter((operation) => operation !== null)) ?? [],
-  derivedMetricValidations: (normalizedPlan == null ? void 0 : normalizedPlan.derivedMetricValidations) ?? []
-});
-const buildDerivedMetricValidationResult = (validations) => {
-  const failed = (validations == null ? void 0 : validations.filter((validation) => validation.status === "fail")) ?? [];
-  const needsConfirmation = (validations == null ? void 0 : validations.filter(
-    (validation) => validation.status === "warn" && validation.requiresConfirmation
-  )) ?? [];
-  if (failed.length === 0 && needsConfirmation.length === 0) return null;
-  const targets = [...failed, ...needsConfirmation].map((validation) => validation.declaration.metricName).join(", ");
-  const requiresConfirmation = failed.length === 0;
-  const summary = requiresConfirmation ? `Derived metric validation needs confirmation before committing: ${targets}.` : `Derived metric validation failed before commit: ${targets}.`;
-  const retryHint = requiresConfirmation ? 'Review the validation signals with the user. Retry with validationMode="warn" only after the user explicitly confirms the ambiguity.' : "Repair the formula, source columns, numeric inputs, denominator behavior, or grouping grain before retrying.";
-  const artifactMetadata = {
-    artifactType: "dataset_mutation_attempt",
-    derivedMetricValidations: validations
-  };
-  return {
-    status: "blocked",
-    toolName: "data.mutate",
-    message: summary,
-    shouldStop: requiresConfirmation,
-    retryHint,
-    artifactMetadata,
-    observation: {
-      type: "tool_result",
-      status: "blocked",
-      summary,
-      toolName: "data.mutate",
-      code: requiresConfirmation ? "confirmation_required" : "validation_failed",
-      retryHint,
-      detail: {
-        derivedMetricValidations: validations,
-        artifactMetadata
-      }
-    }
-  };
-};
-const logDerivedMetricValidationBoundary = (store, result) => {
-  var _a, _b, _c, _d;
-  const validations = Array.isArray((_a = result.artifactMetadata) == null ? void 0 : _a.derivedMetricValidations) ? result.artifactMetadata.derivedMetricValidations : [];
-  (_d = (_c = store.getState()).logAgentToolUsage) == null ? void 0 : _d.call(_c, {
-    tool: "data.mutate",
-    description: result.message,
-    detail: {
-      status: ((_b = result.observation) == null ? void 0 : _b.code) ?? result.status,
-      derivedMetricValidations: validations,
-      retryHint: result.retryHint ?? null
-    }
-  });
-};
-const getWhereColumns = (whereClause) => {
-  const normalizedWhere = normalizeQueryWhereClauseLike(whereClause);
-  if (!normalizedWhere) {
-    return [];
-  }
-  return Array.from(new Set(
-    [
-      ...normalizedWhere.predicates ?? [],
-      ...(normalizedWhere.groups ?? []).flatMap((group) => group.predicates)
-    ].map((predicate) => predicate.column).filter((column) => typeof column === "string" && column.trim().length > 0)
-  ));
-};
-const compareOrderValues = (left, right) => {
-  const leftNumber = robustParseFloat(left);
-  const rightNumber = robustParseFloat(right);
-  if (leftNumber !== null && rightNumber !== null) {
-    return leftNumber - rightNumber;
-  }
-  const leftText = left === null || left === void 0 ? "" : String(left).trim().toLowerCase();
-  const rightText = right === null || right === void 0 ? "" : String(right).trim().toLowerCase();
-  return leftText.localeCompare(rightText, void 0, { numeric: true, sensitivity: "base" });
-};
-const summarizeOrderVerification = (rows, orderBy) => {
-  if (!Array.isArray(orderBy) || orderBy.length === 0) {
-    return [];
-  }
-  return orderBy.map((orderClause) => {
-    const sampleValues = rows.slice(0, 5).map((row) => row[orderClause.column] ?? null);
-    let appearsSorted = true;
-    for (let index2 = 1; index2 < sampleValues.length; index2 += 1) {
-      const comparison = compareOrderValues(sampleValues[index2 - 1], sampleValues[index2]);
-      if (orderClause.direction === "desc" && comparison < 0 || orderClause.direction === "asc" && comparison > 0) {
-        appearsSorted = false;
-        break;
-      }
-    }
-    return {
-      column: orderClause.column,
-      direction: orderClause.direction,
-      sampleValues,
-      appearsSorted
-    };
-  });
-};
-const executeDataOperationsAction = async (action, store, abortSignal) => {
-  var _a, _b, _c, _d, _e;
-  const { getState } = store;
-  if (action.type !== "tool_call" || !getState().csvData) {
-    return {
-      status: "error",
-      toolName: "data.mutate",
-      message: "No dataset available for data mutation.",
-      shouldStop: false,
-      retryHint: "Load a dataset before using data.mutate."
-    };
-  }
-  const mutationDataset = getPreferredAnalysisDataset(getState());
-  if ((_a = mutationDataset == null ? void 0 : mutationDataset.backing) == null ? void 0 : _a.readOnly) {
-    return {
-      status: "blocked",
-      toolName: "data.mutate",
-      message: "This large dataset is open in read-only mode, so source rows cannot be changed.",
-      shouldStop: false,
-      retryHint: "Use data.query for full-dataset analysis, or import a smaller CSV to enable governed cleaning and mutation.",
-      observation: {
-        type: "tool_result",
-        status: "blocked",
-        summary: "Large-file read-only mode blocks data mutation.",
-        toolName: "data.mutate",
-        code: "blocked_tool",
-        detail: { reason: "large_dataset_read_only" }
-      }
-    };
-  }
-  const normalizedPayload = normalizeDataMutatePayload({
-    explanation: (_b = action.args) == null ? void 0 : _b.explanation,
-    operations: Array.isArray((_c = action.args) == null ? void 0 : _c.operations) ? action.args.operations : action.args && "operation" in action.args && action.args.operation !== void 0 ? [action.args.operation] : void 0,
-    outputColumns: (_d = action.args) == null ? void 0 : _d.outputColumns,
-    planStatus: "operations",
-    consistencyIssues: []
-  });
-  const normalizedPlan = normalizedPayload.plan;
-  if (!normalizedPlan) {
-    throw new Error("data.mutate payload is invalid after pre-validation.");
-  }
-  const deriveMetricOperations = normalizedPlan.operations.filter(isDerivedMetricOperation);
-  const deriveMetricByLabelOperations = deriveMetricOperations.filter(
-    (operation) => operation.type === "derive_metric_by_label"
-  );
-  for (const deriveMetricOperation of deriveMetricByLabelOperations) {
-    const state2 = getState();
-    const preflightFailure = validateMetricDerivationPreflight({
-      columnProfiles: state2.columnProfiles,
-      csvData: state2.csvData ?? null,
-      dataPreparationPlan: state2.dataPreparationPlan ?? null,
-      operation: deriveMetricOperation
-    });
-    if (preflightFailure) {
-      return preflightFailure;
-    }
-  }
-  if (deriveMetricOperations.length > 0) {
-    const currentData = getState().csvData;
-    const inputVersionId = buildDatasetVersionId(currentData.fileName, currentData.data);
-    const warningConfirmed = isDerivedMetricWarningExplicitlyConfirmed(
-      (_e = getState().activeTurn) == null ? void 0 : _e.userMessage
-    );
-    let previewRows = currentData.data;
-    const postflightValidations = [];
-    for (const operation of normalizedPlan.operations) {
-      const operationInputRows = previewRows;
-      if (isDerivedMetricOperation(operation)) {
-        const preflightValidation = validateDerivedMetricOperation({
-          inputRows: operationInputRows,
-          operation,
-          inputVersionId
-        });
-        const preflightBlock = buildDerivedMetricValidationResult([{
-          ...preflightValidation,
-          requiresConfirmation: preflightValidation.requiresConfirmation && !(operation.validationMode === "warn" && warningConfirmed)
-        }]);
-        if (preflightBlock) {
-          logDerivedMetricValidationBoundary(store, preflightBlock);
-          return preflightBlock;
-        }
-      }
-      previewRows = applyDataOperations(previewRows, [operation]).data;
-      if (isDerivedMetricOperation(operation)) {
-        const postflightValidation = validateDerivedMetricOperation({
-          inputRows: operationInputRows,
-          outputRows: previewRows,
-          operation,
-          inputVersionId
-        });
-        const postflightBlock = buildDerivedMetricValidationResult([{
-          ...postflightValidation,
-          requiresConfirmation: postflightValidation.requiresConfirmation && !(operation.validationMode === "warn" && warningConfirmed)
-        }]);
-        if (postflightBlock) {
-          logDerivedMetricValidationBoundary(store, postflightBlock);
-          return postflightBlock;
-        }
-        postflightValidations.push(postflightValidation);
-      }
-    }
-    const outputVersionId = buildDatasetVersionId(currentData.fileName, previewRows);
-    normalizedPlan.derivedMetricValidations = postflightValidations.map((validation) => ({
-      ...validation,
-      evidenceReferences: [
-        ...validation.evidenceReferences,
-        {
-          kind: "dataset_version",
-          id: outputVersionId,
-          label: "Output dataset version"
-        }
-      ]
-    }));
-  }
-  console.log(`${LOG_PREFIX$d} Running deterministic data operations: ${normalizedPlan.explanation}`);
-  throwIfAborted(abortSignal);
-  await executeDeterministicMutationPlan(normalizedPlan, store, abortSignal);
-  const artifactMetadata = buildMutationArtifactMetadata(normalizedPlan);
-  return {
-    status: "success",
-    toolName: "data.mutate",
-    message: normalizedPlan.explanation,
-    shouldStop: false,
-    artifactMetadata,
-    observation: {
-      type: "tool_result",
-      status: "success",
-      summary: normalizedPlan.explanation,
-      toolName: "data.mutate",
-      detail: {
-        operationCount: normalizedPlan.operations.length,
-        derivedMetrics: normalizedPlan.operations.map(summarizeMutationOperation).filter((operation) => operation !== null),
-        artifactMetadata
-      }
-    }
-  };
-};
-const executeDataQueryAction = async (action, store, abortSignal) => {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o;
-  const { getState, setState } = store;
-  const state2 = getState();
-  const preferredDataset = getPreferredAnalysisDataset(state2);
-  if (action.type !== "tool_call" || !((_a = action.args) == null ? void 0 : _a.plan) || !preferredDataset) {
-    return {
-      status: "error",
-      toolName: "data.query",
-      message: "data.query requires a structured plan and a loaded dataset.",
-      shouldStop: false,
-      retryHint: "Return data.query with a valid plan object."
-    };
-  }
-  const normalizedPayload = normalizeDataQueryPayload(action.args);
-  const queryInput = preferredDataset.data;
-  const fallbackOperation = normalizedPayload.fallbackFilterOperation;
-  const phase = state2.cleaningRun && state2.cleaningRun.status !== "completed" ? "verify" : "analysis";
-  const governance = getToolGovernanceMeta(store, "data.query");
-  const activeTurn = state2.activeTurn;
-  const activeStep = activeTurn == null ? void 0 : activeTurn.steps.at(-1);
-  const columnRegistry2 = buildEffectiveColumnRegistryFromState(state2, {
-    datasetOverride: preferredDataset
-  });
-  const steering = (_b = state2.latestAnalysisSession) == null ? void 0 : _b.analysisSteering;
-  let augmentedPlan = normalizedPayload.plan;
-  const actualDataColumns = getAllowedColumns(columnRegistry2, "select").length > 0 ? getAllowedColumns(columnRegistry2, "select") : state2.columnProfiles.map((profile) => profile.name);
-  const canonicalizeColumns = (columns2) => columns2 == null ? void 0 : columns2.map((column) => resolveColumnReference(column, columnRegistry2) ?? column);
-  augmentedPlan = {
-    ...augmentedPlan,
-    ...augmentedPlan.select ? { select: canonicalizeColumns(augmentedPlan.select) ?? augmentedPlan.select } : {},
-    ...augmentedPlan.groupBy ? { groupBy: canonicalizeColumns(augmentedPlan.groupBy) ?? augmentedPlan.groupBy } : {},
-    ...augmentedPlan.orderBy ? {
-      orderBy: augmentedPlan.orderBy.map((order) => ({
-        ...order,
-        column: resolveColumnReference(order.column, columnRegistry2) ?? order.column
-      }))
-    } : {}
-  };
-  if (steering) {
-    const steeringFilter = steering.detailRowFilter ?? null;
-    const shouldInheritAnalysisScopeFilters = ((_d = (_c = state2.activeTurn) == null ? void 0 : _c.runtimeStepContract) == null ? void 0 : _d.taskMode) === "reconciliation" && ((_e = state2.activeTurn.runtimeStepContract.reconciliation) == null ? void 0 : _e.inheritPriorFilters) === true;
-    if (steeringFilter) {
-      console.log(
-        `${LOG_PREFIX$d} Directive injection: detailRowFilter="${steeringFilter.column}" = "${steeringFilter.value}", hierarchyColumn="${steering.hierarchyColumn ?? "none"}", excludeFromAggregation=[${(steering.excludeFromAggregation ?? []).length}], preferGroupBy=[${(steering.preferGroupBy ?? []).join(", ")}], blockGroupBy=[${(steering.blockGroupBy ?? []).join(", ")}], actualDataColumns=[${actualDataColumns.length}]: ${actualDataColumns.slice(0, 8).join(", ")}${actualDataColumns.length > 8 ? "..." : ""}`
-      );
-    }
-    const injectionResult = injectDirectivesIntoQueryPlan(augmentedPlan, {
-      directives: {
-        detailRowColumn: steering.detailRowColumn ?? null,
-        detailRowValue: steering.detailRowValue ?? null,
-        detailRowFilter: steeringFilter,
-        hierarchyColumn: shouldInheritAnalysisScopeFilters ? steering.hierarchyColumn ?? null : null,
-        excludeFromAggregation: shouldInheritAnalysisScopeFilters ? steering.excludeFromAggregation ?? [] : [],
-        preferGroupBy: steering.preferGroupBy ?? [],
-        blockGroupBy: steering.blockGroupBy ?? [],
-        recommendedTopN: null
-        // Do not enforce topN for user-initiated queries
-      },
-      availableColumns: actualDataColumns,
-      columnRegistry: columnRegistry2
-    });
-    augmentedPlan = injectionResult.plan;
-    if (injectionResult.warnings.length > 0) {
-      console.warn(`${LOG_PREFIX$d} Directive injection warnings:`, injectionResult.warnings);
-    }
-    if (injectionResult.validationError) {
-      throw new Error(injectionResult.validationError);
-    }
-  }
-  const needsCompleteDerivedEvidence = requiresCompleteAggregateEvidence(
-    (activeTurn == null ? void 0 : activeTurn.userMessage) ?? ""
-  ) && (((_f = augmentedPlan.groupBy) == null ? void 0 : _f.length) ?? 0) > 0 && (((_g = augmentedPlan.aggregates) == null ? void 0 : _g.length) ?? 0) >= 1;
-  if (needsCompleteDerivedEvidence && (augmentedPlan.limit ?? 0) < 500) {
-    augmentedPlan = {
-      ...augmentedPlan,
-      limit: 500
-    };
-  }
-  const aggregateAliasMismatch = validateAggregateAliasSemantics(augmentedPlan);
-  if (aggregateAliasMismatch) {
-    return {
-      status: "error",
-      toolName: "data.query",
-      message: aggregateAliasMismatch.message,
-      shouldStop: false,
-      retryHint: aggregateAliasMismatch.message,
-      observation: {
-        type: "tool_result",
-        status: "error",
-        summary: aggregateAliasMismatch.message,
-        toolName: "data.query",
-        code: "validation_failed",
-        detail: {
-          semanticCode: aggregateAliasMismatch.code,
-          column: aggregateAliasMismatch.column,
-          alternativeColumn: aggregateAliasMismatch.alternativeColumn
-        }
-      }
-    };
-  }
-  try {
-    throwIfAborted(abortSignal);
-    if (augmentedPlan.rawSql) {
-      console.log(`${LOG_PREFIX$d} Raw SQL passthrough detected, bypassing structured compilation.`);
-      const rawExecution = await executeRawSqlQuery(
-        preferredDataset,
-        augmentedPlan.rawSql,
-        augmentedPlan.select ?? [],
-        {
-          limit: augmentedPlan.limit ?? 500,
-          abortSignal,
-          reportDiagnostics: createWorkerDiagnosticsTelemetryReporter(store),
-          columnRegistry: columnRegistry2
-        }
-      );
-      throwIfAborted(abortSignal);
-      const rawActiveDataQuery = {
-        ...resolveDatasetScopeBinding(getState().datasetBundle),
-        explanation: normalizedPayload.explanation,
-        plan: augmentedPlan,
-        result: rawExecution.result,
-        appliedAt: /* @__PURE__ */ new Date(),
-        source: "execute_data_query",
-        engine: rawExecution.engine,
-        sqlPreview: rawExecution.sqlPreview ?? augmentedPlan.rawSql,
-        tableName: rawExecution.tableName ?? "session_clean_dataset",
-        loadVersion: rawExecution.loadVersion ?? null
-      };
-      setState({ activeDataQuery: rawActiveDataQuery });
-      return {
-        status: "success",
-        toolName: "data.query",
-        message: normalizedPayload.explanation,
-        shouldStop: false,
-        artifactMetadata: {
-          type: "data_query",
-          engine: rawExecution.engine,
-          queryMode: "raw_sql",
-          rowCount: rawExecution.result.returnedRows,
-          columnCount: rawExecution.result.selectedColumns.length,
-          selectedColumns: rawExecution.result.selectedColumns,
-          truncated: rawExecution.result.truncated,
-          sqlPreview: rawExecution.sqlPreview ?? null
-        },
-        artifacts: { activeDataQuery: rawActiveDataQuery }
-      };
-    }
-    if (normalizedPayload.unpivotParams) {
-      console.log(`${LOG_PREFIX$d} Structured unpivot detected.`);
-      const { executeUnifiedQuery: executeUnifiedQuery2 } = await __vitePreload(async () => {
-        const { executeUnifiedQuery: executeUnifiedQuery3 } = await Promise.resolve().then(() => unifiedQueryExecutor);
-        return { executeUnifiedQuery: executeUnifiedQuery3 };
-      }, true ? void 0 : void 0, import.meta.url);
-      const { primeDuckDbDataset: primeDuckDbDataset2 } = await __vitePreload(async () => {
-        const { primeDuckDbDataset: primeDuckDbDataset3 } = await Promise.resolve().then(() => queryEngine);
-        return { primeDuckDbDataset: primeDuckDbDataset3 };
-      }, true ? void 0 : void 0, import.meta.url);
-      const prime = await primeDuckDbDataset2(preferredDataset, abortSignal);
-      if (prime.engine !== "duckdb") {
-        throw new Error("UNPIVOT requires DuckDB to be available.");
-      }
-      const unpivotResult = await executeUnifiedQuery2(
-        {
-          kind: "unpivot",
-          purpose: normalizedPayload.explanation,
-          unpivotParams: normalizedPayload.unpivotParams
-        },
-        {
-          binding: { tableName: prime.tableName, loadVersion: prime.loadVersion },
-          allowedColumns: actualDataColumns,
-          columnRegistry: columnRegistry2,
-          directives: steering ? {
-            detailRowColumn: steering.detailRowColumn ?? null,
-            detailRowValue: steering.detailRowValue ?? null,
-            detailRowFilter: steering.detailRowFilter ?? null,
-            hierarchyColumn: steering.hierarchyColumn ?? null,
-            excludeFromAggregation: steering.excludeFromAggregation ?? [],
-            preferGroupBy: steering.preferGroupBy ?? [],
-            blockGroupBy: steering.blockGroupBy ?? [],
-            recommendedTopN: null
-          } : null
-        }
-      );
-      throwIfAborted(abortSignal);
-      const unpivotActiveDataQuery = {
-        ...resolveDatasetScopeBinding(getState().datasetBundle),
-        explanation: normalizedPayload.explanation,
-        plan: augmentedPlan,
-        result: {
-          rows: unpivotResult.rows,
-          totalMatchedRows: unpivotResult.totalMatchedRows,
-          returnedRows: unpivotResult.returnedRows,
-          truncated: false,
-          selectedColumns: unpivotResult.selectedColumns,
-          appliedOrderBy: [],
-          appliedLimit: normalizedPayload.unpivotParams.limit ?? 500,
-          durationMs: unpivotResult.durationMs
-        },
-        appliedAt: /* @__PURE__ */ new Date(),
-        source: "execute_data_query",
-        engine: unpivotResult.engine,
-        sqlPreview: unpivotResult.sqlPreview,
-        tableName: prime.tableName,
-        loadVersion: prime.loadVersion
-      };
-      setState({ activeDataQuery: unpivotActiveDataQuery });
-      return {
-        status: "success",
-        toolName: "data.query",
-        message: normalizedPayload.explanation,
-        shouldStop: false,
-        artifactMetadata: {
-          type: "data_query",
-          engine: unpivotResult.engine,
-          queryMode: "unpivot",
-          rowCount: unpivotResult.returnedRows,
-          columnCount: unpivotResult.selectedColumns.length,
-          selectedColumns: unpivotResult.selectedColumns,
-          truncated: false,
-          sqlPreview: unpivotResult.sqlPreview ?? null
-        },
-        artifacts: { activeDataQuery: unpivotActiveDataQuery }
-      };
-    }
-    const activeDataQuery = await executeStructuredDataQuery(store, {
-      datasetOverride: preferredDataset,
-      explanation: normalizedPayload.explanation,
-      plan: augmentedPlan,
-      phase,
-      origin: "chat",
-      fallbackFilterOperation: fallbackOperation ?? null,
-      allowedColumnsOverride: actualDataColumns,
-      columnRegistryOverride: columnRegistry2,
-      policyReason: ((_h = governance.decision) == null ? void 0 : _h.reason) ?? null,
-      toolCategory: ((_i = governance.descriptor) == null ? void 0 : _i.category) ?? "data",
-      appendChatTrace: true,
-      appendCleaningRunTrace: true,
-      scrollToRawDataExplorer: true,
-      allowNativeFallback: true,
-      progressMessage: `AI is running a read-only data query: ${normalizedPayload.explanation}`,
-      abortSignal,
-      dimensionNormalization: {
-        ...DEFAULT_DIMENSION_NORMALIZATION,
-        shouldNormalize: buildColumnTypeGate(state2.columnProfiles)
-      }
-    });
-    throwIfAborted(abortSignal);
-    const semanticMismatch = validateGroupedQuerySemantics({
-      plan: activeDataQuery.plan,
-      resultRows: activeDataQuery.result.rows,
-      datasetRows: preferredDataset.data
-    });
-    if (semanticMismatch) {
-      setState({ activeDataQuery: null });
-      return {
-        status: "error",
-        toolName: "data.query",
-        message: semanticMismatch.message,
-        shouldStop: false,
-        retryHint: semanticMismatch.message,
-        observation: {
-          type: "tool_result",
-          status: "error",
-          summary: semanticMismatch.message,
-          toolName: "data.query",
-          code: "validation_failed",
-          detail: {
-            semanticCode: semanticMismatch.code,
-            column: semanticMismatch.column,
-            alternativeColumn: semanticMismatch.alternativeColumn
-          }
-        }
-      };
-    }
-    const queryMode = ((_j = activeDataQuery.plan.groupBy) == null ? void 0 : _j.length) || ((_k = activeDataQuery.plan.aggregates) == null ? void 0 : _k.length) ? "aggregate" : activeDataQuery.plan.where ? "filtered" : "preview";
-    const orderVerification = summarizeOrderVerification(
-      activeDataQuery.result.rows,
-      activeDataQuery.result.appliedOrderBy
-    );
-    return {
-      status: "success",
-      toolName: "data.query",
-      message: activeDataQuery.explanation,
-      shouldStop: false,
-      artifactMetadata: {
-        artifactType: "data_query",
-        metricDefinition: ((_l = normalizedPayload.plan.aggregates) == null ? void 0 : _l.map((aggregate2) => aggregate2.as)) ?? [],
-        grain: normalizedPayload.plan.groupBy ?? [],
-        sourceArtifactIds: []
-      },
-      observation: {
-        type: "tool_result",
-        status: "success",
-        summary: `${queryMode} data.query returned ${activeDataQuery.result.returnedRows} of ${activeDataQuery.result.totalMatchedRows} rows.`,
-        toolName: "data.query",
-        queryMode,
-        detail: {
-          engine: activeDataQuery.engine,
-          sqlPreview: activeDataQuery.sqlPreview,
-          queryMode,
-          returnedRows: activeDataQuery.result.returnedRows,
-          totalMatchedRows: activeDataQuery.result.totalMatchedRows,
-          selectedColumns: activeDataQuery.result.selectedColumns,
-          truncated: activeDataQuery.result.truncated,
-          whereColumns: getWhereColumns(activeDataQuery.plan.where),
-          orderVerification,
-          artifactMetadata: {
-            artifactType: "data_query",
-            metricDefinition: ((_m = normalizedPayload.plan.aggregates) == null ? void 0 : _m.map((aggregate2) => aggregate2.as)) ?? [],
-            grain: normalizedPayload.plan.groupBy ?? [],
-            sourceArtifactIds: []
-          }
-        }
-      },
-      artifacts: {
-        activeDataQuery
-      }
-    };
-  } catch (error2) {
-    if (isRuntimeAbortError(error2, abortSignal)) {
-      throw error2;
-    }
-    const errorMessage = error2 instanceof Error ? error2.message : String(error2);
-    if (fallbackOperation && !((_n = preferredDataset.backing) == null ? void 0 : _n.readOnly)) {
-      const fallbackPlan = createQueryPlanFromFilterOperation(fallbackOperation, { limit: action.args.plan.limit });
-      throwIfAborted(abortSignal);
-      const fallbackResult = await executeDataQueryWithWorker(queryInput, fallbackPlan, {
-        allowedColumns: actualDataColumns,
-        maxRows: 500,
-        maxColumns: 50,
-        maxOrderBy: 3,
-        timeoutMs: 1500,
-        abortSignal,
-        reportDiagnostics: createWorkerDiagnosticsTelemetryReporter(store)
-      });
-      throwIfAborted(abortSignal);
-      const activeDataQuery = {
-        ...resolveDatasetScopeBinding(getState().datasetBundle),
-        sessionId: getState().sessionId,
-        turnId: activeTurn == null ? void 0 : activeTurn.turnId,
-        stepId: activeStep == null ? void 0 : activeStep.stepId,
-        explanation: `${action.args.explanation} (fallback filter)`,
-        plan: {
-          select: fallbackResult.selectedColumns,
-          where: fallbackPlan.where,
-          orderBy: fallbackResult.appliedOrderBy,
-          limit: fallbackResult.appliedLimit
-        },
-        result: fallbackResult,
-        appliedAt: /* @__PURE__ */ new Date(),
-        source: "execute_data_query",
-        engine: "native",
-        sqlPreview: null,
-        tableName: null,
-        loadVersion: null,
-        fallbackReason: errorMessage,
-        fallbackFilterOperation: fallbackOperation
-      };
-      throwIfAborted(abortSignal);
-      setState({
-        activeDataQuery,
-        activeSpreadsheetFilter: null,
-        spreadsheetFilterFunction: null,
-        aiFilterExplanation: null,
-        isSpreadsheetVisible: true
-      });
-      throwIfAborted(abortSignal);
-      setState((prev) => {
-        var _a2, _b2;
-        return {
-          chatHistory: [
-            ...prev.chatHistory,
-            createChatMessage({
-              sender: "ai",
-              text: `**${getDataQueryTraceLabel(phase, activeDataQuery.plan, activeDataQuery.fallbackFilterOperation)}**
-${activeDataQuery.explanation}
-Engine: \`${activeDataQuery.engine}\` | Rows: ${activeDataQuery.result.returnedRows}/${activeDataQuery.result.totalMatchedRows} | Duration: ${activeDataQuery.result.durationMs}ms${activeDataQuery.fallbackReason ? `
-Fallback: ${activeDataQuery.fallbackReason}` : ""}`,
-              timestamp: /* @__PURE__ */ new Date(),
-              type: "ai_query_trace",
-              queryTrace: {
-                sessionId: activeDataQuery.sessionId,
-                turnId: activeDataQuery.turnId,
-                stepId: activeDataQuery.stepId,
-                phase,
-                engine: activeDataQuery.engine,
-                sqlPreview: activeDataQuery.sqlPreview,
-                returnedRows: activeDataQuery.result.returnedRows,
-                totalMatchedRows: activeDataQuery.result.totalMatchedRows,
-                durationMs: activeDataQuery.result.durationMs,
-                fallbackReason: activeDataQuery.fallbackReason ?? null
-              }
-            })
-          ],
-          queryHistory: appendQueryHistory(prev.queryHistory ?? [], createQueryTraceEntry(activeDataQuery, phase, {
-            origin: "chat",
-            policyReason: ((_a2 = governance.decision) == null ? void 0 : _a2.reason) ?? null,
-            toolCategory: ((_b2 = governance.descriptor) == null ? void 0 : _b2.category) ?? "data"
-          }))
-        };
-      });
-      throwIfAborted(abortSignal);
-      getState().logAgentToolUsage({
-        tool: "data.query",
-        description: `${action.args.explanation} (fallback filter)`,
-        detail: {
-          error: errorMessage,
-          fallbackOperation,
-          totalMatchedRows: fallbackResult.totalMatchedRows,
-          returnedRows: fallbackResult.returnedRows,
-          truncated: fallbackResult.truncated
-        }
-      });
-      throwIfAborted(abortSignal);
-      getState().addProgress(`Read-only query fell back to compatibility filter: ${errorMessage}`, "system");
-      return {
-        status: "success",
-        toolName: "data.query",
-        message: `${normalizedPayload.explanation} (fallback filter)`,
-        shouldStop: false,
-        observation: {
-          type: "tool_result",
-          status: "success",
-          summary: `filtered data.query fallback returned ${fallbackResult.returnedRows} of ${fallbackResult.totalMatchedRows} rows.`,
-          toolName: "data.query",
-          queryMode: "filtered",
-          detail: {
-            fallbackReason: errorMessage,
-            queryMode: "filtered",
-            returnedRows: fallbackResult.returnedRows,
-            totalMatchedRows: fallbackResult.totalMatchedRows,
-            selectedColumns: fallbackResult.selectedColumns,
-            truncated: fallbackResult.truncated,
-            whereColumns: getWhereColumns(fallbackPlan.where),
-            orderVerification: summarizeOrderVerification(
-              fallbackResult.rows,
-              fallbackResult.appliedOrderBy
-            )
-          }
-        }
-      };
-    }
-    getState().logAgentToolUsage({
-      tool: "data.query",
-      description: normalizedPayload.explanation,
-      detail: {
-        error: errorMessage,
-        plan: normalizedPayload.plan
-      }
-    });
-    const repairGuidance = getDataQueryRepairGuidance(errorMessage, {
-      availableColumns: (_o = getState().columnProfiles) == null ? void 0 : _o.map((p) => p.name)
-    });
-    const isRecoverableQueryShapeError = repairGuidance.repairHintCategories.length > 0;
-    getState().addProgress(
-      `AI data query failed: ${errorMessage}`,
-      isRecoverableQueryShapeError ? "system" : "error"
-    );
-    return {
-      status: isRecoverableQueryShapeError ? "blocked" : "error",
-      toolName: "data.query",
-      message: errorMessage,
-      shouldStop: false,
-      retryHint: isRecoverableQueryShapeError ? repairGuidance.repairHint : errorMessage,
-      observation: {
-        type: isRecoverableQueryShapeError ? "runtime_error" : "tool_result",
-        status: isRecoverableQueryShapeError ? "blocked" : "error",
-        summary: errorMessage,
-        toolName: "data.query",
-        code: isRecoverableQueryShapeError ? "validation_failed" : void 0,
-        retryHint: isRecoverableQueryShapeError ? repairGuidance.repairHint : errorMessage,
-        detail: isRecoverableQueryShapeError ? {
-          repairHint: repairGuidance.repairHint,
-          repairHintCategory: repairGuidance.repairHintCategory,
-          repairHintCategories: repairGuidance.repairHintCategories
-        } : void 0
-      }
-    };
-  }
-};
-const executeFilterAction = async (query, store, origin = "chat", abortSignal) => {
-  const { getState, setState } = store;
-  console.log(`${LOG_PREFIX$d} Filtering spreadsheet with query: ${query}`);
-  getState().addProgress("AI is filtering data explorer.");
-  throwIfAborted(abortSignal);
-  const activeSpreadsheetFilter = await runSpreadsheetFilter(query, store, { origin }, abortSignal);
-  throwIfAborted(abortSignal);
-  setState({ isSpreadsheetVisible: true });
-  if (typeof document !== "undefined") {
-    setTimeout(() => {
-      var _a;
-      return (_a = document.getElementById("raw-data-explorer")) == null ? void 0 : _a.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
-  }
-  return {
-    status: "success",
-    toolName: "spreadsheet.filter",
-    message: activeSpreadsheetFilter.finalReply,
-    shouldStop: false,
-    observation: {
-      type: "tool_result",
-      status: "success",
-      summary: activeSpreadsheetFilter.finalReply,
-      toolName: "spreadsheet.filter",
-      queryMode: "filtered",
-      detail: {
-        matchedRowCount: activeSpreadsheetFilter.observation.matchedRowCount,
-        selectedColumn: activeSpreadsheetFilter.observation.selectedColumn,
-        operator: activeSpreadsheetFilter.observation.operator,
-        value: activeSpreadsheetFilter.observation.value
-      }
-    },
-    artifacts: {
-      activeSpreadsheetFilter
-    }
-  };
-};
-const executeCorrelationAction = async (action, store) => {
-  var _a, _b;
-  if (action.type !== "tool_call" || !action.args) {
-    return {
-      status: "error",
-      toolName: "analysis.correlation",
-      message: "Correlation analysis payload is missing.",
-      shouldStop: false
-    };
-  }
-  if ((_b = (_a = getPreferredAnalysisDataset(store.getState())) == null ? void 0 : _a.backing) == null ? void 0 : _b.readOnly) {
-    return {
-      status: "blocked",
-      toolName: "analysis.correlation",
-      message: "Correlation is unavailable in large-file read-only mode because it would otherwise run only on the preview sample.",
-      shouldStop: false,
-      retryHint: "Use governed SQL aggregations on the complete dataset, or import a smaller CSV for row-level statistical analysis."
-    };
-  }
-  return executeStatisticalAnalysis(action.args, store);
-};
-const executeReshapeAction = async (action, store, abortSignal) => {
-  var _a;
-  const { getState } = store;
-  const csvData = getState().csvData;
-  if (!csvData) {
-    return {
-      status: "error",
-      toolName: "data.reshape",
-      message: "No dataset available for reshape.",
-      shouldStop: false
-    };
-  }
-  const args = (action.type === "tool_call" ? action.args : null) ?? {};
-  const sourceColumns = args.sourceColumns ?? [];
-  const keepColumns = args.keepColumns ?? [];
-  const keyColumn = args.keyColumn ?? "Period";
-  const valueColumn = args.valueColumn ?? "Value";
-  const reason = args.reason ?? "";
-  const rowCountBefore = csvData.data.length;
-  const reshapeAction = {
-    type: "tool_call",
-    args: {
-      explanation: `Reshape wide-format dataset into long format: ${reason}`,
-      operations: [{
-        id: "agent_reshape_wide_pivot",
-        type: "unpivot_columns",
-        reason,
-        sourceColumns,
-        keyColumn,
-        valueColumn,
-        keepColumns,
-        sourceColumnNameColumn: "SourceColumnName"
-      }]
-    }
-  };
-  const result = await executeDataOperationsAction(reshapeAction, store, abortSignal);
-  const rowCountAfter = ((_a = getState().csvData) == null ? void 0 : _a.data.length) ?? 0;
-  const retentionRatio = rowCountBefore > 0 ? rowCountAfter / rowCountBefore : 1;
-  console.log(
-    `${LOG_PREFIX$d} data.reshape: ${rowCountBefore} → ${rowCountAfter} rows (${(retentionRatio * 100).toFixed(1)}% retention)`
-  );
-  return {
-    ...result,
-    toolName: "data.reshape",
-    observation: {
-      type: "tool_result",
-      status: result.status === "success" ? "success" : result.status,
-      summary: `Reshaped dataset from ${rowCountBefore} to ${rowCountAfter} rows (${sourceColumns.length} columns unpivoted). Retention: ${(retentionRatio * 100).toFixed(1)}%.`,
-      toolName: "data.reshape",
-      detail: {
-        rowCountBefore,
-        rowCountAfter,
-        retentionRatio,
-        sourceColumns,
-        keepColumns,
-        keyColumn,
-        valueColumn,
-        reshapeQuality: retentionRatio < 0.01 ? "catastrophic_loss" : retentionRatio < 0.1 ? "severe_loss" : "normal"
-      }
-    }
-  };
-};
-const executeKeepWideAction = (action, store) => {
-  var _a;
-  const reason = (action.type === "tool_call" ? (_a = action.args) == null ? void 0 : _a.reason : null) ?? "Agent decided to keep wide format.";
-  console.log(`${LOG_PREFIX$d} data.keep_wide: ${reason}`);
-  const state2 = store.getState();
-  const session = state2.latestAnalysisSession;
-  if (session == null ? void 0 : session.analysisSteering) {
-    store.setState((prev) => {
-      const updatedSession = prev.latestAnalysisSession;
-      if (!(updatedSession == null ? void 0 : updatedSession.analysisSteering)) return {};
-      return {
-        latestAnalysisSession: {
-          ...updatedSession,
-          analysisSteering: {
-            ...updatedSession.analysisSteering,
-            reshapeDecision: null,
-            reshapeDecisionReasons: [
-              ...updatedSession.analysisSteering.reshapeDecisionReasons ?? [],
-              "agent_decided_keep_wide",
-              reason
-            ]
-          }
-        }
-      };
-    });
-  }
-  return {
-    status: "success",
-    toolName: "data.keep_wide",
-    message: `Dataset kept in wide format: ${reason}`,
-    shouldStop: false,
-    observation: {
-      type: "tool_result",
-      status: "success",
-      summary: `Agent decided to keep dataset in wide format. Reason: ${reason}. Analysis will use existing columns directly.`,
-      toolName: "data.keep_wide",
-      detail: { reason }
-    }
-  };
-};
-const LOG_PREFIX$c = "[DiagnosticData]";
-const QUERY_TIMEOUT_MS = 8e3;
-const resolveBinding = (store) => {
-  const state2 = store.getState();
-  const preferredDataset = getPreferredAnalysisDataset(state2);
-  const binding = resolveCurrentDuckDbBinding({
-    mode: "analysis",
-    csvData: preferredDataset,
-    snapshot: state2.datasetSemanticSnapshot,
-    semanticDatasetVersion: state2.semanticDatasetVersion,
-    sessionStatus: state2.duckDbSessionStatus,
-    activeDataQuery: state2.activeDataQuery ?? null
-  });
-  if (!(binding == null ? void 0 : binding.tableName)) return null;
-  return binding;
-};
-const numericTypes = /* @__PURE__ */ new Set(["numerical", "currency", "percentage"]);
-const getNumericColumns = (profiles, requested) => {
-  const numeric = profiles.filter((c) => numericTypes.has(c.type));
-  if (!requested || requested.length === 0) return numeric;
-  return numeric.filter((c) => requested.includes(c.name));
-};
-const executeDataDescribeAction = async (action, store) => {
-  const state2 = store.getState();
-  if (action.type !== "tool_call" || !state2.csvData) {
-    return { status: "error", toolName: "data.describe", message: "No dataset loaded.", shouldStop: false };
-  }
-  const binding = resolveBinding(store);
-  if (!binding) {
-    return { status: "error", toolName: "data.describe", message: "DuckDB binding unavailable.", shouldStop: false };
-  }
-  const args = action.args ?? {};
-  const cols = getNumericColumns(state2.columnProfiles, args.columns);
-  if (cols.length === 0) {
-    return { status: "error", toolName: "data.describe", message: "No numeric columns found to describe.", shouldStop: false };
-  }
-  const intent = {
-    kind: "describe",
-    purpose: `Summary statistics for ${cols.length} numeric column(s)`,
-    params: { columns: cols.map((c) => c.name) },
-    options: { timeout: QUERY_TIMEOUT_MS }
-  };
-  try {
-    const queryResult = await executeUnifiedQuery(intent, {
-      binding,
-      columnProfiles: state2.columnProfiles
-    });
-    const explanation = args.explanation || `Summary statistics for ${cols.length} numeric column(s).`;
-    console.log(`${LOG_PREFIX$c} data.describe returned ${queryResult.returnedRows} column stats.`);
-    return {
-      status: "success",
-      toolName: "data.describe",
-      message: explanation,
-      shouldStop: false,
-      observation: {
-        type: "tool_result",
-        status: "success",
-        summary: `Computed summary statistics for ${queryResult.returnedRows} numeric column(s): ${cols.map((c) => c.name).join(", ")}.`,
-        toolName: "data.describe",
-        detail: { columns: cols.map((c) => c.name), rowCount: queryResult.returnedRows }
-      },
-      artifacts: {
-        activeDataQuery: {
-          explanation,
-          result: {
-            rows: queryResult.rows,
-            totalMatchedRows: queryResult.totalMatchedRows,
-            returnedRows: queryResult.returnedRows,
-            truncated: false,
-            selectedColumns: queryResult.selectedColumns,
-            appliedOrderBy: [],
-            appliedLimit: cols.length,
-            durationMs: queryResult.durationMs
-          },
-          plan: {}
-        }
-      }
-    };
-  } catch (error2) {
-    return { status: "error", toolName: "data.describe", message: `Describe query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, shouldStop: false };
-  }
-};
-const executeDataValueCountsAction = async (action, store) => {
-  const state2 = store.getState();
-  if (action.type !== "tool_call" || !state2.csvData) {
-    return { status: "error", toolName: "data.value_counts", message: "No dataset loaded.", shouldStop: false };
-  }
-  const binding = resolveBinding(store);
-  if (!binding) {
-    return { status: "error", toolName: "data.value_counts", message: "DuckDB binding unavailable.", shouldStop: false };
-  }
-  const args = action.args ?? {};
-  const column = String(args.column ?? "").trim();
-  if (!column) {
-    return { status: "error", toolName: "data.value_counts", message: '"column" is required.', shouldStop: false, retryHint: "Provide a column name." };
-  }
-  if (!state2.columnProfiles.some((c) => c.name === column)) {
-    return { status: "error", toolName: "data.value_counts", message: `Column "${column}" not found.`, shouldStop: false };
-  }
-  const limit = Math.min(Math.max(Number(args.limit) || 20, 1), 100);
-  const intent = {
-    kind: "value_counts",
-    purpose: `Value counts for "${column}" (top ${limit})`,
-    params: { column, limit },
-    options: { timeout: QUERY_TIMEOUT_MS }
-  };
-  try {
-    const queryResult = await executeUnifiedQuery(intent, {
-      binding,
-      allowedColumns: state2.columnProfiles.map((c) => c.name),
-      columnProfiles: state2.columnProfiles
-    });
-    const explanation = args.explanation || `Value counts for "${column}" (top ${limit}).`;
-    console.log(`${LOG_PREFIX$c} data.value_counts returned ${queryResult.returnedRows} values for "${column}".`);
-    return {
-      status: "success",
-      toolName: "data.value_counts",
-      message: explanation,
-      shouldStop: false,
-      observation: {
-        type: "tool_result",
-        status: "success",
-        summary: `Top ${queryResult.returnedRows} values for "${column}".`,
-        toolName: "data.value_counts",
-        detail: { column, rowCount: queryResult.returnedRows }
-      },
-      artifacts: {
-        activeDataQuery: {
-          explanation,
-          result: {
-            rows: queryResult.rows,
-            totalMatchedRows: queryResult.totalMatchedRows,
-            returnedRows: queryResult.returnedRows,
-            truncated: false,
-            selectedColumns: queryResult.selectedColumns,
-            appliedOrderBy: [{ column: "count", direction: "desc" }],
-            appliedLimit: limit,
-            durationMs: queryResult.durationMs
-          },
-          plan: {}
-        }
-      }
-    };
-  } catch (error2) {
-    return { status: "error", toolName: "data.value_counts", message: `Value counts query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, shouldStop: false };
-  }
-};
-const executeDataOutliersAction = async (action, store) => {
-  const state2 = store.getState();
-  if (action.type !== "tool_call" || !state2.csvData) {
-    return { status: "error", toolName: "data.outliers", message: "No dataset loaded.", shouldStop: false };
-  }
-  const binding = resolveBinding(store);
-  if (!binding) {
-    return { status: "error", toolName: "data.outliers", message: "DuckDB binding unavailable.", shouldStop: false };
-  }
-  const args = action.args ?? {};
-  const column = String(args.column ?? "").trim();
-  if (!column) {
-    return { status: "error", toolName: "data.outliers", message: '"column" is required.', shouldStop: false, retryHint: "Provide a numeric column name." };
-  }
-  const profile = state2.columnProfiles.find((c) => c.name === column);
-  if (!profile || !numericTypes.has(profile.type)) {
-    return { status: "error", toolName: "data.outliers", message: `Column "${column}" is not numeric.`, shouldStop: false };
-  }
-  const intent = {
-    kind: "outliers",
-    purpose: `IQR outlier detection for "${column}"`,
-    params: { column },
-    options: { timeout: QUERY_TIMEOUT_MS }
-  };
-  try {
-    const queryResult = await executeUnifiedQuery(intent, {
-      binding,
-      columnProfiles: state2.columnProfiles
-    });
-    const explanation = args.explanation || `IQR outlier detection for "${column}".`;
-    const statsRow = queryResult.rows[0];
-    const q1 = statsRow ? Number(statsRow["__q1"]) : 0;
-    const q3 = statsRow ? Number(statsRow["__q3"]) : 0;
-    const iqr = statsRow ? Number(statsRow["__iqr"]) : 0;
-    console.log(`${LOG_PREFIX$c} data.outliers found ${queryResult.returnedRows} outlier(s) in "${column}" (Q1=${q1}, Q3=${q3}, IQR=${iqr}).`);
-    return {
-      status: "success",
-      toolName: "data.outliers",
-      message: explanation,
-      shouldStop: false,
-      observation: {
-        type: "tool_result",
-        status: "success",
-        summary: `Found ${queryResult.returnedRows} outlier(s) in "${column}". Q1=${q1.toFixed(2)}, Q3=${q3.toFixed(2)}, IQR=${iqr.toFixed(2)}, fences=[${(q1 - 1.5 * iqr).toFixed(2)}, ${(q3 + 1.5 * iqr).toFixed(2)}].`,
-        toolName: "data.outliers",
-        detail: { column, outlierCount: queryResult.returnedRows, q1, q3, iqr }
-      },
-      artifacts: {
-        activeDataQuery: {
-          explanation,
-          result: {
-            rows: queryResult.rows,
-            totalMatchedRows: queryResult.totalMatchedRows,
-            returnedRows: queryResult.returnedRows,
-            truncated: false,
-            selectedColumns: queryResult.selectedColumns,
-            appliedOrderBy: [],
-            appliedLimit: 50,
-            durationMs: queryResult.durationMs
-          },
-          plan: {}
-        }
-      }
-    };
-  } catch (error2) {
-    return { status: "error", toolName: "data.outliers", message: `Outlier query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, shouldStop: false };
-  }
-};
-const executeDataMissingAction = async (action, store) => {
-  const state2 = store.getState();
-  if (action.type !== "tool_call" || !state2.csvData) {
-    return { status: "error", toolName: "data.missing", message: "No dataset loaded.", shouldStop: false };
-  }
-  const binding = resolveBinding(store);
-  if (!binding) {
-    return { status: "error", toolName: "data.missing", message: "DuckDB binding unavailable.", shouldStop: false };
-  }
-  const args = action.args ?? {};
-  const requestedCols = args.columns;
-  const targetCols = requestedCols && requestedCols.length > 0 ? state2.columnProfiles.filter((c) => requestedCols.includes(c.name)) : state2.columnProfiles;
-  if (targetCols.length === 0) {
-    return { status: "error", toolName: "data.missing", message: "No matching columns found.", shouldStop: false };
-  }
-  const intent = {
-    kind: "missing",
-    purpose: `Missing data profile for ${targetCols.length} column(s)`,
-    params: { columns: targetCols.map((c) => c.name) },
-    options: { timeout: QUERY_TIMEOUT_MS }
-  };
-  try {
-    const queryResult = await executeUnifiedQuery(intent, {
-      binding,
-      columnProfiles: state2.columnProfiles
-    });
-    const explanation = args.explanation || `Missing data profile for ${targetCols.length} column(s).`;
-    const issueCount = queryResult.rows.filter((r) => Number(r["null_rate"]) + Number(r["blank_rate"]) > 0.05).length;
-    console.log(`${LOG_PREFIX$c} data.missing profiled ${queryResult.returnedRows} columns, ${issueCount} with >5% missing.`);
-    return {
-      status: "success",
-      toolName: "data.missing",
-      message: explanation,
-      shouldStop: false,
-      observation: {
-        type: "tool_result",
-        status: "success",
-        summary: `Profiled ${queryResult.returnedRows} column(s). ${issueCount} column(s) have >5% missing values.`,
-        toolName: "data.missing",
-        detail: { columnCount: queryResult.returnedRows, issueCount }
-      },
-      artifacts: {
-        activeDataQuery: {
-          explanation,
-          result: {
-            rows: queryResult.rows,
-            totalMatchedRows: queryResult.totalMatchedRows,
-            returnedRows: queryResult.returnedRows,
-            truncated: false,
-            selectedColumns: queryResult.selectedColumns,
-            appliedOrderBy: [],
-            appliedLimit: targetCols.length,
-            durationMs: queryResult.durationMs
-          },
-          plan: {}
-        }
-      }
-    };
-  } catch (error2) {
-    return { status: "error", toolName: "data.missing", message: `Missing data query failed: ${error2 instanceof Error ? error2.message : String(error2)}`, shouldStop: false };
-  }
-};
-const buildCreatePlanRetryHint = (code) => {
-  switch (code) {
-    case "empty_result":
-      return "Retry analysis.create_plan with broader filters, a less specific slice, or a wider grouping so the query returns rows.";
-    case "duckdb_unavailable":
-      return "Retry analysis.create_plan only after a cleaned dataset is loaded into DuckDB, or use a non-SQL plan path.";
-    default:
-      return "Choose a different analysis plan or ask for clarification.";
-  }
-};
-const buildCreatePlanExecutionResult = (plan, createdCard, failure) => {
-  const displayPlan = resolveDisplayPlanLabels(plan);
-  const detail = {
-    requestedTitle: displayPlan.title,
-    chartType: plan.chartType,
-    groupByColumn: plan.groupByColumn ?? null,
-    valueColumn: plan.valueColumn ?? plan.yValueColumn ?? null
-  };
-  if (!createdCard) {
-    const message = (failure == null ? void 0 : failure.message) || `Plan "${displayPlan.title}" did not create a card.`;
-    const retryHint = buildCreatePlanRetryHint(failure == null ? void 0 : failure.code);
-    return {
-      status: "blocked",
-      toolName: "analysis.create_plan",
-      message,
-      shouldStop: false,
-      retryHint,
-      artifacts: detail,
-      artifactMetadata: {
-        artifactType: "analysis_card_attempt",
-        metricDefinition: plan.valueColumn ?? plan.yValueColumn ?? null,
-        grain: plan.groupByColumn ?? null,
-        sourceArtifactIds: []
-      },
-      observation: {
-        type: "tool_result",
-        status: "blocked",
-        summary: message,
-        toolName: "analysis.create_plan",
-        code: failure == null ? void 0 : failure.code,
-        retryHint,
-        detail: {
-          ...detail,
-          ...(failure == null ? void 0 : failure.detail) ?? {},
-          artifactMetadata: {
-            artifactType: "analysis_card_attempt",
-            metricDefinition: plan.valueColumn ?? plan.yValueColumn ?? null,
-            grain: plan.groupByColumn ?? null,
-            sourceArtifactIds: []
-          }
-        }
-      }
-    };
-  }
-  const successDetail = {
-    ...detail,
-    createdCardId: createdCard.id,
-    createdCardTitle: displayPlan.title,
-    rowCount: createdCard.aggregatedData.length
-  };
-  return {
-    status: "success",
-    toolName: "analysis.create_plan",
-    message: `Created analysis card "${displayPlan.title}".`,
-    shouldStop: true,
-    artifacts: successDetail,
-    artifactMetadata: {
-      artifactType: "analysis_card",
-      metricDefinition: plan.valueColumn ?? plan.yValueColumn ?? null,
-      grain: plan.groupByColumn ?? null,
-      sourceArtifactIds: [createdCard.id]
-    },
-    observation: {
-      type: "tool_result",
-      status: "success",
-      summary: `Created analysis card "${displayPlan.title}" with ${createdCard.aggregatedData.length} rows.`,
-      toolName: "analysis.create_plan",
-      detail: {
-        ...successDetail,
-        artifactMetadata: {
-          artifactType: "analysis_card",
-          metricDefinition: plan.valueColumn ?? plan.yValueColumn ?? null,
-          grain: plan.groupByColumn ?? null,
-          sourceArtifactIds: [createdCard.id]
-        }
-      }
-    }
-  };
-};
-const MAX_CARD_SAMPLE_ROWS = 12;
-const MAX_RELEVANT_LOGS = 24;
-const cloneRows = (rows, limit) => rows.slice(0, limit).map((row) => JSON.parse(JSON.stringify(row)));
-const filterChartEvents = (events) => events.filter((event) => ["planning", "execution", "evaluation", "chat"].includes(event.phase)).slice(-MAX_RELEVANT_LOGS);
-const filterChartTelemetry = (events) => events.filter((event) => {
-  var _a;
-  return ["summary", "planner", "chat", "insight", "next_step"].includes(String(((_a = event.meta) == null ? void 0 : _a.callType) ?? ""));
-}).slice(0, MAX_RELEVANT_LOGS);
-const buildChartReviewBundle = (state2) => {
-  var _a, _b, _c;
-  const inspection = buildCleaningInspectionBundle(state2);
-  const cards = state2.analysisCards.map((card) => ({
-    id: card.id,
-    title: card.plan.title,
-    description: card.plan.description,
-    isFallback: Boolean(card.plan.isFallback),
-    chartType: card.plan.chartType,
-    displayChartType: card.displayChartType,
-    aggregation: card.plan.aggregation ?? null,
-    groupByColumn: card.plan.groupByColumn ?? null,
-    valueColumn: card.plan.valueColumn ?? null,
-    secondaryValueColumn: card.plan.secondaryValueColumn ?? null,
-    rowCount: card.aggregatedData.length,
-    aggregatedDataSample: cloneRows(card.aggregatedData, MAX_CARD_SAMPLE_ROWS),
-    summary: card.summary.text,
-    summaryLanguage: card.summary.language,
-    topN: card.topN,
-    hideOthers: card.hideOthers,
-    hiddenLabels: [...card.hiddenLabels ?? []],
-    cardFilter: card.filter ? { column: card.filter.column, values: [...card.filter.values] } : null,
-    isDataVisible: card.isDataVisible
-  }));
-  return {
-    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-    session: {
-      sessionId: state2.sessionId,
-      datasetId: state2.currentDatasetId,
-      activeGoal: state2.confirmedAnalysisGoal,
-      provider: state2.settings.provider,
-      model: state2.settings.complexModel
-    },
-    dataset: {
-      fileName: ((_a = state2.csvData) == null ? void 0 : _a.fileName) ?? ((_b = state2.rawCsvData) == null ? void 0 : _b.fileName) ?? null,
-      rawRowCount: inspection.importFacts.rawRowCount,
-      cleanedRowCount: inspection.importFacts.cleanedRowCount,
-      columnCount: state2.columnProfiles.length,
-      qualityIssues: [...inspection.verification.warnings]
-    },
-    cleaning: {
-      status: inspection.cleaning.status,
-      planStatus: inspection.cleaning.planStatus,
-      consistencyIssues: [...inspection.cleaning.consistencyIssues],
-      explanation: inspection.cleaning.explanation,
-      operationCount: inspection.cleaning.operationCount,
-      baselineNoiseRowsRemoved: inspection.cleaning.baselineNoiseRowsRemoved,
-      operations: cloneRows(inspection.cleaning.operations, inspection.cleaning.operations.length)
-    },
-    verification: {
-      datasetSafetyStatus: inspection.verification.datasetSafetyStatus,
-      cleaningConsistencyStatus: inspection.verification.cleaningConsistencyStatus,
-      overallStatus: inspection.verification.overallStatus,
-      downstreamAnalysisBlocked: inspection.verification.downstreamAnalysisBlocked
-    },
-    spreadsheetFilter: inspection.spreadsheetFilter,
-    cards,
-    chartReviewHints: {
-      totalCards: cards.length,
-      cardsWithNoRows: cards.filter((card) => card.rowCount === 0).map((card) => card.title),
-      cardsWithSingleRow: cards.filter((card) => card.rowCount === 1).map((card) => card.title),
-      cardsUsingFallbackChartType: cards.filter((card) => card.displayChartType !== card.chartType).map((card) => card.title),
-      fallbackCardTitles: cards.filter((card) => card.isFallback).map((card) => card.title),
-      allCardsAreFallback: cards.length > 0 && cards.every((card) => card.isFallback)
-    },
-    relevantLogs: {
-      agentEvents: filterChartEvents(inspection.logs.pipeline),
-      telemetry: filterChartTelemetry(inspection.logs.telemetry)
-    },
-    finalSummary: ((_c = state2.finalSummary) == null ? void 0 : _c.text) ?? null
-  };
-};
-const toIso$2 = (value2) => {
-  if (!value2) return "";
-  if (value2 instanceof Date) return value2.toISOString();
-  const parsed = new Date(value2);
-  return Number.isNaN(parsed.getTime()) ? String(value2) : parsed.toISOString();
-};
-const formatJson = (value2) => JSON.stringify(value2, null, 2);
-const formatNdjson = (rows) => rows.map((row) => JSON.stringify(row)).join("\n");
-const createFile = (path, language, content, group, badges = ["virtual"]) => ({
-  path,
-  label: path.split("/").filter(Boolean).slice(-1)[0] ?? path,
-  language,
-  content,
-  group,
-  badges
-});
-const getWorkspaceFileGroup = (path) => {
-  if (path.startsWith("/dataset/")) return "dataset";
-  if (path.startsWith("/workspace/")) return "workspace";
-  return "debug";
-};
-const buildWorkspaceBundle = (state2) => {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
-  const inspection = buildCleaningInspectionBundle(state2);
-  const chartReviewBundle = buildChartReviewBundle(state2);
-  const workflow = buildDataPreparationWorkflowBundle(state2);
-  const files = [];
-  const workspaceSnapshot = { ...state2.workspaceFiles ?? {} };
-  const intakeIrSidecar = state2.rawIntakeIr ? formatJson({
-    fileName: state2.rawIntakeIr.fileName,
-    columnCount: state2.rawIntakeIr.columnCount,
-    provisionalTable: state2.rawIntakeIr.provisionalTable,
-    diagnostics: state2.rawIntakeIr.diagnostics,
-    segmentCount: state2.rawIntakeIr.segments.length
-  }) : null;
-  const runtimeAssessmentSidecar = ((_a = state2.cleaningRun) == null ? void 0 : _a.runtimeTableAssessment) ? formatJson(state2.cleaningRun.runtimeTableAssessment) : null;
-  const datasetFiles = [
-    {
-      path: WORKSPACE_DATASET_RAW_CSV,
-      content: buildWorkspaceCsv(state2.rawCsvData ?? state2.csvData)
-    },
-    {
-      path: WORKSPACE_DATASET_CLEAN_CSV,
-      content: buildWorkspaceCsv(state2.csvData)
-    },
-    {
-      path: WORKSPACE_REPORT_CONTEXT_JSON,
-      content: formatJson(inspection.reportContext)
-    },
-    ...intakeIrSidecar ? [{
-      path: WORKSPACE_INTAKE_IR_JSON,
-      content: intakeIrSidecar
-    }] : [],
-    ...runtimeAssessmentSidecar ? [{
-      path: WORKSPACE_RUNTIME_TABLE_ASSESSMENT_JSON,
-      content: runtimeAssessmentSidecar
-    }] : []
-  ];
-  datasetFiles.forEach((file) => {
-    if (file.content) {
-      workspaceSnapshot[file.path] = file.content;
-    }
-  });
-  const chatActions = state2.chatHistory.slice(-40).map((message) => ({
-    timestamp: toIso$2(message.timestamp),
-    sender: message.sender,
-    type: message.type,
-    text: message.text
-  }));
-  const safeWorkspaceHistory = [...state2.workspaceActionHistory ?? []].slice(-WORKSPACE_HISTORY_LIMIT).map((entry) => ({
-    ...entry,
-    timestamp: entry.timestamp instanceof Date ? entry.timestamp.toISOString() : String(entry.timestamp)
-  }));
-  const cardSummaries = state2.analysisCards.map((card) => ({
-    id: card.id,
-    title: card.plan.title,
-    description: card.plan.description,
-    summary: card.summary.text,
-    summaryLanguage: card.summary.language,
-    chartType: card.displayChartType,
-    rowCount: card.aggregatedData.length,
-    groupByColumn: card.plan.groupByColumn ?? null,
-    valueColumn: card.plan.valueColumn ?? null,
-    aggregation: card.plan.aggregation ?? null,
-    previewRows: card.aggregatedData.slice(0, 10)
-  }));
-  const queryHistory = (state2.queryHistory ?? []).slice(-10).map((entry) => {
-    var _a2;
-    return {
-      id: entry.id,
-      correlation: {
-        ...toCorrelationRecord(entry),
-        datasetId: state2.currentDatasetId ?? null,
-        cleaningRunId: ((_a2 = state2.cleaningRun) == null ? void 0 : _a2.runId) ?? null,
-        requestId: null
-      },
-      phase: entry.phase,
-      explanation: entry.explanation,
-      engine: entry.engine,
-      sqlPreview: entry.sqlPreview,
-      tableName: entry.tableName,
-      loadVersion: entry.loadVersion,
-      fallbackReason: entry.fallbackReason ?? null,
-      appliedAt: toIso$2(entry.appliedAt),
-      toolCategory: entry.toolCategory ?? "data",
-      policyDecision: entry.policyDecision ?? "allowed",
-      policyReason: entry.policyReason ?? null,
-      result: entry.result
-    };
-  });
-  const contextTelemetry = state2.telemetryEvents.filter((event) => {
-    var _a2, _b2;
-    return ((_a2 = event.meta) == null ? void 0 : _a2.callType) === "data_prep" || ((_b2 = event.meta) == null ? void 0 : _b2.callType) === "chat";
-  }).slice(-40).map((event) => ({
-    id: event.id,
-    timestamp: toIso$2(event.timestamp),
-    correlation: toCorrelationRecord(event),
-    stage: event.stage,
-    responseType: event.responseType,
-    detail: event.detail,
-    meta: event.meta ?? null
-  }));
-  const toolContext = buildToolAvailabilityContext(state2, {
-    toolStage: !state2.cleaningRun || state2.cleaningRun.status === "completed" ? "analysis" : "cleaning"
-  });
-  const resolvedRegistry = resolveAllowedTools(buildBuiltinToolRegistry(toolContext.columnNames), toolContext);
-  const toolPolicySnapshot = buildToolGovernanceSnapshot({
-    stage: resolvedRegistry.stage,
-    allowedTools: resolvedRegistry.allowedTools,
-    blockedTools: resolvedRegistry.blockedTools,
-    diagnostics: resolvedRegistry.diagnostics
-  });
-  files.push(createFile("/cleaning/session-summary.json", "json", formatJson({
-    explanation: inspection.cleaning.explanation,
-    status: inspection.cleaning.status,
-    planStatus: inspection.cleaning.planStatus,
-    consistencyIssues: inspection.cleaning.consistencyIssues,
-    outputColumns: inspection.cleaning.outputColumns,
-    loopCount: ((_b = state2.cleaningRun) == null ? void 0 : _b.loopCount) ?? 0,
-    inspectionStatus: inspection.rowInspection.inspectionStatus,
-    residualUnknownRowCount: inspection.rowInspection.residualUnknownRowCount,
-    residualSummaryLikeRowCount: inspection.rowInspection.residualSummaryLikeRowCount
-  }), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/cleaning/intake-diagnostics.json", "json", formatJson(inspection.intakeDiagnostics), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/cleaning/report-shape.json", "json", formatJson(inspection.reportShape.profile), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/cleaning/reshape-hypotheses.json", "json", formatJson(inspection.reportShape.hypotheses), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/cleaning/row-inspection.json", "json", formatJson(inspection.rowInspection.latest), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/cleaning/row-classification.json", "json", formatJson(((_c = inspection.rowInspection.latest) == null ? void 0 : _c.rows) ?? []), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/cleaning/cleaning-loop-history.json", "json", formatJson(inspection.loopHistory), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/cleaning/verification-signals.json", "json", formatJson(inspection.verification.shapeVerification), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/chat/actions.ndjson", "ndjson", formatNdjson(chatActions), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/chat/spreadsheet-filter.json", "json", formatJson({
-    active: Boolean(state2.activeSpreadsheetFilter ?? state2.spreadsheetFilterFunction),
-    correlation: {
-      ...toCorrelationRecord({
-        sessionId: state2.sessionId,
-        datasetId: state2.currentDatasetId,
-        turnId: (_d = state2.activeTurn) == null ? void 0 : _d.turnId,
-        stepId: (_f = (_e = state2.activeTurn) == null ? void 0 : _e.steps.at(-1)) == null ? void 0 : _f.stepId,
-        cleaningRunId: (_g = state2.cleaningRun) == null ? void 0 : _g.runId,
-        requestId: (_h = state2.activeSpreadsheetFilter) == null ? void 0 : _h.requestId
-      })
-    },
-    requestId: ((_i = state2.activeSpreadsheetFilter) == null ? void 0 : _i.requestId) ?? null,
-    origin: ((_j = state2.activeSpreadsheetFilter) == null ? void 0 : _j.origin) ?? null,
-    query: ((_k = state2.activeSpreadsheetFilter) == null ? void 0 : _k.query) ?? null,
-    finalReply: ((_l = state2.activeSpreadsheetFilter) == null ? void 0 : _l.finalReply) ?? state2.aiFilterExplanation ?? null,
-    operation: ((_m = state2.activeSpreadsheetFilter) == null ? void 0 : _m.operation) ?? state2.spreadsheetFilterFunction ?? null,
-    observation: ((_n = state2.activeSpreadsheetFilter) == null ? void 0 : _n.observation) ?? null,
-    appliedAt: toIso$2((_o = state2.activeSpreadsheetFilter) == null ? void 0 : _o.appliedAt)
-  }), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/chat/data-query.json", "json", formatJson({
-    active: Boolean(state2.activeDataQuery),
-    correlation: {
-      ...toCorrelationRecord(state2.activeDataQuery),
-      datasetId: state2.currentDatasetId ?? null,
-      cleaningRunId: ((_p = state2.cleaningRun) == null ? void 0 : _p.runId) ?? null,
-      requestId: null
-    },
-    explanation: ((_q = state2.activeDataQuery) == null ? void 0 : _q.explanation) ?? null,
-    engine: ((_r = state2.activeDataQuery) == null ? void 0 : _r.engine) ?? null,
-    sqlPreview: ((_s = state2.activeDataQuery) == null ? void 0 : _s.sqlPreview) ?? null,
-    tableName: ((_t = state2.activeDataQuery) == null ? void 0 : _t.tableName) ?? null,
-    loadVersion: ((_u = state2.activeDataQuery) == null ? void 0 : _u.loadVersion) ?? null,
-    fallbackReason: ((_v = state2.activeDataQuery) == null ? void 0 : _v.fallbackReason) ?? null,
-    toolCategory: "data",
-    policyDecision: "allowed",
-    policyReason: null,
-    plan: ((_w = state2.activeDataQuery) == null ? void 0 : _w.plan) ?? null,
-    result: ((_x = state2.activeDataQuery) == null ? void 0 : _x.result) ? {
-      totalMatchedRows: state2.activeDataQuery.result.totalMatchedRows,
-      returnedRows: state2.activeDataQuery.result.returnedRows,
-      truncated: state2.activeDataQuery.result.truncated,
-      selectedColumns: state2.activeDataQuery.result.selectedColumns,
-      appliedOrderBy: state2.activeDataQuery.result.appliedOrderBy,
-      appliedLimit: state2.activeDataQuery.result.appliedLimit,
-      durationMs: state2.activeDataQuery.result.durationMs,
-      previewRows: state2.activeDataQuery.result.rows.slice(0, 20)
-    } : null
-  }), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/chat/query-history.json", "json", formatJson(queryHistory), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/analysis/cards.json", "json", formatJson(cardSummaries.map((card) => ({
-    id: card.id,
-    title: card.title,
-    chartType: card.chartType,
-    rowCount: card.rowCount,
-    groupByColumn: card.groupByColumn,
-    valueColumn: card.valueColumn,
-    aggregation: card.aggregation
-  }))), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/analysis/card-snapshot.json", "json", formatJson(cardSummaries), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/analysis/chart-review-bundle.json", "json", formatJson(chartReviewBundle), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/context/data-prep-context.ndjson", "ndjson", formatNdjson(contextTelemetry.filter((event) => {
-    var _a2;
-    return ((_a2 = event.meta) == null ? void 0 : _a2.callType) === "data_prep";
-  })), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/context/chat-context.ndjson", "ndjson", formatNdjson(contextTelemetry.filter((event) => {
-    var _a2;
-    return ((_a2 = event.meta) == null ? void 0 : _a2.callType) === "chat";
-  })), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/context/tool-policy.json", "json", formatJson(toolPolicySnapshot), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/context/tool-diagnostics.json", "json", formatJson(resolvedRegistry.diagnostics), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/logs/agent-events.ndjson", "ndjson", formatNdjson(inspection.logs.pipeline), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/logs/agent-tool-logs.ndjson", "ndjson", formatNdjson(inspection.logs.toolLogs), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/logs/telemetry.ndjson", "ndjson", formatNdjson(inspection.logs.telemetry), "debug", ["virtual", "generated", "debug"]));
-  files.push(createFile("/workspace/actions.ndjson", "ndjson", formatNdjson(safeWorkspaceHistory), "debug", ["virtual", "generated", "debug"]));
-  Object.entries(workspaceSnapshot).forEach(([path, content]) => {
-    if (!path || !isWorkspaceReadablePath(path)) return;
-    const group = getWorkspaceFileGroup(path);
-    const badges = [
-      "virtual",
-      ...path.startsWith("/dataset/") ? ["generated"] : [],
-      ...isWorkspaceWritablePath(path) ? ["editable"] : [],
-      ...group === "debug" ? ["debug"] : []
-    ];
-    const existingIndex = files.findIndex((file) => file.path === path);
-    const nextFile = {
-      path,
-      label: path.split("/").filter(Boolean).slice(-1)[0] ?? path,
-      language: getWorkspaceFileLanguage(path),
-      content: String(content),
-      group,
-      badges
-    };
-    if (existingIndex >= 0) {
-      files[existingIndex] = nextFile;
-    } else {
-      files.push(nextFile);
-    }
-  });
-  const summary = {
-    sessionId: state2.sessionId,
-    datasetId: state2.currentDatasetId,
-    reportTitle: inspection.reportContext.effective.reportTitle,
-    activeGoal: state2.confirmedAnalysisGoal,
-    provider: state2.settings.provider,
-    model: state2.settings.complexModel,
-    rawRowCount: inspection.importFacts.rawRowCount,
-    cleanedRowCount: inspection.importFacts.cleanedRowCount,
-    rawColumnCount: inspection.profiling.originalSchema.length || inspection.samples.rawSample.columns.length,
-    cleanedColumnCount: inspection.profiling.outputSchema.length || inspection.samples.cleanedSample.columns.length,
-    latestMutationStatus: inspection.cleaning.status,
-    preparationState: workflow.summary.preparationState,
-    overallStatus: workflow.verification.overallStatus,
-    analysisState: workflow.summary.analysisState,
-    availableFiles: []
-  };
-  files.unshift(createFile("/session/summary.json", "json", formatJson(summary), "debug", ["virtual", "generated", "debug"]));
-  summary.availableFiles = files.map((file) => file.path);
-  files[0] = createFile("/session/summary.json", "json", formatJson(summary), "debug", ["virtual", "generated", "debug"]);
-  const primaryFiles = files.filter((file) => file.group !== "debug");
-  const debugFiles = files.filter((file) => file.group === "debug");
-  const editableFiles = files.filter((file) => isWorkspaceWritablePath(file.path));
-  return {
-    summary,
-    files,
-    primaryFiles,
-    debugFiles,
-    editableFiles
-  };
-};
-const normalizePath = (path) => path.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
-const splitLines = (content) => content.replace(/\r\n/g, "\n").split("\n");
-const getScopedFiles = (files, basePath) => {
-  const scope = normalizePath(basePath);
-  if (scope === "/") return files;
-  return files.filter((file) => file.path === scope || file.path.startsWith(`${scope}/`));
-};
-const buildWorkspaceTree = (files, basePath = "/") => {
-  const root = { children: [] };
-  getScopedFiles(files, basePath).forEach((file) => {
-    const parts = normalizePath(file.path).split("/").filter(Boolean);
-    let current2 = root;
-    let currentPath = "";
-    parts.forEach((part, index2) => {
-      var _a, _b;
-      currentPath = `${currentPath}/${part}`;
-      const isFile = index2 === parts.length - 1;
-      let next = (_a = current2.children) == null ? void 0 : _a.find((child) => child.name === part);
-      if (!next) {
-        next = {
-          name: part,
-          path: currentPath,
-          type: isFile ? "file" : "directory",
-          children: isFile ? void 0 : []
-        };
-        (_b = current2.children) == null ? void 0 : _b.push(next);
-      }
-      current2 = next;
-    });
-  });
-  const sortNodes = (nodes) => {
-    nodes.sort((left, right) => {
-      if (left.type !== right.type) {
-        return left.type === "directory" ? -1 : 1;
-      }
-      return left.name.localeCompare(right.name);
-    });
-    nodes.forEach((node) => {
-      if (node.children) sortNodes(node.children);
-    });
-  };
-  sortNodes(root.children ?? []);
-  return root.children ?? [];
-};
-const grepWorkspaceFiles = (files, basePath, query, limit, caseSensitive) => {
-  const needle = caseSensitive ? query : query.toLowerCase();
-  const matches = [];
-  for (const file of getScopedFiles(files, basePath)) {
-    const lines = splitLines(file.content);
-    for (let index2 = 0; index2 < lines.length; index2 += 1) {
-      const line = lines[index2];
-      const haystack = caseSensitive ? line : line.toLowerCase();
-      if (!haystack.includes(needle)) continue;
-      matches.push({
-        path: file.path,
-        line: index2 + 1,
-        snippet: line.trim().slice(0, 240)
-      });
-      if (matches.length >= limit) {
-        return matches;
-      }
-    }
-  }
-  return matches;
-};
-const headWorkspaceFile = (file, limit) => {
-  const lines = splitLines(file.content);
-  return {
-    path: file.path,
-    totalLines: lines.length,
-    lines: lines.slice(0, Math.max(1, limit)).map((line, index2) => ({
-      line: index2 + 1,
-      content: line
-    }))
-  };
-};
-const diffWorkspaceFiles = (leftPath, leftContent, rightPath, rightContent, limit = 20) => {
-  const leftLines = splitLines(leftContent);
-  const rightLines = splitLines(rightContent);
-  const maxLines = Math.max(leftLines.length, rightLines.length);
-  const hunks = [];
-  for (let index2 = 0; index2 < maxLines; index2 += 1) {
-    const left = leftLines[index2] ?? "";
-    const right = rightLines[index2] ?? "";
-    if (left === right) continue;
-    hunks.push({
-      line: index2 + 1,
-      left,
-      right
-    });
-    if (hunks.length >= limit) break;
-  }
-  return {
-    leftPath,
-    rightPath,
-    changedLines: hunks.length,
-    hunks
-  };
-};
-const buildWorkspaceEntry = (action, details) => ({
-  timestamp: /* @__PURE__ */ new Date(),
-  operation: action.type === "tool_call" && action.toolName.startsWith("workspace.") ? action.toolName.replace("workspace.", "") : "read",
-  path: details.path || "unknown",
-  success: details.success,
-  message: details.message,
-  output: details.output ?? "",
-  durationMs: details.durationMs,
-  stage: details.stage,
-  toolCategory: details.toolCategory,
-  policyDecision: details.policyDecision,
-  policyReason: details.policyReason
-});
-const parseWorkspaceWriteDataSet = (_path, content, currentData) => ({
-  fileName: (currentData == null ? void 0 : currentData.fileName) ?? "cleaned.csv",
-  data: parseWorkspaceCsv(content),
-  metadataRows: (currentData == null ? void 0 : currentData.metadataRows) ?? [],
-  headerLayers: (currentData == null ? void 0 : currentData.headerLayers) ?? [],
-  summaryRows: (currentData == null ? void 0 : currentData.summaryRows) ?? [],
-  headerDepth: currentData == null ? void 0 : currentData.headerDepth,
-  summaryRowCount: currentData == null ? void 0 : currentData.summaryRowCount
-});
-const normalizeWorkspaceOutput = (value2) => truncateWorkspaceOutput(typeof value2 === "string" ? value2 : JSON.stringify(value2));
-const resolveWorkspaceSearchLimit = (requested) => !Number.isFinite(requested) || requested == null ? WORKSPACE_SEARCH_DEFAULT_LIMIT : Math.min(WORKSPACE_SEARCH_MAX_LIMIT, Math.max(1, Math.floor(requested)));
-const resolveWorkspaceListLimit = (requested) => !Number.isFinite(requested) || requested == null ? WORKSPACE_LIST_LIMIT : Math.min(WORKSPACE_LIST_LIMIT, Math.max(1, Math.floor(requested)));
-const appendWorkspaceTraceMessage = (store, detail) => {
-  store.setState((prev) => ({
-    chatHistory: [
-      ...prev.chatHistory,
-      createChatMessage({
-        sender: "ai",
-        text: detail.text,
-        timestamp: /* @__PURE__ */ new Date(),
-        type: "ai_cleaning_step",
-        isError: detail.isError,
-        cleaningStep: {
-          stepId: createId(detail.toolName),
-          kind: detail.kind,
-          toolName: detail.toolName,
-          path: detail.path,
-          diffSummary: detail.diffSummary,
-          status: detail.status
-        }
-      })
-    ],
-    cleaningRun: prev.cleaningRun ? appendCleaningRunStep(prev.cleaningRun, { kind: detail.kind, toolName: detail.toolName, path: detail.path, diffSummary: detail.diffSummary, status: detail.status }) : prev.cleaningRun
-  }));
-};
-const resolveCleaningFailureCards = (chatHistory, runId) => chatHistory.map((message) => message.type === "ai_cleaning_failure" && message.resolved !== true && (!runId || !message.cleaningRunId || message.cleaningRunId === runId) ? { ...message, resolved: true, isError: false, suggestedActions: [] } : message);
-const toPath = (rawPath) => rawPath.replace(/\\/g, "/");
-const toWorkspaceOperation = (toolName) => toolName.replace("workspace.", "");
-const withActionHistory = async (store, action, path, run2, abortSignal) => {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r;
-  const start = Date.now();
-  const toolName = action.type === "tool_call" ? action.toolName : "workspace.read";
-  const governance = getToolGovernanceMeta(store, toolName);
-  const kind = ["workspace.read", "workspace.list", "workspace.tree", "workspace.search", "workspace.grep", "workspace.head", "workspace.diff"].includes(toolName) ? "inspect" : "edit";
-  try {
-    throwIfAborted(abortSignal);
-    const result = await run2();
-    throwIfAborted(abortSignal);
-    const entry = buildWorkspaceEntry(action, { path, success: true, message: result.successMessage, output: result.output, durationMs: Date.now() - start, stage: governance.stage, toolCategory: ((_a = governance.descriptor) == null ? void 0 : _a.category) ?? "unknown", policyDecision: ((_b = governance.decision) == null ? void 0 : _b.allowed) === false ? "blocked" : "allowed", policyReason: ((_c = governance.decision) == null ? void 0 : _c.reason) ?? null });
-    const current2 = store.getState().workspaceActionHistory ?? [];
-    store.setState({ workspaceActionHistory: [...current2, entry].slice(-WORKSPACE_HISTORY_LIMIT) });
-    store.getState().logAgentToolUsage({ tool: toolName, description: `workspace success: ${entry.operation} ${entry.path}`, stage: governance.stage, category: ((_d = governance.descriptor) == null ? void 0 : _d.category) ?? "unknown", risk: ((_e = governance.descriptor) == null ? void 0 : _e.risk) ?? "unknown", policyDecision: ((_f = governance.decision) == null ? void 0 : _f.allowed) === false ? "blocked" : "allowed", policyReason: ((_g = governance.decision) == null ? void 0 : _g.reason) ?? null, detail: { path: entry.path, operation: entry.operation, success: entry.success, stage: governance.stage, policyDecision: ((_h = governance.decision) == null ? void 0 : _h.allowed) === false ? "blocked" : "allowed", policyReason: ((_i = governance.decision) == null ? void 0 : _i.reason) ?? null } });
-    appendWorkspaceTraceMessage(store, { toolName, path, kind, status: "done", diffSummary: result.diffSummary, text: `**${toolName}** \`${path}\`
-${result.diffSummary ?? result.successMessage}` });
-    return result;
-  } catch (error2) {
-    if (isRuntimeAbortError(error2, abortSignal)) {
-      throw error2;
-    }
-    const entry = buildWorkspaceEntry(action, { path, success: false, message: error2 instanceof Error ? error2.message : String(error2), durationMs: Date.now() - start, stage: governance.stage, toolCategory: ((_j = governance.descriptor) == null ? void 0 : _j.category) ?? "unknown", policyDecision: ((_k = governance.decision) == null ? void 0 : _k.allowed) === false ? "blocked" : "allowed", policyReason: ((_l = governance.decision) == null ? void 0 : _l.reason) ?? null });
-    const current2 = store.getState().workspaceActionHistory ?? [];
-    store.setState({ workspaceActionHistory: [...current2, entry].slice(-WORKSPACE_HISTORY_LIMIT) });
-    store.getState().logAgentToolUsage({ tool: toolName, description: `workspace failed: ${entry.operation} ${entry.path}`, stage: governance.stage, category: ((_m = governance.descriptor) == null ? void 0 : _m.category) ?? "unknown", risk: ((_n = governance.descriptor) == null ? void 0 : _n.risk) ?? "unknown", policyDecision: ((_o = governance.decision) == null ? void 0 : _o.allowed) === false ? "blocked" : "allowed", policyReason: ((_p = governance.decision) == null ? void 0 : _p.reason) ?? entry.message, detail: { path: entry.path, operation: entry.operation, error: entry.message, stage: governance.stage, policyDecision: ((_q = governance.decision) == null ? void 0 : _q.allowed) === false ? "blocked" : "allowed", policyReason: ((_r = governance.decision) == null ? void 0 : _r.reason) ?? null } });
-    appendWorkspaceTraceMessage(store, { toolName, path, kind, status: "error", text: `**${toolName}** \`${path}\`
-Failed: ${entry.message}`, isError: true });
-    throw error2;
-  }
-};
-const executeWorkspaceFileAction = async (action, store, options2) => {
-  const { getState, setState } = store;
-  if (action.type !== "tool_call" || !action.toolName.startsWith("workspace.")) return;
-  const workspaceAction = {
-    ...action.args ?? {},
-    operation: toWorkspaceOperation(action.toolName)
-  };
-  const operation = workspaceAction.operation;
-  const defaultPath = ["list", "tree", "search", "grep"].includes(operation) ? "/" : operation === "diff" ? WORKSPACE_DATASET_CLEAN_CSV : "/workspace";
-  const normalizedPath = (() => {
-    const path = toPath(String(workspaceAction.path || defaultPath));
-    return path.startsWith("/") ? path : `/${path}`;
-  })();
-  const currentData = getState().csvData;
-  if (!isWorkspaceReadablePath(normalizedPath) && !["list", "tree"].includes(operation)) throw new Error(`Workspace path not allowed: ${normalizedPath}`);
-  return withActionHistory(store, action, normalizedPath, async () => {
-    var _a;
-    throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-    const bundle = buildWorkspaceBundle(getState());
-    const allFiles = bundle.files;
-    const exactMatch = allFiles.find((file) => file.path === normalizedPath);
-    if (operation === "list") {
-      const base = normalizedPath === "/" || normalizedPath === "" ? "/" : normalizedPath;
-      const recursive = Boolean(workspaceAction.recursive);
-      const limit = resolveWorkspaceListLimit(workspaceAction.limit);
-      const matched = allFiles.filter((file) => {
-        if (!file.path.startsWith(base === "/" ? "/" : `${base}/`)) return false;
-        if (!recursive) {
-          const relative = file.path.slice(base === "/" ? 1 : base.length + 1);
-          return relative.length > 0 && !relative.includes("/");
-        }
-        return true;
-      }).map((file) => ({ path: file.path, pathType: "file" }));
-      return { successMessage: `Listed ${matched.length} workspace file(s).`, output: normalizeWorkspaceOutput({ operation, path: base, recursive, files: matched.slice(0, limit) }), payload: { workspace: { operation, path: base, changed: false, affectsCleanedDataset: false } } };
-    }
-    if (operation === "tree") {
-      const base = normalizedPath === "/" || normalizedPath === "" ? "/" : normalizedPath;
-      return { successMessage: `Built workspace tree for ${base}.`, output: normalizeWorkspaceOutput({ operation, path: base, tree: buildWorkspaceTree(allFiles, base) }), payload: { workspace: { operation, path: base, changed: false, affectsCleanedDataset: false } } };
-    }
-    if (operation === "read") {
-      if (!exactMatch) throw new Error(`File not found: ${normalizedPath}`);
-      return { successMessage: `Read ${normalizedPath}.`, output: truncateWorkspaceOutput(exactMatch.content, WORKSPACE_ACTION_OUTPUT_LIMIT), payload: { workspace: { operation, path: normalizedPath, changed: false, affectsCleanedDataset: false } } };
-    }
-    if (operation === "search") {
-      const query = String(workspaceAction.query || "");
-      if (!query) throw new Error("search requires a non-empty query.");
-      const caseSensitive = Boolean(workspaceAction.caseSensitive);
-      const queryNeedle = caseSensitive ? query : query.toLowerCase();
-      const limit = resolveWorkspaceSearchLimit(workspaceAction.limit);
-      const scope = normalizedPath === "/" || normalizedPath === "" ? "/" : normalizedPath;
-      const matches = allFiles.filter((file) => file.path.startsWith(scope === "/" ? "/" : `${scope}/`)).map((file) => (caseSensitive ? file.content : file.content.toLowerCase()).includes(queryNeedle) ? { path: file.path, match: true, pathPreview: file.path } : null).filter((item) => item !== null).slice(0, limit);
-      return { successMessage: `Search completed for "${query}"`, output: normalizeWorkspaceOutput(matches), payload: { workspace: { operation, path: scope, changed: false, affectsCleanedDataset: false } } };
-    }
-    if (operation === "grep") {
-      const query = String(workspaceAction.query || "");
-      if (!query) throw new Error("grep requires a non-empty query.");
-      const scope = normalizedPath === "/" || normalizedPath === "" ? "/" : normalizedPath;
-      return { successMessage: `Grep completed for "${query}".`, output: normalizeWorkspaceOutput({ operation, path: scope, matches: grepWorkspaceFiles(allFiles, scope, query, resolveWorkspaceSearchLimit(workspaceAction.limit), Boolean(workspaceAction.caseSensitive)) }), payload: { workspace: { operation, path: scope, changed: false, affectsCleanedDataset: false } } };
-    }
-    if (operation === "head") {
-      if (!exactMatch) throw new Error(`File not found: ${normalizedPath}`);
-      const head = headWorkspaceFile(exactMatch, Math.min(50, Math.max(1, Number(workspaceAction.limit ?? 10))));
-      return { successMessage: `Read the first ${head.lines.length} line(s) from ${normalizedPath}.`, output: normalizeWorkspaceOutput(head), payload: { workspace: { operation, path: normalizedPath, changed: false, affectsCleanedDataset: false } } };
-    }
-    if (operation === "diff") {
-      if (!exactMatch) throw new Error(`File not found: ${normalizedPath}`);
-      const compareNormalizedPath = (() => {
-        const comparePath = toPath(String(workspaceAction.comparePath || WORKSPACE_DATASET_RAW_CSV));
-        return comparePath.startsWith("/") ? comparePath : `/${comparePath}`;
-      })();
-      if (!isWorkspaceReadablePath(compareNormalizedPath)) throw new Error(`Workspace path not allowed: ${compareNormalizedPath}`);
-      const compareFile = allFiles.find((file) => file.path === compareNormalizedPath);
-      if (!compareFile) throw new Error(`Compare file not found: ${compareNormalizedPath}`);
-      const diff = diffWorkspaceFiles(compareNormalizedPath, compareFile.content, normalizedPath, exactMatch.content, Math.min(40, Math.max(1, Number(workspaceAction.limit ?? 20))));
-      return { successMessage: `Diff completed between ${compareNormalizedPath} and ${normalizedPath}.`, output: normalizeWorkspaceOutput(diff), payload: { workspace: { operation, path: normalizedPath, comparePath: compareNormalizedPath, changedLines: diff.changedLines, changed: false, affectsCleanedDataset: false } } };
-    }
-    if (!isWorkspaceWritablePath(normalizedPath)) throw new Error(`Write permission denied for ${normalizedPath}`);
-    if (operation === "write" && workspaceAction.content === void 0) throw new Error("write requires content.");
-    if (operation === "append" && workspaceAction.content === void 0) throw new Error("append requires content.");
-    if (operation === "replace" && (workspaceAction.oldText == null || workspaceAction.newText == null)) throw new Error("replace requires oldText and newText.");
-    const existingContent = (exactMatch == null ? void 0 : exactMatch.content) ?? "";
-    let nextContent = existingContent;
-    if (operation === "write") nextContent = String(workspaceAction.content || "");
-    if (operation === "append") nextContent = `${existingContent}${String(workspaceAction.content || "")}`;
-    if (operation === "replace") {
-      const oldText = String(workspaceAction.oldText);
-      const newText = String(workspaceAction.newText);
-      if (!existingContent.includes(oldText)) throw new Error(`replace target not found in ${normalizedPath}`);
-      nextContent = Boolean(workspaceAction.replaceAll) ? existingContent.split(oldText).join(newText) : existingContent.replace(oldText, newText);
-    }
-    const nextWorkspaceFiles = { ...getState().workspaceFiles ?? {}, [normalizedPath]: nextContent };
-    const lineCountBefore = existingContent.length === 0 ? 0 : existingContent.split("\n").length;
-    const lineCountAfter = nextContent.length === 0 ? 0 : nextContent.split("\n").length;
-    const diffSummary = operation === "replace" ? `Updated ${normalizedPath} with targeted replacements. ${lineCountBefore} -> ${lineCountAfter} lines.` : operation === "append" ? `Appended new content to ${normalizedPath}. ${lineCountBefore} -> ${lineCountAfter} lines.` : `Overwrote ${normalizedPath}. ${lineCountBefore} -> ${lineCountAfter} lines.`;
-    if (isWorkspaceDatasetWritePath(normalizedPath)) {
-      if (!currentData) throw new Error("No cleaned dataset loaded. Cannot apply cleaned dataset edit.");
-      const nextData = parseWorkspaceWriteDataSet(normalizedPath, nextContent, currentData);
-      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-      const profileResult = await profileDataWithWorker(nextData.data, options2 == null ? void 0 : options2.abortSignal);
-      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-      setState({
-        csvData: { ...currentData, ...nextData },
-        workspaceFiles: nextWorkspaceFiles,
-        columnProfiles: profileResult.profiles,
-        activeDataQuery: null,
-        activeSpreadsheetFilter: null,
-        spreadsheetFilterFunction: null,
-        aiFilterExplanation: null,
-        dataPreparationPlan: getState().dataPreparationPlan ? { ...getState().dataPreparationPlan, explanation: "AI workspace cleaning edited cleaned.csv.", outputColumns: profileResult.profiles, planStatus: "operations", consistencyIssues: [] } : { explanation: "AI workspace cleaning edited cleaned.csv.", operations: [], outputColumns: profileResult.profiles, planStatus: "operations", consistencyIssues: [] },
-        chatHistory: resolveCleaningFailureCards(getState().chatHistory, (_a = getState().cleaningRun) == null ? void 0 : _a.runId)
-      });
-      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-      const duckDbSync = await ensureDuckDbSessionSync(store, { ...currentData, ...nextData }, createWorkerDiagnosticsTelemetryReporter(store));
-      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-      if (duckDbSync.status === "ready") {
-        getState().logAgentToolUsage({ tool: "duckdb_query_engine", description: "Synced cleaned dataset after workspace_file edit.", detail: { tableName: duckDbSync.tableName, loadVersion: duckDbSync.loadVersion } });
-      } else if (duckDbSync.fallbackStage === "bind_failed" || duckDbSync.fallbackStage === "query_failed") {
-        getState().logAgentToolUsage({ tool: "duckdb_query_engine", description: "DuckDB dataset sync failed after workspace edit.", detail: { tableName: duckDbSync.tableName, loadVersion: duckDbSync.loadVersion, fallbackStage: duckDbSync.fallbackStage, error: duckDbSync.fallbackReason } });
-      }
-      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-      await getState().regenerateAnalyses({ ...currentData, ...nextData });
-    } else {
-      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-      setState({ workspaceFiles: nextWorkspaceFiles });
-    }
-    return { successMessage: `${operation} completed on ${normalizedPath}`, output: normalizeWorkspaceOutput({ path: normalizedPath, content: nextContent }), diffSummary, payload: { workspace: { operation, path: normalizedPath, changed: nextContent !== existingContent, affectsCleanedDataset: isWorkspaceDatasetWritePath(normalizedPath), lineCountBefore, lineCountAfter } } };
-  }, options2 == null ? void 0 : options2.abortSignal);
-};
-const dedupeIssues = (issues) => issues.filter((issue, index2, entries2) => entries2.findIndex(
-  (candidate) => candidate.code === issue.code && candidate.metricName === issue.metricName && candidate.message === issue.message
-) === index2);
-const buildLinearCombinationFormula = (metricName) => {
-  if (metricName === "profit") {
-    return {
-      kind: "linear_combination",
-      components: [
-        { operator: "add", matchAny: ["revenue"] },
-        { operator: "subtract", matchAny: ["cost"] }
-      ]
-    };
-  }
-  if (metricName === "variance") {
-    return {
-      kind: "linear_combination",
-      components: [
-        { operator: "add", matchAny: ["actual"] },
-        { operator: "subtract", matchAny: ["budget"] }
-      ]
-    };
-  }
-  if (metricName === "margin") {
-    return {
-      kind: "ratio",
-      numerator: [
-        { operator: "add", matchAny: ["revenue"] },
-        { operator: "subtract", matchAny: ["cost"] }
-      ],
-      denominator: [
-        { operator: "add", matchAny: ["revenue"] }
-      ],
-      scale: 100
-    };
-  }
-  return null;
-};
-const buildDerivedTemplate = (metricName, definition, brief) => {
-  if (!(definition == null ? void 0 : definition.requiresDerivation)) {
-    return null;
-  }
-  const rowBinding = definition.bindings.find((binding) => binding.source === "row_label");
-  const formula = buildLinearCombinationFormula(metricName);
-  if (!(rowBinding == null ? void 0 : rowBinding.labelColumn) || !rowBinding.valueColumn || !formula) {
-    return null;
-  }
-  const groupByColumns = definition.grainCandidates.length > 0 ? definition.grainCandidates.slice(0, 3) : brief.grainCandidates.slice(0, 3);
-  return {
-    groupByColumns,
-    labelColumn: rowBinding.labelColumn,
-    valueColumn: rowBinding.valueColumn,
-    expectedInputs: rowBinding.matchedValues ?? [],
-    outputMetricLabel: metricName.charAt(0).toUpperCase() + metricName.slice(1),
-    formula
-  };
-};
-const validateProposedColumnMapping = (definition, request) => {
-  const proposedMapping = request.proposedMapping;
-  if (!proposedMapping || proposedMapping.sourceKind !== "column") {
-    return [];
-  }
-  const columnBindings = (definition == null ? void 0 : definition.bindings.filter((binding) => binding.source === "column")) ?? [];
-  if (columnBindings.length === 0) {
-    return [{
-      code: "metric_definition_missing",
-      severity: "error",
-      metricName: request.metricName,
-      message: `${request.metricName} is not modeled as a direct column metric in this dataset.`
-    }];
-  }
-  if (!columnBindings.some((binding) => binding.column === proposedMapping.column)) {
-    return [{
-      code: "metric_definition_missing",
-      severity: "error",
-      metricName: request.metricName,
-      message: `The proposed column "${proposedMapping.column}" does not match the detected ${request.metricName} metric binding.`
-    }];
-  }
-  return [];
-};
-const validateProposedRowLabelMapping = (request, brief, template) => {
-  var _a;
-  const proposedMapping = request.proposedMapping;
-  if (!proposedMapping || proposedMapping.sourceKind !== "row_label" || !template) {
-    return [];
-  }
-  const operation = {
-    metricName: request.metricName,
-    groupByColumns: ((_a = request.requestedGrain) == null ? void 0 : _a.length) ? request.requestedGrain : template.groupByColumns,
-    labelColumn: proposedMapping.labelColumn ?? template.labelColumn,
-    valueColumn: proposedMapping.valueColumn ?? template.valueColumn,
-    outputMetricLabel: template.outputMetricLabel,
-    expectedInputs: proposedMapping.expectedInputs ?? template.expectedInputs,
-    formula: template.formula
-  };
-  return validateDeriveMetricOperationAgainstBrief(brief, operation);
-};
-const validateRequestedGrain = (request, definition) => {
-  var _a;
-  if (!((_a = request.requestedGrain) == null ? void 0 : _a.length) || !definition) {
-    return [];
-  }
-  const unsupported = request.requestedGrain.filter((column) => !definition.grainCandidates.includes(column));
-  if (unsupported.length === 0) {
-    return [];
-  }
-  return [{
-    code: "grain_ambiguous",
-    severity: "warn",
-    metricName: request.metricName,
-    message: `The requested grain (${unsupported.join(", ")}) is outside the likely grain candidates for ${request.metricName}.`
-  }];
-};
-const chooseRecommendation = ({
-  request,
-  definition,
-  blockers
-}) => {
-  var _a;
-  if (blockers.length > 0) {
-    return {
-      recommendedAction: "clarify",
-      suggestedNextTool: "conversation.request_clarification"
-    };
-  }
-  if (request.validationKind === "derived" && (definition == null ? void 0 : definition.requiresDerivation)) {
-    return {
-      recommendedAction: "derive_metric",
-      suggestedNextTool: "data.mutate"
-    };
-  }
-  if (((_a = request.requestedGrain) == null ? void 0 : _a.length) || request.proposedMapping) {
-    return {
-      recommendedAction: "visualize",
-      suggestedNextTool: "analysis.create_plan"
-    };
-  }
-  return {
-    recommendedAction: "answer",
-    suggestedNextTool: "assistant_message"
-  };
-};
-const executeMetricMappingValidationAction = (request, store) => {
-  var _a, _b, _c, _d;
-  const state2 = store.getState();
-  if (!state2.csvData || state2.columnProfiles.length === 0) {
-    return {
-      status: "error",
-      toolName: "analysis.validate_metric_mapping",
-      message: "No dataset is loaded for metric mapping validation.",
-      shouldStop: false,
-      retryHint: "Load a dataset before validating business metric mappings."
-    };
-  }
-  const brief = buildAnalysisIntentBrief({
-    columns: state2.columnProfiles,
-    csvData: state2.csvData,
-    dataPreparationPlan: state2.dataPreparationPlan ?? null,
-    datasetSemanticSnapshot: state2.datasetSemanticSnapshot ?? null,
-    semanticDatasetVersion: state2.semanticDatasetVersion ?? null
-  });
-  const metricDefinition = brief.metricDefinitions.find((metric) => metric.name === request.metricName) ?? null;
-  const deriveMetricTemplate = request.validationKind === "derived" ? buildDerivedTemplate(request.metricName, metricDefinition, brief) : null;
-  const requestMessage = ((_b = (_a = state2.activeTurn) == null ? void 0 : _a.userMessage) == null ? void 0 : _b.trim()) || request.metricName;
-  const requestFingerprint = buildRuntimeRequestFingerprint(requestMessage, {
-    sessionId: state2.sessionId,
-    datasetId: state2.currentDatasetId
-  });
-  const validationIssues = dedupeIssues([
-    ...validateAnalysisBrief(brief, [request.metricName]),
-    ...validateRequestedGrain(request, metricDefinition),
-    ...validateProposedColumnMapping(metricDefinition, request),
-    ...validateProposedRowLabelMapping(request, brief, deriveMetricTemplate)
-  ]);
-  const blockers = validationIssues.filter((issue) => issue.severity === "error").map((issue) => issue.message);
-  const { recommendedAction, suggestedNextTool } = chooseRecommendation({
-    request,
-    definition: metricDefinition,
-    blockers
-  });
-  const artifactMetadata = {
-    artifactType: "metric_mapping_validation",
-    metricName: request.metricName,
-    validationKind: request.validationKind,
-    metricDefinition,
-    validationIssues,
-    blockers,
-    recommendedAction,
-    recommendedPath: brief.recommendedPath,
-    suggestedNextTool,
-    deriveMetricTemplate: deriveMetricTemplate ?? void 0,
-    grain: (metricDefinition == null ? void 0 : metricDefinition.grainCandidates) ?? brief.grainCandidates,
-    sourceArtifactIds: [],
-    originRunId: ((_c = state2.activeTurn) == null ? void 0 : _c.runId) ?? null,
-    originTurnId: ((_d = state2.activeTurn) == null ? void 0 : _d.turnId) ?? null,
-    requestFingerprint,
-    requestMessage
-  };
-  store.setState({
-    activeMetricMappingValidation: artifactMetadata
-  });
-  const summary = blockers.length > 0 ? blockers.join(" ") : `Validated the ${request.metricName} metric mapping. Recommended next step: ${recommendedAction}.`;
-  const retryHint = blockers.length > 0 ? "Resolve the metric blockers with clarification before deriving or charting this business metric." : null;
-  return {
-    status: blockers.length > 0 ? "blocked" : "success",
-    toolName: "analysis.validate_metric_mapping",
-    message: summary,
-    shouldStop: false,
-    artifactMetadata,
-    observation: {
-      type: "tool_result",
-      status: blockers.length > 0 ? "blocked" : "success",
-      summary,
-      toolName: "analysis.validate_metric_mapping",
-      code: blockers.length > 0 ? "validation_failed" : void 0,
-      retryHint,
-      detail: {
-        artifactMetadata,
-        validationIssues,
-        blockers
-      }
-    }
-  };
-};
-const ANALYSIS_TOOLS = [
-  "analysis.create_plan",
-  "analysis.pivot_matrix",
-  "analysis.period_compare",
-  "analysis.cohort_retention",
-  "analysis.root_cause_breakdown",
-  "analysis.correlation",
-  "analysis.validate_metric_mapping",
-  "card.review",
-  "card.delete",
-  "ui.change_chart_type",
-  "ui.highlight_card",
-  "ui.show_card_data",
-  "ui.filter_card",
-  "data.query",
-  "data.mutate",
-  "spreadsheet.filter",
-  "conversation.request_clarification"
-];
-const RUNTIME_TOOL_POLICY = [
-  {
-    phase: "converse",
-    label: "Conversational with card refinement + deletion",
-    tools: ["conversation.request_clarification", "card.refine", "card.delete", "data.query"]
-  },
-  {
-    phase: "explore",
-    label: "Read-only evidence inspection + card refinement + deletion",
-    tools: [
-      "data.query",
-      "spreadsheet.filter",
-      "analysis.validate_metric_mapping",
-      "conversation.request_clarification",
-      "card.refine",
-      "card.delete"
-    ]
-  },
-  {
-    phase: "analyze",
-    label: "Full analysis, card creation, and data mutation",
-    tools: [...ANALYSIS_TOOLS]
-  }
-];
-const policyMap = new Map(
-  RUNTIME_TOOL_POLICY.map((entry) => [entry.phase, entry])
-);
-const getToolsForPhase = (phase) => {
-  const entry = policyMap.get(phase);
-  return entry ? [...entry.tools] : [];
-};
-const ALL_RUNTIME_TOOLS = [
-  "analysis.create_plan",
-  "analysis.correlation",
-  "analysis.pivot_matrix",
-  "analysis.period_compare",
-  "analysis.cohort_retention",
-  "analysis.root_cause_breakdown",
-  "analysis.validate_metric_mapping",
-  "card.aggregate_table",
-  "card.add_calculated_column",
-  "card.delete",
-  "card.review",
-  "card.suggestion.apply",
-  "card.suggestion.dismiss",
-  "ui.highlight_card",
-  "ui.change_chart_type",
-  "ui.show_card_data",
-  "ui.filter_card",
-  "cleaning.resume",
-  "cleaning.restart",
-  "data.mutate",
-  "data.query",
-  "spreadsheet.filter",
-  "workspace.list",
-  "workspace.tree",
-  "workspace.read",
-  "workspace.search",
-  "workspace.grep",
-  "workspace.head",
-  "workspace.diff",
-  "workspace.replace",
-  "workspace.write",
-  "workspace.append",
-  "conversation.request_clarification"
-];
-getToolsForPhase("explore");
-getToolsForPhase("explore");
-getToolsForPhase("analyze");
-const CLARIFICATION_RESUME_MARKER = "Continue the original request using the user clarification below.";
-const PLACEHOLDER_ORIGINAL_REQUEST_VALUES = /* @__PURE__ */ new Set(["?", "？"]);
-new Set([
-  ...ALL_RUNTIME_TOOLS,
-  "assistant_message"
-].map((value2) => value2.toLowerCase()));
-const extractClarificationResumeField = (message, label) => {
-  var _a;
-  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match2 = message.match(new RegExp(`^${escapedLabel}:\\s*(.+)$`, "mi"));
-  return ((_a = match2 == null ? void 0 : match2[1]) == null ? void 0 : _a.trim()) ?? "";
-};
-const unwrapClarificationResumeMessage = (message) => {
-  const clarificationResume = parseClarificationResumeMessage(message);
-  if (!(clarificationResume == null ? void 0 : clarificationResume.originalUserRequest)) {
-    const trimmed = message.trim();
-    return trimmed || null;
-  }
-  if (clarificationResume.originalUserRequest.includes(CLARIFICATION_RESUME_MARKER)) {
-    return unwrapClarificationResumeMessage(clarificationResume.originalUserRequest);
-  }
-  return clarificationResume.originalUserRequest.trim() || null;
-};
-const normalizeClarificationOriginalUserRequest = (message) => {
-  const trimmed = (message == null ? void 0 : message.trim()) ?? "";
-  if (!trimmed || PLACEHOLDER_ORIGINAL_REQUEST_VALUES.has(trimmed)) {
-    return null;
-  }
-  const unwrapped = unwrapClarificationResumeMessage(trimmed) ?? trimmed;
-  const normalized = unwrapped.trim();
-  if (!normalized || PLACEHOLDER_ORIGINAL_REQUEST_VALUES.has(normalized)) {
-    return null;
-  }
-  return normalized;
-};
-const resolveClarificationOriginalUserRequest = (...candidates) => {
-  for (const candidate of candidates) {
-    const normalized = normalizeClarificationOriginalUserRequest(candidate);
-    if (normalized) {
-      return normalized;
-    }
-  }
-  return "";
-};
-const parseClarificationResumeMessage = (message) => {
-  if (!message.includes(CLARIFICATION_RESUME_MARKER)) {
-    return null;
-  }
-  const originalUserRequest = extractClarificationResumeField(message, "Original user request");
-  const clarificationQuestion = extractClarificationResumeField(message, "Clarification question");
-  const selectedOption = extractClarificationResumeField(message, "Selected option");
-  const selectedPath = extractClarificationResumeField(message, "Selected path");
-  const mustPreserveOutcome = extractClarificationResumeField(message, "Must preserve outcome");
-  const clarificationAssessment = extractClarificationResumeField(message, "Clarification assessment");
-  const assumptionSummary = extractClarificationResumeField(message, "Assumption summary");
-  const clarificationQuestionFingerprint = extractClarificationResumeField(message, "Clarification question fingerprint");
-  const blockedReason = extractClarificationResumeField(message, "Blocked reason");
-  const priorQueryEvidence = extractClarificationResumeField(message, "Prior query evidence");
-  const priorQueryColumnsRaw = extractClarificationResumeField(message, "Prior query columns");
-  const priorQueryTrace = extractClarificationResumeField(message, "Prior query trace");
-  const priorSampleRowsRaw = extractClarificationResumeField(message, "Prior sample rows");
-  const priorQualityContext = extractClarificationResumeField(message, "Prior quality context");
-  if (!originalUserRequest || !selectedOption) {
-    return null;
-  }
-  const priorQueryColumns = priorQueryColumnsRaw ? priorQueryColumnsRaw.split(",").map((c) => c.trim()).filter(Boolean) : void 0;
-  let priorSampleRows;
-  if (priorSampleRowsRaw) {
-    try {
-      const parsed = JSON.parse(priorSampleRowsRaw);
-      if (Array.isArray(parsed) && parsed.every((row) => row && typeof row === "object" && !Array.isArray(row))) {
-        priorSampleRows = parsed;
-      }
-    } catch {
-    }
-  }
-  return {
-    originalUserRequest,
-    clarificationQuestion,
-    selectedOption,
-    selectedPath: selectedPath || void 0,
-    mustPreserveOutcome: mustPreserveOutcome === "table" || mustPreserveOutcome === "card" || mustPreserveOutcome === "derived_metric" || mustPreserveOutcome === "answer" ? mustPreserveOutcome : void 0,
-    clarificationAssessment: clarificationAssessment === "best_effort_continue" || clarificationAssessment === "still_ambiguous" ? clarificationAssessment : "resolved",
-    assumptionSummary: assumptionSummary || void 0,
-    clarificationQuestionFingerprint: clarificationQuestionFingerprint || void 0,
-    blockedReason: blockedReason || void 0,
-    priorQueryEvidence: priorQueryEvidence || void 0,
-    priorQueryColumns: (priorQueryColumns == null ? void 0 : priorQueryColumns.length) ? priorQueryColumns : void 0,
-    priorQueryTrace: priorQueryTrace || void 0,
-    priorSampleRows: (priorSampleRows == null ? void 0 : priorSampleRows.length) ? priorSampleRows : void 0,
-    priorQualityContext: priorQualityContext || void 0
-  };
-};
-const normalizeFingerprint = (value2) => value2.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 160);
-const buildClarificationQuestionFingerprint = (question) => {
-  const normalized = typeof question === "string" ? normalizeFingerprint(question) : "";
-  return normalized || null;
-};
-const LOG_PREFIX$b = "[ExecutorAgent]";
-const requestClarification = (action, store) => {
-  var _a;
-  if (action.type !== "tool_call" || !action.args) {
-    return {
-      status: "error",
-      toolName: "conversation.request_clarification",
-      message: "Clarification payload is missing.",
-      shouldStop: false,
-      retryHint: "Return a clarification payload with question and options."
-    };
-  }
-  const clarificationRequest = action.args;
-  if (!clarificationRequest.question || !clarificationRequest.question.trim()) {
-    const userMessage = ((_a = store.getState().activeTurn) == null ? void 0 : _a.userMessage) ?? "";
-    clarificationRequest.question = userMessage ? getTranslation("clarification_follow_up_prompt", store.getState().settings.language, { question: userMessage }) : getTranslation("chat_placeholder_clarification", store.getState().settings.language);
-  }
-  const validationErrors = validateClarification(clarificationRequest);
-  if (validationErrors.length > 0) {
-    return {
-      status: "blocked",
-      toolName: "conversation.request_clarification",
-      message: validationErrors.join(" "),
-      shouldStop: false,
-      retryHint: "Return a clarification question with 1-3 labeled options, or provide a question-only free-text clarification.",
-      observation: {
-        type: "tool_result",
-        status: "blocked",
-        summary: validationErrors.join(" "),
-        toolName: "conversation.request_clarification",
-        code: "validation_failed",
-        retryHint: "Return a clarification question with 1-3 labeled options, or provide a question-only free-text clarification."
-      }
-    };
-  }
-  console.log(`${LOG_PREFIX$b} Clarification requested.`);
-  store.setState((prev) => {
-    var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _A, _B, _C, _D, _E, _F;
-    return {
-      pendingClarification: {
-        ...clarificationRequest,
-        resumeContext: {
-          ...clarificationRequest.resumeContext,
-          originalUserRequest: resolveClarificationOriginalUserRequest(
-            (_a2 = clarificationRequest.resumeContext) == null ? void 0 : _a2.originalUserRequest,
-            (_b = clarificationRequest.resumeContext) == null ? void 0 : _b.resumeOriginalUserMessage,
-            (_c = prev.activeTurn) == null ? void 0 : _c.userMessage
-          ),
-          resumeOriginalUserMessage: resolveClarificationOriginalUserRequest(
-            (_d = clarificationRequest.resumeContext) == null ? void 0 : _d.resumeOriginalUserMessage,
-            (_e = clarificationRequest.resumeContext) == null ? void 0 : _e.originalUserRequest,
-            (_f = prev.activeTurn) == null ? void 0 : _f.userMessage
-          ),
-          selectedPath: ((_g = clarificationRequest.resumeContext) == null ? void 0 : _g.selectedPath) ?? ((_i = (_h = prev.activeTurn) == null ? void 0 : _h.runtimeCommitment) == null ? void 0 : _i.selectedPath) ?? void 0,
-          mustPreserveOutcome: ((_j = clarificationRequest.resumeContext) == null ? void 0 : _j.mustPreserveOutcome) ?? ((_l = (_k = prev.activeTurn) == null ? void 0 : _k.runtimeCommitment) == null ? void 0 : _l.mustPreserveOutcome) ?? "answer",
-          clarificationQuestionFingerprint: ((_m = clarificationRequest.resumeContext) == null ? void 0 : _m.clarificationQuestionFingerprint) ?? buildClarificationQuestionFingerprint(clarificationRequest.question) ?? void 0,
-          blockedReason: ((_n = clarificationRequest.resumeContext) == null ? void 0 : _n.blockedReason) ?? ((_p = (_o = prev.activeTurn) == null ? void 0 : _o.recoveryState) == null ? void 0 : _p.lastBlockedReason) ?? void 0,
-          resumeTargetRunId: ((_q = clarificationRequest.resumeContext) == null ? void 0 : _q.resumeTargetRunId) ?? ((_r = prev.activeTurn) == null ? void 0 : _r.runId) ?? "",
-          resumeTargetTurnId: ((_s = clarificationRequest.resumeContext) == null ? void 0 : _s.resumeTargetTurnId) ?? ((_t = prev.activeTurn) == null ? void 0 : _t.turnId) ?? void 0,
-          // AGENT-107: Capture structured evidence at clarification time
-          priorEvidence: ((_u = clarificationRequest.resumeContext) == null ? void 0 : _u.priorEvidence) ?? {
-            queryExplanation: ((_v = prev.activeDataQuery) == null ? void 0 : _v.explanation) ?? null,
-            queryColumns: ((_x = (_w = prev.activeDataQuery) == null ? void 0 : _w.result) == null ? void 0 : _x.selectedColumns) ?? null,
-            sampleRows: ((_A = (_z = (_y = prev.activeDataQuery) == null ? void 0 : _y.result) == null ? void 0 : _z.rows) == null ? void 0 : _A.slice(0, 5)) ?? null,
-            queryTraceSummary: prev.activeDataQuery ? `${prev.activeDataQuery.engine} | ${((_B = prev.activeDataQuery.result) == null ? void 0 : _B.returnedRows) ?? 0}/${((_C = prev.activeDataQuery.result) == null ? void 0 : _C.totalMatchedRows) ?? 0} rows | columns: ${(((_D = prev.activeDataQuery.result) == null ? void 0 : _D.selectedColumns) ?? []).join(", ")}` : null,
-            qualityContext: ((_F = (_E = prev.activeTurn) == null ? void 0 : _E.lastObservation) == null ? void 0 : _F.summary) ?? null
-          }
-        }
-      },
-      chatHistory: [
-        ...prev.chatHistory,
-        createChatMessage({
-          sender: "ai",
-          text: clarificationRequest.question,
-          timestamp: /* @__PURE__ */ new Date(),
-          type: "ai_clarification",
-          clarificationRequest
-        })
-      ],
-      isBusy: false
-    };
-  });
-  return {
-    status: "success",
-    toolName: action.toolName,
-    message: "Clarification requested.",
-    shouldStop: true,
-    observation: {
-      type: "clarification",
-      status: "success",
-      summary: clarificationRequest.question,
-      toolName: action.toolName
-    }
-  };
-};
-const executeCleaningControl = async (toolName, store) => {
-  if (toolName === "cleaning.resume") {
-    await store.getState().resumeCleaningRun();
-    return {
-      status: "success",
-      toolName,
-      message: "Resumed the cleaning runtime.",
-      shouldStop: true,
-      observation: {
-        type: "tool_result",
-        status: "success",
-        summary: "Resumed the cleaning runtime.",
-        toolName
-      }
-    };
-  }
-  await store.getState().restartCleaningRun();
-  return {
-    status: "success",
-    toolName,
-    message: "Restarted the cleaning runtime.",
-    shouldStop: true,
-    observation: {
-      type: "tool_result",
-      status: "success",
-      summary: "Restarted the cleaning runtime.",
-      toolName
-    }
-  };
-};
-const executeSuggestionAction = async (toolName, suggestionId, store) => {
-  if (!suggestionId) {
-    return {
-      status: "error",
-      toolName,
-      message: "Suggestion id is missing.",
-      shouldStop: false,
-      retryHint: "Return suggestionId for the target suggestion."
-    };
-  }
-  if (toolName === "card.suggestion.apply") {
-    await store.getState().applyCardEnhancementSuggestion(suggestionId);
-    return {
-      status: "success",
-      toolName,
-      message: "Applied the requested card suggestion.",
-      shouldStop: false,
-      observation: {
-        type: "tool_result",
-        status: "success",
-        summary: "Applied the requested card suggestion.",
-        toolName,
-        detail: { suggestionId }
-      }
-    };
-  }
-  store.getState().dismissCardEnhancementSuggestion(suggestionId);
-  return {
-    status: "success",
-    toolName,
-    message: "Dismissed the requested card suggestion.",
-    shouldStop: false,
-    observation: {
-      type: "tool_result",
-      status: "success",
-      summary: "Dismissed the requested card suggestion.",
-      toolName,
-      detail: { suggestionId }
-    }
-  };
-};
-const executeCardRefineAction = (action, store) => {
-  var _a, _b, _c;
-  if (action.type !== "tool_call" || !action.args) {
-    return {
-      status: "error",
-      toolName: "card.refine",
-      message: "card.refine payload is missing.",
-      shouldStop: false,
-      retryHint: "Provide cardId and a changes object."
-    };
-  }
-  let { cardId, changes } = action.args;
-  const { getState, setState } = store;
-  const state2 = getState();
-  if (!cardId) {
-    const mentionedIds = extractMentionedCardIds(((_a = state2.activeTurn) == null ? void 0 : _a.userMessage) ?? "");
-    if (mentionedIds.length === 1) {
-      cardId = mentionedIds[0];
-      console.log(`${LOG_PREFIX$b} card.refine: auto-injected cardId from @mention: ${cardId}`);
-    }
-  }
-  const cardIndex = state2.analysisCards.findIndex((c) => c.id === cardId);
-  if (cardIndex === -1) {
-    return {
-      status: "error",
-      toolName: "card.refine",
-      message: `Card "${cardId}" not found.`,
-      shouldStop: false,
-      retryHint: `Use one of the current cardIds: [${state2.analysisCards.map((c) => c.id).join(", ")}].`
-    };
-  }
-  const appliedChanges = [];
-  setState((prev) => {
-    var _a2;
-    const newCards = [...prev.analysisCards];
-    const card = { ...newCards[cardIndex] };
-    if (changes.topN !== void 0) {
-      card.topN = changes.topN;
-      appliedChanges.push(`topN → ${changes.topN}`);
-    }
-    if (changes.chartType !== void 0) {
-      card.displayChartType = changes.chartType;
-      appliedChanges.push(`chartType → ${changes.chartType}`);
-    }
-    if (changes.filter !== void 0) {
-      card.filter = changes.filter.values.length > 0 ? { column: changes.filter.column, values: changes.filter.values } : void 0;
-      appliedChanges.push(changes.filter.values.length > 0 ? `filter → ${changes.filter.column} in [${changes.filter.values.join(", ")}]` : "filter cleared");
-    }
-    if (changes.isDataVisible !== void 0) {
-      card.isDataVisible = changes.isDataVisible;
-      appliedChanges.push(`isDataVisible → ${changes.isDataVisible}`);
-    }
-    if (changes.summary !== void 0) {
-      const lang = ((_a2 = prev.settings) == null ? void 0 : _a2.language) ?? card.summary.language ?? "English";
-      card.summary = { language: lang, text: changes.summary };
-      appliedChanges.push("summary updated");
-    }
-    newCards[cardIndex] = card;
-    return { analysisCards: newCards };
-  });
-  const cardTitle = ((_c = (_b = state2.analysisCards[cardIndex]) == null ? void 0 : _b.plan) == null ? void 0 : _c.title) ?? cardId;
-  const changeDesc = appliedChanges.join(", ");
-  const friendlyMessage = appliedChanges.length > 0 ? `Updated "${cardTitle}" — ${changeDesc}.` : `No changes applied to "${cardTitle}".`;
-  console.log(`${LOG_PREFIX$b} card.refine: ${friendlyMessage}`);
-  if (appliedChanges.length > 0) {
-    if (changes.summary !== void 0) {
-      navigateToCardNarrative(cardId);
-    } else {
-      getState().handleShowCardFromChat(cardId);
-    }
-  }
-  return {
-    status: "success",
-    toolName: "card.refine",
-    message: friendlyMessage,
-    shouldStop: true,
-    observation: {
-      type: "tool_result",
-      status: "success",
-      summary: friendlyMessage,
-      toolName: "card.refine",
-      detail: { cardId, changes }
-    }
-  };
-};
-const isSqlAnalysisPlanLike = (plan) => {
-  if (!plan || typeof plan !== "object" || Array.isArray(plan)) {
-    return false;
-  }
-  const candidate = plan;
-  return (candidate.queryMode === "aggregate" || candidate.queryMode === "rowset") && Boolean(candidate.query && typeof candidate.query === "object" && !Array.isArray(candidate.query));
-};
-const resolveSqlBinding = (store) => {
-  const state2 = store.getState();
-  return resolveCurrentDuckDbBinding({
-    mode: "analysis",
-    csvData: state2.csvData,
-    snapshot: state2.datasetSemanticSnapshot,
-    semanticDatasetVersion: state2.semanticDatasetVersion,
-    sessionStatus: state2.duckDbSessionStatus,
-    activeDataQuery: state2.activeDataQuery ?? null
-  });
-};
-const executePlanAction = async (plan, store, options2) => {
-  const { getState, setState } = store;
-  if (!getState().csvData) return null;
-  console.log(`${LOG_PREFIX$b} Executing plan: "${plan.title}"`);
-  const precomputed = getState().pendingPrecomputedCardData;
-  if (precomputed && precomputed.length > 0) {
-    setState({ pendingPrecomputedCardData: null });
-    console.log(`${LOG_PREFIX$b} Using precomputed data (${precomputed.length} rows) from GroupByTest for "${plan.title}".`);
-    const normalizedPlan = isSqlAnalysisPlanLike(plan) ? mapSqlAnalysisPlanToAnalysisPlan(plan) : plan;
-    return createNewCard(normalizedPlan, precomputed, store);
-  }
-  if (isSqlAnalysisPlanLike(plan)) {
-    const binding = resolveSqlBinding(store);
-    return executeSqlPlanAndCreateCard(plan, store, binding);
-  }
-  return executePlanAndCreateCard(plan, getState().csvData, store, options2);
-};
-const executeAggregateTableAction = async (action, store) => {
-  const { getState } = store;
-  if (action.type !== "tool_call") return;
-  const tableAction = action.args;
-  if (!tableAction) return;
-  if (!getState().csvData) {
-    throw new Error("No dataset available for aggregation.");
-  }
-  const baseCard = tableAction.cardId ? getState().analysisCards.find((card) => card.id === tableAction.cardId) : null;
-  const fallbackTitle = tableAction.title || (baseCard == null ? void 0 : baseCard.plan.title) || "AI Aggregate Result";
-  const derivedPlan = {
-    chartType: tableAction.chartType || (baseCard == null ? void 0 : baseCard.plan.chartType) || "bar",
-    title: fallbackTitle,
-    description: tableAction.description || (baseCard == null ? void 0 : baseCard.plan.description) || `Quick aggregation for ${fallbackTitle}`,
-    aggregation: tableAction.aggregation || (baseCard == null ? void 0 : baseCard.plan.aggregation) || (tableAction.valueColumn ? "sum" : "count"),
-    groupByColumn: tableAction.groupByColumn || (baseCard == null ? void 0 : baseCard.plan.groupByColumn),
-    valueColumn: tableAction.valueColumn || (baseCard == null ? void 0 : baseCard.plan.valueColumn),
-    xValueColumn: baseCard == null ? void 0 : baseCard.plan.xValueColumn,
-    yValueColumn: baseCard == null ? void 0 : baseCard.plan.yValueColumn,
-    secondaryValueColumn: baseCard == null ? void 0 : baseCard.plan.secondaryValueColumn,
-    secondaryAggregation: baseCard == null ? void 0 : baseCard.plan.secondaryAggregation,
-    defaultTopN: baseCard == null ? void 0 : baseCard.plan.defaultTopN,
-    defaultHideOthers: baseCard == null ? void 0 : baseCard.plan.defaultHideOthers,
-    preFilter: tableAction.preFilter || (baseCard == null ? void 0 : baseCard.plan.preFilter),
-    isFallback: false
-  };
-  console.log(`${LOG_PREFIX$b} Quick aggregate requested for card ${tableAction.cardId ?? "n/a"}.`);
-  await executePlanAndCreateCard(derivedPlan, getState().csvData, store);
-};
-const executeDomAction = (toolName, args, store) => {
-  const { getState, setState } = store;
-  console.log(`${LOG_PREFIX$b} DOM action: ${toolName}`, args);
-  getState().addProgress(`AI is performing action: ${toolName}...`);
-  setState((prev) => {
-    const cardIndex = prev.analysisCards.findIndex((c) => c.id === args.cardId);
-    if (cardIndex === -1) {
-      console.warn(`${LOG_PREFIX$b} Card "${args.cardId}" not found.`);
-      return {};
-    }
-    const newCards = [...prev.analysisCards];
-    switch (toolName) {
-      case "ui.highlight_card": {
-        navigateToCard(args.cardId);
-        break;
-      }
-      case "ui.change_chart_type":
-        newCards[cardIndex].displayChartType = args.newType;
-        break;
-      case "ui.show_card_data":
-        newCards[cardIndex].isDataVisible = args.visible;
-        break;
-      case "ui.filter_card":
-        newCards[cardIndex].filter = args.values.length > 0 ? { column: args.column, values: args.values } : void 0;
-        break;
-    }
-    return { analysisCards: newCards };
-  });
-};
-const handleExecutorAction = async (action, store, options2) => {
-  var _a, _b, _c, _d, _e, _f, _g, _h;
-  if (action.type !== "tool_call") {
-    return {
-      status: "error",
-      toolName: "assistant_message",
-      message: "Executor received a non-tool action.",
-      shouldStop: false
-    };
-  }
-  switch (action.toolName) {
-    case "analysis.create_plan":
-      if ((_a = action.args) == null ? void 0 : _a.plan) {
-        const rawPlan = action.args.plan;
-        const createdCard = await executePlanAction(rawPlan, store);
-        return buildCreatePlanExecutionResult(
-          isSqlAnalysisPlanLike(rawPlan) ? mapSqlAnalysisPlanToAnalysisPlan(rawPlan) : rawPlan,
-          createdCard
-        );
-      }
-      break;
-    case "analysis.correlation":
-      if (action.args) {
-        return executeCorrelationAction(action, store);
-      }
-      break;
-    case "analysis.pivot_matrix":
-      if (action.args) {
-        return executePivotMatrixAnalysis(action.args, store);
-      }
-      break;
-    case "analysis.period_compare":
-      if (action.args) {
-        return executePeriodCompareAnalysis(action.args, store);
-      }
-      break;
-    case "analysis.cohort_retention":
-      if (action.args) {
-        return executeCohortRetentionAnalysis(action.args, store);
-      }
-      break;
-    case "analysis.root_cause_breakdown":
-      if (action.args) {
-        return executeRootCauseBreakdownAnalysis(action.args, store);
-      }
-      break;
-    case "analysis.validate_metric_mapping":
-      if ((_b = action.args) == null ? void 0 : _b.metricName) {
-        return executeMetricMappingValidationAction(action.args, store);
-      }
-      break;
-    case "analysis.presentation_upgrade":
-      if ((_c = action.args) == null ? void 0 : _c.cardId) {
-        return executePresentationUpgrade({ cardId: action.args.cardId }, store);
-      }
-      break;
-    case "card.refine":
-      return executeCardRefineAction(action, store);
-    case "card.aggregate_table":
-      await executeAggregateTableAction(action, store);
-      break;
-    case "card.add_calculated_column":
-      if (action.args) {
-        const { cardId, newColumnName, formula, updateChart } = action.args;
-        store.getState().addCalculatedColumnToCard(cardId, newColumnName, formula, updateChart);
-      }
-      break;
-    case "card.delete":
-      if ((_d = action.args) == null ? void 0 : _d.cardId) {
-        store.getState().deleteAnalysisCard(action.args.cardId);
-      }
-      break;
-    case "card.review":
-      if (typeof store.getState().runCardEnhancementReview === "function") {
-        await store.getState().runCardEnhancementReview();
-      } else {
-        console.warn(`${LOG_PREFIX$b} runCardEnhancementReview not found on store.`);
-      }
-      break;
-    case "card.suggestion.apply":
-    case "card.suggestion.dismiss":
-      return executeSuggestionAction(action.toolName, (_e = action.args) == null ? void 0 : _e.suggestionId, store);
-    case "ui.highlight_card":
-    case "ui.change_chart_type":
-    case "ui.show_card_data":
-    case "ui.filter_card":
-      executeDomAction(action.toolName, action.args ?? {}, store);
-      break;
-    case "cleaning.resume":
-    case "cleaning.restart":
-      return executeCleaningControl(action.toolName, store);
-    case "data.mutate":
-      return executeDataOperationsAction(action, store, options2 == null ? void 0 : options2.abortSignal);
-    case "data.reshape":
-      return executeReshapeAction(action, store, options2 == null ? void 0 : options2.abortSignal);
-    case "data.keep_wide":
-      return executeKeepWideAction(action, store);
-    case "data.query":
-      return executeDataQueryAction(action, store, options2 == null ? void 0 : options2.abortSignal);
-    case "data.describe":
-      return executeDataDescribeAction(action, store);
-    case "data.value_counts":
-      return executeDataValueCountsAction(action, store);
-    case "data.outliers":
-      return executeDataOutliersAction(action, store);
-    case "data.missing":
-      return executeDataMissingAction(action, store);
-    case "spreadsheet.filter": {
-      const query = ((_g = (_f = action.args) == null ? void 0 : _f.query) == null ? void 0 : _g.trim()) || ((_h = action.thought) == null ? void 0 : _h.trim());
-      if (query) {
-        return executeFilterAction(query, store, (options2 == null ? void 0 : options2.spreadsheetFilterOrigin) ?? "chat", options2 == null ? void 0 : options2.abortSignal);
-      }
-      console.warn(`${LOG_PREFIX$b} spreadsheet.filter action missing query and thought.`);
-      store.getState().addProgress("AI tried to filter the data explorer but did not specify a query.", "error");
-      return {
-        status: "error",
-        toolName: "spreadsheet.filter",
-        message: "spreadsheet.filter action missing query.",
-        shouldStop: false,
-        retryHint: "Provide args.query for spreadsheet.filter."
-      };
-    }
-    case "workspace.list":
-    case "workspace.tree":
-    case "workspace.read":
-    case "workspace.search":
-    case "workspace.grep":
-    case "workspace.head":
-    case "workspace.diff":
-    case "workspace.replace":
-    case "workspace.write":
-    case "workspace.append": {
-      const workspaceResult = await executeWorkspaceFileAction(action, store, { abortSignal: options2 == null ? void 0 : options2.abortSignal });
-      return {
-        status: "success",
-        toolName: action.toolName,
-        message: `Executed ${action.toolName}`,
-        shouldStop: false,
-        payload: workspaceResult == null ? void 0 : workspaceResult.payload,
-        observation: {
-          type: "tool_result",
-          status: "success",
-          summary: `Executed ${action.toolName}.`,
-          toolName: action.toolName,
-          detail: workspaceResult == null ? void 0 : workspaceResult.payload
-        }
-      };
-    }
-    case "conversation.request_clarification":
-      return requestClarification(action, store);
-  }
-  return {
-    status: "success",
-    toolName: action.toolName,
-    message: `Executed ${action.toolName}`,
-    shouldStop: false,
-    observation: {
-      type: "tool_result",
-      status: "success",
-      summary: `Executed ${action.toolName}.`,
-      toolName: action.toolName
-    }
-  };
-};
-const CHART_TYPE_MAP = {
-  bar: "bar",
-  line: "line",
-  pie: "pie",
-  doughnut: "doughnut",
-  donut: "doughnut",
-  scatter: "scatter",
-  combo: "combo",
-  radar: "radar",
-  bubble: "bubble",
-  stacked_bar: "stacked_bar",
-  stacked_column: "stacked_column"
-};
-const AGGREGATION_MAP = {
-  sum: "sum",
-  count: "count",
-  avg: "avg"
-};
-const normalizeString = (value2) => typeof value2 === "string" && value2.trim().length > 0 ? value2.trim() : void 0;
-const normalizeChartType = (value2) => {
-  var _a;
-  const normalized = (_a = normalizeString(value2)) == null ? void 0 : _a.toLowerCase();
-  return normalized ? CHART_TYPE_MAP[normalized] : void 0;
-};
-const normalizeStringList = (value2) => Array.isArray(value2) ? value2.filter((entry) => typeof entry === "string" && entry.trim().length > 0).map((entry) => entry.trim()) : [];
-const dedupeStrings = (values2) => Array.from(new Set(values2));
-const getLooseBindings = (plan) => plan.bindings && typeof plan.bindings === "object" && !Array.isArray(plan.bindings) ? plan.bindings : {};
-const getQuerySelectColumns = (plan) => {
-  const query = plan.query;
-  if (!query || typeof query !== "object" || Array.isArray(query)) {
-    return [];
-  }
-  return normalizeStringList(query.select);
-};
-const buildMetricAliases = (plan, groupByColumn) => {
-  const bindings = getLooseBindings(plan);
-  const aliases = dedupeStrings([
-    normalizeString(bindings.valueColumn),
-    normalizeString(bindings.secondaryValueColumn),
-    ...normalizeStringList(plan.valueColumns),
-    ...normalizeStringList(plan.values),
-    ...normalizeStringList(plan.metrics),
-    ...normalizeStringList(plan.yAxis),
-    ...normalizeStringList(plan.columns).filter((column) => column !== groupByColumn),
-    ...getQuerySelectColumns(plan).filter((column) => column !== groupByColumn)
-  ].filter((value2) => typeof value2 === "string" && value2.length > 0));
-  return aliases;
-};
-const resolveAggregationForAlias = (activeDataQuery, alias) => {
-  if (!alias) {
-    return void 0;
-  }
-  const aggregate2 = (activeDataQuery.plan.aggregates ?? []).find(
-    (candidate) => {
-      var _a;
-      return ((_a = normalizeString(candidate.as)) == null ? void 0 : _a.toLowerCase()) === alias.toLowerCase();
-    }
-  );
-  if (!aggregate2) {
-    return void 0;
-  }
-  return AGGREGATION_MAP[aggregate2.function];
-};
-const resolveGroupByColumn = (plan, activeDataQuery) => {
-  var _a;
-  const bindings = getLooseBindings(plan);
-  const direct = normalizeString(plan.groupByColumn) ?? normalizeString(bindings.groupByColumn) ?? normalizeString(plan.xAxis) ?? (() => {
-    const groupBy = plan.groupBy;
-    if (typeof groupBy === "string" && groupBy.trim()) {
-      return groupBy.trim();
-    }
-    if (Array.isArray(groupBy)) {
-      return normalizeString(groupBy[0]);
-    }
-    return void 0;
-  })();
-  if (direct) {
-    return direct;
-  }
-  return normalizeString((_a = activeDataQuery == null ? void 0 : activeDataQuery.plan.groupBy) == null ? void 0 : _a[0]);
-};
-const canBindToActiveQuery = (activeDataQuery, groupByColumn, metricAliases) => {
-  if (!activeDataQuery || !groupByColumn || metricAliases.length === 0) {
-    return false;
-  }
-  const selectedColumns = new Set((activeDataQuery.result.selectedColumns ?? []).map((column) => column.toLowerCase()));
-  if (!selectedColumns.has(groupByColumn.toLowerCase())) {
-    return false;
-  }
-  return metricAliases.every((alias) => selectedColumns.has(alias.toLowerCase()));
-};
-const buildSqlPlanFromActiveQuery = (plan, activeDataQuery, groupByColumn, metricAliases) => {
-  var _a, _b;
-  const requestedChartType = normalizeChartType(plan.chartType) ?? normalizeChartType(plan.chart) ?? "bar";
-  const chartType = metricAliases.length > 1 && (requestedChartType === "bar" || requestedChartType === "line") ? "combo" : requestedChartType;
-  return {
-    chartType,
-    title: normalizeString(plan.title) ?? "AI Generated Analysis",
-    description: normalizeString(plan.description) ?? "Analysis of the active query result.",
-    queryMode: (((_a = activeDataQuery.plan.groupBy) == null ? void 0 : _a.length) ?? 0) > 0 || (((_b = activeDataQuery.plan.aggregates) == null ? void 0 : _b.length) ?? 0) > 0 ? "aggregate" : "rowset",
-    query: activeDataQuery.plan,
-    bindings: {
-      groupByColumn,
-      valueColumn: metricAliases[0],
-      secondaryValueColumn: metricAliases[1]
-    },
-    aggregation: resolveAggregationForAlias(activeDataQuery, metricAliases[0]),
-    secondaryAggregation: resolveAggregationForAlias(activeDataQuery, metricAliases[1]),
-    defaultTopN: typeof plan.defaultTopN === "number" ? plan.defaultTopN : void 0,
-    defaultHideOthers: typeof plan.defaultHideOthers === "boolean" ? plan.defaultHideOthers : void 0
-  };
-};
-const adaptCreatePlanFromContext = (rawPlan, state2) => {
-  var _a;
-  if (isSqlAnalysisPlanLike(rawPlan)) {
-    return rawPlan;
-  }
-  const loosePlan = rawPlan;
-  const activeDataQuery = state2.activeDataQuery ?? null;
-  const groupByColumn = resolveGroupByColumn(loosePlan, activeDataQuery);
-  const metricAliases = buildMetricAliases(loosePlan, groupByColumn);
-  const datasetColumns = new Set((state2.columnProfiles ?? []).map((profile) => profile.name.toLowerCase()));
-  if (canBindToActiveQuery(activeDataQuery, groupByColumn, metricAliases)) {
-    return buildSqlPlanFromActiveQuery(loosePlan, activeDataQuery, groupByColumn, metricAliases);
-  }
-  const groupByIsPhantom = groupByColumn && !datasetColumns.has(groupByColumn.toLowerCase()) && !((activeDataQuery == null ? void 0 : activeDataQuery.result.selectedColumns) ?? []).some((c) => c.toLowerCase() === groupByColumn.toLowerCase());
-  if (activeDataQuery && (!groupByColumn || groupByIsPhantom)) {
-    const queryColumns = activeDataQuery.result.selectedColumns ?? [];
-    const hasAggregates = (((_a = activeDataQuery.plan.aggregates) == null ? void 0 : _a.length) ?? 0) > 0;
-    if (hasAggregates && queryColumns.length >= 3) {
-      const requestedChartType2 = normalizeChartType(loosePlan.chartType) ?? normalizeChartType(loosePlan.chart) ?? "bar";
-      return {
-        chartType: queryColumns.length > 2 ? "combo" : requestedChartType2,
-        title: normalizeString(loosePlan.title) ?? "AI Generated Analysis",
-        description: normalizeString(loosePlan.description) ?? "Analysis of query result.",
-        queryMode: "aggregate",
-        query: activeDataQuery.plan,
-        bindings: {
-          groupByColumn: queryColumns[0],
-          valueColumn: queryColumns[1],
-          secondaryValueColumn: queryColumns[2]
-        },
-        aggregation: resolveAggregationForAlias(activeDataQuery, queryColumns[1]),
-        secondaryAggregation: resolveAggregationForAlias(activeDataQuery, queryColumns[2])
-      };
-    }
-  }
-  const valueColumn = normalizeString(loosePlan.valueColumn) ?? metricAliases.find((alias) => datasetColumns.has(alias.toLowerCase()));
-  const secondaryValueColumn = normalizeString(loosePlan.secondaryValueColumn) ?? metricAliases.find((alias) => alias !== valueColumn && datasetColumns.has(alias.toLowerCase()));
-  const requestedChartType = normalizeChartType(loosePlan.chartType) ?? normalizeChartType(loosePlan.chart) ?? "bar";
-  return {
-    ...rawPlan,
-    chartType: secondaryValueColumn && (requestedChartType === "bar" || requestedChartType === "line") ? "combo" : requestedChartType,
-    title: normalizeString(loosePlan.title) ?? "AI Generated Analysis",
-    description: normalizeString(loosePlan.description) ?? "Analysis of AI generated chart.",
-    groupByColumn,
-    valueColumn,
-    secondaryValueColumn,
-    secondaryAggregation: secondaryValueColumn ? "sum" : void 0
-  };
-};
-const DERIVED_PATHS = /* @__PURE__ */ new Set(["derive_metric_by_label_then_plan", "derive_column_then_plan"]);
-const DERIVED_ALIAS_TERMS = [
-  { metric: "profit", pattern: /\bprofit(?:ability)?\b/i },
-  { metric: "margin", pattern: /\bmargin\b/i },
-  { metric: "variance", pattern: /\bvariance\b|\bdelta\b/i }
-];
-const isObject = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
-const normalizeText = (value2) => String(value2 ?? "").replace(/[_-]+/g, " ").trim().toLowerCase();
-const collectStringValues = (value2) => {
-  if (typeof value2 === "string") {
-    return [value2];
-  }
-  if (Array.isArray(value2)) {
-    return value2.flatMap((entry) => collectStringValues(entry));
-  }
-  if (isObject(value2)) {
-    return Object.values(value2).flatMap((entry) => collectStringValues(entry));
-  }
-  return [];
-};
-const getRequestedDerivedMetrics = (userMessage, plan) => {
-  const sources = [
-    userMessage ?? "",
-    ...collectStringValues({
-      title: plan.title,
-      description: plan.description,
-      bindings: plan.bindings,
-      query: {
-        select: plan.query && isObject(plan.query) ? plan.query.select : void 0,
-        aggregates: plan.query && isObject(plan.query) ? plan.query.aggregates : void 0
-      },
-      valueColumn: plan.valueColumn,
-      secondaryValueColumn: plan.secondaryValueColumn
-    })
-  ];
-  const requested = /* @__PURE__ */ new Set();
-  sources.forEach((source2) => {
-    extractRequestedDerivedMetrics(source2).forEach((metric) => requested.add(metric));
-  });
-  return Array.from(requested);
-};
-const collectStructuralMetricRefs = (plan) => {
-  const refs = /* @__PURE__ */ new Set();
-  const rawPlan = plan;
-  [
-    rawPlan.valueColumn,
-    rawPlan.secondaryValueColumn,
-    rawPlan.xValueColumn,
-    rawPlan.yValueColumn,
-    rawPlan.valueColumns,
-    rawPlan.values,
-    rawPlan.metrics,
-    rawPlan.columns,
-    rawPlan.yAxis
-  ].forEach((value2) => {
-    collectStringValues(value2).forEach((entry) => refs.add(normalizeText(entry)));
-  });
-  if (isObject(rawPlan.bindings)) {
-    Object.values(rawPlan.bindings).forEach((value2) => {
-      collectStringValues(value2).forEach((entry) => refs.add(normalizeText(entry)));
-    });
-  }
-  if (isObject(rawPlan.query)) {
-    collectStringValues(rawPlan.query.select).forEach((entry) => refs.add(normalizeText(entry)));
-    const aggregates = Array.isArray(rawPlan.query.aggregates) ? rawPlan.query.aggregates : [];
-    aggregates.forEach((aggregate2) => {
-      if (!isObject(aggregate2)) return;
-      collectStringValues(aggregate2.as).forEach((entry) => refs.add(normalizeText(entry)));
-    });
-  }
-  return Array.from(refs).filter(Boolean);
-};
-const findReferencedDerivedMetrics = (refs) => {
-  const derivedMetrics = /* @__PURE__ */ new Set();
-  refs.forEach((ref2) => {
-    DERIVED_ALIAS_TERMS.forEach(({ metric, pattern }) => {
-      if (pattern.test(ref2)) {
-        derivedMetrics.add(metric);
-      }
-    });
-  });
-  return Array.from(derivedMetrics);
-};
-const cardHasDerivedMetric = (card, metrics) => {
-  var _a;
-  const refs = /* @__PURE__ */ new Set();
-  [
-    card.plan.valueColumn,
-    card.plan.secondaryValueColumn,
-    card.plan.xValueColumn,
-    card.plan.yValueColumn,
-    ...Object.keys(((_a = card.aggregatedData) == null ? void 0 : _a[0]) ?? {})
-  ].forEach((value2) => {
-    if (typeof value2 === "string" && value2.trim()) {
-      refs.add(normalizeText(value2));
-    }
-  });
-  return metrics.some((metric) => Array.from(refs).some((ref2) => DERIVED_ALIAS_TERMS.some((candidate) => candidate.metric === metric && candidate.pattern.test(ref2))));
-};
-const hasVisibleDerivedMetric = (state2, metrics, validationArtifact) => {
-  var _a;
-  if (metrics.length === 0) {
-    return false;
-  }
-  const datasetColumns = new Set((state2.columnProfiles ?? []).map((profile) => normalizeText(profile.name)));
-  if (metrics.some((metric) => Array.from(datasetColumns).some((column) => DERIVED_ALIAS_TERMS.some((candidate) => candidate.metric === metric && candidate.pattern.test(column))))) {
-    return true;
-  }
-  const visibleQueryColumns = new Set((((_a = state2.activeDataQuery) == null ? void 0 : _a.result.selectedColumns) ?? []).map((column) => normalizeText(column)));
-  if (metrics.some((metric) => Array.from(visibleQueryColumns).some((column) => DERIVED_ALIAS_TERMS.some((candidate) => candidate.metric === metric && candidate.pattern.test(column))))) {
-    return true;
-  }
-  if ((state2.analysisCards ?? []).some((card) => cardHasDerivedMetric(card, metrics))) {
-    return true;
-  }
-  return Boolean(
-    validationArtifact && validationArtifact.recommendedAction === "visualize" && metrics.includes(validationArtifact.metricName)
-  );
-};
-const validateCreatePlanPreflight = ({
-  plan,
-  state: state2
-}) => {
-  var _a, _b;
-  if (!((_a = state2.columnProfiles) == null ? void 0 : _a.length)) {
-    return null;
-  }
-  const analysisBrief = buildAnalysisIntentBrief({
-    columns: state2.columnProfiles,
-    csvData: state2.csvData ?? null,
-    dataPreparationPlan: state2.dataPreparationPlan ?? null,
-    datasetSemanticSnapshot: state2.datasetSemanticSnapshot ?? null,
-    semanticDatasetVersion: state2.semanticDatasetVersion ?? null
-  });
-  if (!DERIVED_PATHS.has(analysisBrief.recommendedPath)) {
-    return null;
-  }
-  const requestedDerivedMetrics = getRequestedDerivedMetrics((_b = state2.activeTurn) == null ? void 0 : _b.userMessage, plan);
-  if (requestedDerivedMetrics.length === 0) {
-    return null;
-  }
-  const structuralRefs = collectStructuralMetricRefs(plan);
-  const referencedDerivedMetrics = findReferencedDerivedMetrics(structuralRefs);
-  if (referencedDerivedMetrics.length === 0) {
-    return null;
-  }
-  const validationArtifact = state2.activeMetricMappingValidation ?? null;
-  if (hasVisibleDerivedMetric(state2, referencedDerivedMetrics, validationArtifact)) {
-    return null;
-  }
-  const summaryMetrics = referencedDerivedMetrics.join(", ");
-  const message = (validationArtifact == null ? void 0 : validationArtifact.recommendedAction) === "derive_metric" ? `analysis.create_plan cannot directly generate the derived metric (${summaryMetrics}) before it is materialized. The metric mapping is already validated, but you must derive the metric deterministically before creating this card.` : `analysis.create_plan cannot directly generate the derived metric (${summaryMetrics}) on this label/value financial dataset. Validate the metric mapping and derive the metric before creating this card.`;
-  const retryHint = (validationArtifact == null ? void 0 : validationArtifact.recommendedAction) === "derive_metric" ? "Use analysis.validate_metric_mapping to re-enter the validated derive-metric workflow, then materialize the metric with data.mutate before retrying analysis.create_plan." : "Use analysis.validate_metric_mapping first, then derive the requested metric deterministically before retrying analysis.create_plan.";
-  return {
-    status: "blocked",
-    toolName: "analysis.create_plan",
-    message,
-    shouldStop: false,
-    retryHint,
-    artifactMetadata: {
-      artifactType: "analysis_card_attempt",
-      recommendedPath: analysisBrief.recommendedPath,
-      requestedDerivedMetrics,
-      referencedDerivedMetrics
-    },
-    observation: {
-      type: "tool_result",
-      status: "blocked",
-      summary: message,
-      toolName: "analysis.create_plan",
-      code: "tool_contract",
-      retryHint,
-      detail: {
-        artifactMetadata: {
-          artifactType: "analysis_card_attempt",
-          recommendedPath: analysisBrief.recommendedPath,
-          requestedDerivedMetrics,
-          referencedDerivedMetrics
-        },
-        suggestedNextTool: "analysis.validate_metric_mapping",
-        repairHintCategory: "derived_metric_validation_required",
-        recommendedPath: analysisBrief.recommendedPath,
-        activeValidationRecommendedAction: (validationArtifact == null ? void 0 : validationArtifact.recommendedAction) ?? null
-      }
-    }
-  };
-};
-const PREVIEW_LIMIT = 120;
-const summarizeText = (value2) => {
-  const text = typeof value2 === "string" ? value2 : String(value2 ?? "");
-  const normalizedPreview = text.replace(/\s+/g, " ").trim().slice(0, PREVIEW_LIMIT);
-  return {
-    charCount: text.length,
-    lineCount: text.length === 0 ? 0 : text.split(/\r?\n/).length,
-    preview: normalizedPreview
-  };
-};
-const sanitizeWorkspaceReplace = (args) => {
-  const before = summarizeText(args.oldText);
-  const after = summarizeText(args.newText);
-  return {
-    path: args.path,
-    replaceAll: Boolean(args.replaceAll),
-    diffSummary: `replace ${before.lineCount} line(s) / ${before.charCount} chars with ${after.lineCount} line(s) / ${after.charCount} chars`,
-    oldTextSummary: before,
-    newTextSummary: after
-  };
-};
-const sanitizeWorkspaceWrite = (args, mode) => ({
-  path: args.path,
-  mode,
-  contentSummary: summarizeText(args.content)
-});
-const sanitizeToolLogDetail = (toolName, detail) => {
-  if (!detail) {
-    return detail;
-  }
-  switch (toolName) {
-    case "workspace.replace":
-      return sanitizeWorkspaceReplace(detail);
-    case "workspace.write":
-      return sanitizeWorkspaceWrite(detail, "write");
-    case "workspace.append":
-      return sanitizeWorkspaceWrite(detail, "append");
-    default:
-      return detail;
-  }
-};
-const ROW_DELETE_TYPES = /* @__PURE__ */ new Set([
-  "drop_rows_by_condition",
-  "drop_rows_by_index"
-]);
-const isRowDeleteOperation = (operation) => Boolean(operation) && ROW_DELETE_TYPES.has(operation.type);
-const normalizeMutateOperations = (action) => {
-  var _a, _b, _c, _d;
-  if (action.type !== "tool_call" || action.toolName !== "data.mutate") {
-    return [];
-  }
-  const normalizedPayload = normalizeDataMutatePayload({
-    explanation: (_a = action.args) == null ? void 0 : _a.explanation,
-    operations: Array.isArray((_b = action.args) == null ? void 0 : _b.operations) ? action.args.operations : action.args && "operation" in action.args && action.args.operation !== void 0 ? [action.args.operation] : void 0,
-    outputColumns: (_c = action.args) == null ? void 0 : _c.outputColumns,
-    planStatus: "operations",
-    consistencyIssues: []
-  });
-  return ((_d = normalizedPayload.plan) == null ? void 0 : _d.operations) ?? [];
-};
-const canonicalizePrimitive = (value2) => {
-  if (Array.isArray(value2)) {
-    return value2.map((item) => canonicalizePrimitive(item));
-  }
-  if (!value2 || typeof value2 !== "object") {
-    return value2;
-  }
-  return Object.fromEntries(
-    Object.entries(value2).sort(([left], [right]) => left.localeCompare(right)).map(([key2, item]) => [key2, canonicalizePrimitive(item)])
-  );
-};
-const stableSort = (items, mapItem) => items.map((item) => canonicalizePrimitive(mapItem(item))).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
-const canonicalizePredicate = (predicate) => ({
-  column: predicate.column,
-  operator: predicate.operator,
-  ...predicate.value !== void 0 ? { value: canonicalizePrimitive(predicate.value) } : {}
-});
-const canonicalizeGroup = (group) => ({
-  predicates: stableSort(group.predicates, canonicalizePredicate)
-});
-const canonicalizeRowDeleteOperation = (operation) => {
-  var _a, _b;
-  if (operation.type === "drop_rows_by_index") {
-    return {
-      type: operation.type,
-      indices: [...operation.indices].sort((left, right) => left - right)
-    };
-  }
-  return {
-    type: operation.type,
-    ...((_a = operation.predicates) == null ? void 0 : _a.length) ? { predicates: stableSort(operation.predicates, canonicalizePredicate) } : {},
-    ...((_b = operation.groups) == null ? void 0 : _b.length) ? { groups: stableSort(operation.groups, canonicalizeGroup) } : {}
-  };
-};
-const getDestructiveRowDeleteSignature = (action) => {
-  const operations = normalizeMutateOperations(action);
-  if (operations.length === 0) {
-    return null;
-  }
-  const primaryOperation = operations[0];
-  const allRowDeletes = operations.every(isRowDeleteOperation);
-  if (!isRowDeleteOperation(primaryOperation) && !allRowDeletes) {
-    return null;
-  }
-  const rowDeleteOperations = operations.filter(isRowDeleteOperation);
-  if (rowDeleteOperations.length === 0) {
-    return null;
-  }
-  return JSON.stringify(rowDeleteOperations.map(canonicalizeRowDeleteOperation));
-};
-const isDestructiveRowDeleteAction = (action) => getDestructiveRowDeleteSignature(action) !== null;
-const buildClarificationAssessmentPrompt = (clarificationQuestion, userReply, availableOptions) => ({
-  system: `You assess whether a user's reply to a clarification question provides enough information to proceed.
-
-Context: A data analysis app asked the user a clarification question. The user replied. You decide the outcome.
-
-Categories:
-
-resolved — The user's reply directly answers the question or selects a specific option/value.
-Examples: "use March 2025", "the second one", "Campaign name column", "TRF_CBE_2025"
-
-best_effort_continue — The user wants to proceed without giving a precise answer. They delegate the decision to the system, express impatience, confirm generically, or provide vague direction.
-Examples: "just do it", "you decide", "whatever works", "ok la", "go check yourself", "idk", "don't care", "sure", "yes", "ha? you go check la", "just pick one", "anything", "can", "proceed"
-
-still_ambiguous — The user's reply is ONLY pure punctuation (e.g. "?" "..." "!") with zero meaningful content. This should be very rare — when in doubt, prefer best_effort_continue over still_ambiguous. Never block the user from proceeding.
-
-IMPORTANT:
-- Prefer best_effort_continue over still_ambiguous. Only use still_ambiguous for replies that are literally empty or pure punctuation.
-- Any reply with words — even vague, impatient, or colloquial — should be best_effort_continue or resolved.
-- The goal is to NEVER trap the user in a clarification loop.
-${availableOptions.length > 0 ? `
-Available options were: ${availableOptions.join(", ")}` : ""}
-
-Reply with ONLY the category name (resolved, best_effort_continue, or still_ambiguous). Nothing else.`,
-  user: `Clarification question: ${clarificationQuestion}
-User reply: ${userReply}`
-});
-const LOG_PREFIX$a = "[ClarificationAssessment]";
-const AI_TIMEOUT_MS = 1e4;
-const normalizeOption = (option) => {
-  if (!option || typeof option !== "object") {
-    return null;
-  }
-  const record = option;
-  const label = typeof record.label === "string" ? record.label.trim() : "";
-  const value2 = typeof record.value === "string" ? record.value.trim() : "";
-  return label && value2 ? { label, value: value2 } : null;
-};
-const normalizeQuestion = (value2, fallbacks) => {
-  if (typeof value2 === "string" && value2.trim()) {
-    return value2.trim();
-  }
-  for (const fallback of fallbacks) {
-    if (typeof fallback === "string" && fallback.trim()) {
-      return fallback.trim();
-    }
-  }
-  return "";
-};
-const normalizeReplyText = (userChoice) => {
-  const normalizedLabel = userChoice.label.trim();
-  const normalizedValue = userChoice.value.trim();
-  if (normalizedValue && normalizedValue !== normalizedLabel) {
-    return `${normalizedLabel} ${normalizedValue}`.trim();
-  }
-  return normalizedLabel || normalizedValue;
-};
-const cleanOptionText = (value2) => value2.replace(/^\*\*|\*\*$/g, "").replace(/^(\d+[.)、]|[-*])\s*/u, "").replace(/\s+/g, " ").trim().replace(/[;,]+$/g, "").trim();
-const OPTION_LINE_PATTERN = /^(\d+[.)、]|[-*])\s*/u;
-const normalizeExtractedOption = (value2) => {
-  const cleaned = cleanOptionText(value2);
-  return cleaned ? { label: cleaned, value: cleaned } : null;
-};
-const extractMultilineOptions = (question) => {
-  const rawLines = question.split("\n").map((line) => line.trim()).filter(Boolean);
-  const optionLines = rawLines.filter((line) => OPTION_LINE_PATTERN.test(line));
-  if (optionLines.length < 2 || optionLines.length > 5) {
-    return null;
-  }
-  const options2 = optionLines.map((line) => line.replace(OPTION_LINE_PATTERN, "")).map(normalizeExtractedOption).filter((option) => Boolean(option));
-  if (options2.length < 2) {
-    return null;
-  }
-  const questionStem = rawLines.filter((line) => !OPTION_LINE_PATTERN.test(line)).join(" ").replace(/[:：]\s*$/u, "").trim();
-  return {
-    question: questionStem || question,
-    options: options2
-  };
-};
-const extractInlineNumberedOptions = (question) => {
-  var _a;
-  const matches = Array.from(
-    question.matchAll(/(?:^|[\s:：;；,，(（\[])(\d+)([.)、])\s*(.+?)(?=(?:[\s:：;；,，(（\[]\d+[.)、]\s*)|$)/gsu)
-  );
-  if (matches.length < 2 || matches.length > 5) {
-    return null;
-  }
-  const options2 = matches.map((match2) => normalizeExtractedOption(match2[3] ?? "")).filter((option) => Boolean(option));
-  if (options2.length < 2) {
-    return null;
-  }
-  const firstMatchIndex = ((_a = matches[0]) == null ? void 0 : _a.index) ?? 0;
-  const questionStem = question.slice(0, firstMatchIndex).replace(/[:：]\s*$/u, "").trim();
-  return {
-    question: questionStem || question,
-    options: options2
-  };
-};
-const extractStructuredOptions = (question) => extractMultilineOptions(question) ?? extractInlineNumberedOptions(question);
-const buildCandidatePhrases = (clarification) => Array.from(new Set(clarification.options.flatMap((option) => [option.label, option.value]).filter(Boolean)));
-const findReferencedValues = (reply, candidates) => {
-  const normalizedReply = reply.toLowerCase();
-  return candidates.filter((candidate) => normalizedReply.includes(candidate.toLowerCase()));
-};
-const countMeaningfulWords = (reply) => reply.trim().split(/\s+/).map((token) => token.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")).filter(Boolean).length;
-const normalizeClarificationRequest = (request, fallbackQuestionSources = []) => {
-  const normalizedQuestion = normalizeQuestion(request == null ? void 0 : request.question, fallbackQuestionSources);
-  const normalizedOptions = Array.isArray(request == null ? void 0 : request.options) ? request.options.map(normalizeOption).filter((option) => Boolean(option)) : [];
-  const extractedOptions = normalizedOptions.length === 0 && normalizedQuestion ? extractStructuredOptions(normalizedQuestion) : null;
-  const finalOptions = (extractedOptions == null ? void 0 : extractedOptions.options) ?? normalizedOptions;
-  const allowFreeText = Boolean(request == null ? void 0 : request.allowFreeText) || finalOptions.length === 0;
-  return {
-    question: (extractedOptions == null ? void 0 : extractedOptions.question) ?? normalizedQuestion,
-    options: finalOptions,
-    allowFreeText,
-    clarificationMode: allowFreeText ? "free_text" : "options",
-    interactionKind: request == null ? void 0 : request.interactionKind,
-    pendingPlan: request == null ? void 0 : request.pendingPlan,
-    targetProperty: request == null ? void 0 : request.targetProperty,
-    resumeContext: request == null ? void 0 : request.resumeContext
-  };
-};
-const resolveEffectivePendingClarification = (state2) => {
-  var _a;
-  const pendingClarification = state2.pendingClarification ?? ((_a = state2.activeTurn) == null ? void 0 : _a.pendingClarificationRequest) ?? null;
-  return pendingClarification ? normalizeClarificationRequest(pendingClarification) : null;
-};
-const isPurePunctuation = (reply) => /^[?!.…\s]+$/u.test(reply);
-const extractStructuralSignals$1 = (normalizedReply, clarification, availableColumns) => ({
-  referencedColumns: findReferencedValues(normalizedReply, availableColumns),
-  referencedCandidates: findReferencedValues(normalizedReply, buildCandidatePhrases(clarification)),
-  isPurePunctuation: isPurePunctuation(normalizedReply),
-  meaningfulWordCount: countMeaningfulWords(normalizedReply)
-});
-const parseAiAssessment = (text) => {
-  const trimmed = text.trim().toLowerCase().replace(/[^a-z_]/g, "");
-  const valid = ["resolved", "best_effort_continue", "still_ambiguous"];
-  return valid.find((v) => trimmed.includes(v)) ?? null;
-};
-const classifyWithAi = async (clarificationQuestion, userReply, availableOptions, settings2) => {
-  try {
-    if (!(settings2 == null ? void 0 : settings2.provider) || !isProviderConfigured(settings2)) return null;
-  } catch {
-    return null;
-  }
-  try {
-    const { model, modelId } = createProviderModel(settings2, settings2.simpleModel);
-    const prompt = buildClarificationAssessmentPrompt(clarificationQuestion, userReply, availableOptions);
-    const result = await withTransientRetry(
-      (fb) => streamGenerateText({
-        model: fb ?? model,
-        messages: [
-          { role: "system", content: prompt.system },
-          { role: "user", content: prompt.user }
-        ],
-        activityTimeoutMs: AI_TIMEOUT_MS
-      }),
-      { settings: settings2, primaryModelId: modelId, label: "runtimeClarification" }
-    );
-    const assessment = parseAiAssessment(result.text);
-    if (assessment) {
-      console.log(`${LOG_PREFIX$a} AI: ${assessment} (model: ${modelId})`);
-      return assessment;
-    }
-    console.warn(`${LOG_PREFIX$a} AI returned unparseable assessment: "${result.text}" (model: ${modelId})`);
-    return null;
-  } catch (error2) {
-    const msg = error2 instanceof Error ? error2.message : String(error2);
-    console.warn(`${LOG_PREFIX$a} AI classification failed: ${msg}`);
-    return null;
-  }
-};
-const tryDeterministicAssessment = (normalizedReply, signals) => {
-  if (!normalizedReply) return "still_ambiguous";
-  if (signals.referencedCandidates.length > 0) return "resolved";
-  if (signals.referencedColumns.length > 0) return "resolved";
-  if (signals.isPurePunctuation) return "best_effort_continue";
-  return null;
-};
-const structuralFallback = (signals, hasOptions) => {
-  if (hasOptions) {
-    return signals.meaningfulWordCount >= 2 ? "resolved" : "still_ambiguous";
-  }
-  return "best_effort_continue";
-};
-const buildAssumptionSummary = (status) => {
-  if (status === "best_effort_continue") {
-    return "The user did not provide a precise constraint. Continue with the most defensible assumption and state it explicitly before giving the answer.";
-  }
-  return void 0;
-};
-const evaluateClarificationResponse = async ({
-  clarification,
-  userChoice,
-  availableColumns,
-  settings: settings2
-}) => {
-  const normalizedReply = normalizeReplyText(userChoice).trim();
-  const signals = extractStructuralSignals$1(normalizedReply, clarification, availableColumns);
-  const deterministicResult = tryDeterministicAssessment(normalizedReply, signals);
-  if (deterministicResult) {
-    console.log(`${LOG_PREFIX$a} Deterministic: ${deterministicResult}`);
-    return {
-      status: deterministicResult,
-      normalizedReply,
-      ...deterministicResult === "still_ambiguous" ? { missingInfoSummary: clarification.question } : {},
-      assumptionSummary: buildAssumptionSummary(deterministicResult)
-    };
-  }
-  const optionLabels = clarification.options.map((o) => o.label);
-  const aiStatus = await classifyWithAi(clarification.question, normalizedReply, optionLabels, settings2);
-  if (aiStatus) {
-    return {
-      status: aiStatus,
-      normalizedReply,
-      ...aiStatus === "still_ambiguous" ? { missingInfoSummary: clarification.question } : {},
-      assumptionSummary: buildAssumptionSummary(aiStatus)
-    };
-  }
-  const hasOptions = clarification.options.length > 0;
-  const fallbackStatus = structuralFallback(signals, hasOptions);
-  console.log(`${LOG_PREFIX$a} Structural fallback: ${fallbackStatus}`);
-  return {
-    status: fallbackStatus,
-    normalizedReply,
-    ...fallbackStatus === "still_ambiguous" ? { missingInfoSummary: clarification.question } : {},
-    assumptionSummary: buildAssumptionSummary(fallbackStatus)
-  };
-};
-const buildClarificationFollowUpPrompt = (clarification, language) => getTranslation("clarification_follow_up_prompt", language, { question: clarification.question });
-const runtimeClarification = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  buildClarificationFollowUpPrompt,
-  evaluateClarificationResponse,
-  normalizeClarificationRequest,
-  resolveEffectivePendingClarification
-}, Symbol.toStringTag, { value: "Module" }));
-const EXPLICIT_METRIC_VALIDATION_PATTERN = /\b(validate|validation|verify|verified|confirm|check|mapping|map|mapped|binding|bindings|label|labels)\b/i;
-const BASE_VALIDATION_METRICS = ["revenue", "cost", "budget", "actual"];
-const DERIVED_VALIDATION_METRICS = ["profit", "margin", "variance"];
-const extractRequestedMetricValidationTargets = (message) => {
-  const requested = new Set(extractRequestedDerivedMetrics(message));
-  Object.entries(METRIC_PATTERNS).forEach(([metric, patterns]) => {
-    if (patterns.some((pattern) => pattern.test(message))) {
-      requested.add(metric);
-    }
-  });
-  if (/\bbudget\b/i.test(message) && /\bactual\b/i.test(message) || /\bbudget\s+vs\.?\s+actual\b/i.test(message)) {
-    requested.add("variance");
-  }
-  const baseMetrics = BASE_VALIDATION_METRICS.filter((metric) => requested.has(metric));
-  const derivedMetrics = DERIVED_VALIDATION_METRICS.filter((metric) => requested.has(metric));
-  const explicitValidation = EXPLICIT_METRIC_VALIDATION_PATTERN.test(message);
-  return {
-    baseMetrics,
-    derivedMetrics,
-    explicitValidation,
-    needsValidation: explicitValidation || derivedMetrics.length > 0
-  };
-};
-const resolveSingleRequestedValidationMetric = (message) => {
-  const targets = extractRequestedMetricValidationTargets(message);
-  const prioritizedDerivedMetrics = Object.entries(EXPLICIT_DERIVED_PRIORITY_PATTERNS).filter(([, patterns]) => patterns.some((pattern) => pattern.test(message))).map(([metric]) => metric).filter((metric) => targets.derivedMetrics.includes(metric));
-  if (prioritizedDerivedMetrics.length === 1) {
-    return {
-      metricName: prioritizedDerivedMetrics[0],
-      validationKind: "derived"
-    };
-  }
-  if (targets.derivedMetrics.length === 1) {
-    return {
-      metricName: targets.derivedMetrics[0],
-      validationKind: "derived"
-    };
-  }
-  if (targets.baseMetrics.length === 1 && targets.derivedMetrics.length === 0) {
-    return {
-      metricName: targets.baseMetrics[0],
-      validationKind: "base"
-    };
-  }
-  return null;
-};
-const buildValidationRequestFingerprint = (message, state2) => buildRuntimeRequestFingerprint(message, {
-  sessionId: (state2 == null ? void 0 : state2.sessionId) ?? null,
-  datasetId: (state2 == null ? void 0 : state2.currentDatasetId) ?? null
-});
-const LOG_PREFIX$9 = "[ActionHandler]";
-const getActionLabel = (action) => action.type === "assistant_message" ? "assistant_message" : typeof action.toolName === "string" && action.toolName.trim() ? action.toolName : "unknown_tool";
-const BLOCKED_VALIDATION_ERROR_CODES = /* @__PURE__ */ new Set([
-  "blocked_tool",
-  "tool_unavailable",
-  "malformed_tool_payload",
-  "invalid_args"
-]);
-const isBlockedValidationError = (error2) => Boolean(error2 && BLOCKED_VALIDATION_ERROR_CODES.has(error2.code));
-const isMissingThoughtValidationError = (error2, message) => (error2 == null ? void 0 : error2.code) === "invalid_action" && Boolean(message == null ? void 0 : message.includes("Every action must include a non-empty 'thought'."));
-const getValidationObservationCode = (error2) => (error2 == null ? void 0 : error2.code) === "blocked_tool" ? "blocked_tool" : (error2 == null ? void 0 : error2.code) === "tool_unavailable" ? "tool_unavailable" : (error2 == null ? void 0 : error2.code) === "malformed_tool_payload" || (error2 == null ? void 0 : error2.code) === "invalid_args" || (error2 == null ? void 0 : error2.code) === "invalid_action" ? "validation_failed" : void 0;
-const getWorkspaceRuleViolation = (error2) => {
-  var _a, _b, _c;
-  const normalizedPath = typeof ((_a = error2 == null ? void 0 : error2.detail) == null ? void 0 : _a.normalizedPath) === "string" ? error2.detail.normalizedPath : null;
-  const matchedPrefix = typeof ((_b = error2 == null ? void 0 : error2.detail) == null ? void 0 : _b.matchedPrefix) === "string" ? error2.detail.matchedPrefix : null;
-  if (((_c = error2 == null ? void 0 : error2.detail) == null ? void 0 : _c.source) !== "workspace_rule" || !normalizedPath || !matchedPrefix) {
-    return null;
-  }
-  return { normalizedPath, matchedPrefix };
-};
-const getExecutionMonitorStage = (result) => result.status === "blocked" ? "executor_blocked" : "executor_error";
-const recordSuccessMonitor = (store, action, options2) => {
-  if (options2 == null ? void 0 : options2.deferSuccessMonitor) {
-    return;
-  }
-  recordMonitorEvent(store, { stage: "executor_success", action, phase: mapToolNameToPhase(getActionLabel(action)) });
-};
-const getCleaningStepKind = (action) => {
-  if (action.type === "assistant_message") return "commit";
-  if (["workspace.write", "workspace.replace", "workspace.append", "data.mutate"].includes(action.toolName)) return "edit";
-  if (action.toolName === "data.query") return "verify";
-  return "inspect";
-};
-const describeToolAction = (action) => {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
-  if (action.type === "assistant_message") {
-    return {
-      description: "Assistant message emitted",
-      detail: action.cardId ? { cardId: action.cardId } : void 0
-    };
-  }
-  switch (action.toolName) {
-    case "analysis.create_plan":
-      return {
-        description: `Created plan "${((_b = (_a = action.args) == null ? void 0 : _a.plan) == null ? void 0 : _b.title) || "Untitled Plan"}"`,
-        detail: action.args
-      };
-    case "card.aggregate_table":
-      return {
-        description: `Quick aggregate${((_c = action.args) == null ? void 0 : _c.cardId) ? ` from card ${action.args.cardId}` : ""}`,
-        detail: action.args
-      };
-    case "card.add_calculated_column":
-      return {
-        description: `Added calculated column "${(_d = action.args) == null ? void 0 : _d.newColumnName}"`,
-        detail: action.args
-      };
-    case "card.delete":
-      return {
-        description: `Deleted card "${(_e = action.args) == null ? void 0 : _e.cardId}"`,
-        detail: action.args
-      };
-    case "data.mutate":
-      return {
-        description: `Executed dataset transform: ${((_f = action.args) == null ? void 0 : _f.explanation) || "Deterministic operations"}`,
-        detail: action.args
-      };
-    case "data.query":
-      return {
-        description: `Executed read-only data query: ${((_g = action.args) == null ? void 0 : _g.explanation) || "Bounded query"}`,
-        detail: action.args
-      };
-    case "spreadsheet.filter":
-      return {
-        description: `Filtered raw data with query: "${((_h = action.args) == null ? void 0 : _h.query) || ""}"`,
-        detail: action.args
-      };
-    case "analysis.correlation":
-      return {
-        description: `Statistical analysis (${((_i = action.args) == null ? void 0 : _i.analysisType) || "correlation"})`,
-        detail: action.args
-      };
-    case "analysis.pivot_matrix":
-      return {
-        description: `Created pivot matrix for ${Array.isArray((_j = action.args) == null ? void 0 : _j.rows) ? action.args.rows.join(", ") : "selected dimensions"}`,
-        detail: action.args
-      };
-    case "analysis.period_compare":
-      return {
-        description: `Compared ${((_k = action.args) == null ? void 0 : _k.aggregate) || "metric"} across periods using ${(_l = action.args) == null ? void 0 : _l.dateColumn}`,
-        detail: action.args
-      };
-    case "analysis.cohort_retention":
-      return {
-        description: `Ran cohort analysis for ${((_m = action.args) == null ? void 0 : _m.metricName) || "retention"}`,
-        detail: action.args
-      };
-    case "analysis.root_cause_breakdown":
-      return {
-        description: `Diagnosed change drivers across ${Array.isArray((_n = action.args) == null ? void 0 : _n.dimensionColumns) ? action.args.dimensionColumns.join(", ") : "selected dimensions"}`,
-        detail: action.args
-      };
-    case "analysis.validate_metric_mapping":
-      return {
-        description: `Validated business metric mapping for "${(_o = action.args) == null ? void 0 : _o.metricName}"`,
-        detail: action.args
-      };
-    case "card.review":
-      return { description: "Initiated AI review of analysis cards", detail: action.args };
-    case "conversation.request_clarification":
-      return {
-        description: `Requested clarification: ${((_p = action.args) == null ? void 0 : _p.question) || "unspecified question"}`,
-        detail: action.args
-      };
-    default:
-      return {
-        description: `Executed tool ${action.toolName}`,
-        detail: action.args
-      };
-  }
-};
-const mapToolNameToPhase = (toolName) => {
-  if (toolName === "assistant_message") return "chat";
-  if (toolName === "unknown_tool") return "chat";
-  if (toolName.startsWith("analysis.")) return "planning";
-  if (toolName.startsWith("data.") || toolName.startsWith("workspace.") || toolName.startsWith("card.")) return "execution";
-  return "chat";
-};
-const buildValidationContext = (store, options2) => buildToolAvailabilityContext(store.getState(), {
-  toolStage: options2 == null ? void 0 : options2.toolStage,
-  allowOverrides: options2 == null ? void 0 : options2.allowOverrides,
-  denyOverrides: options2 == null ? void 0 : options2.denyOverrides
-});
-const stringifySpreadsheetFilterValue = (value2) => {
-  if (Array.isArray(value2)) {
-    return value2.map((item) => stringifySpreadsheetFilterValue(item)).filter(Boolean).join(", ");
-  }
-  if (value2 === null || value2 === void 0) {
-    return "";
-  }
-  const text = String(value2).trim();
-  return /\s/.test(text) ? `'${text}'` : text;
-};
-const inferMetricValidationArgs = (store, action) => {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i;
-  if (action.type !== "tool_call" || action.toolName !== "analysis.validate_metric_mapping") {
-    return null;
-  }
-  const currentMetricName = typeof ((_a = action.args) == null ? void 0 : _a.metricName) === "string" ? action.args.metricName.trim().toLowerCase() : "";
-  const currentValidationKind = typeof ((_b = action.args) == null ? void 0 : _b.validationKind) === "string" ? action.args.validationKind.trim().toLowerCase() : "";
-  if (currentMetricName && (currentValidationKind === "base" || currentValidationKind === "derived")) {
-    return null;
-  }
-  const state2 = store.getState();
-  const sources = [
-    String(action.thought ?? ""),
-    String(((_c = state2.activeTurn) == null ? void 0 : _c.userMessage) ?? "")
-  ];
-  for (const source2 of sources) {
-    const inferred = resolveSingleRequestedValidationMetric(source2);
-    if (inferred) {
-      return inferred;
-    }
-  }
-  const resumeOriginalUserMessage = (_f = (_e = (_d = state2.pendingClarification) == null ? void 0 : _d.resumeContext) == null ? void 0 : _e.resumeOriginalUserMessage) == null ? void 0 : _f.trim();
-  const resumeTargetRunId = (_i = (_h = (_g = state2.pendingClarification) == null ? void 0 : _g.resumeContext) == null ? void 0 : _h.resumeTargetRunId) == null ? void 0 : _i.trim();
-  const activeArtifact = state2.activeMetricMappingValidation;
-  if (resumeOriginalUserMessage && resumeTargetRunId && (activeArtifact == null ? void 0 : activeArtifact.requestFingerprint)) {
-    const resumeFingerprint = buildValidationRequestFingerprint(resumeOriginalUserMessage, state2);
-    if (activeArtifact.originRunId === resumeTargetRunId && activeArtifact.requestFingerprint === resumeFingerprint && activeArtifact.metricName && activeArtifact.validationKind) {
-      return {
-        metricName: activeArtifact.metricName,
-        validationKind: activeArtifact.validationKind
-      };
-    }
-  }
-  return null;
-};
-const normalizeToolActionPayload = (action, store) => {
-  var _a, _b, _c, _d, _e;
-  if (action.type !== "tool_call") {
-    return action;
-  }
-  if (action.toolName === "conversation.request_clarification") {
-    const rawArgs = action.args && typeof action.args === "object" ? action.args : {};
-    const thoughtFallback = typeof action.thought === "string" && /[?？]$/.test(action.thought.trim()) ? action.thought.trim() : "";
-    return {
-      ...action,
-      args: normalizeClarificationRequest(rawArgs, [
-        rawArgs.question,
-        rawArgs.message,
-        rawArgs.text,
-        thoughtFallback
-      ])
-    };
-  }
-  if (action.toolName === "analysis.validate_metric_mapping") {
-    const inferredArgs = inferMetricValidationArgs(store, action);
-    if (!inferredArgs) {
-      return action;
-    }
-    return {
-      ...action,
-      args: {
-        ...action.args ?? {},
-        metricName: inferredArgs.metricName,
-        validationKind: inferredArgs.validationKind
-      }
-    };
-  }
-  if (action.toolName !== "spreadsheet.filter") {
-    return action;
-  }
-  if (typeof ((_a = action.args) == null ? void 0 : _a.query) === "string" && action.args.query.trim()) {
-    return action;
-  }
-  const normalizedWhere = normalizeQueryWhereClauseLike(((_b = action.args) == null ? void 0 : _b.filter) ?? ((_c = action.args) == null ? void 0 : _c.filters) ?? ((_d = action.args) == null ? void 0 : _d.where));
-  if (!((_e = normalizedWhere == null ? void 0 : normalizedWhere.predicates) == null ? void 0 : _e.length)) {
-    return action;
-  }
-  const query = normalizedWhere.predicates.map((predicate) => {
-    const operator = predicate.operator === "eq" ? "=" : predicate.operator;
-    const value2 = predicate.operator === "is_null" || predicate.operator === "not_null" ? "" : ` ${stringifySpreadsheetFilterValue(predicate.value)}`;
-    return `${predicate.column} ${operator}${value2}`.trim();
-  }).join(" AND ");
-  if (!query) {
-    return action;
-  }
-  return {
-    ...action,
-    args: {
-      ...action.args ?? {},
-      query
-    }
-  };
-};
-const logToolUsage = (action, store, options2) => {
-  const logger = store.getState().logAgentToolUsage;
-  if (typeof logger !== "function") return;
-  const summary = describeToolAction(action);
-  if (!summary) return;
-  if (action.type === "assistant_message") {
-    logger({
-      tool: "assistant_message",
-      description: summary.description,
-      detail: summary.detail
-    });
-    return;
-  }
-  const registry2 = getResolvedToolRegistry(buildValidationContext(store, options2));
-  const descriptor = registry2.descriptorMap.get(action.toolName);
-  const decision = registry2.decisions[action.toolName];
-  logger({
-    tool: action.toolName,
-    description: summary.description,
-    stage: decision == null ? void 0 : decision.stage,
-    category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
-    risk: (descriptor == null ? void 0 : descriptor.risk) ?? "unknown",
-    policyDecision: (decision == null ? void 0 : decision.allowed) === false ? "blocked" : "allowed",
-    policyReason: (decision == null ? void 0 : decision.reason) ?? null,
-    detail: {
-      ...sanitizeToolLogDetail(action.toolName, summary.detail),
-      risk: (descriptor == null ? void 0 : descriptor.risk) ?? "unknown",
-      category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
-      stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
-      policyDecision: (decision == null ? void 0 : decision.allowed) === false ? "blocked" : "allowed",
-      policyReason: (decision == null ? void 0 : decision.reason) ?? null
-    }
-  });
-};
-const appendBlockedWorkspaceHistory = (params) => {
-  if (params.action.type !== "tool_call" || !params.action.toolName.startsWith("workspace.")) {
-    return;
-  }
-  const current2 = params.store.getState().workspaceActionHistory ?? [];
-  const blockedEntry = {
-    timestamp: /* @__PURE__ */ new Date(),
-    operation: params.action.toolName.replace("workspace.", ""),
-    path: params.normalizedPath,
-    success: false,
-    message: params.reason,
-    durationMs: 0,
-    stage: params.stage,
-    toolCategory: params.category,
-    policyDecision: "blocked",
-    policyReason: params.reason
-  };
-  params.store.setState({
-    workspaceActionHistory: [...current2, blockedEntry].slice(-WORKSPACE_HISTORY_LIMIT)
-  });
-};
-const validateRestrictedDataMutateAction = (action, policy) => {
-  var _a, _b, _c;
-  if (action.type !== "tool_call" || action.toolName !== "data.mutate") {
-    return null;
-  }
-  if (policy !== "quality_repair_fill_missing_only") {
-    return null;
-  }
-  const normalizedPayload = normalizeDataMutatePayload({
-    explanation: (_a = action.args) == null ? void 0 : _a.explanation,
-    operations: Array.isArray((_b = action.args) == null ? void 0 : _b.operations) ? action.args.operations : action.args && "operation" in action.args && action.args.operation !== void 0 ? [action.args.operation] : void 0,
-    outputColumns: (_c = action.args) == null ? void 0 : _c.outputColumns,
-    planStatus: "operations",
-    consistencyIssues: []
-  });
-  const normalizedPlan = normalizedPayload.plan;
-  const buildBlockedResult2 = (message, retryHint) => ({
-    status: "blocked",
-    toolName: "data.mutate",
-    message,
-    shouldStop: false,
-    retryHint,
-    observation: {
-      type: "tool_result",
-      status: "blocked",
-      summary: message,
-      toolName: "data.mutate",
-      code: "tool_contract",
-      retryHint
-    }
-  });
-  if (!normalizedPlan || normalizedPayload.rawOperationCount !== normalizedPlan.operations.length) {
-    return buildBlockedResult2(
-      "Analysis-stage quality repair rejected a malformed data.mutate payload.",
-      "Return exactly one valid fill_missing operation with a constant replacement value."
-    );
-  }
-  if (normalizedPlan.operations.length !== 1) {
-    return buildBlockedResult2(
-      "Analysis-stage quality repair only allows one conservative fill_missing operation per proposal.",
-      "Return exactly one fill_missing operation. Do not batch multiple edits."
-    );
-  }
-  const operation = normalizedPlan.operations[0];
-  if (operation.type !== "fill_missing") {
-    return buildBlockedResult2(
-      `Analysis-stage quality repair blocked unsupported mutation "${operation.type}".`,
-      "Only fill_missing with a constant replacement value is allowed during pre-analysis quality repair."
-    );
-  }
-  if (operation.strategy !== "constant") {
-    return buildBlockedResult2(
-      'Analysis-stage quality repair only allows fill_missing with strategy="constant".',
-      'Return fill_missing with strategy "constant" and a concrete replacement value.'
-    );
-  }
-  if (operation.value === void 0 || operation.value === null) {
-    return buildBlockedResult2(
-      "Analysis-stage quality repair requires a concrete replacement value.",
-      "Return fill_missing with a non-null constant replacement value."
-    );
-  }
-  return null;
-};
-const handleAiAction = async (action, store, options2) => {
-  var _a, _b, _c, _d, _e;
-  const { setState } = store;
-  throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-  const normalizedAction = normalizeToolActionPayload(action, store);
-  const actionLabel = getActionLabel(normalizedAction);
-  const actionPhase = mapToolNameToPhase(actionLabel);
-  console.log(`${LOG_PREFIX$9} Handling action: ${actionLabel}`);
-  recordMonitorEvent(store, { stage: "received", action: normalizedAction, phase: actionPhase });
-  if (normalizedAction.type !== "assistant_message" && actionLabel === "unknown_tool") {
-    const detail = "Ignored malformed tool_call with missing toolName.";
-    recordMonitorEvent(store, { stage: "executor_error", action: normalizedAction, detail, isError: true, phase: actionPhase });
-    return {
-      status: "error",
-      toolName: "assistant_message",
-      message: detail,
-      shouldStop: false,
-      retryHint: "Return a valid registered tool name.",
-      observation: {
-        type: "runtime_error",
-        status: "error",
-        summary: detail,
-        toolName: "assistant_message",
-        retryHint: "Return a valid registered tool name."
-      }
-    };
-  }
-  if ((options2 == null ? void 0 : options2.requireRowDeleteConfirmation) && isDestructiveRowDeleteAction(normalizedAction)) {
-    const detail = "Permanent row deletion from chat requires preflight confirmation before executing data.mutate.";
-    recordMonitorEvent(store, { stage: "executor_blocked", action: normalizedAction, detail, phase: actionPhase });
-    return {
-      status: "blocked",
-      toolName: "data.mutate",
-      message: detail,
-      shouldStop: false,
-      retryHint: "Use the row-delete preflight confirmation flow first. Do not execute permanent row deletion directly from chat.",
-      observation: {
-        type: "tool_result",
-        status: "blocked",
-        summary: detail,
-        toolName: "data.mutate",
-        retryHint: "Use the row-delete preflight confirmation flow first. Do not execute permanent row deletion directly from chat."
-      }
-    };
-  }
-  throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-  if (normalizedAction.thought) {
-    setState((prev) => ({
-      cleaningRun: prev.cleaningRun ? appendCleaningRunStep(prev.cleaningRun, {
-        kind: getCleaningStepKind(normalizedAction),
-        thought: normalizedAction.thought,
-        toolName: normalizedAction.type === "tool_call" ? normalizedAction.toolName : "assistant_message",
-        status: "in_progress"
-      }) : prev.cleaningRun
-    }));
-    emitAgentEvent(store, {
-      phase: mapToolNameToPhase(actionLabel),
-      step: "thought",
-      status: "in_progress",
-      message: normalizedAction.thought,
-      detail: { action: actionLabel }
-    });
-  }
-  const validationContext = buildValidationContext(store, options2);
-  const registry2 = getResolvedToolRegistry(validationContext);
-  const validation = validateAction(normalizedAction, validationContext, registry2);
-  if (!validation.isValid) {
-    const decision = normalizedAction.type === "tool_call" ? registry2.decisions[normalizedAction.toolName] : void 0;
-    const descriptor = normalizedAction.type === "tool_call" ? registry2.descriptorMap.get(normalizedAction.toolName) : void 0;
-    const workspaceRuleViolation = getWorkspaceRuleViolation(validation.error);
-    const isValidationBlocked = isBlockedValidationError(validation.error) || isMissingThoughtValidationError(validation.error, validation.errors) || Boolean(decision && !decision.allowed);
-    const dataQueryRepairGuidance = normalizedAction.type === "tool_call" && normalizedAction.toolName === "data.query" && ((_a = validation.error) == null ? void 0 : _a.code) === "malformed_tool_payload" ? getDataQueryRepairGuidance(validation.errors, {
-      availableColumns: (_b = store.getState().columnProfiles) == null ? void 0 : _b.map((p) => p.name)
-    }) : null;
-    const dataMutateRepairGuidance = normalizedAction.type === "tool_call" && normalizedAction.toolName === "data.mutate" && ((_c = validation.error) == null ? void 0 : _c.code) === "malformed_tool_payload" ? getDataMutateRepairGuidance(validation.errors) : null;
-    const pivotMatrixRepairGuidance = normalizedAction.type === "tool_call" && normalizedAction.toolName === "analysis.pivot_matrix" && ((_d = validation.error) == null ? void 0 : _d.code) === "malformed_tool_payload" ? getPivotMatrixRepairGuidance(validation.errors) : null;
-    const validationRepairGuidance = dataQueryRepairGuidance ?? dataMutateRepairGuidance ?? pivotMatrixRepairGuidance;
-    const validationRetryHint = (validationRepairGuidance == null ? void 0 : validationRepairGuidance.repairHint) ?? validation.errors;
-    const validationDetail = validation.error ? {
-      error: validation.error,
-      ...validationRepairGuidance ? {
-        repairHint: validationRepairGuidance.repairHint,
-        repairHintCategory: validationRepairGuidance.repairHintCategory,
-        repairHintCategories: validationRepairGuidance.repairHintCategories
-      } : {}
-    } : void 0;
-    recordMonitorEvent(store, {
-      stage: isValidationBlocked ? "executor_blocked" : "executor_error",
-      action: normalizedAction,
-      isError: !isValidationBlocked,
-      detail: validation.errors,
-      phase: actionPhase
-    });
-    if (workspaceRuleViolation && normalizedAction.type === "tool_call") {
-      appendBlockedWorkspaceHistory({
-        action: normalizedAction,
-        store,
-        stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
-        category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
-        reason: validation.errors,
-        normalizedPath: workspaceRuleViolation.normalizedPath
-      });
-    }
-    store.getState().logAgentToolUsage({
-      tool: "tool_registry",
-      description: `Blocked action ${actionLabel}`,
-      stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
-      category: (decision == null ? void 0 : decision.category) ?? "unknown",
-      risk: (decision == null ? void 0 : decision.risk) ?? "unknown",
-      policyDecision: "blocked",
-      policyReason: (decision == null ? void 0 : decision.reason) ?? validation.errors,
-      detail: validation.error ? {
-        error: validation.error,
-        action: actionLabel,
-        allowedTools: registry2.allowedToolNames,
-        blockedTools: registry2.blockedTools.map((entry) => ({
-          toolName: entry.toolName,
-          source: entry.source,
-          reason: entry.reason,
-          overrideOrigin: entry.overrideOrigin
-        })),
-        stage: registry2.stage
-      } : {
-        message: validation.errors,
-        action: actionLabel,
-        stage: registry2.stage
-      }
-    });
-    if ((decision == null ? void 0 : decision.source) === "deny_override") {
-      console.log("[ChatDebug] Runtime tool override blocked action.", {
-        action: actionLabel,
-        toolName: normalizedAction.type === "tool_call" ? normalizedAction.toolName : "assistant_message",
-        overrideOrigin: decision.overrideOrigin ?? null,
-        allowedTools: registry2.allowedToolNames,
-        blockedTools: registry2.blockedTools.map((entry) => ({
-          toolName: entry.toolName,
-          source: entry.source,
-          overrideOrigin: entry.overrideOrigin ?? null
-        }))
-      });
-    }
-    return {
-      status: isValidationBlocked ? "blocked" : "error",
-      toolName: normalizedAction.type === "tool_call" ? normalizedAction.toolName : "assistant_message",
-      message: validation.errors,
-      shouldStop: false,
-      diagnostics: validation.error ? [validation.error] : void 0,
-      policyDecision: decision && !decision.allowed ? decision : void 0,
-      retryHint: validationRetryHint,
-      observation: {
-        type: "tool_result",
-        status: isValidationBlocked ? "blocked" : "error",
-        summary: validation.errors,
-        toolName: normalizedAction.type === "tool_call" ? normalizedAction.toolName : "assistant_message",
-        code: getValidationObservationCode(validation.error),
-        retryHint: validationRetryHint,
-        detail: validationDetail
-      }
-    };
-  }
-  recordMonitorEvent(store, { stage: "validated", action: normalizedAction, phase: actionPhase });
-  logToolUsage(normalizedAction, store, options2);
-  if (options2 == null ? void 0 : options2.dataMutatePolicy) {
-    const policyViolation = validateRestrictedDataMutateAction(normalizedAction, options2.dataMutatePolicy);
-    if (policyViolation) {
-      recordMonitorEvent(store, {
-        stage: "executor_blocked",
-        action: normalizedAction,
-        detail: policyViolation.message,
-        phase: actionPhase
-      });
-      return policyViolation;
-    }
-  }
-  if (normalizedAction.type === "assistant_message") {
-    recordMonitorEvent(store, { stage: "chat", action: normalizedAction, phase: actionPhase });
-    if (!(options2 == null ? void 0 : options2.deferAssistantMessageAppend)) {
-      handleChatAction(normalizedAction, store);
-    }
-    if (store.getState().cleaningRun) {
-      store.setState((prev) => {
-        var _a2;
-        return {
-          cleaningRun: updateCleaningRun(prev.cleaningRun, {
-            status: ((_a2 = prev.cleaningRun) == null ? void 0 : _a2.status) ?? "running"
-          })
-        };
-      });
-    }
-    recordSuccessMonitor(store, normalizedAction, options2);
-    return {
-      status: "success",
-      toolName: "assistant_message",
-      message: (options2 == null ? void 0 : options2.deferAssistantMessageAppend) ? "Assistant message prepared." : "Assistant message appended.",
-      shouldStop: false,
-      observation: {
-        type: "assistant_message",
-        status: "success",
-        summary: normalizedAction.message,
-        toolName: "assistant_message",
-        detail: {
-          message: normalizedAction.message,
-          deferred: Boolean(options2 == null ? void 0 : options2.deferAssistantMessageAppend)
-        }
-      }
-    };
-  }
-  try {
-    if (normalizedAction.toolName === "analysis.create_plan" && ((_e = normalizedAction.args) == null ? void 0 : _e.plan)) {
-      throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-      recordMonitorEvent(store, { stage: "planner_start", action: normalizedAction, phase: actionPhase });
-      const rawPlan = normalizedAction.args.plan;
-      const preflightResult = validateCreatePlanPreflight({
-        plan: rawPlan,
-        state: store.getState()
-      });
-      if (preflightResult) {
-        recordMonitorEvent(store, {
-          stage: "executor_blocked",
-          action: normalizedAction,
-          detail: preflightResult.message,
-          phase: actionPhase
-        });
-        return preflightResult;
-      }
-      const adaptedPlan = adaptCreatePlanFromContext(rawPlan, store.getState());
-      const normalizedPlan = isSqlAnalysisPlanLike(adaptedPlan) ? adaptedPlan : preparePlan(adaptedPlan);
-      recordMonitorEvent(store, { stage: "planner_ready", action: normalizedAction, phase: actionPhase });
-      recordMonitorEvent(store, { stage: "executor_start", action: normalizedAction, phase: actionPhase });
-      const uiPlan = isSqlAnalysisPlanLike(normalizedPlan) ? mapSqlAnalysisPlanToAnalysisPlan(normalizedPlan) : normalizedPlan;
-      let result2;
-      try {
-        const createdCard = await executePlanAction(normalizedPlan, store, { throwOnSoftFailure: true });
-        result2 = buildCreatePlanExecutionResult(uiPlan, createdCard);
-      } catch (error2) {
-        if (isRuntimeAbortError(error2, options2 == null ? void 0 : options2.abortSignal)) {
-          throw error2;
-        }
-        if (isSqlAutoAnalysisError(error2) || isPlanExecutionSoftError(error2)) {
-          const failureCode = error2.code === "empty_result" || error2.code === "no_card_created" || error2.code === "duckdb_unavailable" ? error2.code : void 0;
-          result2 = buildCreatePlanExecutionResult(uiPlan, null, {
-            code: failureCode,
-            message: error2.message,
-            detail: error2.detail
-          });
-        } else {
-          throw error2;
-        }
-      }
-      if (result2.status === "success") {
-        recordSuccessMonitor(store, normalizedAction, options2);
-      } else {
-        recordMonitorEvent(store, {
-          stage: getExecutionMonitorStage(result2),
-          action: normalizedAction,
-          detail: result2.message,
-          isError: result2.status !== "blocked",
-          phase: actionPhase
-        });
-      }
-      return result2;
-    }
-    recordMonitorEvent(store, { stage: "executor_start", action: normalizedAction, phase: actionPhase });
-    throwIfAborted(options2 == null ? void 0 : options2.abortSignal);
-    const result = await handleExecutorAction(normalizedAction, store, options2);
-    if (result.status === "success") {
-      recordSuccessMonitor(store, normalizedAction, options2);
-    } else {
-      recordMonitorEvent(store, {
-        stage: getExecutionMonitorStage(result),
-        action: normalizedAction,
-        detail: result.message,
-        isError: result.status !== "blocked",
-        phase: actionPhase
-      });
-    }
-    return result;
-  } catch (error2) {
-    if (isRuntimeAbortError(error2, options2 == null ? void 0 : options2.abortSignal)) {
-      throw error2;
-    }
-    const detail = error2 instanceof Error ? error2.message : String(error2);
-    const descriptor = registry2.descriptorMap.get(normalizedAction.toolName);
-    const decision = registry2.decisions[normalizedAction.toolName];
-    recordMonitorEvent(store, { stage: "executor_error", action: normalizedAction, detail, isError: true, phase: actionPhase });
-    store.getState().logAgentToolUsage({
-      tool: normalizedAction.toolName,
-      description: `Execution failed for ${normalizedAction.toolName}`,
-      stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
-      category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
-      risk: (descriptor == null ? void 0 : descriptor.risk) ?? "unknown",
-      policyDecision: (decision == null ? void 0 : decision.allowed) === false ? "blocked" : "allowed",
-      policyReason: (decision == null ? void 0 : decision.reason) ?? detail,
-      detail: {
-        error: detail,
-        risk: (descriptor == null ? void 0 : descriptor.risk) ?? "unknown",
-        category: (descriptor == null ? void 0 : descriptor.category) ?? "unknown",
-        stage: (decision == null ? void 0 : decision.stage) ?? registry2.stage,
-        policyDecision: (decision == null ? void 0 : decision.allowed) === false ? "blocked" : "allowed",
-        policyReason: (decision == null ? void 0 : decision.reason) ?? null
-      }
-    });
-    return {
-      status: "error",
-      toolName: normalizedAction.toolName,
-      message: detail,
-      shouldStop: false,
-      policyDecision: decision,
-      retryHint: detail,
-      observation: {
-        type: "tool_result",
-        status: "error",
-        summary: detail,
-        toolName: normalizedAction.toolName,
-        retryHint: detail
-      }
-    };
-  }
-};
-const actionHandler = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  handleAiAction
-}, Symbol.toStringTag, { value: "Module" }));
-const DUCKDB_STALE_ASSET_HINT = "If this happened right after a rebuild, refresh the page or restart preview so the browser loads the latest DuckDB worker asset.";
-const computeCardYieldMetric = (cardsProduced, topicsAttempted, cardsFailed) => {
-  const yieldRate = topicsAttempted > 0 ? cardsProduced / topicsAttempted : 0;
-  return {
-    cardsProduced,
-    topicsAttempted,
-    cardsFailed,
-    yieldRate,
-    /** True when more than half of attempted hypotheses produced no card. */
-    shouldFlagLow: topicsAttempted > 0 && yieldRate < 0.5
-  };
-};
-const explainDuckDbUnavailableReason = (fallbackReason) => {
-  const reason = fallbackReason || "Dataset could not be loaded into DuckDB.";
-  if (/duckdb worker crashed|mime type|corrupted_content|failed to fetch|worker task .* timed out/i.test(reason)) {
-    return `${reason} ${DUCKDB_STALE_ASSET_HINT}`;
-  }
-  return reason;
-};
-const syncSessionState = (store, session, isActive = true) => {
-  store.setState((state2) => ({
-    activeAnalysisSession: isActive ? session : null,
-    latestAnalysisSession: session,
-    visibleAnalysisTrace: session.trace,
-    analysisSessionHistory: isActive ? state2.analysisSessionHistory ?? [] : [
-      ...(state2.analysisSessionHistory ?? []).filter((entry) => entry.runId !== session.runId),
-      session
-    ].slice(-20)
-  }));
-};
-const SEMANTIC_DIAGNOSTIC_REASON = "Semantic screening did not identify a safe business grain for trusted narrative analysis.";
-const buildHarnessCoverageState = (coverageMetric) => {
-  if (!coverageMetric) {
-    return null;
-  }
-  const forcedDiagnostic = coverageMetric.attempted > 0 && coverageMetric.successRate < 0.5;
-  return {
-    ...coverageMetric,
-    forcedDiagnostic,
-    reason: forcedDiagnostic ? `Harness coverage degraded: only ${coverageMetric.succeeded}/${coverageMetric.attempted} phases succeeded (${Math.round(coverageMetric.successRate * 100)}%).` : null
-  };
-};
-const resolveAnalysisMode = (params) => {
-  var _a;
-  if ((_a = params.harnessCoverage) == null ? void 0 : _a.forcedDiagnostic) {
-    return {
-      analysisMode: "diagnostic",
-      analysisModeReason: params.harnessCoverage.reason,
-      effectiveDiagnosticMode: true
-    };
-  }
-  if (params.semanticDiagnosticMode) {
-    return {
-      analysisMode: "diagnostic",
-      analysisModeReason: SEMANTIC_DIAGNOSTIC_REASON,
-      effectiveDiagnosticMode: true
-    };
-  }
-  return {
-    analysisMode: "business",
-    analysisModeReason: null,
-    effectiveDiagnosticMode: false
-  };
-};
-const resolveTopicRoundLimit = (harnessSummary) => {
-  if (!harnessSummary) {
-    return DATA_ANALYSIS_MAX_TOPIC_ROUNDS;
-  }
-  if (harnessSummary.signalConfidence === "low") {
-    return 1;
-  }
-  if (harnessSummary.reportShapeClass === "hierarchical_statement" || harnessSummary.reportShapeClass === "wide_pivot") {
-    return Math.min(2, DATA_ANALYSIS_MAX_TOPIC_ROUNDS);
-  }
-  return DATA_ANALYSIS_MAX_TOPIC_ROUNDS;
-};
-const resolveSuggestedPivotsForDataset = (data2, findings) => {
-  var _a;
-  return ((_a = data2.backing) == null ? void 0 : _a.readOnly) ? [] : (findings == null ? void 0 : findings.runtimeDirectives.suggestedPivots) ?? [];
-};
-const requireDuckDbBinding = async (store, dataForAnalysis) => {
-  store.setState((state2) => ({
-    duckDbSessionStatus: {
-      ...state2.duckDbSessionStatus,
-      status: "binding",
-      fallbackReason: null
-    }
-  }));
-  const sync = await ensureDuckDbSessionSync(store, dataForAnalysis, createWorkerDiagnosticsTelemetryReporter(store));
-  if (sync.engine !== "duckdb" || !sync.tableName || !sync.loadVersion) {
-    throw new SqlAutoAnalysisError(
-      "duckdb_unavailable",
-      `Automatic analysis requires DuckDB. ${explainDuckDbUnavailableReason(sync.fallbackReason)}`,
-      { analysisEngine: "duckdb", duckDbRequired: true }
-    );
-  }
-  return {
-    tableName: sync.tableName,
-    loadVersion: sync.loadVersion
-  };
-};
-const buildSessionTraceRecorder = (store, getSession, setSession, options2) => (record) => {
-  var _a, _b;
-  const session = getSession();
-  if (session.stepsUsed >= session.maxSteps - DATA_ANALYSIS_FINALIZE_RESERVE_STEPS) {
-    return "";
-  }
-  const { session: nextSession, step } = appendDataAnalysisStep(session, {
-    type: record.type,
-    status: record.status,
-    inputSummary: record.inputSummary,
-    outputSummary: record.outputSummary,
-    inputSummaryI18n: record.inputSummaryI18n,
-    outputSummaryI18n: record.outputSummaryI18n,
-    labelI18n: record.labelI18n,
-    whyI18n: record.whyI18n,
-    decision: record.decision,
-    queryRef: record.queryRef ?? null,
-    hypothesisId: record.hypothesisId ?? null,
-    reasonCodes: record.reasonCodes ?? []
-  });
-  let updatedSession = nextSession;
-  if (record.querySignature && record.semanticSignature) {
-    updatedSession = appendAnalysisQueryHistory(updatedSession, {
-      stepId: step.id,
-      hypothesisId: record.hypothesisId ?? null,
-      title: record.queryTitle ?? step.outputSummary,
-      queryMode: record.queryMode ?? "aggregate",
-      sqlPreview: record.queryRef ?? null,
-      querySignature: record.querySignature,
-      semanticSignature: record.semanticSignature
-    });
-  }
-  setSession(updatedSession);
-  if (!(options2 == null ? void 0 : options2.suppressSync)) {
-    syncSessionState(store, updatedSession, true);
-  }
-  (_b = (_a = store.getState()).logTelemetryEvent) == null ? void 0 : _b.call(_a, {
-    stage: "planner_ready",
-    responseType: "analysis_step",
-    detail: `${record.type}:${record.status}`,
-    meta: {
-      runId: updatedSession.runId,
-      stepId: step.id,
-      stepType: record.type,
-      hypothesisId: record.hypothesisId ?? null,
-      decision: record.decision ?? null,
-      reasonCodes: record.reasonCodes ?? []
-    },
-    runId: updatedSession.runId,
-    stepId: step.id
-  });
-  return step.id;
 };
 const buildQualityIssueSummary = (findings) => {
   const issues = [];
@@ -89110,189 +89721,6 @@ const reshapeWidePivotBeforeAnalysis = async (harnessContext, columnProfiles, st
     });
     return skip(`Reshape threw: ${errorMessage}`);
   }
-};
-const getQueryableColumnProfiles = (data2, profiles, rawData) => {
-  var _a, _b;
-  if (((_a = data2.backing) == null ? void 0 : _a.mode) !== "duckdb_file") return profiles;
-  const physicalColumns = ((_b = data2.backing.columnNames) == null ? void 0 : _b.length) ? data2.backing.columnNames : Object.keys((rawData == null ? void 0 : rawData.data[0]) ?? {});
-  if (physicalColumns.length === 0) return [];
-  const available = new Set(physicalColumns.map((column) => column.trim().toLowerCase()));
-  return profiles.filter((profile) => available.has(profile.name.trim().toLowerCase()));
-};
-const applyInvestigationSteering = (datasetContext, semanticUnderstanding, investigationFindings) => {
-  var _a;
-  if (!investigationFindings) {
-    datasetContext.analysisSteering = null;
-    return null;
-  }
-  const d = investigationFindings.runtimeDirectives;
-  const preferredDimensions = d.preferredDimensions ?? d.preferGroupBy ?? [];
-  const blockedDimensions = d.blockedDimensions ?? d.blockGroupBy ?? [];
-  const preferredMetrics = d.preferredMetrics ?? [];
-  const blockedMetrics = d.blockedMetrics ?? [];
-  if ((((_a = d.blockGroupBy) == null ? void 0 : _a.length) ?? 0) > 0) {
-    const existingBlocked = new Set(datasetContext.blockedDimensions ?? []);
-    d.blockGroupBy.forEach((dim) => existingBlocked.add(dim));
-    datasetContext.blockedDimensions = Array.from(existingBlocked);
-    d.blockGroupBy.forEach((dim) => {
-      if (!semanticUnderstanding.blockedDimensions.includes(dim)) {
-        semanticUnderstanding.blockedDimensions.push(dim);
-      }
-    });
-  }
-  if (preferredDimensions.length > 0) {
-    const existing = new Set(datasetContext.preferredGrainColumns ?? []);
-    preferredDimensions.forEach((dim) => existing.add(dim));
-    datasetContext.preferredGrainColumns = Array.from(existing);
-  }
-  if (preferredMetrics.length > 0) {
-    const existing = new Set(datasetContext.preferredMetricTerms ?? []);
-    preferredMetrics.forEach((metric) => existing.add(metric));
-    datasetContext.preferredMetricTerms = Array.from(existing);
-  }
-  if (blockedMetrics.length > 0) {
-    const existing = new Set(datasetContext.avoidMetricColumns ?? []);
-    blockedMetrics.forEach((metric) => existing.add(metric));
-    datasetContext.avoidMetricColumns = Array.from(existing);
-  }
-  const avoidedDimensions = new Set(datasetContext.avoidGrainColumns ?? []);
-  d.excludeFromAggregation.forEach((desc2) => avoidedDimensions.add(desc2));
-  d.softDeprioritizeGroupBy.forEach((dim) => avoidedDimensions.add(dim));
-  investigationFindings.missingDataPatterns.filter((p) => p.severity === "severe" && p.nullRate + p.blankRate >= 0.5).forEach((pattern) => avoidedDimensions.add(pattern.column));
-  investigationFindings.dimensionCompleteness.filter((dimension) => dimension.deprioritize).forEach((dimension) => avoidedDimensions.add(dimension.column));
-  datasetContext.avoidGrainColumns = Array.from(avoidedDimensions);
-  if (investigationFindings.suggestedDerivedTopics.length > 0) {
-    datasetContext.suggestedDerivedTopics = investigationFindings.suggestedDerivedTopics;
-  }
-  if (investigationFindings.metricRelationships.length > 0) {
-    const terms = /* @__PURE__ */ new Set();
-    investigationFindings.metricRelationships.forEach((r) => {
-      terms.add(r.left);
-      terms.add(r.right);
-      terms.add(r.result);
-    });
-    datasetContext.metricRelationshipTerms = Array.from(terms);
-  }
-  const pivotOnly = investigationFindings.crossDimensionCardinality.filter((c) => c.recommendPivotOnly).map((c) => ({ dimA: c.dimA, dimB: c.dimB, product: c.product }));
-  if (pivotOnly.length > 0) {
-    datasetContext.pivotOnlyCombinations = pivotOnly;
-  }
-  const steering = investigationFindings.analysisSteering ? cloneAnalysisSteering(investigationFindings.analysisSteering) : buildCanonicalAnalysisSteering({
-    semanticUnderstanding,
-    reportShapeKind: datasetContext.reportShapeKind ?? null,
-    base: {
-      preferGroupBy: d.preferGroupBy,
-      blockGroupBy: d.blockGroupBy,
-      softDeprioritizeGroupBy: d.softDeprioritizeGroupBy,
-      preferredDimensions,
-      blockedDimensions,
-      preferredMetrics,
-      blockedMetrics,
-      columnRoles: d.columnRoles ?? {},
-      excludeFromAggregation: d.excludeFromAggregation,
-      hierarchyColumn: d.hierarchyColumn,
-      parentDescriptions: investigationFindings.parentDescriptions,
-      duplicateDescriptions: investigationFindings.duplicateLabels.map((pair) => pair.descriptionB),
-      detailRowColumn: d.detailRowColumn,
-      detailRowValue: d.detailRowValue,
-      detailRowFilter: d.detailRowFilter ?? null,
-      promotedChartType: d.promotedChartType,
-      blockedChartTypes: d.blockedChartTypes,
-      suggestedHideOthers: d.suggestedHideOthers,
-      recommendedTopN: d.recommendedTopN,
-      pivotOnlyCombinations: pivotOnly,
-      widePivotShape: d.widePivotShape,
-      periodColumnFamilies: d.periodColumnFamilies,
-      formattedNumberColumns: d.formattedNumberColumns,
-      pairingSignals: d.pairingSignals,
-      duplicateSignatureHints: d.duplicateSignatureHints ?? [],
-      reshapeDecision: d.reshapeDecision ?? null,
-      reshapeDecisionReasons: d.reshapeDecisionReasons ?? [],
-      inferredColumnLabels: d.inferredColumnLabels
-    }
-  });
-  datasetContext.analysisSteering = cloneAnalysisSteering(steering);
-  return steering;
-};
-const refreshAnalysisContext = async (store, origin, inputData, addProgress) => {
-  var _a, _b;
-  await ((_b = (_a = store.getState()).ensureDatasetSemanticSnapshot) == null ? void 0 : _b.call(_a, inputData));
-  const {
-    datasetSemanticSnapshot,
-    semanticDatasetVersion,
-    columnProfiles: storedColumnProfiles,
-    reportContextResolution,
-    dataPreparationPlan
-  } = store.getState();
-  const bindingTarget = resolveDatasetBindingTarget({
-    mode: "analysis",
-    csvData: inputData,
-    snapshot: datasetSemanticSnapshot,
-    semanticDatasetVersion
-  });
-  const semanticDataForAnalysis = (bindingTarget == null ? void 0 : bindingTarget.dataset) ?? inputData;
-  const columnProfiles = getQueryableColumnProfiles(
-    semanticDataForAnalysis,
-    storedColumnProfiles,
-    store.getState().rawCsvData
-  );
-  const hiddenSemanticRows = getSemanticHiddenRowCount(
-    datasetSemanticSnapshot,
-    semanticDatasetVersion,
-    inputData
-  );
-  if (hiddenSemanticRows > 0) {
-    addProgress == null ? void 0 : addProgress(`AI semantic analysis view excluded ${hiddenSemanticRows} non-detail row(s) from automatic analysis.`, "system");
-  }
-  const binding = await requireDuckDbBinding(store, semanticDataForAnalysis);
-  const datasetContext = buildDatasetContext(
-    semanticDataForAnalysis,
-    columnProfiles,
-    reportContextResolution,
-    datasetSemanticSnapshot,
-    semanticDatasetVersion,
-    dataPreparationPlan ?? null,
-    store.getState().rawCsvData ?? inputData
-  );
-  const semanticUnderstanding = buildRuntimeSemanticUnderstanding({
-    columns: columnProfiles,
-    analysisBrief: buildAnalysisIntentBrief({
-      columns: columnProfiles,
-      csvData: semanticDataForAnalysis,
-      dataPreparationPlan: dataPreparationPlan ?? null,
-      datasetSemanticSnapshot,
-      semanticDatasetVersion
-    }),
-    reportContextResolution,
-    datasetSemanticSnapshot
-  });
-  const qualityGovernance = origin === "auto_analysis" ? analyzeDatasetQualityGovernance(
-    columnProfiles,
-    semanticDataForAnalysis,
-    datasetContext
-  ) : null;
-  if (qualityGovernance) {
-    const avoided = new Set(datasetContext.avoidGrainColumns ?? []);
-    qualityGovernance.blockedDimensions.forEach((column) => avoided.add(column));
-    qualityGovernance.avoidDimensions.forEach((column) => avoided.add(column));
-    datasetContext.avoidGrainColumns = Array.from(avoided);
-    datasetContext.qualityBlockedDimensions = [...qualityGovernance.blockedDimensions];
-    const avoidedMetrics = new Set(datasetContext.avoidMetricColumns ?? []);
-    qualityGovernance.avoidMetrics.forEach((column) => avoidedMetrics.add(column));
-    datasetContext.avoidMetricColumns = Array.from(avoidedMetrics);
-    datasetContext.qualityHintsSummary = qualityGovernance.qualityHintsSummary || void 0;
-  }
-  return {
-    inputData,
-    semanticDataForAnalysis,
-    binding,
-    columnProfiles,
-    datasetContext,
-    semanticUnderstanding,
-    qualityGovernance,
-    datasetSemanticSnapshot,
-    semanticDatasetVersion
-  };
 };
 const DEFAULT_STOP_CONDITIONS = [
   "accepted_card_limit_reached",
@@ -90027,11 +90455,22 @@ const runDataAnalysisSessionInternal = async (params) => {
     if (plannable.length > 0 && session.status !== "cancelled") {
       const preGenStart = performance.now();
       console.log(`[Perf:PlanD] Pre-generating ${plannable.length} evidence plans in parallel...`);
+      const piPlannerSlots = createSlotLimiter(2);
       const planResults = await Promise.all(
         plannable.map(async (h) => {
           var _a2;
           const t02 = performance.now();
           try {
+            const piPlan = researchPlan ? await piPlannerSlots(() => runPiEvidencePlanner({
+              store,
+              topic: h.topic,
+              columns: columnProfiles,
+              datasetContext,
+              planningIntent: { preferredGroupBy: h.grain, preferredMetric: h.metric, preferredFilterIntent: h.filterIntent },
+              harnessSummary,
+              signal: params.abortSignal
+            })) : null;
+            if (piPlan) return { id: h.id, plan: piPlan };
             const plan = await generateEvidenceQueryPlanStepped(
               h.topic,
               columnProfiles,
@@ -90567,6 +91006,21 @@ const runDataAnalysisSessionInternal = async (params) => {
     semanticData: semanticDataForAnalysis,
     binding,
     acceptedCardCount: session.acceptedOutputs.length
+  };
+};
+const createSlotLimiter = (limit) => {
+  let active = 0;
+  const waiting = [];
+  return async (task) => {
+    var _a;
+    if (active >= limit) await new Promise((resolve2) => waiting.push(resolve2));
+    active += 1;
+    try {
+      return await task();
+    } finally {
+      active -= 1;
+      (_a = waiting.shift()) == null ? void 0 : _a();
+    }
   };
 };
 const runDataAnalysisSession = async (params) => {
@@ -91219,205 +91673,6 @@ const executeInitialAnalysisStageTool = async (params) => {
     params.args
   );
 };
-const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-Cl11HMkj.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
-const values$1 = {
-  "google-generative-ai": /* @__PURE__ */ JSON.parse('{"deep-research-max-preview-04-2026":{"id":"deep-research-max-preview-04-2026","name":"Deep Research Max Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"deep-research-preview-04-2026":{"id":"deep-research-preview-04-2026","name":"Deep Research Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-computer-use-preview-10-2025":{"id":"gemini-2.5-computer-use-preview-10-2025","name":"Gemini 2.5 Computer Use Preview 10-2025","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash":{"id":"gemini-2.5-flash","name":"Gemini 2.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash-lite":{"id":"gemini-2.5-flash-lite","name":"Gemini 2.5 Flash-Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.01,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-pro":{"id":"gemini-2.5-pro","name":"Gemini 2.5 Pro","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3-flash-preview":{"id":"gemini-3-flash-preview","name":"Gemini 3 Flash Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.5,"output":3,"cacheRead":0.05,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite":{"id":"gemini-3.1-flash-lite","name":"Gemini 3.1 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-image":{"id":"gemini-3.1-flash-lite-image","name":"Nano Banana 2 Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":null,"medium":null,"high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":65536,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-preview":{"id":"gemini-3.1-flash-lite-preview","name":"Gemini 3.1 Flash Lite Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-live-preview":{"id":"gemini-3.1-flash-live-preview","name":"Gemini 3.1 Flash Live Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview":{"id":"gemini-3.1-pro-preview","name":"Gemini 3.1 Pro Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview-customtools":{"id":"gemini-3.1-pro-preview-customtools","name":"Gemini 3.1 Pro Preview Custom Tools","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash":{"id":"gemini-3.5-flash","name":"Gemini 3.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash-lite":{"id":"gemini-3.5-flash-lite","name":"Gemini 3.5 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.6-flash":{"id":"gemini-3.6-flash","name":"Gemini 3.6 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.7-flash":{"id":"gemini-3.7-flash","name":"Gemini 3.7 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.8-flash":{"id":"gemini-3.8-flash","name":"Gemini 3.8 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-latest":{"id":"gemini-flash-latest","name":"Gemini Flash Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-lite-latest":{"id":"gemini-flash-lite-latest","name":"Gemini Flash-Lite Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-26b-a4b-it":{"id":"gemma-4-26b-a4b-it","name":"Gemma 4 26B A4B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-31b-it":{"id":"gemma-4-31b-it","name":"Gemma 4 31B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
-};
-function flattenModelCatalog(_provider, groups) {
-  return Object.assign({}, ...Object.values(groups));
-}
-const GOOGLE_MODELS = flattenModelCatalog("google", values$1);
-function googleProvider() {
-  return createProvider({
-    id: "google",
-    name: "Google",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-    auth: { apiKey: envApiKeyAuth("Gemini API key", ["GEMINI_API_KEY"]) },
-    models: Object.values(GOOGLE_MODELS),
-    api: googleGenerativeAIApi()
-  });
-}
-const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-OQpIzK7y.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
-const values = {
-  "openai-responses": /* @__PURE__ */ JSON.parse('{"gpt-4":{"id":"gpt-4","name":"GPT-4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text"],"cost":{"input":30,"output":60,"cacheRead":0,"cacheWrite":0},"contextWindow":8192,"maxTokens":8192,"compat":{"supportsStrictMode":true}},"gpt-4-turbo":{"id":"gpt-4-turbo","name":"GPT-4 Turbo","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":10,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1":{"id":"gpt-4.1","name":"GPT-4.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-mini":{"id":"gpt-4.1-mini","name":"GPT-4.1 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.4,"output":1.6,"cacheRead":0.1,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-nano":{"id":"gpt-4.1-nano","name":"GPT-4.1 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o":{"id":"gpt-4o","name":"GPT-4o","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-05-13":{"id":"gpt-4o-2024-05-13","name":"GPT-4o (2024-05-13)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":5,"output":15,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-08-06":{"id":"gpt-4o-2024-08-06","name":"GPT-4o (2024-08-06)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-11-20":{"id":"gpt-4o-2024-11-20","name":"GPT-4o (2024-11-20)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.15,"output":0.6,"cacheRead":0.075,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5":{"id":"gpt-5","name":"GPT-5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-chat-latest":{"id":"gpt-5-chat-latest","name":"GPT-5 Chat Latest","api":"openai-responses","baseUrl":"https://api.openai.com/v1","provider":"openai","reasoning":false,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-mini":{"id":"gpt-5-mini","name":"GPT-5 Mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.25,"output":2,"cacheRead":0.025,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-nano":{"id":"gpt-5-nano","name":"GPT-5 Nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.05,"output":0.4,"cacheRead":0.005,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-pro":{"id":"gpt-5-pro","name":"GPT-5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":120,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":null,"high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.1":{"id":"gpt-5.1","name":"GPT-5.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2":{"id":"gpt-5.2","name":"GPT-5.2","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-chat-latest":{"id":"gpt-5.2-chat-latest","name":"GPT-5.2 Chat","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":null,"xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-pro":{"id":"gpt-5.2-pro","name":"GPT-5.2 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":21,"output":168,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-chat-latest":{"id":"gpt-5.3-chat-latest","name":"GPT-5.3 Chat (latest)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"xhigh":"xhigh"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex":{"id":"gpt-5.3-codex","name":"GPT-5.3 Codex","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex-spark":{"id":"gpt-5.3-codex-spark","name":"GPT-5.3 Codex Spark","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4":{"id":"gpt-5.4","name":"GPT-5.4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2.5,"output":15,"cacheRead":0.25,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":5,"output":22.5,"cacheRead":0.5,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-mini":{"id":"gpt-5.4-mini","name":"GPT-5.4 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0.075,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-nano":{"id":"gpt-5.4-nano","name":"GPT-5.4 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.25,"cacheRead":0.02,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-pro":{"id":"gpt-5.4-pro","name":"GPT-5.4 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5":{"id":"gpt-5.5","name":"GPT-5.5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":5,"output":30,"cacheRead":0.5,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":10,"output":45,"cacheRead":1,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5-pro":{"id":"gpt-5.5-pro","name":"GPT-5.5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-luna":{"id":"gpt-5.6-luna","name":"GPT-5.6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.2,"cacheRead":0.02,"cacheWrite":0.25,"tiers":[{"inputTokensAbove":272000,"input":0.4,"output":1.8,"cacheRead":0.04,"cacheWrite":0.5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-sol":{"id":"gpt-5.6-sol","name":"GPT-5.6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":20,"cacheRead":0.4,"cacheWrite":5,"tiers":[{"inputTokensAbove":272000,"input":8,"output":30,"cacheRead":0.8,"cacheWrite":10}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-terra":{"id":"gpt-5.6-terra","name":"GPT-5.6 Terra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":18,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-astra":{"id":"gpt-6-astra","name":"GPT-6 Astra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":10,"output":50,"cacheRead":1,"cacheWrite":12.5,"tiers":[{"inputTokensAbove":272000,"input":20,"output":75,"cacheRead":2,"cacheWrite":25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-luna":{"id":"gpt-6-luna","name":"GPT-6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"inputTokensAbove":272000,"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-sol":{"id":"gpt-6-sol","name":"GPT-6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":10,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":15,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-realtime-2.1":{"id":"gpt-realtime-2.1","name":"GPT-Realtime-2.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":24,"cacheRead":0.4,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1":{"id":"o1","name":"o1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":60,"cacheRead":7.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1-pro":{"id":"o1-pro","name":"o1-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":150,"output":600,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3":{"id":"o3","name":"o3","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3-mini":{"id":"o3-mini","name":"o3-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.55,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true}},"o3-pro":{"id":"o3-pro","name":"o3-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":20,"output":80,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o4-mini":{"id":"o4-mini","name":"o4-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.275,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
-};
-const OPENAI_MODELS = flattenModelCatalog("openai", values);
-function openaiProvider() {
-  return createProvider({
-    id: "openai",
-    name: "OpenAI",
-    baseUrl: "https://api.openai.com/v1",
-    auth: { apiKey: envApiKeyAuth("OpenAI API key", ["OPENAI_API_KEY"]) },
-    models: Object.values(OPENAI_MODELS),
-    api: openAIResponsesApi()
-  });
-}
-const estimateVisibleTokens = (value2) => {
-  const serialized = JSON.stringify(value2);
-  let nonAsciiUnits = 0;
-  for (let index2 = 0; index2 < serialized.length; index2 += 1) {
-    if (serialized.charCodeAt(index2) > 127) nonAsciiUnits += 1;
-  }
-  return Math.ceil((serialized.length - nonAsciiUnits) / 3 + nonAsciiUnits * 2);
-};
-const projectedTokens = (messages, hasSummary) => {
-  const visibleTokens = estimateVisibleTokens(messages);
-  return hasSummary ? visibleTokens : Math.max(visibleTokens, estimateContextTokens(messages).tokens);
-};
-const createPiContextCompactor = (contextWindow, summarize, onDegraded) => {
-  if (!Number.isFinite(contextWindow) || contextWindow <= 0) {
-    throw new Error("Pi requires a known context window for automatic compaction.");
-  }
-  const triggerTokens = Math.floor(contextWindow * PI_CONTEXT_COMPACTION_TRIGGER_RATIO);
-  let summary = "";
-  let summarizedThrough = 1;
-  let summaryTimestamp = 0;
-  let retryAboveTokens = 0;
-  const retryGrowthTokens = Math.floor(contextWindow * 0.05);
-  const degrade = (reason, error2, estimatedTokens) => {
-    retryAboveTokens = estimatedTokens + retryGrowthTokens;
-    try {
-      onDegraded == null ? void 0 : onDegraded({ reason, error: error2, estimatedTokens });
-    } catch {
-    }
-  };
-  return async (messages, signal) => {
-    var _a;
-    if (((_a = messages[0]) == null ? void 0 : _a.role) !== "system") return messages;
-    const summaryMessage = () => ({
-      role: "user",
-      content: [{ type: "text", text: `Earlier conversation summary:
-${summary}` }],
-      timestamp: summaryTimestamp
-    });
-    const projected = [
-      messages[0],
-      ...summary ? [summaryMessage()] : [],
-      ...messages.slice(summarizedThrough)
-    ];
-    const estimated = projectedTokens(projected, Boolean(summary));
-    if (estimated < triggerTokens || estimated <= retryAboveTokens) return projected;
-    let cut = projected.length;
-    let recentTokens = 0;
-    while (cut > 1 && recentTokens < PI_CONTEXT_COMPACTION_KEEP_RECENT_TOKENS) {
-      const nextTokens = Math.max(
-        estimateTokens$1(projected[cut - 1]),
-        estimateVisibleTokens(projected[cut - 1])
-      );
-      if (recentTokens > 0 && recentTokens + nextTokens > PI_CONTEXT_COMPACTION_KEEP_RECENT_TOKENS) break;
-      cut -= 1;
-      recentTokens += nextTokens;
-    }
-    while (cut > 1 && projected[cut].role === "toolResult") cut -= 1;
-    if (cut <= (summary ? 2 : 1)) return projected;
-    try {
-      const nextSummary = (await summarize(projected.slice(1, cut), signal)).trim();
-      if (signal == null ? void 0 : signal.aborted) return projected;
-      if (!nextSummary || nextSummary.length > 2e4) {
-        degrade("summary_unusable", new Error(nextSummary ? "Pi summary exceeded the size limit." : "Pi summary was empty."), estimated);
-        return projected;
-      }
-      const nextSummarizedThrough = summarizedThrough + cut - 1 - (summary ? 1 : 0);
-      const nextTimestamp = Date.now();
-      const compacted = [
-        messages[0],
-        { role: "user", content: [{ type: "text", text: `Earlier conversation summary:
-${nextSummary}` }], timestamp: nextTimestamp },
-        ...messages.slice(nextSummarizedThrough)
-      ];
-      if (projectedTokens(compacted, true) >= triggerTokens) {
-        degrade("compaction_ineffective", new Error("Compaction did not bring the history under the trigger."), estimated);
-        return projected;
-      }
-      retryAboveTokens = 0;
-      summary = nextSummary;
-      summarizedThrough = nextSummarizedThrough;
-      summaryTimestamp = nextTimestamp;
-      return compacted;
-    } catch (error2) {
-      if (!(signal == null ? void 0 : signal.aborted)) degrade("summary_failed", error2, estimated);
-      return projected;
-    }
-  };
-};
-const createPiProviderContextCompactor = (model, models2, apiKey, providerFetch, onDegraded) => createPiContextCompactor(model.contextWindow, async (messages, signal) => {
-  const history = serializeConversation(convertToLlm(messages));
-  const response = await models2.completeSimple(model, {
-    systemPrompt: "Summarize earlier Pi agent history for continuation. Preserve the user goal, dataset identity, completed tool results, decisions, and outstanding work. Never invent evidence or include credentials. Keep the summary concise.",
-    messages: [{
-      role: "user",
-      content: [{ type: "text", text: history }],
-      timestamp: Date.now()
-    }]
-  }, {
-    apiKey,
-    fetch: providerFetch,
-    signal,
-    timeoutMs: 45e3,
-    maxRetries: 0
-  });
-  if (response.stopReason === "error" || response.stopReason === "aborted") {
-    throw new Error("Pi context summarization failed.");
-  }
-  return contentText(response.content);
-}, onDegraded);
-const models$1 = createModels();
-models$1.setProvider(openaiProvider());
-models$1.setProvider(googleProvider());
-const resolvePiModel = (settings2) => {
-  const provider = settings2.provider === "google" ? "google" : "openai";
-  const id = resolveProviderModelId(settings2);
-  const catalogModel = models$1.getModel(provider, id);
-  const familyModel = models$1.getModel(
-    provider,
-    provider === "google" ? "gemini-3.1-pro-preview" : "gpt-5.4-mini"
-  );
-  const model = catalogModel ?? familyModel;
-  if (!model) throw new Error(`Pi has no model configuration for ${provider}.`);
-  return {
-    ...model,
-    id,
-    contextWindow: Math.min(model.contextWindow, PROVIDER_CONTEXT_WINDOW_CAP),
-    ...settings2.provider === "default" ? {
-      baseUrl: DEFAULT_GATEWAY_BASE_URL,
-      // The shared demo gateway rejects this optional Responses API field.
-      compat: { ...model.compat, supportsMaxOutputTokens: false }
-    } : {}
-  };
-};
-const resolvePiThinkingLevel = (settings2) => clampThinkingLevel(
-  resolvePiModel(settings2),
-  settings2.reasoningEffort === "off" ? "off" : settings2.reasoningEffort ?? "medium"
-);
-const createPiProviderStream = (settings2) => {
-  const apiKey = resolveProviderApiKey(settings2);
-  if (!apiKey.trim()) throw new Error("The selected AI provider has no API key.");
-  const providerFetch = settings2.provider === "default" ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent;
-  return (model, context, options2) => models$1.streamSimple(model, context, {
-    ...options2,
-    apiKey,
-    fetch: providerFetch,
-    timeoutMs: 45e3,
-    maxRetries: 0
-  });
-};
-const createPiProviderContextTransform = (settings2, onDegraded) => {
-  const apiKey = resolveProviderApiKey(settings2);
-  if (!apiKey.trim()) throw new Error("The selected AI provider has no API key.");
-  return createPiProviderContextCompactor(
-    resolvePiModel(settings2),
-    models$1,
-    apiKey,
-    settings2.provider === "default" ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent,
-    onDegraded
-  );
-};
-const createPiCompactionTelemetry = (store) => ({ reason, error: error2, estimatedTokens }) => emitSilentFailure(store, error2, {
-  component: "PiContextCompaction",
-  recoveryAction: `uncompacted_history_used:${reason}`,
-  userNotified: false,
-  detail: { reason, estimatedTokens }
-});
 const PROVIDER_ERROR_PATTERN = /\b(?:api key|authentication|unauthorized|forbidden|quota|rate limit|overloaded|provider|model not found|network error|networkerror|failed to fetch|fetch failed|timed out|timeout|connection reset|econnreset)\b/i;
 const isInitialAnalysisProviderFailure = (error2) => {
   const candidate = error2 && typeof error2 === "object" ? error2 : null;
@@ -91427,117 +91682,6 @@ const isInitialAnalysisProviderFailure = (error2) => {
   }
   const detail = [candidate == null ? void 0 : candidate.code, candidate == null ? void 0 : candidate.message, error2 instanceof Error ? error2.message : error2].filter((value2) => typeof value2 === "string").join(" ");
   return /\b(?:400|401|403|404|408|429|500|502|503|504)\b/.test(detail) || PROVIDER_ERROR_PATTERN.test(detail);
-};
-const READ_SKILL_TOOL_NAME = "read_skill";
-const buildSkillsPromptSection = (skills) => {
-  const listing = formatSkillsForSystemPrompt([...skills]);
-  if (!listing) return "";
-  return [
-    listing,
-    `When a task matches a skill description, call ${READ_SKILL_TOOL_NAME} with the skill name before acting, then follow it.`,
-    "Skills are guidance for how to analyse; they never override the data, the user request or app safety rules."
-  ].join("\n");
-};
-const PI_MAX_SKILL_READS_PER_TURN = 2;
-const createPiSkillTool = (store, options2 = {}) => {
-  const maxReads = options2.maxReads ?? PI_MAX_SKILL_READS_PER_TURN;
-  let reads = 0;
-  return {
-    name: READ_SKILL_TOOL_NAME,
-    label: "Read skill",
-    description: "Load the full instructions of one skill listed in <available_skills>. Use it when the task matches that skill.",
-    parameters: _Object_({
-      name: String$1({ description: "The skill name exactly as listed in <available_skills>." })
-    }),
-    executionMode: "sequential",
-    replay: "safe",
-    execute: async (_toolCallId, args) => {
-      const requested = typeof (args == null ? void 0 : args.name) === "string" ? args.name : "";
-      if (reads >= maxReads) {
-        throw new Error(`The limit of ${maxReads} skill reads per request was reached. Continue with what you have loaded.`);
-      }
-      reads += 1;
-      const skills = resolveAvailableSkills(store.getState().workspaceFiles).skills.filter((entry) => !entry.disableModelInvocation);
-      const skill = findSkillByName(skills, requested);
-      if (!skill) {
-        const available = skills.map((entry) => entry.name);
-        throw new Error(`Unknown skill "${requested}". Available skills: ${available.join(", ") || "none"}.`);
-      }
-      return {
-        details: void 0,
-        content: [{ type: "text", text: `<skill name="${skill.name}">
-${skill.content}
-</skill>` }]
-      };
-    }
-  };
-};
-const PI_MAX_TOOL_CALLS_PER_TURN = 3;
-const MAX_TOOL_RESULT_CHARS = 6e3;
-const isCardCreatingTool = (manifest2) => {
-  var _a;
-  return manifest2.name === "analysis.create_plan" || ((_a = manifest2.capabilities) == null ? void 0 : _a.piFollowUpCardCreation) === true;
-};
-const createPiAppTools = (store, datasetVersion, options2 = {}) => {
-  let calls = 0;
-  const maxToolCalls = options2.maxToolCalls ?? PI_MAX_TOOL_CALLS_PER_TURN;
-  const state2 = store.getState();
-  const dataset = getPreferredAnalysisDataset(state2);
-  const columnNames = dataset ? getQueryableColumnProfiles(dataset, state2.columnProfiles ?? [], state2.rawCsvData).map((profile) => profile.name) : [];
-  const manifests = buildBuiltinToolRegistry(columnNames).manifests.filter((manifest2) => {
-    var _a, _b, _c, _d;
-    return manifest2.risk === "low" && ((_a = manifest2.capabilities) == null ? void 0 : _a.readOnly) === true && ((_b = manifest2.capabilities) == null ? void 0 : _b.piFollowUpReadOnly) === true || options2.allowCardCreation && (manifest2.name === "analysis.create_plan" || ((_c = manifest2.capabilities) == null ? void 0 : _c.piFollowUpCardCreation) === true) || manifest2.name === "data.mutate" && ((_d = manifest2.capabilities) == null ? void 0 : _d.piFollowUpMutation) === true;
-  });
-  const manifestTools = manifests.map((manifest2) => {
-    var _a;
-    return {
-      name: manifest2.name.replace(/[^a-zA-Z0-9_-]/g, "_"),
-      label: manifest2.name,
-      description: [manifest2.description, ...manifest2.promptHints ?? []].join(" ").slice(0, 4e3),
-      parameters: Unsafe(manifest2.inputSchema),
-      executionMode: "sequential",
-      replay: ((_a = manifest2.capabilities) == null ? void 0 : _a.mutatesState) || isCardCreatingTool(manifest2) ? "never" : "safe",
-      execute: async (_toolCallId, args, signal) => {
-        var _a2, _b, _c, _d;
-        if ((_a2 = manifest2.capabilities) == null ? void 0 : _a2.mutatesState) {
-          throw new Error("This mutation requires app approval before execution.");
-        }
-        if (getCurrentAnalysisDatasetVersion(store.getState()) !== datasetVersion) {
-          throw new Error("The dataset changed during this turn. Start a new request.");
-        }
-        if (calls >= maxToolCalls) {
-          throw new Error(`The limit of ${maxToolCalls} app tools was reached.`);
-        }
-        calls += 1;
-        const result = await handleAiAction({
-          type: "tool_call",
-          thought: `Execute ${manifest2.name} for the current request.`,
-          toolName: manifest2.name,
-          args
-        }, store, {
-          toolStage: "analysis",
-          abortSignal: signal,
-          requireRowDeleteConfirmation: true
-        });
-        if (isCardCreatingTool(manifest2) && result.status === "success") {
-          const cardId = ((_b = result.artifacts) == null ? void 0 : _b.createdCardId) ?? ((_c = result.artifacts) == null ? void 0 : _c.cardId);
-          if (typeof cardId === "string" && store.getState().analysisCards.some((card) => card.id === cardId)) {
-            (_d = options2.onCardCreated) == null ? void 0 : _d.call(options2, cardId);
-          }
-        }
-        const payload = JSON.stringify({
-          status: result.status,
-          message: result.message,
-          observation: result.observation,
-          artifacts: result.artifacts,
-          retryHint: result.retryHint
-        }).slice(0, MAX_TOOL_RESULT_CHARS);
-        if (result.status === "error") throw new Error(payload);
-        return { details: void 0, content: [{ type: "text", text: payload }] };
-      }
-    };
-  });
-  return options2.includeSkills === false ? manifestTools : [...manifestTools, createPiSkillTool(store)];
 };
 const SUBMIT_RESEARCH_PLAN_TOOL = "submit_research_plan";
 const PLANNER_MAX_PROVIDER_TURNS = 9;
@@ -91699,6 +91843,8 @@ const runPiResearchPlanner = async (params) => {
 const STAGES = createInitialAnalysisStageToolManifests();
 const CHECKPOINT_PREFIX = "pi-initial-analysis-v1:";
 const INITIAL_ANALYSIS_BUDGET_MS = 24e4;
+const OPTIONAL_STAGE_NAMES = /* @__PURE__ */ new Set(["dataset.suggestCleaningPlan", "dataset.applyTransform"]);
+const MAX_INVALID_STAGE_REQUESTS = 2;
 const activeRuns = /* @__PURE__ */ new Map();
 const cancelPiInitialAnalysis = (appSessionId) => {
   const active = activeRuns.get(appSessionId);
@@ -91749,6 +91895,25 @@ const hasCommittedState = (checkpoint, store) => {
   }).filter(Boolean));
   return checkpoint.committedTransformationIds.every((id) => transformations.has(id)) && checkpoint.cardFingerprints.every((value2) => cardFingerprints.has(value2));
 };
+const describeStageChoices = (fromIndex) => {
+  const skippable = [];
+  for (let index2 = fromIndex; index2 < STAGES.length; index2 += 1) {
+    if (!OPTIONAL_STAGE_NAMES.has(STAGES[index2].name)) return { required: STAGES[index2].name, skippable };
+    skippable.push(STAGES[index2].name);
+  }
+  return { required: null, skippable };
+};
+const readStageFacts = (store) => {
+  var _a, _b, _c;
+  const state2 = store.getState();
+  const inspection = (_a = state2.reportStructureResolution) == null ? void 0 : _a.rowInspection;
+  return {
+    rows: readCurrentRowCount(store),
+    columns: ((_b = state2.columnProfiles) == null ? void 0 : _b.length) ?? null,
+    residualNoiseCandidates: inspection ? inspection.residualUnknownRowIndexes.length + inspection.residualSummaryLikeRowIndexes.length : null,
+    dataQualityNotes: ((_c = state2.dataQualityIssues) == null ? void 0 : _c.length) ?? null
+  };
+};
 const createIdentity = (prefix) => {
   var _a, _b;
   return `${prefix}-${((_b = (_a = globalThis.crypto) == null ? void 0 : _a.randomUUID) == null ? void 0 : _b.call(_a)) ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
@@ -91777,6 +91942,7 @@ const run = async (request, store, checkpoint, streamOverride, options2 = {}) =>
   const executors = createInitialAnalysisStageExecutors();
   let recoveryEnabled = !((_d = (_c = store.getState().csvData) == null ? void 0 : _c.backing) == null ? void 0 : _d.ephemeral);
   let providerTurns = 0;
+  let invalidStageRequests = 0;
   const timer = setTimeout(
     () => controller.abort(new Error("The Pi initial-analysis time budget expired.")),
     INITIAL_ANALYSIS_BUDGET_MS
@@ -91809,17 +91975,45 @@ const run = async (request, store, checkpoint, streamOverride, options2 = {}) =>
   const tool = {
     name: "run_next_analysis_stage",
     label: "Run next analysis stage",
-    description: "Run the next app-governed CSV analysis stage. Call repeatedly until all nine stages are complete. The host chooses the stage and arguments; no raw rows are sent to this tool.",
-    parameters: _Object_({}),
+    description: "Run an app-governed CSV analysis stage. With no arguments it runs the next required stage. Pass `stage` only to skip the optional cleaning stages (dataset.suggestCleaningPlan, dataset.applyTransform) when the earlier results show the data needs no cleaning. The host validates the request and owns all arguments; no raw rows are sent to this tool.",
+    parameters: _Object_({
+      stage: Optional(String$1({ description: "Stage name to run next; later than the next stage only when every stage in between is optional." })),
+      reason: Optional(String$1({ description: "One short sentence on why." }))
+    }),
     executionMode: "sequential",
     replay: "never",
-    execute: async (_id, _args, signal) => {
+    execute: async (_id, args, signal) => {
       var _a2;
       if (nextStageIndex >= STAGES.length) {
         return { details: void 0, content: [{ type: "text", text: "All stages are complete." }], terminate: true };
       }
       if ((signal == null ? void 0 : signal.aborted) || controller.signal.aborted) {
         throw (signal == null ? void 0 : signal.reason) ?? controller.signal.reason;
+      }
+      const requestedName = typeof (args == null ? void 0 : args.stage) === "string" ? args.stage.trim() : "";
+      if (requestedName) {
+        const choices = describeStageChoices(nextStageIndex);
+        const requestedIndex = STAGES.findIndex((candidate) => candidate.name === requestedName);
+        const allowed = requestedIndex === nextStageIndex || requestedIndex > nextStageIndex && choices.skippable.length > 0 && requestedName === choices.required || requestedIndex > nextStageIndex && choices.skippable.includes(requestedName);
+        if (allowed) {
+          invalidStageRequests = 0;
+          if (requestedIndex > nextStageIndex) {
+            emitAgentEvent(store, {
+              runId: runtimeRunId,
+              phase: "execution",
+              step: "pi_skipped_optional_stages",
+              status: "done",
+              message: `Pi skipped ${STAGES.slice(nextStageIndex, requestedIndex).map((item) => item.name).join(", ")}.`,
+              detail: { runtimeOwner: "pi", reason: String(args.reason ?? "").slice(0, 200) }
+            });
+            nextStageIndex = requestedIndex;
+          }
+        } else {
+          invalidStageRequests += 1;
+          if (invalidStageRequests <= MAX_INVALID_STAGE_REQUESTS) {
+            throw new Error(`Stage "${requestedName}" cannot run now. Next required stage: ${choices.required ?? "none"}; optional stages you may skip first: ${choices.skippable.join(", ") || "none"}.`);
+          }
+        }
       }
       const stageIndex = nextStageIndex;
       const stage = STAGES[stageIndex];
@@ -91884,7 +92078,10 @@ const run = async (request, store, checkpoint, streamOverride, options2 = {}) =>
           decision: result.decision,
           summary: result.summary,
           warningCodes: result.warningCodes,
-          remainingStages: STAGES.length - nextStageIndex
+          remainingStages: STAGES.length - nextStageIndex,
+          nextRequired: describeStageChoices(nextStageIndex).required,
+          optionalStagesYouMaySkip: describeStageChoices(nextStageIndex).skippable,
+          facts: readStageFacts(store)
         }) }],
         terminate: result.decision === "fail" || nextStageIndex === STAGES.length
       };
@@ -91896,7 +92093,9 @@ const run = async (request, store, checkpoint, streamOverride, options2 = {}) =>
         "You coordinate the app-governed CSV analysis lifecycle.",
         `Dataset: ${request.datasetId}; version: ${request.datasetVersion}.`,
         `Research goal: ${request.researchGoal}`,
-        "Call run_next_analysis_stage repeatedly. The host enforces the exact stage order and owns all data and mutations.",
+        "Stages in order: " + STAGES.map((item) => item.name).join(", ") + ".",
+        "Call run_next_analysis_stage repeatedly. With no arguments it runs the next required stage. The host owns all data and mutations and validates every request.",
+        `You may skip ${[...OPTIONAL_STAGE_NAMES].join(" and ")} (pass stage = the stage you want next, and a short reason) only when the facts returned after dataset.detectNoiseRows show clean data: no residual noise candidates and no data quality notes. When unsure, do not skip. Every other stage is required.`,
         "Use no raw CSV rows, credentials, web access, or undeclared actions.",
         "Do not answer before the host says every stage is complete."
       ].join("\n"),
