@@ -1,4 +1,9 @@
-import { sanitizeDemoGatewayInput } from './demoGatewayInputSanitizer';
+import {
+    DEMO_SESSION_MAX_CONCURRENT_REQUESTS,
+    createConcurrencyLimiter,
+    releaseWhenBodyDone,
+} from './demoGatewayConcurrency';
+import { endsWithAssistantMessage, sanitizeDemoGatewayInput } from './demoGatewayInputSanitizer';
 import {
     getDemoGatewaySession,
     invalidateDemoGatewaySession,
@@ -27,8 +32,6 @@ export const fetchWithoutForbiddenUserAgent: typeof fetch = (
     });
 };
 
-const SESSION_LIMIT_MESSAGE = 'demo session request limit reached';
-
 const sendWithSession = async (request: Request, body: Record<string, unknown>) => {
     const session = await getDemoGatewaySession();
     const headers = new Headers(request.headers);
@@ -41,19 +44,35 @@ const sendWithSession = async (request: Request, body: Record<string, unknown>) 
     return { response, token: session.token };
 };
 
-/** True when the gateway says this session is expired or has spent its request cap. */
-const isRefreshableRejection = async (response: Response): Promise<boolean> => {
-    if (response.status === 401) return true;
-    if (response.status !== 429) return false;
-    const { message } = await readGatewayErrorBody(response);
-    return Boolean(message?.toLowerCase().includes(SESSION_LIMIT_MESSAGE));
+const SESSION_LIMIT_MESSAGE = 'demo session request limit reached';
+const CONCURRENCY_RETRY_DELAYS_MS = [400, 1200];
+
+let requestLimiter = createConcurrencyLimiter(DEMO_SESSION_MAX_CONCURRENT_REQUESTS);
+
+export const resetDemoGatewayRequestLimiterForTests = (): void => {
+    requestLimiter = createConcurrencyLimiter(DEMO_SESSION_MAX_CONCURRENT_REQUESTS);
 };
+
+type Rejection = 'refresh_session' | 'wait_for_slot' | null;
+
+/** Classifies gateway rejections the client can recover from by itself. */
+const classifyRejection = async (response: Response): Promise<Rejection> => {
+    if (response.status === 401) return 'refresh_session';
+    if (response.status !== 429) return null;
+    const { code, message } = await readGatewayErrorBody(response);
+    if (code === 'DEMO_SESSION_REQUEST_LIMIT' || message?.toLowerCase().includes(SESSION_LIMIT_MESSAGE)) {
+        return 'refresh_session';
+    }
+    return code === 'DEMO_SESSION_CONCURRENCY_LIMIT' ? 'wait_for_slot' : null;
+};
+
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
 /**
  * Enforce the demo gateway's request contract at the final browser boundary:
- * no max_output_tokens, a short-lived dmo_ bearer token, and the session's
- * model alias. An expired or exhausted session is refreshed once and the same
- * request is replayed.
+ * confirmed-schema input items, no max_output_tokens/top_p, a short-lived dmo_
+ * bearer token, the session's model alias, at most 2 requests in flight, and
+ * one session refresh (plus short waits for a free slot) on recoverable 4xx.
  */
 export const fetchDefaultGateway: typeof fetch = async (input, init) => {
     const request = new Request(input, init);
@@ -71,12 +90,37 @@ export const fetchDefaultGateway: typeof fetch = async (input, init) => {
         throw new Error('The demo gateway requires a JSON object request body.');
     }
 
-    const body = sanitizeDemoGatewayInput({ ...payload as Record<string, unknown> });
+    const body = sanitizeDemoGatewayInput(payload as Record<string, unknown>);
     delete body.max_output_tokens;
+    if (endsWithAssistantMessage(body.input)) {
+        console.warn('[DemoGateway] Request history ends with an assistant message; the upstream model may reject it.');
+    }
 
-    const first = await sendWithSession(request.clone(), body);
-    if (!await isRefreshableRejection(first.response)) return first.response;
+    let refreshed = false;
+    let slotWaits = 0;
+    for (;;) {
+        const release = await requestLimiter.acquire();
+        let outcome: { response: Response; token: string };
+        try {
+            outcome = await sendWithSession(request.clone(), body);
+        } catch (error) {
+            release();
+            throw error;
+        }
 
-    invalidateDemoGatewaySession(first.token);
-    return (await sendWithSession(request, body)).response;
+        const rejection = await classifyRejection(outcome.response);
+        const canRefresh = rejection === 'refresh_session' && !refreshed;
+        const canWait = rejection === 'wait_for_slot' && slotWaits < CONCURRENCY_RETRY_DELAYS_MS.length;
+        if (!canRefresh && !canWait) return releaseWhenBodyDone(outcome.response, release);
+
+        await outcome.response.body?.cancel().catch(() => undefined);
+        release();
+        if (canRefresh) {
+            refreshed = true;
+            invalidateDemoGatewaySession(outcome.token);
+        } else {
+            await sleep(CONCURRENCY_RETRY_DELAYS_MS[slotWaits]);
+            slotWaits += 1;
+        }
+    }
 };

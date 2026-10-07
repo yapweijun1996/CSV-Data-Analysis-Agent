@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-Vo4zCLvq.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-C-_IUtO6.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-BWl1NFPM.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_google-generative-ai-fLrSG3po.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_simple-options-BZfpb1PG.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_openai-responses-BOJ5V4qW.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -5484,16 +5484,16 @@ const unpivotHierarchyDepthMappingSchema = {
   },
   required: ["sourceRowIndex", "depth"]
 };
-const isRecord$3 = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
+const isRecord$4 = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
 const OPERATION_WRAPPER_KEYS = ["args", "params", "payload", "config", "operation"];
 const normalizeString$3 = (value2) => typeof value2 === "string" ? value2.trim() : "";
 const flattenOperationRecord = (value2) => {
-  if (!isRecord$3(value2)) return null;
+  if (!isRecord$4(value2)) return null;
   let flattened = { ...value2 };
   for (let depth = 0; depth < 3; depth += 1) {
     let changed = false;
     for (const key2 of OPERATION_WRAPPER_KEYS) {
-      const nested = isRecord$3(flattened[key2]) ? flattened[key2] : null;
+      const nested = isRecord$4(flattened[key2]) ? flattened[key2] : null;
       if (!nested) {
         continue;
       }
@@ -5527,7 +5527,7 @@ const normalizeFilterOperator = (value2) => {
   return "";
 };
 const normalizeLooseFilterPredicate = (value2) => {
-  if (!isRecord$3(value2)) return null;
+  if (!isRecord$4(value2)) return null;
   const column = normalizeString$3(value2.column ?? value2.columnName ?? value2.field ?? value2.key ?? value2.name);
   const inferredOperator = normalizeFilterOperator(
     value2.operator ?? value2.op ?? value2.comparator ?? value2.matchType ?? ("equals" in value2 ? "eq" : void 0) ?? ("is" in value2 ? "eq" : void 0) ?? ("match" in value2 ? "eq" : void 0) ?? ("notEquals" in value2 ? "neq" : void 0) ?? ("not" in value2 ? "neq" : void 0) ?? ("gt" in value2 ? "gt" : void 0) ?? ("gte" in value2 ? "gte" : void 0) ?? ("lt" in value2 ? "lt" : void 0) ?? ("lte" in value2 ? "lte" : void 0)
@@ -5552,13 +5552,13 @@ const normalizeFilterPredicate$1 = (value2) => {
   return normalizeLooseFilterPredicate(value2);
 };
 const normalizeFilterPredicateGroup$1 = (value2) => {
-  if (!isRecord$3(value2)) return null;
+  if (!isRecord$4(value2)) return null;
   const sourcePredicates = Array.isArray(value2.predicates) ? value2.predicates : Array.isArray(value2.conditions) ? value2.conditions : [];
   const predicates = sourcePredicates.map(normalizeFilterPredicate$1).filter((predicate) => Boolean(predicate));
   return predicates.length > 0 ? { predicates } : null;
 };
 const extractFilterPredicates = (value2) => {
-  if (!isRecord$3(value2)) return void 0;
+  if (!isRecord$4(value2)) return void 0;
   if (Array.isArray(value2.predicates)) {
     const predicates = value2.predicates.map(normalizeFilterPredicate$1).filter((predicate) => Boolean(predicate));
     return predicates.length > 0 ? predicates : void 0;
@@ -5567,11 +5567,11 @@ const extractFilterPredicates = (value2) => {
     const predicates = value2.filters.map(normalizeFilterPredicate$1).filter((predicate) => Boolean(predicate));
     return predicates.length > 0 ? predicates : void 0;
   }
-  if (isRecord$3(value2.predicate)) {
+  if (isRecord$4(value2.predicate)) {
     const predicate = normalizeFilterPredicate$1(value2.predicate);
     return predicate ? [predicate] : void 0;
   }
-  if (isRecord$3(value2.where)) {
+  if (isRecord$4(value2.where)) {
     const wherePredicates = extractFilterPredicates(value2.where);
     if (wherePredicates == null ? void 0 : wherePredicates.length) return wherePredicates;
     const directWherePredicate = normalizeFilterPredicate$1(value2.where);
@@ -5581,14 +5581,14 @@ const extractFilterPredicates = (value2) => {
   return directPredicate ? [directPredicate] : void 0;
 };
 const extractFilterPredicateGroups = (value2) => {
-  if (!isRecord$3(value2)) return void 0;
+  if (!isRecord$4(value2)) return void 0;
   if (Array.isArray(value2.groups)) {
     const groups = value2.groups.map(normalizeFilterPredicateGroup$1).filter((group) => Boolean(group));
     return groups.length > 0 ? groups : void 0;
   }
   if (Array.isArray(value2.or)) {
     const groups = value2.or.map((item) => {
-      if (isRecord$3(item) && (Array.isArray(item.predicates) || Array.isArray(item.conditions))) {
+      if (isRecord$4(item) && (Array.isArray(item.predicates) || Array.isArray(item.conditions))) {
         return normalizeFilterPredicateGroup$1(item);
       }
       const predicate = normalizeFilterPredicate$1(item);
@@ -5596,7 +5596,7 @@ const extractFilterPredicateGroups = (value2) => {
     }).filter((group) => Boolean(group));
     return groups.length > 0 ? groups : void 0;
   }
-  if (isRecord$3(value2.where)) {
+  if (isRecord$4(value2.where)) {
     return extractFilterPredicateGroups(value2.where);
   }
   return void 0;
@@ -5648,7 +5648,7 @@ const normalizeQueryWhereClauseLike = (value2) => {
     const predicates2 = value2.map(normalizeFilterPredicate$1).filter((predicate) => Boolean(predicate));
     return predicates2.length > 0 ? { predicates: predicates2 } : void 0;
   }
-  if (!isRecord$3(value2)) {
+  if (!isRecord$4(value2)) {
     return void 0;
   }
   const predicates = extractFilterPredicates(value2);
@@ -5662,14 +5662,14 @@ const normalizeQueryWhereClauseLike = (value2) => {
   };
 };
 const normalizeRenameMappings = (value2) => {
-  if (isRecord$3(value2)) {
+  if (isRecord$4(value2)) {
     return Object.entries(value2).map(([from2, to]) => ({ from: normalizeString$3(from2), to: normalizeString$3(to) })).filter((mapping) => Boolean(mapping.from && mapping.to));
   }
   if (!Array.isArray(value2)) return [];
-  return value2.map((item) => isRecord$3(item) ? { from: normalizeString$3(item.from), to: normalizeString$3(item.to) } : null).filter((mapping) => Boolean((mapping == null ? void 0 : mapping.from) && mapping.to));
+  return value2.map((item) => isRecord$4(item) ? { from: normalizeString$3(item.from), to: normalizeString$3(item.to) } : null).filter((mapping) => Boolean((mapping == null ? void 0 : mapping.from) && mapping.to));
 };
 const normalizeReplacementEntry = (value2) => {
-  if (!isRecord$3(value2)) {
+  if (!isRecord$4(value2)) {
     return null;
   }
   const from2 = normalizeString$3(
@@ -5684,7 +5684,7 @@ const normalizeReplacementEntry = (value2) => {
   return column ? { from: from2, to, column } : { from: from2, to };
 };
 const normalizeReplaceValueReplacements = (value2) => {
-  if (isRecord$3(value2)) {
+  if (isRecord$4(value2)) {
     const directEntry = normalizeReplacementEntry(value2);
     if (directEntry) {
       return [directEntry];
@@ -5707,7 +5707,7 @@ const normalizeCastTargetType = (value2) => {
   const normalized = raw === "numerical" || raw === "numeric" || raw === "float" || raw === "double" || raw === "decimal" || raw === "int" || raw === "integer" ? "number" : raw;
   return ["number", "currency", "percentage", "date", "boolean", "string"].includes(normalized) ? normalized : null;
 };
-const isRecordLike$1 = isRecord$3;
+const isRecordLike$1 = isRecord$4;
 const isValidLabelMapping = (mapping) => Boolean(mapping == null ? void 0 : mapping.sourceColumn);
 const isValidLabelColumn = (labelColumn) => Boolean(labelColumn == null ? void 0 : labelColumn.outputColumn) && Array.isArray(labelColumn == null ? void 0 : labelColumn.mappings) && labelColumn.mappings.some(isValidLabelMapping);
 const normalizeUnpivotLabelColumns = (operation) => {
@@ -6307,7 +6307,7 @@ const DEFAULT_ROW_CLASS_COLUMN = "RowClass";
 const DEFAULT_HIERARCHY_DEPTH_COLUMN = "HierarchyDepth";
 const DEFAULT_SOURCE_ROW_INDEX_COLUMN = "SourceRowIndex";
 const cloneRows$3 = (rows) => rows.map((row) => ({ ...row }));
-const isRecord$2 = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
+const isRecord$3 = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
 const getColumns$1 = (rows) => {
   const columns2 = /* @__PURE__ */ new Set();
   rows.forEach((row) => {
@@ -6552,7 +6552,7 @@ const appendDerivedMetricRows = (rows, operation) => {
 };
 const comparePredicateGroup = (row, group) => Array.isArray(group.predicates) && group.predicates.every((predicate) => comparePredicate(row, predicate));
 const normalizeFilterPredicate = (value2) => {
-  if (!isRecord$2(value2)) return null;
+  if (!isRecord$3(value2)) return null;
   const column = typeof value2.column === "string" ? value2.column.trim() : "";
   const operator = typeof value2.operator === "string" ? value2.operator : "";
   if (!column || !FILTER_OPERATORS.has(operator)) {
@@ -6568,7 +6568,7 @@ const normalizeFilterPredicate = (value2) => {
   return predicate;
 };
 const normalizeFilterPredicateGroup = (value2) => {
-  if (!isRecord$2(value2) || !Array.isArray(value2.predicates)) return null;
+  if (!isRecord$3(value2) || !Array.isArray(value2.predicates)) return null;
   const predicates = value2.predicates.map(normalizeFilterPredicate).filter((predicate) => Boolean(predicate));
   if (predicates.length === 0) {
     return null;
@@ -6609,10 +6609,10 @@ const coerceAiOperationShape = (value2, explanation, index2) => {
     if (rawId && ((_a = getDataOperationManifest(rawId)) == null ? void 0 : _a.type)) {
       return rawId;
     }
-    if (typeof candidate.newColumn === "string" && isRecord$2(candidate.expression)) {
+    if (typeof candidate.newColumn === "string" && isRecord$3(candidate.expression)) {
       return "derive_column";
     }
-    if (Array.isArray(candidate.groupByColumns) && typeof candidate.labelColumn === "string" && typeof candidate.valueColumn === "string" && typeof candidate.outputMetricLabel === "string" && isRecord$2(candidate.formula)) {
+    if (Array.isArray(candidate.groupByColumns) && typeof candidate.labelColumn === "string" && typeof candidate.valueColumn === "string" && typeof candidate.outputMetricLabel === "string" && isRecord$3(candidate.formula)) {
       return "derive_metric_by_label";
     }
     if (Array.isArray(candidate.sourceColumns) && typeof candidate.keyColumn === "string" && typeof candidate.valueColumn === "string") {
@@ -6639,7 +6639,7 @@ const coerceAiOperationShape = (value2, explanation, index2) => {
     if (Array.isArray(candidate.keyColumns) && typeof candidate.keep === "string") {
       return "dedupe_rows";
     }
-    if (candidate.mappings !== void 0 || isRecord$2(candidate.columns) && !Array.isArray(candidate.columns)) {
+    if (candidate.mappings !== void 0 || isRecord$3(candidate.columns) && !Array.isArray(candidate.columns)) {
       return "rename_columns";
     }
     return "";
@@ -9852,7 +9852,7 @@ const createQueryPlanFromFilterOperation = (operation, overrides) => ({
     ...operation.groups ? { groups: operation.groups } : {}
   }
 });
-const isRecord$1 = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
+const isRecord$2 = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
 const isMissingValue = (value2) => {
   if (value2 === null || value2 === void 0) return true;
   return typeof value2 === "string" && value2.trim() === "";
@@ -10013,7 +10013,7 @@ const calculatePercentile = (values2, percentile2) => {
   return sorted[index2] ?? null;
 };
 const normalizePostAggregatePredicate$1 = (predicate) => {
-  if (!isRecord$1(predicate)) {
+  if (!isRecord$2(predicate)) {
     return null;
   }
   const column = normalizeString$3(predicate.column);
@@ -10028,12 +10028,12 @@ const normalizePostAggregatePredicate$1 = (predicate) => {
   };
 };
 const normalizePostAggregateClause$1 = (value2) => {
-  if (!isRecord$1(value2)) {
+  if (!isRecord$2(value2)) {
     return void 0;
   }
   const predicates = Array.isArray(value2.predicates) ? value2.predicates.map(normalizePostAggregatePredicate$1).filter((predicate) => Boolean(predicate)) : void 0;
   const groups = Array.isArray(value2.groups) ? value2.groups.map((group) => {
-    if (!isRecord$1(group) || !Array.isArray(group.predicates)) {
+    if (!isRecord$2(group) || !Array.isArray(group.predicates)) {
       return null;
     }
     const normalizedPredicates = group.predicates.map(normalizePostAggregatePredicate$1).filter((predicate) => Boolean(predicate));
@@ -33842,30 +33842,139 @@ const waitForCloudAiConnectivity = async (abortSignal) => {
     abortSignal == null ? void 0 : abortSignal.addEventListener("abort", handleAbort, { once: true });
   });
 };
-const CONFIRMED_ITEM_FIELDS = {
-  reasoning: {
-    allowed: ["type", "id", "summary", "encrypted_content"],
-    defaults: { summary: [] }
-  }
+const DEMO_SESSION_MAX_CONCURRENT_REQUESTS = 2;
+const createConcurrencyLimiter = (max2) => {
+  let active = 0;
+  const waiting = [];
+  const grant = () => {
+    active += 1;
+    let released = false;
+    return () => {
+      var _a;
+      if (released) return;
+      released = true;
+      active -= 1;
+      (_a = waiting.shift()) == null ? void 0 : _a();
+    };
+  };
+  return {
+    acquire: () => new Promise((resolve2) => {
+      if (active < max2) resolve2(grant());
+      else waiting.push(() => resolve2(grant()));
+    })
+  };
 };
-const reduceItem = (item) => {
-  if (!item || typeof item !== "object" || Array.isArray(item)) return item;
-  const record = item;
-  const type = typeof record.type === "string" ? record.type : void 0;
-  const rule = type ? CONFIRMED_ITEM_FIELDS[type] : void 0;
-  if (!rule) return item;
-  const reduced = {};
-  for (const field2 of rule.allowed) {
-    if (record[field2] !== void 0) reduced[field2] = record[field2];
+const NULL_BODY_STATUSES = /* @__PURE__ */ new Set([101, 204, 205, 304]);
+const MAX_SLOT_HOLD_MS = 10 * 60 * 1e3;
+const releaseWhenBodyDone = (response, releaseSlot, maxHoldMs = MAX_SLOT_HOLD_MS) => {
+  if (!response.body || NULL_BODY_STATUSES.has(response.status)) {
+    releaseSlot();
+    return response;
   }
-  for (const [field2, fallback] of Object.entries(rule.defaults ?? {})) {
-    const current2 = reduced[field2];
-    const missing = current2 === void 0 || Array.isArray(fallback) && !Array.isArray(current2);
-    if (missing) reduced[field2] = fallback;
+  const holdTimer = setTimeout(releaseSlot, maxHoldMs);
+  const release = () => {
+    clearTimeout(holdTimer);
+    releaseSlot();
+  };
+  const reader = response.body.getReader();
+  const body = new ReadableStream({
+    async pull(controller) {
+      try {
+        const { done, value: value2 } = await reader.read();
+        if (done) {
+          controller.close();
+          release();
+        } else {
+          controller.enqueue(value2);
+        }
+      } catch (error2) {
+        release();
+        controller.error(error2);
+      }
+    },
+    cancel(reason) {
+      release();
+      return reader.cancel(reason);
+    }
+  });
+  return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+};
+const isRecord$1 = (value2) => Boolean(value2) && typeof value2 === "object" && !Array.isArray(value2);
+const pick = (record, fields) => {
+  const reduced = {};
+  for (const field2 of fields) {
+    if (record[field2] !== void 0) reduced[field2] = record[field2];
   }
   return reduced;
 };
-const sanitizeDemoGatewayInput = (body) => Array.isArray(body.input) ? { ...body, input: body.input.map(reduceItem) } : body;
+const stringifyToolOutput = (output2) => {
+  if (typeof output2 === "string") return output2;
+  if (Array.isArray(output2)) {
+    return output2.map((part) => {
+      if (!isRecord$1(part)) return String(part ?? "");
+      if (typeof part.text === "string") return part.text;
+      return part.type === "input_image" ? "[image omitted]" : "";
+    }).filter(Boolean).join("\n");
+  }
+  return output2 === void 0 || output2 === null ? "" : JSON.stringify(output2);
+};
+const reduceAssistantPart = (part) => {
+  if (!isRecord$1(part) || part.type !== "output_text") return part;
+  return { type: "output_text", text: part.text, annotations: [] };
+};
+const reduceAssistantMessage = (item) => {
+  const reduced = pick(item, ["type", "role", "id", "phase"]);
+  if (reduced.phase !== "commentary" && reduced.phase !== "final_answer") delete reduced.phase;
+  reduced.content = Array.isArray(item.content) ? item.content.map(reduceAssistantPart) : item.content;
+  return reduced;
+};
+const isAssistantMessage = (item) => item.role === "assistant" && (item.type === void 0 || item.type === "message");
+const reduceItems = (items) => {
+  const reduced = [];
+  let reasoningDropped = false;
+  for (const item of items) {
+    if (!isRecord$1(item)) {
+      reduced.push(item);
+      continue;
+    }
+    if (item.type === "reasoning") {
+      if (typeof item.encrypted_content !== "string" || !item.encrypted_content) {
+        reasoningDropped = true;
+        continue;
+      }
+      reasoningDropped = false;
+      reduced.push({
+        ...pick(item, ["type", "id", "encrypted_content"]),
+        summary: Array.isArray(item.summary) ? item.summary : []
+      });
+      continue;
+    }
+    if (item.type === "function_call") {
+      const call2 = pick(item, ["type", "id", "call_id", "name", "arguments", "status"]);
+      if (reasoningDropped) delete call2.id;
+      reduced.push(call2);
+      continue;
+    }
+    reasoningDropped = false;
+    if (item.type === "function_call_output") {
+      reduced.push({ ...pick(item, ["type", "id", "call_id", "status"]), output: stringifyToolOutput(item.output) });
+      continue;
+    }
+    reduced.push(isAssistantMessage(item) && item.type === "message" ? reduceAssistantMessage(item) : item);
+  }
+  return reduced;
+};
+const endsWithAssistantMessage = (input) => {
+  if (!Array.isArray(input) || input.length === 0) return false;
+  const last = input[input.length - 1];
+  return isRecord$1(last) && isAssistantMessage(last);
+};
+const sanitizeDemoGatewayInput = (body) => {
+  const sanitized = { ...body };
+  if (Array.isArray(body.input)) sanitized.input = reduceItems(body.input);
+  delete sanitized.top_p;
+  return sanitized;
+};
 const DEMO_SESSION_REFRESH_MARGIN_MS = 6e4;
 class DemoGatewayError extends Error {
   constructor(message, status, code) {
@@ -33941,7 +34050,6 @@ const fetchWithoutForbiddenUserAgent = (input, init) => {
     headers
   });
 };
-const SESSION_LIMIT_MESSAGE = "demo session request limit reached";
 const sendWithSession = async (request, body) => {
   const session = await getDemoGatewaySession();
   const headers = new Headers(request.headers);
@@ -33953,13 +34061,21 @@ const sendWithSession = async (request, body) => {
   }));
   return { response, token: session.token };
 };
-const isRefreshableRejection = async (response) => {
-  if (response.status === 401) return true;
-  if (response.status !== 429) return false;
-  const { message } = await readGatewayErrorBody(response);
-  return Boolean(message == null ? void 0 : message.toLowerCase().includes(SESSION_LIMIT_MESSAGE));
+const SESSION_LIMIT_MESSAGE = "demo session request limit reached";
+const CONCURRENCY_RETRY_DELAYS_MS = [400, 1200];
+let requestLimiter = createConcurrencyLimiter(DEMO_SESSION_MAX_CONCURRENT_REQUESTS);
+const classifyRejection = async (response) => {
+  if (response.status === 401) return "refresh_session";
+  if (response.status !== 429) return null;
+  const { code, message } = await readGatewayErrorBody(response);
+  if (code === "DEMO_SESSION_REQUEST_LIMIT" || (message == null ? void 0 : message.toLowerCase().includes(SESSION_LIMIT_MESSAGE))) {
+    return "refresh_session";
+  }
+  return code === "DEMO_SESSION_CONCURRENCY_LIMIT" ? "wait_for_slot" : null;
 };
+const sleep = (ms) => new Promise((resolve2) => setTimeout(resolve2, ms));
 const fetchDefaultGateway = async (input, init) => {
+  var _a;
   const request = new Request(input, init);
   if (request.method.toUpperCase() !== "POST") {
     return fetchWithoutForbiddenUserAgent(request);
@@ -33973,12 +34089,36 @@ const fetchDefaultGateway = async (input, init) => {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     throw new Error("The demo gateway requires a JSON object request body.");
   }
-  const body = sanitizeDemoGatewayInput({ ...payload });
+  const body = sanitizeDemoGatewayInput(payload);
   delete body.max_output_tokens;
-  const first = await sendWithSession(request.clone(), body);
-  if (!await isRefreshableRejection(first.response)) return first.response;
-  invalidateDemoGatewaySession(first.token);
-  return (await sendWithSession(request, body)).response;
+  if (endsWithAssistantMessage(body.input)) {
+    console.warn("[DemoGateway] Request history ends with an assistant message; the upstream model may reject it.");
+  }
+  let refreshed = false;
+  let slotWaits = 0;
+  for (; ; ) {
+    const release = await requestLimiter.acquire();
+    let outcome;
+    try {
+      outcome = await sendWithSession(request.clone(), body);
+    } catch (error2) {
+      release();
+      throw error2;
+    }
+    const rejection = await classifyRejection(outcome.response);
+    const canRefresh = rejection === "refresh_session" && !refreshed;
+    const canWait = rejection === "wait_for_slot" && slotWaits < CONCURRENCY_RETRY_DELAYS_MS.length;
+    if (!canRefresh && !canWait) return releaseWhenBodyDone(outcome.response, release);
+    await ((_a = outcome.response.body) == null ? void 0 : _a.cancel().catch(() => void 0));
+    release();
+    if (canRefresh) {
+      refreshed = true;
+      invalidateDemoGatewaySession(outcome.token);
+    } else {
+      await sleep(CONCURRENCY_RETRY_DELAYS_MS[slotWaits]);
+      slotWaits += 1;
+    }
+  }
 };
 const LOCAL_DIAGNOSTIC_RETENTION_MS = 7 * 24 * 60 * 60 * 1e3;
 const LOCAL_DIAGNOSTIC_MAX_TOTAL_BYTES = 20 * 1024 * 1024;
@@ -90496,7 +90636,7 @@ const executeInitialAnalysisStageTool = async (params) => {
     params.args
   );
 };
-const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-Vo4zCLvq.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
+const googleGenerativeAIApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_google-generative-ai-fLrSG3po.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values$1 = {
   "google-generative-ai": /* @__PURE__ */ JSON.parse('{"deep-research-max-preview-04-2026":{"id":"deep-research-max-preview-04-2026","name":"Deep Research Max Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"deep-research-preview-04-2026":{"id":"deep-research-preview-04-2026","name":"Deep Research Preview (Apr-21-2026)","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-computer-use-preview-10-2025":{"id":"gemini-2.5-computer-use-preview-10-2025","name":"Gemini 2.5 Computer Use Preview 10-2025","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash":{"id":"gemini-2.5-flash","name":"Gemini 2.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-flash-lite":{"id":"gemini-2.5-flash-lite","name":"Gemini 2.5 Flash-Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.01,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-2.5-pro":{"id":"gemini-2.5-pro","name":"Gemini 2.5 Pro","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3-flash-preview":{"id":"gemini-3-flash-preview","name":"Gemini 3 Flash Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.5,"output":3,"cacheRead":0.05,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite":{"id":"gemini-3.1-flash-lite","name":"Gemini 3.1 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-image":{"id":"gemini-3.1-flash-lite-image","name":"Nano Banana 2 Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":null,"medium":null,"high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":65536,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-lite-preview":{"id":"gemini-3.1-flash-lite-preview","name":"Gemini 3.1 Flash Lite Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-flash-live-preview":{"id":"gemini-3.1-flash-live-preview","name":"Gemini 3.1 Flash Live Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0,"cacheWrite":0},"contextWindow":131072,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview":{"id":"gemini-3.1-pro-preview","name":"Gemini 3.1 Pro Preview","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.1-pro-preview-customtools":{"id":"gemini-3.1-pro-preview-customtools","name":"Gemini 3.1 Pro Preview Custom Tools","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash":{"id":"gemini-3.5-flash","name":"Gemini 3.5 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.5-flash-lite":{"id":"gemini-3.5-flash-lite","name":"Gemini 3.5 Flash Lite","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.3,"output":2.5,"cacheRead":0.03,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.6-flash":{"id":"gemini-3.6-flash","name":"Gemini 3.6 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.7-flash":{"id":"gemini-3.7-flash","name":"Gemini 3.7 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-3.8-flash":{"id":"gemini-3.8-flash","name":"Gemini 3.8 Flash","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.75,"output":3.75,"cacheRead":0.075,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-latest":{"id":"gemini-flash-latest","name":"Gemini Flash Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":1.5,"output":9,"cacheRead":0.15,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemini-flash-lite-latest":{"id":"gemini-flash-lite-latest","name":"Gemini Flash-Lite Latest","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"input":["text","image"],"cost":{"input":0.25,"output":1.5,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1048576,"maxTokens":65536,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-26b-a4b-it":{"id":"gemma-4-26b-a4b-it","name":"Gemma 4 26B A4B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gemma-4-31b-it":{"id":"gemma-4-31b-it","name":"Gemma 4 31B IT","api":"google-generative-ai","provider":"google","baseUrl":"https://generativelanguage.googleapis.com/v1beta","reasoning":true,"thinkingLevelMap":{"off":null,"minimal":"MINIMAL","low":null,"medium":null,"high":"HIGH"},"input":["text","image"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":262144,"maxTokens":32768,"inputLimits":{"maxRequestBytes":20971520,"images":{"maxPerRequest":3600,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };
@@ -90514,7 +90654,7 @@ function googleProvider() {
     api: googleGenerativeAIApi()
   });
 }
-const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-BWl1NFPM.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
+const openAIResponsesApi = () => lazyApi(() => __vitePreload(() => import("./csv_data_analysis_openai-responses-BOJ5V4qW.js"), true ? __vite__mapDeps([8,2,3,4,5,6,7]) : void 0, import.meta.url));
 const values = {
   "openai-responses": /* @__PURE__ */ JSON.parse('{"gpt-4":{"id":"gpt-4","name":"GPT-4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text"],"cost":{"input":30,"output":60,"cacheRead":0,"cacheWrite":0},"contextWindow":8192,"maxTokens":8192,"compat":{"supportsStrictMode":true}},"gpt-4-turbo":{"id":"gpt-4-turbo","name":"GPT-4 Turbo","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":10,"output":30,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1":{"id":"gpt-4.1","name":"GPT-4.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-mini":{"id":"gpt-4.1-mini","name":"GPT-4.1 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.4,"output":1.6,"cacheRead":0.1,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4.1-nano":{"id":"gpt-4.1-nano","name":"GPT-4.1 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.1,"output":0.4,"cacheRead":0.025,"cacheWrite":0},"contextWindow":1047576,"maxTokens":32768,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o":{"id":"gpt-4o","name":"GPT-4o","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-05-13":{"id":"gpt-4o-2024-05-13","name":"GPT-4o (2024-05-13)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":5,"output":15,"cacheRead":0,"cacheWrite":0},"contextWindow":128000,"maxTokens":4096,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-08-06":{"id":"gpt-4o-2024-08-06","name":"GPT-4o (2024-08-06)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-2024-11-20":{"id":"gpt-4o-2024-11-20","name":"GPT-4o (2024-11-20)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":2.5,"output":10,"cacheRead":1.25,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":0.15,"output":0.6,"cacheRead":0.075,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5":{"id":"gpt-5","name":"GPT-5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-chat-latest":{"id":"gpt-5-chat-latest","name":"GPT-5 Chat Latest","api":"openai-responses","baseUrl":"https://api.openai.com/v1","provider":"openai","reasoning":false,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-mini":{"id":"gpt-5-mini","name":"GPT-5 Mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.25,"output":2,"cacheRead":0.025,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-nano":{"id":"gpt-5-nano","name":"GPT-5 Nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.05,"output":0.4,"cacheRead":0.005,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5-pro":{"id":"gpt-5-pro","name":"GPT-5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":120,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":null,"high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.1":{"id":"gpt-5.1","name":"GPT-5.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.25,"output":10,"cacheRead":0.125,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2":{"id":"gpt-5.2","name":"GPT-5.2","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-chat-latest":{"id":"gpt-5.2-chat-latest","name":"GPT-5.2 Chat","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":null,"xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.2-pro":{"id":"gpt-5.2-pro","name":"GPT-5.2 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":21,"output":168,"cacheRead":0,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-chat-latest":{"id":"gpt-5.3-chat-latest","name":"GPT-5.3 Chat (latest)","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":false,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":16384,"thinkingLevelMap":{"off":null,"xhigh":"xhigh"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex":{"id":"gpt-5.3-codex","name":"GPT-5.3 Codex","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.3-codex-spark":{"id":"gpt-5.3-codex-spark","name":"GPT-5.3 Codex Spark","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.75,"output":14,"cacheRead":0.175,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4":{"id":"gpt-5.4","name":"GPT-5.4","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2.5,"output":15,"cacheRead":0.25,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":5,"output":22.5,"cacheRead":0.5,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-mini":{"id":"gpt-5.4-mini","name":"GPT-5.4 mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.75,"output":4.5,"cacheRead":0.075,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-nano":{"id":"gpt-5.4-nano","name":"GPT-5.4 nano","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.25,"cacheRead":0.02,"cacheWrite":0},"contextWindow":400000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.4-pro":{"id":"gpt-5.4-pro","name":"GPT-5.4 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5":{"id":"gpt-5.5","name":"GPT-5.5","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":5,"output":30,"cacheRead":0.5,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":10,"output":45,"cacheRead":1,"cacheWrite":0}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.5-pro":{"id":"gpt-5.5-pro","name":"GPT-5.5 Pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":30,"output":180,"cacheRead":0,"cacheWrite":0,"tiers":[{"inputTokensAbove":272000,"input":60,"output":270,"cacheRead":0,"cacheWrite":0}]},"contextWindow":1050000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":null,"medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-luna":{"id":"gpt-5.6-luna","name":"GPT-5.6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.2,"output":1.2,"cacheRead":0.02,"cacheWrite":0.25,"tiers":[{"inputTokensAbove":272000,"input":0.4,"output":1.8,"cacheRead":0.04,"cacheWrite":0.5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-sol":{"id":"gpt-5.6-sol","name":"GPT-5.6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":20,"cacheRead":0.4,"cacheWrite":5,"tiers":[{"inputTokensAbove":272000,"input":8,"output":30,"cacheRead":0.8,"cacheWrite":10}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-5.6-terra":{"id":"gpt-5.6-terra","name":"GPT-5.6 Terra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":12,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":18,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-astra":{"id":"gpt-6-astra","name":"GPT-6 Astra","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":10,"output":50,"cacheRead":1,"cacheWrite":12.5,"tiers":[{"inputTokensAbove":272000,"input":20,"output":75,"cacheRead":2,"cacheWrite":25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-luna":{"id":"gpt-6-luna","name":"GPT-6 Luna","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":0.1,"output":0.5,"cacheRead":0.01,"cacheWrite":0.125,"tiers":[{"inputTokensAbove":272000,"input":0.2,"output":0.75,"cacheRead":0.02,"cacheWrite":0.25}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-6-sol":{"id":"gpt-6-sol","name":"GPT-6 Sol","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":10,"cacheRead":0.2,"cacheWrite":2.5,"tiers":[{"inputTokensAbove":272000,"input":4,"output":15,"cacheRead":0.4,"cacheWrite":5}]},"contextWindow":272000,"maxTokens":128000,"thinkingLevelMap":{"off":"none","minimal":null,"low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":"max"},"compat":{"supportsStrictMode":true,"supportsOpenAIGrammarTools":true,"supportsAdditionalTools":true,"supportsToolSearch":true,"supportsMidConvoSystemMessages":true,"supportsExplicitPromptCacheMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"gpt-realtime-2.1":{"id":"gpt-realtime-2.1","name":"GPT-Realtime-2.1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":4,"output":24,"cacheRead":0.4,"cacheWrite":0},"contextWindow":128000,"maxTokens":32000,"thinkingLevelMap":{"off":null,"minimal":"minimal","low":"low","medium":"medium","high":"high","xhigh":"xhigh","max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1":{"id":"o1","name":"o1","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":15,"output":60,"cacheRead":7.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o1-pro":{"id":"o1-pro","name":"o1-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":150,"output":600,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3":{"id":"o3","name":"o3","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":2,"output":8,"cacheRead":0.5,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o3-mini":{"id":"o3-mini","name":"o3-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.55,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true}},"o3-pro":{"id":"o3-pro","name":"o3-pro","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":20,"output":80,"cacheRead":0,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}},"o4-mini":{"id":"o4-mini","name":"o4-mini","api":"openai-responses","provider":"openai","baseUrl":"https://api.openai.com/v1","reasoning":true,"input":["text","image"],"cost":{"input":1.1,"output":4.4,"cacheRead":0.275,"cacheWrite":0},"contextWindow":200000,"maxTokens":100000,"thinkingLevelMap":{"off":null,"minimal":null,"low":"low","medium":"medium","high":"high","xhigh":null,"max":null},"compat":{"supportsStrictMode":true},"inputLimits":{"maxRequestBytes":536870912,"images":{"maxPerRequest":1500,"resize":{"maxWidth":2000,"maxHeight":2000,"maxBytes":4718592,"jpegQuality":80}}}}}')
 };

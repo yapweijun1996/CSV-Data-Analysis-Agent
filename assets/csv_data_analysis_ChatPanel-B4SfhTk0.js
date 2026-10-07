@@ -1,9 +1,9 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_PiBrowserLab-BlNi1BSH.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_index-BguLWYJM.js","./csv_data_analysis_vendor-state-CMf1uPe1.js"])))=>i.map(i=>d[i]);
-import { U as getTranslation, aA as normalizeClarificationRequest, aB as resolveEffectivePendingClarification, aC as resolveDisplayPlanTitle, aD as resolveSuggestedActionPrompt, aE as MAX_TIMELINE_CHAT_MESSAGES, aF as TERMINAL_CHAT_LIFECYCLE_STATES, aG as shouldShowSettingsButton, ax as shouldShowAgentThinkingModal, ay as shouldShowLongTermMemory, _ as __vitePreload, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-BPTmHNE4.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_PiBrowserLab-B6D5FlnS.js","./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js","./csv_data_analysis_vendor-react-core-DlbdMisc.js","./csv_data_analysis_index-D2EdpMXK.js","./csv_data_analysis_vendor-state-CMf1uPe1.js"])))=>i.map(i=>d[i]);
+import { U as getTranslation, aA as normalizeClarificationRequest, aB as resolveEffectivePendingClarification, aC as resolveDisplayPlanTitle, aD as resolveSuggestedActionPrompt, aE as MAX_TIMELINE_CHAT_MESSAGES, aF as TERMINAL_CHAT_LIFECYCLE_STATES, aG as shouldShowSettingsButton, ax as shouldShowAgentThinkingModal, ay as shouldShowLongTermMemory, _ as __vitePreload, g as shouldAllowSettingsSurface } from "./csv_data_analysis_app-agent-C9lXKmoK.js";
 import { a as reactExports, j as jsxRuntimeExports, W as We } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
 import { s as shallow$1 } from "./csv_data_analysis_vendor-state-CMf1uPe1.js";
-import { u as useAppStore, I as IconChangeGoal } from "./csv_data_analysis_index-BguLWYJM.js";
-import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-BF5kGlZA.js";
+import { u as useAppStore, I as IconChangeGoal } from "./csv_data_analysis_index-D2EdpMXK.js";
+import { M as MarkdownRenderer } from "./csv_data_analysis_MarkdownRenderer-CeE-D1yu.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
 import { I as IconThinking, a as IconSettings } from "./csv_data_analysis_IconSettings-FS0PVK9T.js";
 import { I as IconMemory } from "./csv_data_analysis_IconMemory-Cs1fVUAV.js";
@@ -1033,7 +1033,7 @@ const ChatComposer = ({
     /* @__PURE__ */ jsxRuntimeExports.jsx("p", { id: disclaimerTextId, className: "mt-1.5 text-center text-xs text-slate-600", children: getTranslation("chat_disclaimer_verify", language) })
   ] }) });
 };
-const PiBrowserLab = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_PiBrowserLab-BlNi1BSH.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7,8]) : void 0, import.meta.url).then((module) => ({ default: module.PiBrowserLab })));
+const PiBrowserLab = reactExports.lazy(() => __vitePreload(() => import("./csv_data_analysis_PiBrowserLab-B6D5FlnS.js"), true ? __vite__mapDeps([0,1,2,3,4,5,6,7,8]) : void 0, import.meta.url).then((module) => ({ default: module.PiBrowserLab })));
 const chatDebug = (message, detail) => {
   return;
 };
