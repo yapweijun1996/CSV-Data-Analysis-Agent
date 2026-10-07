@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import type { ReportContextResolution, ResolvedReportContext } from '../../types';
 import { getTranslation } from '../../utils/localization';
 import type { Settings } from '../../types';
-import { isUsableReportTitle } from '../../services/agent/reportContext';
+import { isSchemaDerivedReportTitle, isUsableReportTitle } from '../../services/agent/reportContext';
 
 type ReportHeaderProps = {
     reportContextResolution: ReportContextResolution | null;
@@ -11,6 +11,8 @@ type ReportHeaderProps = {
     preparedRowCount: number;
     headerDepth: number;
     summaryRowCount: number;
+    /** Column names of the dataset, used to avoid showing them as if they were a title. */
+    columnNames?: readonly string[];
     language: Settings['language'];
 };
 
@@ -86,6 +88,7 @@ const ReportHeaderComponent: React.FC<ReportHeaderProps> = ({
     preparedRowCount,
     headerDepth,
     summaryRowCount,
+    columnNames = [],
     language,
 }) => {
     const generatedAtRef = useRef<string>(
@@ -103,7 +106,9 @@ const ReportHeaderComponent: React.FC<ReportHeaderProps> = ({
         effectiveReportContext.reportTitle,
         fileName,
         'Untitled Report',
-    ].find((candidate): candidate is string => typeof candidate === 'string' && isUsableReportTitle(candidate)) ?? 'Untitled Report';
+    ].find((candidate): candidate is string => typeof candidate === 'string'
+        && isUsableReportTitle(candidate)
+        && !isSchemaDerivedReportTitle(candidate, columnNames)) ?? 'Untitled Report';
     const aiParameterLines = toLineList(aiGuess?.parameterLines);
     const effectiveParameterLines = toLineList(effectiveReportContext.parameterLines);
     const parameterLines = (aiParameterLines.length > 0 ? aiParameterLines : effectiveParameterLines).slice(0, 5);

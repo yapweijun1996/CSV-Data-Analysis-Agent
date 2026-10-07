@@ -415,6 +415,7 @@ const AnalysisPanelComponent: React.FC = () => {
             && !analysisAlreadyStarted
             && initialAnalysisFailureKind !== 'provider';
         const showReportHeader = Boolean(reportContext && csvData);
+        const reportColumnNames = Object.keys((canonicalCsvData ?? csvData)?.data?.[0] ?? {});
         const analysisTerminal = initialAnalysisStatus === 'ready'
             || initialAnalysisStatus === 'degraded'
             || initialAnalysisStatus === 'error';
@@ -494,6 +495,7 @@ const AnalysisPanelComponent: React.FC = () => {
                             preparedRowCount={getCsvDataRowCount(canonicalCsvData ?? csvData)}
                             headerDepth={(rawCsvData?.headerDepth ?? csvData!.headerDepth ?? 1)}
                             summaryRowCount={(rawCsvData?.summaryRowCount ?? rawCsvData?.summaryRows?.length ?? csvData!.summaryRowCount ?? csvData!.summaryRows?.length ?? 0)}
+                            columnNames={reportColumnNames}
                             language={language}
                         />
                     )}
@@ -563,6 +565,7 @@ const AnalysisPanelComponent: React.FC = () => {
                             preparedRowCount={getCsvDataRowCount(canonicalCsvData ?? csvData)}
                             headerDepth={(rawCsvData?.headerDepth ?? csvData!.headerDepth ?? 1)}
                             summaryRowCount={(rawCsvData?.summaryRowCount ?? rawCsvData?.summaryRows?.length ?? csvData!.summaryRowCount ?? csvData!.summaryRows?.length ?? 0)}
+                            columnNames={reportColumnNames}
                             language={language}
                         />
                     )}
