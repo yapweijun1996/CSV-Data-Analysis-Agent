@@ -69,6 +69,14 @@ class DuckDbWorkerClient {
     }>();
     private requestId = 0;
     private healthMonitor: WorkerHealthMonitor | null = null;
+    // A timeout, abort or crash terminates the worker (the only way to stop a runaway query) and
+    // with it the in-memory table. Remember the last successful load so the next query can restore it.
+    private lastLoad:
+        | { kind: 'clean'; payload: Parameters<DuckDbWorkerClient['loadCleanDataset']>[0] }
+        | { kind: 'file'; payload: Parameters<DuckDbWorkerClient['loadFileDataset']>[0] }
+        | null = null;
+    private needsRestore = false;
+    private restorePromise: Promise<void> | null = null;
 
     private ping(): Promise<unknown> {
         return this.call('ping', undefined, { timeoutMs: HEALTH_PING_TIMEOUT_MS });
@@ -101,6 +109,29 @@ class DuckDbWorkerClient {
         this.worker = null;
         this.initPromise = null;
         this.initCompleted = false;
+        if (this.lastLoad) this.needsRestore = true;
+    }
+
+    /** Re-creates the worker and reloads the dataset that a worker reset discarded. */
+    private restoreDatasetIfNeeded(abortSignal?: AbortSignal, reportDiagnostics?: WorkerDiagnosticsReporter): Promise<void> {
+        if (!this.needsRestore || !this.lastLoad) return Promise.resolve();
+        if (!this.restorePromise) {
+            const load = this.lastLoad;
+            this.restorePromise = (async () => {
+                await this.initDuckDb(45_000, abortSignal, reportDiagnostics);
+                if (load.kind === 'file') {
+                    await this.call('loadFileDataset', load.payload, { timeoutMs: 180_000, abortSignal, reportDiagnostics });
+                } else {
+                    await this.call('loadCleanDataset', load.payload, { timeoutMs: 45_000, abortSignal, reportDiagnostics });
+                }
+                // A newer load or a dispose during the restore supersedes it.
+                if (this.lastLoad === load) this.needsRestore = false;
+                console.warn(`[DuckDbWorker] Restored table "${load.payload.tableName}" after a worker reset.`);
+            })().finally(() => {
+                this.restorePromise = null;
+            });
+        }
+        return this.restorePromise;
     }
 
     private ensureWorker(): Worker {
@@ -336,7 +367,11 @@ class DuckDbWorkerClient {
         abortSignal?: AbortSignal,
         reportDiagnostics?: WorkerDiagnosticsReporter,
     ) {
-        return this.call('loadCleanDataset', payload, { timeoutMs, abortSignal, reportDiagnostics });
+        this.lastLoad = null;
+        this.needsRestore = false;
+        const result = await this.call('loadCleanDataset', payload, { timeoutMs, abortSignal, reportDiagnostics });
+        this.lastLoad = { kind: 'clean', payload };
+        return result;
     }
 
     async loadFileDataset(
@@ -357,7 +392,11 @@ class DuckDbWorkerClient {
         rowCount: number;
         preview: CsvRow[];
     }> {
-        return this.call('loadFileDataset', payload, { timeoutMs, abortSignal, reportDiagnostics });
+        this.lastLoad = null;
+        this.needsRestore = false;
+        const result = await this.call('loadFileDataset', payload, { timeoutMs, abortSignal, reportDiagnostics });
+        this.lastLoad = { kind: 'file', payload };
+        return result;
     }
 
     async executeCompiledQuery(payload: {
@@ -367,6 +406,7 @@ class DuckDbWorkerClient {
         appliedOrderBy: QueryOrderByClause[];
         appliedLimit: number;
     }, timeoutMs = 1500, abortSignal?: AbortSignal, reportDiagnostics?: WorkerDiagnosticsReporter): Promise<DataQueryResult> {
+        await this.restoreDatasetIfNeeded(abortSignal, reportDiagnostics);
         return this.call('executeCompiledQuery', payload, { timeoutMs, abortSignal, reportDiagnostics });
     }
 
@@ -375,10 +415,13 @@ class DuckDbWorkerClient {
         selectedColumns: string[];
         limit: number;
     }, timeoutMs = 5000, abortSignal?: AbortSignal, reportDiagnostics?: WorkerDiagnosticsReporter): Promise<DataQueryResult> {
+        await this.restoreDatasetIfNeeded(abortSignal, reportDiagnostics);
         return this.call('executeRawQuery', payload, { timeoutMs, abortSignal, reportDiagnostics });
     }
 
     async disposeDuckDbSession(timeoutMs = 1500, reportDiagnostics?: WorkerDiagnosticsReporter) {
+        this.lastLoad = null;
+        this.needsRestore = false;
         try {
             await this.call('disposeDuckDbSession', undefined, { timeoutMs, reportDiagnostics });
         } finally {
