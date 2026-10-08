@@ -714,3 +714,11 @@
 - **Fix**: `resolvePiProviderFetch(settings)` in `piProvider.ts` returns the gateway fetch for Default, the User-Agent-stripping fetch for OpenAI and `undefined` for Google; used by both the stream and the context compactor. Verified against the real adapter in a temporary test (custom fetch gives the exact error; no fetch proceeds to the Google API and returns its own API-key error), and a permanent test covers the helper. Pi Browser Lab (`piBrowserAgent.ts`) is OpenAI-only and unchanged.
 - **Not verified**: no real Google key was used, so a full Google analysis on Pi is unconfirmed. Branch `claude/pi-google-no-custom-fetch`, local only; not deployed.
 
+## 2026-10-08 Google on Pi: history must not end with a model turn; gemini-3.8-flash confirmed
+
+- **Confirmed**: the user's own run returned `modelVersion: gemini-3.8-flash` (goal proposal), so the id added earlier exists and the key works.
+- **Symptom**: Pi stage 8 on Google failed with HTTP 400 `Requests ending with a model turn are not supported.`
+- **Evidence for the cause**: a temporary test against the real Pi Google adapter showed that a history ending with a text-only assistant turn is sent with `contents` roles `user,model` (last = model, which Gemini rejects), while a history ending with a tool result is sent as `user,model,user` (accepted). Pi continues after a text-only model turn in several loops, so such a request can occur.
+- **Fix**: `ensureGoogleHistoryEndsWithUserTurn` in `piProvider.ts` appends a user turn (`Continue.`) when the transformed history ends with an assistant message; `createPiProviderContextTransform` applies it for the Google provider only, so every Pi agent (initial analysis, research and evidence planners, follow-up) is covered. Test added in `piProductionRuntime.test.ts`.
+- **Not verified**: which exact Pi loop produced the failing request in the user's run was not captured (the turn-trace branch `claude/pi-turn-trace` would show it), and no full Google analysis was run here. Branch `claude/pi-google-trailing-model-turn`, local only.
+

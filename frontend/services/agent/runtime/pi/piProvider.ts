@@ -1,7 +1,7 @@
 import { createModels, clampThinkingLevel, type Api, type Model } from '@earendil-works/pi-ai';
 import { googleProvider } from '@earendil-works/pi-ai/providers/google';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
-import type { StreamFn } from '@earendil-works/pi-agent-core';
+import type { AgentMessage, StreamFn } from '@earendil-works/pi-agent-core';
 import type { Settings } from '../../../../types';
 import { emitSilentFailure } from '../../monitoring/silentFailureTracker';
 import type { StoreApi } from '../../types';
@@ -61,19 +61,31 @@ export const createPiProviderStream = (settings: Settings): StreamFn => {
     });
 };
 
+/**
+ * Gemini rejects a request whose last turn is the model's ("Requests ending with a model turn are
+ * not supported"). Pi can continue after a text-only model turn, so end such a history with a user turn.
+ */
+export const ensureGoogleHistoryEndsWithUserTurn = (messages: AgentMessage[]): AgentMessage[] =>
+    messages.at(-1)?.role === 'assistant'
+        ? [...messages, { role: 'user', content: [{ type: 'text', text: 'Continue.' }], timestamp: Date.now() }]
+        : messages;
+
 export const createPiProviderContextTransform = (
     settings: Settings,
     onDegraded?: (degradation: PiCompactionDegradation) => void,
 ) => {
     const apiKey = resolveProviderApiKey(settings);
     if (!apiKey.trim()) throw new Error('The selected AI provider has no API key.');
-    return createPiProviderContextCompactor(
+    const compact = createPiProviderContextCompactor(
         resolvePiModel(settings),
         models,
         apiKey,
         resolvePiProviderFetch(settings),
         onDegraded,
     );
+    if (settings.provider !== 'google') return compact;
+    return async (messages: AgentMessage[], signal?: AbortSignal): Promise<AgentMessage[]> =>
+        ensureGoogleHistoryEndsWithUserTurn(await compact(messages, signal));
 };
 
 /** Surface degraded context compaction as a silent-failure runtime event. */
