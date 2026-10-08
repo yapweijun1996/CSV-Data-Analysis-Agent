@@ -1,4 +1,5 @@
 import { presentGatewayError } from '../../../../utils/gatewayErrorMessage';
+import { getTranslation } from '../../../../utils/localization';
 import { Agent, type AgentTool, type StreamFn } from '@earendil-works/pi-agent-core';
 import { Type } from '@earendil-works/pi-ai';
 import { resolveAnalysisCompletionGate } from '../../analysisCompletionGate';
@@ -17,7 +18,7 @@ import { createInitialAnalysisStageExecutors } from './initialAnalysisStageExecu
 import { executeInitialAnalysisStageTool, type InitialAnalysisStageActionResult } from './initialAnalysisStageTools';
 import type { InitialAnalysisRunOutcome, InitialAnalysisRunRequest } from './initialAnalysisTypes';
 import { createPiCompactionTelemetry, createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
-import { isInitialAnalysisProviderFailure } from './initialAnalysisFailure';
+import { describeInitialAnalysisFailure, isInitialAnalysisProviderFailure } from './initialAnalysisFailure';
 import { runPiResearchPlanner } from './piResearchPlanner';
 
 const STAGES = createInitialAnalysisStageToolManifests();
@@ -399,7 +400,16 @@ const run = async (
         status: status === 'failed' || noUsableResults ? 'error' : 'done',
         title: noUsableResults ? 'Unable to reliably analyze'
             : status === 'completed' ? 'Analysis ready' : 'Analysis ready with limitations',
-        subtitle: warnings[0]?.message ?? presentGatewayError(errorMessage, store.getState().settings.language),
+        subtitle: noUsableResults || status === 'failed'
+            ? describeInitialAnalysisFailure({
+                results,
+                errorText: errorMessage ? presentGatewayError(errorMessage, store.getState().settings.language) : '',
+                stageNames: STAGES.map(item => item.name),
+                stoppedStageIndex: nextStageIndex < STAGES.length ? nextStageIndex : undefined,
+                translate: (key, params) => getTranslation(key, store.getState().settings.language, params),
+                fallbackWarning: warnings[0]?.message,
+            })
+            : warnings[0]?.message ?? presentGatewayError(errorMessage, store.getState().settings.language),
         totalSteps: STAGES.length,
         currentStep: Math.min(nextStageIndex, STAGES.length),
     });
