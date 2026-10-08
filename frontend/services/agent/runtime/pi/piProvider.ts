@@ -39,10 +39,19 @@ export const resolvePiThinkingLevel = (settings: Settings) =>
     clampThinkingLevel(resolvePiModel(settings),
         settings.reasoningEffort === 'off' ? 'off' : settings.reasoningEffort ?? 'medium');
 
+/**
+ * Fetch override for a provider. The Google adapter rejects any custom fetch, and Google needs no
+ * User-Agent workaround, so it uses the platform fetch (undefined here).
+ */
+export const resolvePiProviderFetch = (settings: Settings): typeof fetch | undefined => {
+    if (settings.provider === 'default') return fetchDefaultGateway;
+    return settings.provider === 'google' ? undefined : fetchWithoutForbiddenUserAgent;
+};
+
 export const createPiProviderStream = (settings: Settings): StreamFn => {
     const apiKey = resolveProviderApiKey(settings);
     if (!apiKey.trim()) throw new Error('The selected AI provider has no API key.');
-    const providerFetch = settings.provider === 'default' ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent;
+    const providerFetch = resolvePiProviderFetch(settings);
     return (model, context, options) => models.streamSimple(model, context, {
         ...options,
         apiKey,
@@ -62,7 +71,7 @@ export const createPiProviderContextTransform = (
         resolvePiModel(settings),
         models,
         apiKey,
-        settings.provider === 'default' ? fetchDefaultGateway : fetchWithoutForbiddenUserAgent,
+        resolvePiProviderFetch(settings),
         onDegraded,
     );
 };
