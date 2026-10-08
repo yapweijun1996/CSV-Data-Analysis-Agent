@@ -68,6 +68,7 @@ describe('AI SDK helpers', () => {
         expect(resolveProviderApiKey(googleSettings)).toBe('gemini-key');
         expect(resolveProviderModelId(openAiSettings)).toBe('gpt-5.2');
         expect(resolveProviderModelId(googleSettings, 'gemini-2.5-pro')).toBe('gemini-2.5-pro');
+        expect(resolveProviderModelId(googleSettings, 'models/gemini-3.8-flash')).toBe('gemini-3.8-flash');
         expect(isProviderConfigured(openAiSettings)).toBe(true);
         expect(isProviderConfigured({ ...googleSettings, geminiApiKey: '   ' })).toBe(false);
     });
