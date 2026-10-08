@@ -703,3 +703,8 @@
 - **Left in English on purpose**: `residual_noise_candidates` (count), `prepared_data_not_ready` and `reasonCode` outcomes (pipeline message), query-engine `fallbackReason`, and raw error text, because their wording is dynamic.
 - **Checks**: typecheck, lint baseline, helper tests (6) plus Pi runtime and localization tests (45 total) pass; `publish:root` and `test:publish` (4/4) pass. Full suite not re-run (5 known unrelated failures). Not seen in a browser; not pushed or deployed.
 
+## 2026-10-08 Added Google model gemini-3.8-flash
+
+- **Change**: `gemini-3.8-flash` is in the Google model list (`config/modelDefaults.ts`, first entry; default model unchanged). `resolveProviderModelId` now strips a leading `models/`, so the API-style name `models/gemini-3.8-flash` resolves to the bare id that the Pi catalog lookup and the `startsWith('gemini')` context profile expect. Test added in `aiSdkProvider.test.ts`.
+- **Not verified**: the model was added on the user's word; no request was sent to Google to confirm the id exists or that Pi's catalog has a matching entry (an unknown id falls back to the `gemini-3.1-pro-preview` family configuration, with the requested id on the wire). Needs a run with a personal Google API key.
+

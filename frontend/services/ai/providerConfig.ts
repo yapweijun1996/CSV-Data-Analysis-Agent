@@ -48,7 +48,8 @@ export const resolveProviderModelId = (settings: Settings, modelOverride?: strin
     // The demo gateway only serves one model — never let a stored/override
     // model ID from a different provider leak through.
     if (settings.provider === 'default') return DEFAULT_GATEWAY_MODEL;
-    return modelOverride || settings.complexModel;
+    // Google's API names models `models/<id>`; the app, Pi catalog and context profiles use the bare id.
+    return (modelOverride || settings.complexModel).replace(/^models\//, '');
 };
 
 export const resolveModelContextProfile = (
