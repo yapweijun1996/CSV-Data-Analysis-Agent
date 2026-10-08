@@ -735,3 +735,9 @@
 - **Not verified**: not reproduced in a real browser with the real DuckDB worker; a restore of the 983k-row file takes a few seconds (the initial load took about 5 s), which the next query now absorbs. The slow `data.describe` itself and the `SourceRowIndex` binder error are NOT fixed. Branch `claude/duckdb-restore-after-reset`, local only.
 - **Process note**: untracked generated files survive branch switches; a leftover sample CSV leaked into one publish and was removed before this commit (restore the generated files from git, then re-run `publish:root`).
 
+## 2026-10-08 Where the gateway requests go (small sample, 42 requests, 155 s)
+
+- **Tool**: `services/ai/demoGatewayRequestLog.ts` keeps a 300-entry in-memory log of each Default-gateway request's shape (system-prompt start, tool names, structured-output schema name, input item count; never message text), recorded in `fetchDefaultGateway` once per logical request. Read it in the browser with `__demoGatewayLog()`.
+- **Measured** (local build, gateway calls proxied to the Pages origin, "Load Small HDB Sample", ended "Results available: 3 verified, 2 need review"): 9 x stage orchestrator (`run_next_analysis_stage`, the only job is to say "run the next stage"; 21%), 8 x BI analyst Markdown (per-card summaries), 5 x evidence query designer, 4 x research planner, 3 x goal proposer, 2 + 2 x prepared-data readiness / semantic classification, 2 x hierarchy confirmation, 5 x report summaries, 1 x boundary detector, 1 x report context extractor. The earlier un-logged run of the same sample used 34 and 44 requests, so the count varies by run.
+- **Implication**: only 2 of the 9 stages are optional (cleaning), so 7 to 8 orchestrator requests carry no decision. Letting the host run required stages without an LLM turn, and consulting Pi only at the optional-skip decision, is the largest safe saving (about a fifth of requests). Summaries (about a third) are the next block.
+
