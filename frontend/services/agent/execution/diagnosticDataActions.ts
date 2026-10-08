@@ -33,6 +33,19 @@ const resolveBinding = (store: StoreApi) => {
 
 const numericTypes = new Set(['numerical', 'currency', 'percentage']);
 
+/** Columns the DuckDB table really has: the backing's list, else the loaded rows' keys. */
+const readTableColumns = (store: StoreApi): string[] => {
+    const dataset = getPreferredAnalysisDataset(store.getState());
+    if (dataset?.backing?.columnNames?.length) return dataset.backing.columnNames;
+    return dataset?.data?.[0] ? Object.keys(dataset.data[0]) : [];
+};
+
+/** The 8 s limit suits previews; scanning every row of a large file needs proportionally more. */
+const describeTimeoutMs = (store: StoreApi): number => {
+    const rows = getPreferredAnalysisDataset(store.getState())?.backing?.rowCount ?? 0;
+    return Math.min(30_000, QUERY_TIMEOUT_MS + Math.floor(rows / 50));
+};
+
 const getNumericColumns = (profiles: ColumnProfile[], requested?: string[]) => {
     const numeric = profiles.filter(c => numericTypes.has(c.type));
     if (!requested || requested.length === 0) return numeric;
@@ -55,7 +68,9 @@ export const executeDataDescribeAction = async (
     }
 
     const args = action.args ?? {};
-    const cols = getNumericColumns(state.columnProfiles, args.columns as string[] | undefined);
+    const tableColumns = readTableColumns(store);
+    const cols = getNumericColumns(state.columnProfiles, args.columns as string[] | undefined)
+        .filter(c => tableColumns.length === 0 || tableColumns.includes(c.name));
     if (cols.length === 0) {
         return { status: 'error', toolName: 'data.describe', message: 'No numeric columns found to describe.', shouldStop: false };
     }
@@ -64,13 +79,14 @@ export const executeDataDescribeAction = async (
         kind: 'describe',
         purpose: `Summary statistics for ${cols.length} numeric column(s)`,
         params: { columns: cols.map(c => c.name) },
-        options: { timeout: QUERY_TIMEOUT_MS },
+        options: { timeout: describeTimeoutMs(store) },
     };
 
     try {
         const queryResult = await executeUnifiedQuery(intent, {
             binding,
             columnProfiles: state.columnProfiles,
+            allowedColumns: tableColumns,
         });
 
         const explanation = args.explanation || `Summary statistics for ${cols.length} numeric column(s).`;
