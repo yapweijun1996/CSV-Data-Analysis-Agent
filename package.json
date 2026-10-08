@@ -12,6 +12,7 @@
     "test:publish": "node --test scripts/publish-frontend-build.test.mjs scripts/stage-pages-artifact.test.mjs",
     "stage:pages": "node scripts/stage-pages-artifact.mjs",
     "publish:root": "npm run build && node scripts/publish-frontend-build.mjs",
+    "demo:hdb:sample": "node scripts/make-hdb-sample-demo.mjs",
     "download:model": "bash scripts/download-model.sh"
   }
 }

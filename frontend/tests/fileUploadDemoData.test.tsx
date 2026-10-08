@@ -53,6 +53,28 @@ describe('FileUpload demo data button', () => {
         expect(fetch).toHaveBeenCalledWith('demo-data/singapore-hdb-resale-prices.csv');
     });
 
+    it('offers a small sample next to the full dataset and loads the sample file', async () => {
+        render(<FileUpload />);
+
+        expect(screen.getByRole('button', { name: 'Load Full Raw HDB Data' })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Load Small HDB Sample (fast)' }));
+
+        await waitFor(() => expect(handleFileUpload).toHaveBeenCalledTimes(1));
+        const [file] = handleFileUpload.mock.calls[0];
+        expect(file.name).toBe('singapore-hdb-resale-prices-sample.csv');
+        expect(fetch).toHaveBeenCalledWith('demo-data/singapore-hdb-resale-prices-sample.csv');
+    });
+
+    it('shows the error under the sample button only when the sample fails', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 404 })));
+        render(<FileUpload />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Load Small HDB Sample (fast)' }));
+
+        await waitFor(() => expect(screen.getByText(/Could not load the small HDB sample/)).toBeInTheDocument());
+        expect(screen.queryByText(/Could not load the full raw HDB dataset/)).not.toBeInTheDocument();
+    });
+
     it('shows an inline error and does not call handleFileUpload when the fetch fails', async () => {
         vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 404 })));
         render(<FileUpload />);

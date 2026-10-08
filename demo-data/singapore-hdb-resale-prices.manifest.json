@@ -131,5 +131,11 @@
       ],
       "downloadedCsvSha256": "6089f4a9e94be008eec5239e6a91918dca4fc6cce6a8576eb7ceb5f252cdace6"
     }
-  ]
+  ],
+  "sample": {
+    "file": "singapore-hdb-resale-prices-sample.csv",
+    "method": "Every 197th data row of the full file, starting with the first, in source order; row text is copied byte for byte (no cleaning, no reordering).",
+    "rowCount": 4988,
+    "sha256": "35a63c6a90d18014afe94974df933b3344f25c42b2a9d1c249cc3cc569c059b6"
+  }
 }

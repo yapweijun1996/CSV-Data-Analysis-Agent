@@ -43,28 +43,32 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
 
     const [dragActive, setDragActive] = useState(false);
     const [demoLoadState, setDemoLoadState] = useState<'idle' | 'loading' | 'error'>('idle');
+    const [demoKind, setDemoKind] = useState<'full' | 'sample'>('full');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Relative (no leading slash) so it resolves against <base href> in
     // index.html — this app supports deployment from arbitrary subpaths.
-    const DEMO_DATA_URL = 'demo-data/singapore-hdb-resale-prices.csv';
-    const DEMO_DATA_FILE_NAME = 'singapore-hdb-resale-prices.csv';
+    const DEMO_DATASETS = {
+        full: { url: 'demo-data/singapore-hdb-resale-prices.csv', fileName: 'singapore-hdb-resale-prices.csv' },
+        sample: { url: 'demo-data/singapore-hdb-resale-prices-sample.csv', fileName: 'singapore-hdb-resale-prices-sample.csv' },
+    } as const;
 
-    const handleLoadDemoData = useCallback(async () => {
+    const handleLoadDemoData = useCallback(async (kind: 'full' | 'sample') => {
         if (!isApiKeySet || isBusy || isWorkspaceRestoring) return;
+        setDemoKind(kind);
         setDemoLoadState('loading');
         try {
-            const response = await fetch(DEMO_DATA_URL);
+            const response = await fetch(DEMO_DATASETS[kind].url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const blob = await response.blob();
-            const file = new File([blob], DEMO_DATA_FILE_NAME, { type: 'text/csv' });
+            const file = new File([blob], DEMO_DATASETS[kind].fileName, { type: 'text/csv' });
             setDemoLoadState('idle');
             handleFileUpload(file);
         } catch (error) {
             console.error('Failed to load demo dataset:', error);
             setDemoLoadState('error');
         }
-    }, [DEMO_DATA_URL, handleFileUpload, isApiKeySet, isBusy, isWorkspaceRestoring]);
+    }, [handleFileUpload, isApiKeySet, isBusy, isWorkspaceRestoring]);
 
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -263,22 +267,29 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
             </button>
             <input ref={fileInputRef} id="file-upload" type="file" accept=".csv" onChange={handleChange} className="hidden" disabled={isUploadUnavailable} tabIndex={-1} />
 
-            {!datasetBundle && <div className="mt-6 w-full max-w-sm rounded-card border border-blue-100 bg-blue-50 p-4 text-center">
-                <p className="text-sm text-slate-600">{getTranslation('file_upload_load_demo_hint', language)}</p>
-                <button
-                    type="button"
-                    onClick={handleLoadDemoData}
-                    disabled={isUploadUnavailable || demoLoadState === 'loading'}
-                    className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-card border-2 border-blue-600 bg-white px-4 py-2 text-sm font-bold text-blue-600 transition-colors hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                    {demoLoadState === 'loading' && <IconLoadingSpinner className="h-4 w-4" />}
-                    {demoLoadState === 'loading'
-                        ? getTranslation('file_upload_load_demo_loading', language)
-                        : getTranslation('file_upload_load_demo', language)}
-                </button>
-                {demoLoadState === 'error' && (
-                    <p className="mt-2 text-xs text-red-600">{getTranslation('file_upload_load_demo_error', language)}</p>
-                )}
+            {!datasetBundle && <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
+                {(['sample', 'full'] as const).map(kind => {
+                    const loading = demoLoadState === 'loading' && demoKind === kind;
+                    return (
+                        <div key={kind} className="rounded-card border border-blue-100 bg-blue-50 p-4 text-center">
+                            <p className="text-sm text-slate-600">{getTranslation(kind === 'sample' ? 'file_upload_load_sample_hint' : 'file_upload_load_demo_hint', language)}</p>
+                            <button
+                                type="button"
+                                onClick={() => handleLoadDemoData(kind)}
+                                disabled={isUploadUnavailable || demoLoadState === 'loading'}
+                                className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-card border-2 border-blue-600 bg-white px-4 py-2 text-sm font-bold text-blue-600 transition-colors hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {loading && <IconLoadingSpinner className="h-4 w-4" />}
+                                {loading
+                                    ? getTranslation(kind === 'sample' ? 'file_upload_load_sample_loading' : 'file_upload_load_demo_loading', language)
+                                    : getTranslation(kind === 'sample' ? 'file_upload_load_sample' : 'file_upload_load_demo', language)}
+                            </button>
+                            {demoLoadState === 'error' && demoKind === kind && (
+                                <p className="mt-2 text-xs text-red-600">{getTranslation(kind === 'sample' ? 'file_upload_load_sample_error' : 'file_upload_load_demo_error', language)}</p>
+                            )}
+                        </div>
+                    );
+                })}
             </div>}
 
             <p className="mt-4 max-w-sm text-center text-sm leading-5 text-slate-500">{getTranslation('data_privacy_note', language)}</p>

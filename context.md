@@ -722,3 +722,9 @@
 - **Fix**: `ensureGoogleHistoryEndsWithUserTurn` in `piProvider.ts` appends a user turn (`Continue.`) when the transformed history ends with an assistant message; `createPiProviderContextTransform` applies it for the Google provider only, so every Pi agent (initial analysis, research and evidence planners, follow-up) is covered. Test added in `piProductionRuntime.test.ts`.
 - **Not verified**: which exact Pi loop produced the failing request in the user's run was not captured (the turn-trace branch `claude/pi-turn-trace` would show it), and no full Google analysis was run here. Branch `claude/pi-google-trailing-model-turn`, local only.
 
+## 2026-10-08 Two demo buttons: small sample (fast) and full raw data (slow, real test)
+
+- **Why**: the upload page only had the 983k-row full-data button; every demo cost a full analysis (about 30 gateway requests) and burned the shared quota. The repository never had a small sample (git history shows one demo file).
+- **Change**: new `demo-data/singapore-hdb-resale-prices-sample.csv` (4,988 rows = every 197th row, first included, byte for byte, no cleaning), built by `scripts/make-hdb-sample-demo.mjs` (`npm run demo:hdb:sample`); its method, row count and SHA-256 are in the manifest's `sample` block. `FileUpload.tsx` shows two cards: "Load Small HDB Sample (fast)" and "Load Full Raw HDB Data" (hint now says slower but the real test); four-language copy; errors show under the button that failed. Root deployment now has 78 checksum-verified files.
+- **Checks**: typecheck, lint baseline, upload/localization/PWA tests (30), two new component tests, `publish:root`, `test:publish` 4/4. Real browser on the local build: both buttons visible, the sample imported as 4,988 rows with "Use local processing only", no external requests, no HTTP error responses. No gateway analysis was run on the sample, so its AI result quality and request count are unmeasured. Not pushed or deployed.
+
