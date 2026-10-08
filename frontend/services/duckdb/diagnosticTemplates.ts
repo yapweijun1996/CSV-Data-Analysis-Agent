@@ -141,9 +141,12 @@ const describeTemplate: DiagnosticTemplate = {
     isStructured: false,
     toCompiledQuery: (params, context) => {
         const requested = Array.isArray(params.columns) ? params.columns as string[] : [];
+        // Profiles can name lineage helper columns (for example SourceRowIndex) that the table does not
+        // have; when the real table columns are known, describe only columns that exist there.
         const numericCols = context.columnProfiles
             .filter(isNumericCol)
-            .filter(c => requested.length === 0 || requested.includes(c.name));
+            .filter(c => requested.length === 0 || requested.includes(c.name))
+            .filter(c => context.allowedColumns.length === 0 || context.allowedColumns.includes(c.name));
         if (numericCols.length === 0) {
             return { sql: 'SELECT 1 WHERE FALSE', countSql: 'SELECT 0 AS total', selectedColumns: [], appliedOrderBy: [], appliedLimit: 0 };
         }
