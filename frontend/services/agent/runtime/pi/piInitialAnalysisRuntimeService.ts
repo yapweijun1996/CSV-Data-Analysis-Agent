@@ -17,7 +17,7 @@ import { createInitialAnalysisStageExecutors } from './initialAnalysisStageExecu
 import { executeInitialAnalysisStageTool, type InitialAnalysisStageActionResult } from './initialAnalysisStageTools';
 import type { InitialAnalysisRunOutcome, InitialAnalysisRunRequest } from './initialAnalysisTypes';
 import { createPiCompactionTelemetry, createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
-import { isInitialAnalysisProviderFailure } from './initialAnalysisFailure';
+import { describeInitialAnalysisFailure, isInitialAnalysisProviderFailure } from './initialAnalysisFailure';
 import { runPiResearchPlanner } from './piResearchPlanner';
 
 const STAGES = createInitialAnalysisStageToolManifests();
@@ -399,7 +399,15 @@ const run = async (
         status: status === 'failed' || noUsableResults ? 'error' : 'done',
         title: noUsableResults ? 'Unable to reliably analyze'
             : status === 'completed' ? 'Analysis ready' : 'Analysis ready with limitations',
-        subtitle: warnings[0]?.message ?? presentGatewayError(errorMessage, store.getState().settings.language),
+        subtitle: noUsableResults || status === 'failed'
+            ? describeInitialAnalysisFailure({
+                results,
+                errorText: errorMessage ? presentGatewayError(errorMessage, store.getState().settings.language) : '',
+                stoppedStage: STAGES[nextStageIndex] ? { index: nextStageIndex, name: STAGES[nextStageIndex].name } : undefined,
+                totalStages: STAGES.length,
+                fallbackWarning: warnings[0]?.message,
+            })
+            : warnings[0]?.message ?? presentGatewayError(errorMessage, store.getState().settings.language),
         totalSteps: STAGES.length,
         currentStep: Math.min(nextStageIndex, STAGES.length),
     });
