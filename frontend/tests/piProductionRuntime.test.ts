@@ -47,7 +47,7 @@ import { runPiFollowUpTurn } from '../services/agent/runtime/pi/piFollowUpRuntim
 import { runPiInitialAnalysis } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
 import { cancelPiInitialAnalysis, recoverPiInitialAnalysisIfNeeded } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
 import { getCurrentAnalysisDatasetVersion } from '../services/agent/artifactProvenance';
-import { resolvePiProviderFetch } from '../services/agent/runtime/pi/piProvider';
+import { ensureGoogleHistoryEndsWithUserTurn, createPiProviderContextTransform, resolvePiProviderFetch } from '../services/agent/runtime/pi/piProvider';
 import { createPiAppTools } from '../services/agent/runtime/pi/piAppTools';
 
 const usage = {
@@ -139,6 +139,21 @@ describe('Pi production runtime', () => {
         expect(resolvePiProviderFetch({ ...base, provider: 'google' })).toBeUndefined();
         expect(resolvePiProviderFetch({ ...base, provider: 'openai' })).toBeTypeOf('function');
         expect(resolvePiProviderFetch({ ...base, provider: 'default' })).toBeTypeOf('function');
+    });
+
+    it('ends a Google history with a user turn but leaves other histories alone', async () => {
+        const user = { role: 'user', content: [{ type: 'text', text: 'go' }], timestamp: 1 } as never;
+        const model = { role: 'assistant', content: [{ type: 'text', text: 'thinking' }], timestamp: 2 } as never;
+        const fixed = ensureGoogleHistoryEndsWithUserTurn([user, model]);
+        expect(fixed).toHaveLength(3);
+        expect(fixed.at(-1)?.role).toBe('user');
+        expect(ensureGoogleHistoryEndsWithUserTurn([user])).toHaveLength(1);
+        const base = createStore().getState().settings;
+        const system = { role: 'system', content: 'sys', timestamp: 0 } as never;
+        const google = createPiProviderContextTransform({ ...base, provider: 'google', geminiApiKey: 'k', complexModel: 'gemini-2.5-flash' } as never);
+        expect((await google([system, user, model])).at(-1)?.role).toBe('user');
+        const openai = createPiProviderContextTransform(base as never);
+        expect((await openai([system, user, model])).at(-1)?.role).toBe('assistant');
     });
 
     it('completes a keyless Pi follow-up and projects the answer into the app contract', async () => {
