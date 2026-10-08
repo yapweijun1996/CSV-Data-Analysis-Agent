@@ -3467,6 +3467,10 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
     'analysis_initial_stage_7_short': { 'English': 'Questions', 'Mandarin': '问题', 'Japanese': '問い', 'Malay': 'Soalan' },
     'analysis_initial_stage_8_short': { 'English': 'Analyse', 'Mandarin': '分析', 'Japanese': '分析', 'Malay': 'Analisis' },
     'analysis_initial_stage_9_short': { 'English': 'Results', 'Mandarin': '结果', 'Japanese': '結果', 'Malay': 'Keputusan' },
+    'analysis_failure_stage_failed': { 'English': 'Stage {n}/{total} “{stage}” failed: {detail}', 'Mandarin': '第 {n}/{total} 阶段“{stage}”失败：{detail}', 'Japanese': 'ステージ {n}/{total}「{stage}」が失敗しました：{detail}', 'Malay': 'Peringkat {n}/{total} “{stage}” gagal: {detail}' },
+    'analysis_failure_stopped_at': { 'English': 'Stopped at stage {n}/{total} “{stage}”: {detail}', 'Mandarin': '在第 {n}/{total} 阶段“{stage}”中断：{detail}', 'Japanese': 'ステージ {n}/{total}「{stage}」で停止しました：{detail}', 'Malay': 'Berhenti pada peringkat {n}/{total} “{stage}”: {detail}' },
+    'analysis_failure_no_result_warned': { 'English': 'No result passed the evidence checks. Last warning from stage {n}/{total} “{stage}”: {detail}', 'Mandarin': '没有结果通过证据检查。最后一条警告来自第 {n}/{total} 阶段“{stage}”：{detail}', 'Japanese': '証拠チェックを通過した結果がありません。最後の警告はステージ {n}/{total}「{stage}」からです：{detail}', 'Malay': 'Tiada hasil lulus semakan bukti. Amaran terakhir daripada peringkat {n}/{total} “{stage}”: {detail}' },
+    'analysis_failure_no_result': { 'English': 'No result passed the evidence checks.', 'Mandarin': '没有结果通过证据检查。', 'Japanese': '証拠チェックを通過した結果がありません。', 'Malay': 'Tiada hasil lulus semakan bukti.' },
     'report_header_meta_rows': { 'English': '{count} rows', 'Mandarin': '{count} 行', 'Japanese': '{count} 行', 'Malay': '{count} baris' },
     'upload_working_on_file': { 'English': 'Working on “{fileName}”', 'Mandarin': '正在处理“{fileName}”', 'Japanese': '「{fileName}」を処理中', 'Malay': 'Sedang memproses “{fileName}”' },
 

@@ -28,26 +28,43 @@ export interface InitialAnalysisFailureInput {
     results: readonly FailureStageResult[];
     /** Sanitised error from the run, already passed through the gateway presenter. */
     errorText: string;
-    /** Stage that was running (or next to run) when the run stopped. */
-    stoppedStage?: { index: number; name: string };
-    totalStages: number;
+    /** Tool names of the governed stages in run order; the index gives the stage number. */
+    stageNames: readonly string[];
+    /** Index of the stage that was running (or next to run) when the run stopped. */
+    stoppedStageIndex?: number;
+    /** Localised text lookup (`getTranslation` bound to the user's language). */
+    translate: (key: string, params?: Record<string, string | number>) => string;
     fallbackWarning?: string;
 }
 
 /**
  * One-line reason for a run that produced no trusted result: names the stage and the real cause.
  * The first warning of a run is usually an unrelated note from an earlier stage, so it is only a last resort.
+ * Stage names are localised; the detail text (stage summary or error) is the runtime's own wording.
  */
 export const describeInitialAnalysisFailure = (input: InitialAnalysisFailureInput): string => {
+    const { translate, stageNames } = input;
+    const stageParams = (index: number) => ({
+        n: index + 1,
+        total: stageNames.length,
+        stage: index >= 0 && index < stageNames.length ? translate(`analysis_initial_stage_${index + 1}_short`) : '?',
+    });
     const failed = input.results.find(result => result.decision === 'fail');
-    if (failed) return `Stage ${failed.toolName}: ${failed.summary}`;
+    if (failed) {
+        return translate('analysis_failure_stage_failed', {
+            ...stageParams(stageNames.indexOf(failed.toolName)), detail: failed.summary,
+        });
+    }
     if (input.errorText) {
-        const stage = input.stoppedStage
-            ? `Stopped at stage ${input.stoppedStage.index + 1}/${input.totalStages} (${input.stoppedStage.name}): `
-            : '';
-        return `${stage}${input.errorText}`;
+        return input.stoppedStageIndex === undefined
+            ? input.errorText
+            : translate('analysis_failure_stopped_at', { ...stageParams(input.stoppedStageIndex), detail: input.errorText });
     }
     const lastWarned = [...input.results].reverse().find(result => result.decision === 'warn');
-    if (lastWarned) return `No result passed the evidence checks. Last warning from ${lastWarned.toolName}: ${lastWarned.summary}`;
-    return input.fallbackWarning ?? 'No result passed the evidence checks.';
+    if (lastWarned) {
+        return translate('analysis_failure_no_result_warned', {
+            ...stageParams(stageNames.indexOf(lastWarned.toolName)), detail: lastWarned.summary,
+        });
+    }
+    return input.fallbackWarning ?? translate('analysis_failure_no_result');
 };

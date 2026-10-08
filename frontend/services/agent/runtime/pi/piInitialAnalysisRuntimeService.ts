@@ -1,4 +1,5 @@
 import { presentGatewayError } from '../../../../utils/gatewayErrorMessage';
+import { getTranslation } from '../../../../utils/localization';
 import { Agent, type AgentTool, type StreamFn } from '@earendil-works/pi-agent-core';
 import { Type } from '@earendil-works/pi-ai';
 import { resolveAnalysisCompletionGate } from '../../analysisCompletionGate';
@@ -403,8 +404,9 @@ const run = async (
             ? describeInitialAnalysisFailure({
                 results,
                 errorText: errorMessage ? presentGatewayError(errorMessage, store.getState().settings.language) : '',
-                stoppedStage: STAGES[nextStageIndex] ? { index: nextStageIndex, name: STAGES[nextStageIndex].name } : undefined,
-                totalStages: STAGES.length,
+                stageNames: STAGES.map(item => item.name),
+                stoppedStageIndex: nextStageIndex < STAGES.length ? nextStageIndex : undefined,
+                translate: (key, params) => getTranslation(key, store.getState().settings.language, params),
                 fallbackWarning: warnings[0]?.message,
             })
             : warnings[0]?.message ?? presentGatewayError(errorMessage, store.getState().settings.language),
