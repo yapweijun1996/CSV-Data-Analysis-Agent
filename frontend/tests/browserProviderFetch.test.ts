@@ -199,6 +199,44 @@ describe('default gateway browser fetch', () => {
         expect(responsesCalls).toBe(2);
     });
 
+    it('waits for the per-IP window on a demo IP rate limit 429 and retries once it passes', async () => {
+        let calls = 0;
+        vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
+            if (isSessionCall(input)) return sessionResponse('dmo_token_a');
+            calls += 1;
+            return calls === 1
+                ? new Response(JSON.stringify({ error: { message: 'demo ip rate limit reached', code: 'DEMO_IP_RATE_LIMIT' } }), {
+                    status: 429, headers: { 'retry-after': '0.01' },
+                })
+                : new Response('{}', { status: 200 });
+        }));
+
+        const response = await fetchDefaultGateway('https://example.invalid/demo/v1/responses', {
+            method: 'POST', body: JSON.stringify({ input: 'test' }),
+        });
+
+        expect(response.status).toBe(200);
+        expect(calls).toBe(2);
+    });
+
+    it('gives up after two waits on a persistent demo IP rate limit', async () => {
+        let calls = 0;
+        vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
+            if (isSessionCall(input)) return sessionResponse('dmo_token_a');
+            calls += 1;
+            return new Response(JSON.stringify({ error: { message: 'demo ip rate limit reached' } }), {
+                status: 429, headers: { 'retry-after': '0.01' },
+            });
+        }));
+
+        const response = await fetchDefaultGateway('https://example.invalid/demo/v1/responses', {
+            method: 'POST', body: JSON.stringify({ input: 'test' }),
+        });
+
+        expect(response.status).toBe(429);
+        expect(calls).toBe(3);
+    });
+
     it('does not refresh on other client errors such as 400', async () => {
         let sessions = 0;
         vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {

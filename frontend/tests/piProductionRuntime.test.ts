@@ -535,7 +535,7 @@ describe('Pi production runtime', () => {
         const names: string[] = [];
         passingStages(names);
         const outcome = await runStages(scriptedStageStream([
-            {}, {}, { stage: 'dataset.validatePreparedData', reason: 'No noise rows and no notes.' }, {},
+            {}, { stage: 'dataset.validatePreparedData', reason: 'No noise rows and no notes.' },
         ]));
 
         expect(outcome.status).toBe('completed');
@@ -658,7 +658,9 @@ describe('Pi production runtime', () => {
             'analysis.executeEvidence',
             'analysis.finalizeArtifacts',
         ]);
-        expect(calls).toBe(9);
+        // The host runs required stages itself: one turn up to the cleaning decision, one for each
+        // optional cleaning stage Pi keeps, one for the rest. The old loop spent one turn per stage (9).
+        expect(calls).toBe(3);
         expect(store.getState().initialAnalysisStatus).toBe('ready');
     });
 

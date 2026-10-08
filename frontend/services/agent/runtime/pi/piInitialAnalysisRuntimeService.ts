@@ -232,75 +232,87 @@ const run = async (
                     }
                 }
             }
-            const stageIndex = nextStageIndex;
-            const stage = STAGES[stageIndex];
-            await persistCheckpoint(stageIndex);
-            const state = store.getState();
-            updateAgentTaskStatus(store, {
-                status: 'acting',
-                // User-facing copy; the technical stage description stays in the tool manifest.
-                title: 'Analysing your data',
-                titleKey: `analysis_initial_stage_${stageIndex + 1}_title`,
-                subtitleKey: `analysis_initial_stage_${stageIndex + 1}_desc`,
-                totalSteps: STAGES.length,
-                currentStep: stageIndex + 1,
-                rowCount: readCurrentRowCount(store),
-            });
-            const result = await executeInitialAnalysisStageTool({
-                toolName: stage.name,
-                phase: stage.initialAnalysis.phase,
-                args: {
-                    datasetId: request.datasetId,
-                    datasetVersion: getCurrentAnalysisDatasetVersion(state) ?? request.datasetVersion,
-                    runtimeRunId,
-                    traceId,
-                    phaseAttempt: 1,
-                    idempotencyKey: `${request.appSessionId}:${request.datasetVersion}:${stage.name}:1`,
-                },
-                availability: buildToolAvailabilityContext(state, {
-                    toolStage: stage.stageAvailability?.[0],
-                }),
-                context: { request, store, signal: signal ?? controller.signal },
-                executors,
-            });
-            results.push(result);
-            // Pi decides what to investigate once the data is ready. This never fails the run:
-            // without a usable plan the existing question planner is used.
-            if (plannerEnabled && stage.name === 'analysis.researchQuestions' && result.decision === 'pass') {
-                await runPiResearchPlanner({
-                    store,
-                    goal: request.researchGoal,
-                    datasetVersionFallback: request.datasetVersion,
-                    signal: signal ?? controller.signal,
-                    streamFn: options.plannerStream,
+            const runOneStage = async (): Promise<InitialAnalysisStageActionResult> => {
+                const stageIndex = nextStageIndex;
+                const stage = STAGES[stageIndex];
+                await persistCheckpoint(stageIndex);
+                const state = store.getState();
+                updateAgentTaskStatus(store, {
+                    status: 'acting',
+                    // User-facing copy; the technical stage description stays in the tool manifest.
+                    title: 'Analysing your data',
+                    titleKey: `analysis_initial_stage_${stageIndex + 1}_title`,
+                    subtitleKey: `analysis_initial_stage_${stageIndex + 1}_desc`,
+                    totalSteps: STAGES.length,
+                    currentStep: stageIndex + 1,
+                    rowCount: readCurrentRowCount(store),
                 });
+                const result = await executeInitialAnalysisStageTool({
+                    toolName: stage.name,
+                    phase: stage.initialAnalysis.phase,
+                    args: {
+                        datasetId: request.datasetId,
+                        datasetVersion: getCurrentAnalysisDatasetVersion(state) ?? request.datasetVersion,
+                        runtimeRunId,
+                        traceId,
+                        phaseAttempt: 1,
+                        idempotencyKey: `${request.appSessionId}:${request.datasetVersion}:${stage.name}:1`,
+                    },
+                    availability: buildToolAvailabilityContext(state, {
+                        toolStage: stage.stageAvailability?.[0],
+                    }),
+                    context: { request, store, signal: signal ?? controller.signal },
+                    executors,
+                });
+                results.push(result);
+                // Pi decides what to investigate once the data is ready. This never fails the run:
+                // without a usable plan the existing question planner is used.
+                if (plannerEnabled && stage.name === 'analysis.researchQuestions' && result.decision === 'pass') {
+                    await runPiResearchPlanner({
+                        store,
+                        goal: request.researchGoal,
+                        datasetVersionFallback: request.datasetVersion,
+                        signal: signal ?? controller.signal,
+                        streamFn: options.plannerStream,
+                    });
+                }
+                warnings.push(...result.warningCodes.map(code => ({
+                    code, message: result.summary, phase: result.phase,
+                })));
+                nextStageIndex += 1;
+                await persistCheckpoint(null);
+                emitAgentEvent(store, {
+                    runId: runtimeRunId,
+                    phase: 'execution',
+                    step: stage.name,
+                    status: result.decision === 'fail' ? 'error' : 'done',
+                    message: result.summary,
+                    detail: { runtimeOwner: 'pi', stageIndex: nextStageIndex, traceId },
+                });
+                return result;
+            };
+            // Only the optional cleaning stages are a decision. The host runs every required stage itself and
+            // returns to Pi at the next decision point, so Pi is not asked for a turn that only says "continue".
+            const outcomes: Array<{ stage: string; decision: string; summary: string; warningCodes: string[] }> = [];
+            for (;;) {
+                const stageName = STAGES[nextStageIndex].name;
+                const result = await runOneStage();
+                outcomes.push({ stage: stageName, decision: result.decision, summary: result.summary, warningCodes: result.warningCodes });
+                if (result.decision === 'fail' || nextStageIndex >= STAGES.length) break;
+                if (describeStageChoices(nextStageIndex).skippable.length > 0) break;
+                if (signal?.aborted || controller.signal.aborted) throw signal?.reason ?? controller.signal.reason;
             }
-            warnings.push(...result.warningCodes.map(code => ({
-                code, message: result.summary, phase: result.phase,
-            })));
-            nextStageIndex += 1;
-            await persistCheckpoint(null);
-            emitAgentEvent(store, {
-                runId: runtimeRunId,
-                phase: 'execution',
-                step: stage.name,
-                status: result.decision === 'fail' ? 'error' : 'done',
-                message: result.summary,
-                detail: { runtimeOwner: 'pi', stageIndex: nextStageIndex, traceId },
-            });
+            const lastResult = results.at(-1);
             return {
                 details: undefined,
                 content: [{ type: 'text', text: JSON.stringify({
-                    stage: stage.name,
-                    decision: result.decision,
-                    summary: result.summary,
-                    warningCodes: result.warningCodes,
+                    stagesRun: outcomes,
                     remainingStages: STAGES.length - nextStageIndex,
                     nextRequired: describeStageChoices(nextStageIndex).required,
                     optionalStagesYouMaySkip: describeStageChoices(nextStageIndex).skippable,
                     facts: readStageFacts(store),
                 }) }],
-                terminate: result.decision === 'fail' || nextStageIndex === STAGES.length,
+                terminate: lastResult?.decision === 'fail' || nextStageIndex === STAGES.length,
             };
         },
     };
@@ -311,7 +323,7 @@ const run = async (
                 `Dataset: ${request.datasetId}; version: ${request.datasetVersion}.`,
                 `Research goal: ${request.researchGoal}`,
                 'Stages in order: ' + STAGES.map(item => item.name).join(', ') + '.',
-                'Call run_next_analysis_stage repeatedly. With no arguments it runs the next required stage. The host owns all data and mutations and validates every request.',
+                'Call run_next_analysis_stage. With no arguments it runs the next required stage and every following required stage up to the next decision about optional cleaning (or the end). The host owns all data and mutations and validates every request.',
                 `You may skip ${[...OPTIONAL_STAGE_NAMES].join(' and ')} (pass stage = the stage you want next, and a short reason) only when the facts returned after dataset.detectNoiseRows show clean data: no residual noise candidates and no data quality notes. When unsure, do not skip. Every other stage is required.`,
                 'Use no raw CSV rows, credentials, web access, or undeclared actions.',
                 'Do not answer before the host says every stage is complete.',
