@@ -1,5 +1,5 @@
 import { j as jsxRuntimeExports, a as reactExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { U as getTranslation } from "./csv_data_analysis_app-agent-CK-b9Aov.js";
+import { U as getTranslation } from "./csv_data_analysis_app-agent-DTfUNPj6.js";
 import { I as IconInsights } from "./csv_data_analysis_IconInsights-C-7nPICp.js";
 const formatNumber = (n) => Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(void 0, { maximumFractionDigits: 2 });
 const formatCell = (value) => {

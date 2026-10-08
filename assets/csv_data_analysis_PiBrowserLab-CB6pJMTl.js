@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js","./csv_data_analysis_vendor-data-gCZ_DPYi.js","./csv_data_analysis_vendor-storage-Dda2oZrY.js","./csv_data_analysis_vendor-ai-google-Brpu0J-t.js","./csv_data_analysis_vendor-ai-openai-B8_yEsiF.js"])))=>i.map(i=>d[i]);
-import { _ as __vitePreload } from "./csv_data_analysis_app-agent-CK-b9Aov.js";
+import { _ as __vitePreload } from "./csv_data_analysis_app-agent-DTfUNPj6.js";
 import { a as reactExports, r as reactDomExports, j as jsxRuntimeExports } from "./csv_data_analysis_vendor-react-core-DlbdMisc.js";
-import { u as useAppStore, e as useDialogAccessibility } from "./csv_data_analysis_index-DNaMfaoV.js";
+import { u as useAppStore, e as useDialogAccessibility } from "./csv_data_analysis_index-Bpa-0F-X.js";
 import "./csv_data_analysis_vendor-ai-sdk-CVLr31yf.js";
 import "./csv_data_analysis_vendor-data-gCZ_DPYi.js";
 import "./csv_data_analysis_vendor-storage-Dda2oZrY.js";
@@ -41,8 +41,8 @@ const PiBrowserLab = ({ onClose }) => {
     let agent = null;
     try {
       const [{ buildEffectiveColumnRegistryFromState }, { createPiBrowserAgent, getPiFinalText }] = await Promise.all([
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CK-b9Aov.js").then((n) => n.cv), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
-        __vitePreload(() => import("./csv_data_analysis_app-agent-CK-b9Aov.js").then((n) => n.c$), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DTfUNPj6.js").then((n) => n.cv), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url),
+        __vitePreload(() => import("./csv_data_analysis_app-agent-DTfUNPj6.js").then((n) => n.c$), true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url)
       ]);
       const state = useAppStore.getState();
       const currentDataset = state.canonicalCsvData ?? state.csvData;
@@ -53,7 +53,7 @@ const PiBrowserLab = ({ onClose }) => {
       if (mode === "live") {
         if (!state.settings.openAIApiKey.trim()) throw new Error("Set an OpenAI API key in Settings first.");
         const { ensureCloudAiConsent } = await __vitePreload(async () => {
-          const { ensureCloudAiConsent: ensureCloudAiConsent2 } = await import("./csv_data_analysis_app-agent-CK-b9Aov.js").then((n) => n.cu);
+          const { ensureCloudAiConsent: ensureCloudAiConsent2 } = await import("./csv_data_analysis_app-agent-DTfUNPj6.js").then((n) => n.cu);
           return { ensureCloudAiConsent: ensureCloudAiConsent2 };
         }, true ? __vite__mapDeps([0,1,2,3,4]) : void 0, import.meta.url);
         await ensureCloudAiConsent("openai");

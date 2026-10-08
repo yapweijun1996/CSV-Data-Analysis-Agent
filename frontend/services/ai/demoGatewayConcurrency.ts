@@ -4,6 +4,37 @@
  */
 export const DEMO_SESSION_MAX_CONCURRENT_REQUESTS = 2;
 
+/** The gateway allows 30 requests per minute per IP; stay under it so a busy run waits instead of failing. */
+export const DEMO_IP_MAX_REQUESTS_PER_MINUTE = 28;
+export const DEMO_IP_WINDOW_MS = 60_000;
+
+export interface RateWindowLimiter {
+    /** Resolves once sending one more request keeps the rolling window within its limit. */
+    waitForTurn: () => Promise<void>;
+}
+
+export const createRateWindowLimiter = (
+    maxRequests: number,
+    windowMs: number,
+    now: () => number = Date.now,
+    sleep: (ms: number) => Promise<void> = ms => new Promise(resolve => setTimeout(resolve, ms)),
+): RateWindowLimiter => {
+    const sentAt: number[] = [];
+    return {
+        waitForTurn: async () => {
+            for (;;) {
+                const current = now();
+                while (sentAt.length > 0 && current - sentAt[0] >= windowMs) sentAt.shift();
+                if (sentAt.length < maxRequests) {
+                    sentAt.push(current);
+                    return;
+                }
+                await sleep(sentAt[0] + windowMs - current + 25);
+            }
+        },
+    };
+};
+
 export interface ConcurrencyLimiter {
     /** Resolves with a one-shot release function once a slot is free. */
     acquire: () => Promise<() => void>;
