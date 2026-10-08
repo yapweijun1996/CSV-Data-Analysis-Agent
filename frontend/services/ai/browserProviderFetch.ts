@@ -6,6 +6,7 @@ import {
     createRateWindowLimiter,
     releaseWhenBodyDone,
 } from './demoGatewayConcurrency';
+import { recordDemoGatewayRequest } from './demoGatewayRequestLog';
 import { endsWithAssistantMessage, sanitizeDemoGatewayInput } from './demoGatewayInputSanitizer';
 import {
     getDemoGatewaySession,
@@ -114,6 +115,7 @@ export const fetchDefaultGateway: typeof fetch = async (input, init) => {
         console.warn('[DemoGateway] Request history ends with an assistant message; the upstream model may reject it.');
     }
 
+    recordDemoGatewayRequest(body);
     let refreshed = false;
     let slotWaits = 0;
     let ipWaits = 0;

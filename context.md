@@ -742,3 +742,16 @@
 - **Measured** (local build, gateway proxied, small sample): orchestrator requests 3 (was 9). Total `/responses` requests 38 in 188 s; earlier un-optimised runs of the same sample were 34, 44 and 42, so the saving of about 6 is within run-to-run noise and the total is not proven lower. The IP limiter and IP-429 wait were only unit-tested: a single run does not reach 28 requests per minute. Quality of results with fewer orchestrator turns was not compared (same prompts, same stages, Pi still decides cleaning).
 - **Not done**: per-card summaries (about 8 requests) and the report summaries (about 5) are the next largest blocks.
 
+## 2026-10-08 Where the gateway requests go (small sample, 42 requests, 155 s)
+
+- **Tool**: `services/ai/demoGatewayRequestLog.ts` keeps a 300-entry in-memory log of each Default-gateway request's shape (system-prompt start, tool names, structured-output schema name, input item count; never message text), recorded in `fetchDefaultGateway` once per logical request. Read it in the browser with `__demoGatewayLog()`.
+- **Measured** (local build, gateway calls proxied to the Pages origin, "Load Small HDB Sample", ended "Results available: 3 verified, 2 need review"): 9 x stage orchestrator (`run_next_analysis_stage`, the only job is to say "run the next stage"; 21%), 8 x BI analyst Markdown (per-card summaries), 5 x evidence query designer, 4 x research planner, 3 x goal proposer, 2 + 2 x prepared-data readiness / semantic classification, 2 x hierarchy confirmation, 5 x report summaries, 1 x boundary detector, 1 x report context extractor. The earlier un-logged run of the same sample used 34 and 44 requests, so the count varies by run.
+- **Implication**: only 2 of the 9 stages are optional (cleaning), so 7 to 8 orchestrator requests carry no decision. Letting the host run required stages without an LLM turn, and consulting Pi only at the optional-skip decision, is the largest safe saving (about a fifth of requests). Summaries (about a third) are the next block.
+
+
+## 2026-10-08 Merge latest main into request-budget
+
+- **Result**: fetched `origin` and resolved the pending merge of `origin/main` (`aea2e2c`) into `claude/request-budget`, preserving both the request-budget optimization and gateway-request logging records. The gateway source combines logging with the existing rolling limiter and recoverable 429 handling.
+- **Deployment**: regenerated the root deployment from the merged `frontend/` source with `npm run publish:root`; all 78 root manifest checksums match the generated build. Generated bundles were not edited by hand.
+- **Verification**: typecheck and lint baseline passed; 79 gateway/orchestrator regression tests across 9 files and 4 publish/staging script tests passed. Inspected the final gateway boundary, which removes `max_output_tokens`; its wire-payload regression tests passed.
+- **Limits**: checks ran on installed Node 23.10.0, outside the package declared Node 22 range. No live browser or real gateway analysis was run. No remote push or Pages deployment was performed.
