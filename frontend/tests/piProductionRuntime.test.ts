@@ -47,6 +47,7 @@ import { runPiFollowUpTurn } from '../services/agent/runtime/pi/piFollowUpRuntim
 import { runPiInitialAnalysis } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
 import { cancelPiInitialAnalysis, recoverPiInitialAnalysisIfNeeded } from '../services/agent/runtime/pi/piInitialAnalysisRuntimeService';
 import { getCurrentAnalysisDatasetVersion } from '../services/agent/artifactProvenance';
+import { resolvePiProviderFetch } from '../services/agent/runtime/pi/piProvider';
 import { createPiAppTools } from '../services/agent/runtime/pi/piAppTools';
 
 const usage = {
@@ -131,6 +132,13 @@ describe('Pi production runtime', () => {
         expect(gatewayModel.contextWindow).toBe(200_000);
         expect(gatewayModel.compat).toMatchObject({ supportsMaxOutputTokens: false });
         expect(resolvePiModel(settings).compat).not.toMatchObject({ supportsMaxOutputTokens: false });
+    });
+
+    it('gives Google no custom fetch, because the Google adapter rejects one', async () => {
+        const base = createStore().getState().settings;
+        expect(resolvePiProviderFetch({ ...base, provider: 'google' })).toBeUndefined();
+        expect(resolvePiProviderFetch({ ...base, provider: 'openai' })).toBeTypeOf('function');
+        expect(resolvePiProviderFetch({ ...base, provider: 'default' })).toBeTypeOf('function');
     });
 
     it('completes a keyless Pi follow-up and projects the answer into the app contract', async () => {

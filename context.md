@@ -707,4 +707,10 @@
 
 - **Change**: `gemini-3.8-flash` is in the Google model list (`config/modelDefaults.ts`, first entry; default model unchanged). `resolveProviderModelId` now strips a leading `models/`, so the API-style name `models/gemini-3.8-flash` resolves to the bare id that the Pi catalog lookup and the `startsWith('gemini')` context profile expect. Test added in `aiSdkProvider.test.ts`.
 - **Not verified**: the model was added on the user's word; no request was sent to Google to confirm the id exists or that Pi's catalog has a matching entry (an unknown id falls back to the `gemini-3.1-pro-preview` family configuration, with the requested id on the wire). Needs a run with a personal Google API key.
+## 2026-10-08 Fix: Pi runs failed at stage 1 with Google ("Custom fetch is not supported")
+
+- **Symptom** (user report): with the Google provider the initial analysis stopped at `stage 1/9 "Structure"` with `Custom fetch is not supported by the Google Generative AI adapter`. The AI SDK calls (structure and boundary detection) worked; only the Pi path failed.
+- **Cause**: `createPiProviderStream` and the compaction call always passed a custom `fetch` (the User-Agent workaround) to Pi. Pi's Google adapter throws when `options.fetch` is anything but the platform fetch. Pre-existing, unrelated to the `gemini-3.8-flash` addition.
+- **Fix**: `resolvePiProviderFetch(settings)` in `piProvider.ts` returns the gateway fetch for Default, the User-Agent-stripping fetch for OpenAI and `undefined` for Google; used by both the stream and the context compactor. Verified against the real adapter in a temporary test (custom fetch gives the exact error; no fetch proceeds to the Google API and returns its own API-key error), and a permanent test covers the helper. Pi Browser Lab (`piBrowserAgent.ts`) is OpenAI-only and unchanged.
+- **Not verified**: no real Google key was used, so a full Google analysis on Pi is unconfirmed. Branch `claude/pi-google-no-custom-fetch`, local only; not deployed.
 
