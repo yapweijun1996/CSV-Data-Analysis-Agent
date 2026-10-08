@@ -697,3 +697,9 @@
 - **Limit**: the detail after the colon (a stage summary or the error text) is still the runtime's own English wording; only the stage name and sentence are localised. An unknown tool name renders as `Stage 0/9 “?”`.
 - **Checks**: typecheck, lint baseline, localization tests (3 files / 18 tests), 5 unit tests for the helper, Pi runtime tests (21), `publish:root` (77 files) and `test:publish` (4/4) pass. Full suite not re-run; the 5 known unrelated failures are unchanged. Not seen in a real browser; not pushed or deployed.
 
+## 2026-10-08 Failure subtitle: localised reasons by warning code
+
+- **Change**: the detail after the stage name is now translated from the stage's first warning code (`analysis_failure_code_<code>`, 18 keys in four languages, e.g. `evidence_run_*` -> "The evidence run ended without an accepted card.", `large_dataset_read_only`, `cleaning_not_completed`, `evidence_research_budget_expired`, `summary_finalization_budget_expired`). Dynamic suffix codes `evidence_run_<status>` and `query_engine_<status>` share one message. No executor changed; a code without a key keeps the runtime's English summary.
+- **Left in English on purpose**: `residual_noise_candidates` (count), `prepared_data_not_ready` and `reasonCode` outcomes (pipeline message), query-engine `fallbackReason`, and raw error text, because their wording is dynamic.
+- **Checks**: typecheck, lint baseline, helper tests (6) plus Pi runtime and localization tests (45 total) pass; `publish:root` and `test:publish` (4/4) pass. Full suite not re-run (5 known unrelated failures). Not seen in a browser; not pushed or deployed.
+

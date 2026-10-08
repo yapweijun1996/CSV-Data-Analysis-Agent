@@ -11,6 +11,16 @@ const inEnglish = (key: string, params?: Record<string, string | number>) => get
 const base = { stageNames, results: [], errorText: '', translate: inEnglish };
 
 describe('describeInitialAnalysisFailure', () => {
+    it('translates the failing stage reason from its warning code and keeps unknown codes as the summary', () => {
+        const fail = (code: string) => describeInitialAnalysisFailure({
+            ...base, translate: (key, params) => getTranslation(key, 'Mandarin', params),
+            results: [{ decision: 'fail', toolName: 'analysis.executeEvidence', summary: 'English summary', warningCodes: [code] }],
+        });
+        expect(fail('evidence_run_failed')).toBe('第 8/9 阶段“分析”失败：证据查询结束时没有产出被接受的卡片。');
+        expect(fail('evidence_run_timed_out')).toContain('证据查询结束时没有产出被接受的卡片。');
+        expect(fail('some_new_code')).toBe('第 8/9 阶段“分析”失败：English summary');
+    });
+
     it('names the failed stage and its summary instead of an earlier unrelated warning', () => {
         const text = describeInitialAnalysisFailure({
             ...base,
