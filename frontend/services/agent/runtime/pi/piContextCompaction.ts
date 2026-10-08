@@ -127,7 +127,7 @@ export const createPiProviderContextCompactor = (
     model: Model<Api>,
     models: Models,
     apiKey: string,
-    providerFetch: typeof fetch,
+    providerFetch: typeof fetch | undefined,
     onDegraded?: OnCompactionDegraded,
 ) => createPiContextCompactor(model.contextWindow, async (messages, signal) => {
     const history = serializeConversation(convertToLlm(messages));
