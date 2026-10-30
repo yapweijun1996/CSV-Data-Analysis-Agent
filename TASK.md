@@ -47,7 +47,7 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Priority: P1. Status: partial. Source: backlog 3, P03 P08 P13.
 - Acceptance: mixed units are never summed silently; exact numeric queries are consistent.
 - Exists: validated decimal period columns require matching units (`frontend/services/duckdb/queryCompiler.ts:512-527`); weighted statistics check units when supplied (`frontend/services/agent/execution/weightedMean.ts:19-23`, `weightedMedian.ts:23-27`).
-- Missing: single-column DuckDB sums (`queryCompiler.ts:530-561`), worker/in-memory sums (`frontend/services/agent/execution/dataQueryExecutor.ts:319-383`, `frontend/services/workers/dataWorker.ts:33-35`) and spreadsheet totals (`frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`) lack general row-unit guards; ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). Next: define trusted unit meaning, missing-unit behavior and exact-decimal semantics across routes before enforcing them; test per-group and grand totals, filters, precision and overflow. See [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
+- Missing: single-column DuckDB sums (`queryCompiler.ts:530-561`), worker/in-memory sums (`frontend/services/agent/execution/dataQueryExecutor.ts:319-383`, `frontend/services/workers/dataWorker.ts:33-35`) and spreadsheet totals (`frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`) lack general row-unit guards; ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). The owner policy is recorded, but the standalone unit contract is not connected to aggregation. Next: implement CA-187 integration and CA-188–190; test per-group and grand totals, filters, precision and overflow. See [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
 - Design: [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md); staged work: CA-187–CA-190.
 - Verification run (2026-10-30, local Chromium against the built main, 127.0.0.1 only): `frontend/scripts/exact-decimal-period-browser-smoke.mjs` passed for compatible, mixed-types and mixed-units scenarios with 0 page errors and 0 external requests. This covers the exact-decimal period path only; other aggregation paths remain unverified.
 
@@ -85,9 +85,11 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Blockers: none identified. Next: inventory existing features and version custody before specifying gaps.
 
 ## CA-187 — Bind reviewed unit meaning
-- Priority: P1. Status: pending. Source: CA-181.
-- Acceptance: version-bound fixed/row unit review rejects stale, inferred-only and blank mappings.
-- Next: define trusted metadata and review binding; see [design](docs/design/ca-181-unit-and-decimal-policy.md).
+- Priority: P1. Status: partial. Source: CA-181.
+- Acceptance: version-bound confirmed or inferred fixed/row units reject stale, blank, ambiguous and conflicting evidence; inferred units are visibly labelled wherever guarded results are shown.
+- Exists: standalone contract, header inference and resolver (`frontend/services/data/unitMeaning.ts:1-51`); focused synthetic cases (`frontend/tests/unitMeaning.test.ts:9-42`).
+- Integration blocker: existing accepted manifests carry only unit strings (`frontend/types/intake.ts:235-236`; `frontend/services/duckdb/queryEngine.ts:479,518,582-584,609-613`), without provenance; the period guard accepts identical nonblank strings (`frontend/services/duckdb/queryCompiler.ts:521-523`), including arbitrary text tested at `frontend/tests/exactDecimalAggregates.test.ts:112-118`. Applying the validator changes existing behavior, and the result path cannot display inferred provenance. No wiring was attempted under the scoped compatibility condition.
+- Next: establish version/provenance custody in manifests and guarded result UI, then integrate without inventing confirmation. See [design](docs/design/ca-181-unit-and-decimal-policy.md).
 
 ## CA-188 — Guard query and worker aggregation units
 - Priority: P1. Status: pending. Source: CA-181; depends on CA-187.

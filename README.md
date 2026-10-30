@@ -1,5 +1,9 @@
 # CSV Data Analysis Agent
 
+## Unit meaning policy (source only)
+
+The standalone CA-187 unit contract records dataset version and confirmed/inferred provenance and supports explicit ISO-currency header suffix inference. It is not wired into aggregation or result presentation; existing unit guards and mixed-unit risks are unchanged. Owner decisions and remaining work are in the [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md).
+
 ## Local privacy safeguards (source changes)
 
 When clearing local data, failed local storage, session storage or Cache Storage clearing is reported by store without reloading; successful clearing still reloads. IndexedDB and OPFS errors continue to use the existing error path. Boundary review technical details show only recognized diagnostic codes and fixed safe messages; other text is replaced with a localized generic diagnostic. Independent storage read-back and end-to-end disclosure verification remain outstanding.

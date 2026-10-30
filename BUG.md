@@ -39,7 +39,8 @@ Statuses: `confirmed` = reproduced or established defect; `candidate` = plausibl
 ## BUG-006 — Mixed-unit aggregation
 - Severity: P1 decision integrity. Status: candidate.
 - Evidence: `frontend/services/agent/execution/dataQueryExecutor.ts:319-324,377-383` sums without a unit input; `frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163` also aggregates and computes totals without unit checks. A row-level mixed-unit consumer scenario has not been independently replayed.
-- Next: establish trusted unit metadata and enforce compatibility for each aggregate and grand total across execution paths; define missing-unit and decimal precision policy. Linked task: [CA-181](TASK.md#ca-181--currency-unit-and-decimal-precision).
+- CA-187 adds a standalone version-bound contract (`frontend/services/data/unitMeaning.ts:1-51`), not an aggregation guard; existing manifest strings lack provenance and guarded results lack inferred-unit labels. This does not fix mixed-unit aggregation.
+- Next: integrate unit metadata and enforce compatibility for each aggregate and grand total across execution paths. Linked task: [CA-181](TASK.md#ca-181--currency-unit-and-decimal-precision).
 
 ## BUG-007 — Local-data deletion may silently be incomplete
 - Severity: P1 privacy. Status: candidate.
