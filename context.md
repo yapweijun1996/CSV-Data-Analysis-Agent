@@ -1,5 +1,11 @@
 ## Current Work Context
 
+### 2026-10-30 — CA-187 unit meaning contract
+
+- Added standalone version-bound unit/provenance resolution and ISO-header inference; the owner allows inferred units with visible provenance.
+- Not wired: existing manifest units lack provenance, result UI lacks inferred labels, and stricter validation changes the period guard's existing accepted inputs. CA-187 and CA-181 remain partial; BUG-006 remains a candidate.
+- Node 22 typecheck and lint passed; full Vitest: 536 files, 5516 tests passed. Direct synthetic contract smoke passed. No full build or root deployment.
+
 ### 2026-10-30 — Synthetic upload/privacy browser verification
 
 - Built frontend and exercised real uploads with loopback-only Chromium. Ragged source scan guidance and expanded-detail sentinel privacy passed; three-section upload did not reach boundary Technical details, so that check remains unverified.
