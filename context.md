@@ -1,5 +1,11 @@
 ## Current Work Context
 
+### 2026-10-30 — Persona review documentation
+
+- Added the review archive, task backlog CA-175 through CA-186, and five linked bug records.
+- Review scope: simulated personas, synthetic CSV and Chrome/Chromium; reviewer results are unverified here, not human interviews or product acceptance.
+- No application code or generated deployment files changed.
+
 
 ### 2026-10-29 — Production startup TDZ hotfix (local, not released)
 

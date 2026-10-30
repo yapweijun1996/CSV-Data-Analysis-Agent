@@ -41,6 +41,8 @@ A Responses stream that ends without a terminal event remains a failed run. Its 
 | `duckdb/`, `pyodide/`, `sandbox/`, `demo-data/` | Browser runtime resources and sample data used by the static deployment. |
 | `public/models/` | Optional local model files retained in the repository; the current app loads its vector model from a CDN. |
 | `scripts/` | Build-resource preparation, guarded publication to the root, and verified GitHub Pages artifact staging. |
+| [TASK.md](TASK.md), [BUG.md](BUG.md) | Review follow-up tasks and bug register. |
+| [Persona review archive](docs/reviews/2026-10-30-25-persona-review.md) | Review provenance, reported evidence, coverage gaps and recommendations. |
 
 The active React source was recovered from `React-CSV-Data-Analysis-Agent-Backup`, revision `b268e31b37de94ea3b7a5b9e604ce3eca3a48e3d` (2026-07-28). Rebuilding that revision produced the same 74-file SHA-256 manifest, `index.html`, and service worker as the existing deployment. The earlier root-level Vanilla implementation and the older `original/` reference have been removed. Do not edit compiled files in `assets/` to change app behavior.
 
