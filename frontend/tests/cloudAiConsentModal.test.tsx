@@ -45,6 +45,8 @@ describe('CloudAiConsentModal', () => {
         expect(screen.getByRole('dialog', { name: 'Allow this AI provider?' })).toBeInTheDocument();
         expect(screen.getByText(/What may be sent:/)).toBeInTheDocument();
         expect(screen.getByText(/stored unencrypted in this browser/i)).toBeInTheDocument();
+        expect(screen.getByText(/up to 200 rows.*can miss sensitive data.*does not remove or mask fields/i)).toBeInTheDocument();
+        expect(screen.getByText(/sensitive information may be included in data sent to the provider/i)).toBeInTheDocument();
         expect(screen.getByText(/does not claim compliance for medical, payment, or regulated personal data/i)).toBeInTheDocument();
         expect(screen.getByText(/only be asked once for Shared GPT Server/i)).toBeInTheDocument();
     });

@@ -1534,10 +1534,10 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Japanese': '機密データ',
     },
     'cloud_ai_consent_sensitive_detail': {
-        'English': 'This product does not claim compliance for medical, payment, or regulated personal data. Do not continue unless you accept this risk.',
-        'Mandarin': '本产品不宣称符合医疗、支付或受监管个人资料要求。只有在你接受此风险时才继续。',
-        'Malay': 'Produk ini tidak mendakwa pematuhan bagi data perubatan, pembayaran atau data peribadi terkawal. Jangan teruskan melainkan anda menerima risiko ini.',
-        'Japanese': '本製品は、医療、決済、規制対象の個人データへの準拠を表明していません。このリスクを受け入れる場合のみ続行してください。',
+        'English': 'A local scan checks field names and up to 200 rows for some sensitive-data signals; it can miss sensitive data and does not remove or mask fields. Sensitive information may be included in data sent to the provider. This product does not claim compliance for medical, payment, or regulated personal data. Do not continue unless you accept this risk.',
+        'Mandarin': '本地扫描会检查字段名称和最多 200 行中的部分敏感资料信号；它可能遗漏敏感资料，也不会删除或遮盖字段。发送给提供方的数据可能包含敏感信息。本产品不宣称符合医疗、支付或受监管个人资料要求。只有在你接受此风险时才继续。',
+        'Malay': 'Imbasan setempat memeriksa nama medan dan sehingga 200 baris untuk beberapa isyarat data sensitif; ia boleh terlepas data sensitif dan tidak membuang atau menyamarkan medan. Maklumat sensitif mungkin disertakan dalam data yang dihantar kepada penyedia. Produk ini tidak mendakwa pematuhan bagi data perubatan, pembayaran atau data peribadi terkawal. Jangan teruskan melainkan anda menerima risiko ini.',
+        'Japanese': 'ローカルスキャンはフィールド名と最大 200 行を調べ、一部の機密データの兆候を検出します。機密データを見逃すことがあり、フィールドの削除やマスキングは行いません。プロバイダーに送信されるデータに機密情報が含まれる場合があります。本製品は、医療、決済、規制対象の個人データへの準拠を表明していません。このリスクを受け入れる場合のみ続行してください。',
     },
     'cloud_ai_consent_once': {
         'English': 'You will only be asked once for {provider}. You will be asked again if the provider or disclosure changes.',

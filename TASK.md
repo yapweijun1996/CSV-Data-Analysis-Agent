@@ -29,28 +29,28 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Blockers: repeated cold/warm mobile acceptance unverified. Related: [BUG-004](BUG.md#bug-004--mobile-first-paint).
 
 ## CA-179 — Candidate, validation and approval evidence
-- Priority: P1. Status: pending. Source: backlog 1, P01 P04 P06 P10 P11 P12 P14 P18.
+- Priority: P1. Status: partial. Source: backlog 1, P01 P04 P06 P10 P11 P12 P14 P18.
 - Acceptance: acceptedCommit is empty before approval; per-column source evidence and row counts are explicit, including business-row grain.
-- Evidence: `frontend/scripts/header-repair-bridge-browser-smoke.mjs:35-44` asserts no accepted commit before approval; `frontend/components/task/TaskInspection.tsx:40-56` exposes task and committed version. Unified summary coverage not established.
-- Blockers: none identified. Next: map the existing review UI against each evidence and grain requirement.
+- Exists: `frontend/scripts/header-repair-bridge-browser-smoke.mjs:35-44` asserts no accepted commit in its initial approval scenario (not run here); `frontend/components/task/TaskInspection.tsx:52-56,107-133` shows committed state, counts, validation and dual-grain relationships.
+- Missing: the bounded projection drops general column mappings (`frontend/services/agent/runtime/pi/piTaskInspection.ts:113-129`); other candidate lanes lack a unified business-grain and included/excluded count explanation. An existing prior commit must be distinguished from a new uncommitted candidate. Next: design a review-bound evidence projection with explicit unavailable/truncated states and test initial, prior-commit and all candidate lanes.
 
 ## CA-180 — Local-only, cloud consent and retention disclosure
-- Priority: P1. Status: pending. Source: backlog 2, P02 P09 P16 P17.
+- Priority: P1. Status: partial. Source: backlog 2, P02 P09 P16 P17.
 - Acceptance: refusing cloud still allows local preview; deletion and storage scope have independent read-back; explain sensitive-field handling.
-- Evidence: `frontend/components/DatasetRecoveryPanel.tsx:85` explains optional retained rows; `frontend/scripts/local-preview-browser-smoke.mjs:92-94` inspects local preview state. Complete privacy disclosure and independent read-back not established.
-- Blockers: privacy and sensitive-data review outstanding. Next: inventory disclosures, consent, deletion and storage with independent verification.
+- Exists: refusal stops cloud calls (`frontend/services/privacy/cloudAiConsent.ts:150-174`); import degrades locally (`frontend/services/agent/orchestration/fileOrchestrator.ts:617-621`) and offers preview (`frontend/components/AnalysisPanel.tsx:435-437`). Storage disclosure is at `frontend/utils/localization.ts:1524-1528`; sensitive scan limits and lack of masking are now disclosed at `:1536-1540`, with consent version bumped (`cloudAiConsent.ts:9`).
+- Missing: independent deletion/storage read-back and provider retention scope; clearing suppresses some failures ([BUG-007](BUG.md#bug-007--local-data-deletion-may-silently-be-incomplete)). Next: surface incomplete deletion and verify IndexedDB, web storage, OPFS and cache read-back, including failures and provider-side policy.
 
 ## CA-181 — Currency, unit and DECIMAL precision
-- Priority: P1. Status: pending. Source: backlog 3, P03 P08 P13.
+- Priority: P1. Status: partial. Source: backlog 3, P03 P08 P13.
 - Acceptance: mixed units are never summed silently; exact numeric queries are consistent.
-- Evidence: `frontend/scripts/exact-decimal-period-browser-smoke.mjs:46-49,100-109` checks a bounded exact-decimal period and rejects mixed units. General coverage remains unverified.
-- Blockers: none identified. Next: map all aggregation paths and independently test mixed units and precision boundaries.
+- Exists: validated decimal period columns require matching units (`frontend/services/duckdb/queryCompiler.ts:512-527`); weighted statistics check units when supplied (`frontend/services/agent/execution/weightedMean.ts:19-23`, `weightedMedian.ts:23-27`).
+- Missing: single-column DuckDB sums (`queryCompiler.ts:530-561`), worker/in-memory sums (`frontend/services/agent/execution/dataQueryExecutor.ts:319-383`, `frontend/services/workers/dataWorker.ts:33-35`) and spreadsheet totals (`frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`) lack general row-unit guards; ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). Next: define trusted unit meaning, missing-unit behavior and exact-decimal semantics across routes before enforcing them; test per-group and grand totals, filters, precision and overflow. See [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
 
 ## CA-182 — Safe guidance for boundary diagnostics
-- Priority: P2. Status: pending. Source: backlog 6, P05 P19.
+- Priority: P2. Status: partial. Source: backlog 6, P05 P19.
 - Acceptance: users understand the next step and no raw CSV cell leaks.
-- Evidence: `frontend/services/agent/fileProcessor.ts:519-521` emits source scan diagnostics; `frontend/services/agent/reportStructureResolver.ts:397-398` records runtime ambiguity; `frontend/components/modals/ReportBoundaryConfirmModal.tsx:44` checks one reason.
-- Blockers: user-facing coverage and privacy unverified. Next: trace both codes through UI and test sanitized guidance.
+- Exists: `frontend/services/agent/fileProcessor.ts:511-522` blocks on source anomalies; `frontend/components/CsvSourceScanPanel.tsx:39-47` now gives correction/re-import guidance and displays structural coordinates, not cells. `frontend/services/agent/reportStructureResolver.ts:397-398` emits the runtime ambiguity code; `frontend/components/modals/ReportBoundaryConfirmModal.tsx:123-129,261-264` renders a localized reason and action.
+- Missing: independent end-to-end browser and comprehensive disclosure verification. Focused guidance tests are in `frontend/tests/csvSourceScanPanel.test.tsx:35-47` and `frontend/tests/reportBoundaryConfirmModalReview.test.tsx:181-192`; expanded technical details can render unconstrained messages ([BUG-008](BUG.md#bug-008--technical-diagnostic-text-may-expose-input-derived-errors)). Next: constrain message producers and verify the complete upload-to-review path and technical details with synthetic inputs.
 
 ## CA-183 — Download, offline and stress coverage
 - Priority: P2. Status: pending. Source: backlog 7, P20 P24.
