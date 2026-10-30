@@ -1,0 +1,9 @@
+FICTIONAL MULTILEVEL REPORT — TEST ONLY
+RecordId,RowKind,Customer,Date,Region,Category,Period1,Period1,Period1,Period1,Period1,Period1,Period2,Period2,Period2,Period2,Period2,Period2,Period3,Period3,Period3,Period3,Period3,Period3,Period4,Period4,Period4,Period4,Period4,Period4,Period5,Period5,Period5,Period5,Period5,Period5,Period6,Period6,Period6,Period6,Period6,Period6
+RecordId,RowKind,Customer,Date,Region,Category,Revenue,Cost,Net,Quantity,Tax,Variance,Revenue,Cost,Net,Quantity,Tax,Variance,Revenue,Cost,Net,Quantity,Tax,Variance,Revenue,Cost,Net,Quantity,Tax,Variance,Revenue,Cost,Net,Quantity,Tax,Variance,Revenue,Cost,Net,Quantity,Tax,Variance
+FICT-1,DATA,Synthetic Customer 1,2026-01-01,SG,Test,100,25,75,1,0,4,105,26,79,1,1,5,110,27,83,1,2,6,115,28,87,1,3,7,120,29,91,1,4,8,125,30,95,1,5,9
+SUBTOTAL-1,SUBTOTAL,,,,,100,25,75,1,0,4,105,26,79,1,1,5,110,27,83,1,2,6,115,28,87,1,3,7,120,29,91,1,4,8,125,30,95,1,5,9
+FICT-2,DATA,Synthetic Customer 2,2026-01-01,SG,Test,200,50,150,2,1,8,205,51,154,2,2,9,210,52,158,2,3,10,215,53,162,2,4,11,220,54,166,2,5,12,225,55,170,2,6,13
+FICT-3,DATA,Synthetic Customer 3,2026-01-01,SG,Test,300,75,225,3,2,12,305,76,229,3,3,13,310,77,233,3,4,14,315,78,237,3,5,15,320,79,241,3,6,16,325,80,245,3,7,17
+"SUBTOTAL-2,3",SUBTOTAL,,,,,500,125,375,5,3,20,510,127,383,5,5,22,520,129,391,5,7,24,530,131,399,5,9,26,540,133,407,5,11,28,550,135,415,5,13,30
+"GRAND_TOTAL-1,2,3",GRAND_TOTAL,,,,,600,150,450,6,3,24,615,153,462,6,6,27,630,156,474,6,9,30,645,159,486,6,12,33,660,162,498,6,15,36,675,165,510,6,18,39

@@ -14,3 +14,9 @@ The main Pi runtime uses the provider and model selected in Settings and the app
 Use Node.js `>=22.13 <23`. From the repository root, run `npm ci --prefix frontend`, then `npm run dev`, `npm run typecheck`, `npm run test`, or `npm run build`. The build output is `frontend/dist/`; publish it to the checked-in static root with `npm run publish:root` after review.
 
 Localization coverage is checked by `tests/localizationCoverage.test.ts`. The Japanese, Malay, and placeholder baselines in `tests/fixtures/localization-coverage-baseline.json` are currently empty; `docs/localization-coverage.md` reports any gaps by key prefix. After changing translations, run `npx vitest run --environment jsdom tests/localizationCoverage.test.ts` from `frontend/`. When a reviewed translation closes an existing gap, regenerate both files with `UPDATE_LOCALIZATION_BASELINE=1 npx vitest run --environment jsdom tests/localizationCoverage.test.ts` and review the diff; the normal test rejects new gaps and stale baseline entries.
+
+
+Report-shaped CSV safety:
+- Reconciled group subtotals, including a closing subtotal/grand-total group following an earlier verified section subtotal, remain summary evidence and must not be counted again as business records. A standalone published period-wide Total series is not discarded solely for its label.
+- A dense header layer whose width disagrees with the selected leaf header and data rows signals header_shape_drift, blocking automatic analysis until the source meaning is reviewed. Sparse title/metadata rows are not width-drift evidence.
+- Run cd frontend && npx vitest run tests/complexReportSourceRows.test.ts for fictional 8/42/60/90-column positive and negative regressions. Original CSV bytes and unapproved Dataset Commit boundaries remain protected.

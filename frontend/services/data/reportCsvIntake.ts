@@ -557,6 +557,7 @@ const hasHeaderShapeDrift = (
     rows: RawCsvRow[],
     headerRowIndex: number,
     bodyStartIndex: number,
+    headerLayerIndexes: number[] = [],
 ) => {
     const headerWidth = rows[headerRowIndex]?.length ?? 0;
     if (headerWidth === 0) return false;
@@ -567,7 +568,17 @@ const hasHeaderShapeDrift = (
     if (bodyRows.length === 0) return false;
 
     const mismatchedRows = bodyRows.filter(row => Math.abs(row.length - headerWidth) >= 2).length;
-    return mismatchedRows >= Math.max(1, Math.ceil(bodyRows.length * 0.34));
+    if (mismatchedRows >= Math.max(1, Math.ceil(bodyRows.length * 0.34))) return true;
+
+    // A dense outer header band can be shorter than the selected leaf header,
+    // even when the selected header itself matches all body rows. Sparse title
+    // and metadata rows are not enough evidence to flag a structural mismatch.
+    return headerLayerIndexes.some(index => {
+        if (index < 0 || index >= bodyStartIndex || index === headerRowIndex) return false;
+        const layer = rows[index] ?? [];
+        return Math.abs(layer.length - headerWidth) >= 2
+            && getNonEmptyCells(layer).length >= Math.max(4, Math.ceil(headerWidth * 0.5));
+    });
 };
 
 const findBodyStartAfterHeader = (
@@ -979,15 +990,17 @@ const buildSegments = (
         // Page-break blocks, repeated headers and reconciled subtotals inside
         // the body are layout artefacts, not records.
         const bodyFindings = classifyBodyRows(rows, provisionalTable);
-        // A summary row after the last record is the table's closing total. It
-        // stays in the body (published totals are series of their own in a
-        // period-wide table, and the canonical step classifies it); only
-        // subtotals with records after them are layout between groups.
+        // Preserve standalone closing total series in period-wide tables, but
+        // never reinsert reconciled closing subtotals when an earlier verified
+        // section subtotal proves this is a printed grouped report. Otherwise
+        // the same amounts enter both the business rows and summary evidence.
         let lastRecordIndex = provisionalTable.summaryStartIndex - 1;
         while (lastRecordIndex >= provisionalTable.bodyStartIndex
             && (bodyFindings.has(lastRecordIndex) || isBlankRow(rows[lastRecordIndex]))) {
             lastRecordIndex -= 1;
         }
+        const hasVerifiedInteriorSummary = [...bodyFindings].some(([index, finding]) =>
+            index <= lastRecordIndex && (finding.kind === 'subtotal' || finding.kind === 'total'));
         let seenTitle = false;
         rows.forEach((row, index) => {
             if (isBlankRow(row)) {
@@ -1035,7 +1048,8 @@ const buildSegments = (
             const bodyFinding = bodyFindings.get(index);
             const isClosingSummary = bodyFinding !== undefined
                 && (bodyFinding.kind === 'subtotal' || bodyFinding.kind === 'total')
-                && index > lastRecordIndex;
+                && index > lastRecordIndex
+                && !hasVerifiedInteriorSummary;
             if (bodyFinding && !isClosingSummary) {
                 applyBodyFindingSegment(rowKinds, rowConfidence, rowNotes, index, bodyFinding);
                 return;
@@ -1212,7 +1226,7 @@ export const buildReportIntakeIr = (
         .slice(0, selection.bodyStartIndex)
         .map((_, index) => index)
         .filter(index => !headerLayerIndexSet.has(index) && index !== selection.headerRowIndex && !isBlankRow(normalizedRows[index]));
-    const headerShapeDrift = hasHeaderShapeDrift(coercedRows, selection.headerRowIndex, selection.bodyStartIndex);
+    const headerShapeDrift = hasHeaderShapeDrift(coercedRows, selection.headerRowIndex, selection.bodyStartIndex, selection.headerLayerIndexes);
     const driftDetection = headerShapeDrift
         ? appendDetectionWarning(baseDetection, {
             code: 'header_shape_drift',
@@ -1522,7 +1536,7 @@ export const rebuildIntakeIrWithBoundary = (
     // For headerless files, skip header shape drift check (there is no header to drift from)
     const headerShapeDrift = isHeaderless
         ? false
-        : hasHeaderShapeDrift(coercedRows.map(r => [...r]), boundary.headerRowIndex, boundary.bodyStartIndex);
+        : hasHeaderShapeDrift(coercedRows.map(r => [...r]), boundary.headerRowIndex, boundary.bodyStartIndex, headerLayerIndexes);
 
     const provisionalTable: ReportIntakeIr['provisionalTable'] = {
         headerRowIndex: boundary.headerRowIndex,
