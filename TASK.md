@@ -46,6 +46,7 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Exists: validated decimal period columns require matching units (`frontend/services/duckdb/queryCompiler.ts:512-527`); weighted statistics check units when supplied (`frontend/services/agent/execution/weightedMean.ts:19-23`, `weightedMedian.ts:23-27`).
 - Missing: single-column DuckDB sums (`queryCompiler.ts:530-561`), worker/in-memory sums (`frontend/services/agent/execution/dataQueryExecutor.ts:319-383`, `frontend/services/workers/dataWorker.ts:33-35`) and spreadsheet totals (`frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`) lack general row-unit guards; ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). Next: define trusted unit meaning, missing-unit behavior and exact-decimal semantics across routes before enforcing them; test per-group and grand totals, filters, precision and overflow. See [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
 - Design: [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md); staged work: CA-187–CA-190.
+- Verification run (2026-10-30, local Chromium against the built main, 127.0.0.1 only): `frontend/scripts/exact-decimal-period-browser-smoke.mjs` passed for compatible, mixed-types and mixed-units scenarios with 0 page errors and 0 external requests. This covers the exact-decimal period path only; other aggregation paths remain unverified.
 
 ## CA-182 — Safe guidance for boundary diagnostics
 - Priority: P2. Status: partial. Source: backlog 6, P05 P19.
