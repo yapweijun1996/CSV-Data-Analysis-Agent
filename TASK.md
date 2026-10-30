@@ -45,6 +45,7 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Acceptance: mixed units are never summed silently; exact numeric queries are consistent.
 - Exists: validated decimal period columns require matching units (`frontend/services/duckdb/queryCompiler.ts:512-527`); weighted statistics check units when supplied (`frontend/services/agent/execution/weightedMean.ts:19-23`, `weightedMedian.ts:23-27`).
 - Missing: single-column DuckDB sums (`queryCompiler.ts:530-561`), worker/in-memory sums (`frontend/services/agent/execution/dataQueryExecutor.ts:319-383`, `frontend/services/workers/dataWorker.ts:33-35`) and spreadsheet totals (`frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`) lack general row-unit guards; ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). Next: define trusted unit meaning, missing-unit behavior and exact-decimal semantics across routes before enforcing them; test per-group and grand totals, filters, precision and overflow. See [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
+- Design: [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md); staged work: CA-187–CA-190.
 
 ## CA-182 — Safe guidance for boundary diagnostics
 - Priority: P2. Status: partial. Source: backlog 6, P05 P19.
@@ -75,3 +76,23 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Acceptance: schema/audit exports, cohorts, named SQL, school templates and versioned saves bind to a controlled dataset version.
 - Evidence: `frontend/components/task/TaskExport.tsx:25-28` offers a task bundle; `frontend/services/agent/execution/analysisSkillExecutor.ts:835-850` implements a cohort path; `frontend/components/dashboard/ReportDelivery.tsx:172-175` lists report templates. Requested complete version-bound set is unverified.
 - Blockers: none identified. Next: inventory existing features and version custody before specifying gaps.
+
+## CA-187 — Bind reviewed unit meaning
+- Priority: P1. Status: pending. Source: CA-181.
+- Acceptance: version-bound fixed/row unit review rejects stale, inferred-only and blank mappings.
+- Next: define trusted metadata and review binding; see [design](docs/design/ca-181-unit-and-decimal-policy.md).
+
+## CA-188 — Guard query and worker aggregation units
+- Priority: P1. Status: pending. Source: CA-181; depends on CA-187.
+- Acceptance: filtered mixed/missing units block; explicit unit splits and fallback/worker results agree.
+- Next: enforce complete-scope per-measure and per-group checks across query routes.
+
+## CA-189 — Guard spreadsheet aggregation and totals
+- Priority: P1. Status: pending. Source: CA-181; depends on CA-187.
+- Acceptance: groups and every subtotal/grand total respect units; averages use underlying counts.
+- Next: handle pivot, hidden groups and explicitly split totals.
+
+## CA-190 — Exact decimal arithmetic parity
+- Priority: P1. Status: pending. Source: CA-181; depends on CA-187–CA-189.
+- Acceptance: supported routes agree on exact sums and rounded averages; overflow never falls back to DOUBLE.
+- Next: qualify precision, scale, serialization and fail-closed unsupported paths.
