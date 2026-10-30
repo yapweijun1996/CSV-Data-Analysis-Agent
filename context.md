@@ -1,5 +1,10 @@
 ## Current Work Context
 
+### 2026-10-30 — CA-181 design
+
+- Added a proposed unit/decimal policy and pending CA-187–CA-190; CA-181 remains partial and BUG-006 remains a candidate.
+- Documentation-only; aggregation behavior and end-to-end acceptance remain unverified.
+
 ### 2026-10-30 — P1 audit CA-179–182
 
 - Review evidence, privacy/deletion, unit/decimal routes and boundary guidance audited; all four remain partial, with concrete next steps in TASK.md and candidates BUG-006–008.
