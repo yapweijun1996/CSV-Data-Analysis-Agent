@@ -1837,3 +1837,9 @@ Final delivery checks: 135 documentation links resolve; 13 source/test hashes an
 - When an earlier subtotal/total has independently reconciled against preceding records, the trailing recognized summary run is now excluded from business rows and preserved as summary evidence. Standalone closing published Total series and unmatched business labels remain unchanged.
 - A dense (at least half-width populated) outer header layer with a material width difference from a selected leaf header is now detected, even when selected leaf header and body widths match. This raises existing header_shape_drift diagnostics and routes the unresolved structure to human review; sparse title metadata is not sufficient.
 - Added solely fictional 8/42/60/90-column CSV fixtures and negative tests, including legitimate business Total labels and normal multi-layer headers. Verified red-before-green: five new failures on baseline, followed by twelve green assertions after integration-gate coverage. Source changes only in frontend/; no root Pages publication, real AI calls, user data, merge or deployment.
+
+## 2026-10-30 — CA-175–178 source changes
+- Vitest prepares public assets; the standalone A60 repeat runner enforces a per-run timeout.
+- Assistant composer and hide control are named; lazy loading now displays a localized status.
+- Full Vitest: 535 files / 5,487 tests passed; A60 standalone passed three runs. Build needed a 4 GiB Node heap after the default heap exhausted.
+- Root deployment remains unchanged; real assistive-technology and repeated cold/warm acceptance remain open.

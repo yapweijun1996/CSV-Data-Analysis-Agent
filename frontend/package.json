@@ -19,6 +19,7 @@
     "preview:single": "npm run assets:pyodide && vite build --mode single --sourcemap --minify false && vite preview --host 0.0.0.0 --strictPort --logLevel debug",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "node scripts/lint-baseline.mjs",
+    "pretest": "node ../scripts/prepare-frontend-assets.mjs",
     "test": "vitest run --environment jsdom",
     "test:coding-agent:fixtures": "vitest run tests/codingAgentFixturePreflight.test.ts",
     "coding-agent:fixtures": "node scripts/coding-agent-fixtures.mjs",

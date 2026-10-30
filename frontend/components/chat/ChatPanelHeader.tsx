@@ -72,7 +72,7 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
             )}
             <button
                 onClick={onHidePanel}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-1 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 md:min-h-8 md:min-w-8"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-1 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900"
                 title={getTranslation('hide_panel', language)}
                 aria-label={getTranslation('hide_panel', language)}
             >

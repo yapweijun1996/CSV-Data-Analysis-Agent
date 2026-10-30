@@ -1375,6 +1375,22 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'French': 'Réflexion de l\'agent',
         'Malay': 'Pemikiran ejen',
     },
+    'chat_message_label': {
+        'English': 'Message Assistant',
+        'Mandarin': '给助手发送消息',
+        'Spanish': 'Mensaje al asistente',
+        'Japanese': 'アシスタントへのメッセージ',
+        'French': 'Message à l’assistant',
+        'Malay': 'Mesej kepada pembantu',
+    },
+    'chat_loading': {
+        'English': 'Loading Assistant…',
+        'Mandarin': '正在加载助手…',
+        'Spanish': 'Cargando asistente…',
+        'Japanese': 'アシスタントを読み込み中…',
+        'French': 'Chargement de l’assistant…',
+        'Malay': 'Memuatkan pembantu…',
+    },
     'chat_placeholder_api_key': {
         'English': 'Configure API Key in settings to start',
         'Mandarin': '请在设置中配置 API 密钥以开始',
