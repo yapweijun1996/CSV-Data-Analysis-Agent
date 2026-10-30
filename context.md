@@ -1,5 +1,11 @@
 ## Current Work Context
 
+### 2026-10-30 — Synthetic upload/privacy browser verification
+
+- Built frontend and exercised real uploads with loopback-only Chromium. Ragged source scan guidance and expanded-detail sentinel privacy passed; three-section upload did not reach boundary Technical details, so that check remains unverified.
+- Injected localStorage.clear failure produced the incomplete-store warning without reload; unpatched clear reloaded. No storage read-back or provider retention verification.
+- Page errors and external requests were empty. The initial harness attempted details during import and timed out behind an overlay; waiting for upload completion fixed the harness, not application code. No root deployment publication.
+
 ### 2026-10-30 — BUG-007 and BUG-008 source fixes
 
 - Clear-all reports incomplete web/cache stores without reloading; boundary technical diagnostics use safe allowlists and generic fallback. Both bugs remain candidates pending independent acceptance.
