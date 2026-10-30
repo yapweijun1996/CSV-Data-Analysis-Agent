@@ -453,6 +453,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
                             <textarea
                                 ref={textareaRef}
                                 name="assistant-message"
+                                aria-label={getTranslation('chat_message_label', language)}
                                 rows={1}
                                 value={input}
                                 onChange={handleInputChange}

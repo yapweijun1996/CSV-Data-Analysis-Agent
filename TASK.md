@@ -5,28 +5,28 @@ Follow-up work from the [review archive](docs/reviews/2026-10-30-25-persona-revi
 Statuses: `pending` = not established; `partial` = some scope exists; `implemented-unverified` = implementation identified but acceptance not checked; `verified-complete` = acceptance tested; `blocked` = prerequisite prevents progress; `obsolete` = no longer applicable.
 
 ## CA-175 — Vitest build-asset preflight
-- Priority: P2. Status: pending. Source: backlog 5, observation 4, P15 P17.
+- Priority: P2. Status: implemented-unverified. Source: backlog 5, observation 4, P15 P17.
 - Acceptance: a fresh clone runs Vitest without a false missing-WASM failure after one preparation flow.
-- Evidence: `frontend/package.json:11-13,22` prepares assets before build/dev but has no test preflight; `frontend/tests/duckDbSqlSecurity.test.ts:91` hashes the prepared public WASM.
-- Blockers: none identified. Next: reproduce the original failing test in a clean environment and implement a bounded preflight. Related: [BUG-001](BUG.md#bug-001--vitest-asset-setup).
+- Evidence: `frontend/package.json:22-23` runs `scripts/prepare-frontend-assets.mjs` before Vitest.
+- Blockers: fresh-clone acceptance not independently established. Related: [BUG-001](BUG.md#bug-001--vitest-asset-setup).
 
 ## CA-176 — Bounded A60 retain/recovery regression
-- Priority: P2. Status: pending. Source: backlog 5, observation 3, P15 P17.
+- Priority: P2. Status: implemented-unverified. Source: backlog 5, observation 3, P15 P17.
 - Acceptance: repeated A60 retain/recovery runs complete without hanging.
-- Evidence: `frontend/scripts/pi-dual-grain-browser-smoke.mjs:25,223-226` includes A60 and retention/reload; grouped repeatability is unverified.
-- Blockers: root cause unverified. Next: run bounded repeated grouped and standalone scenarios, capture timings. [BUG-002](BUG.md#bug-002--a60-grouped-timeout).
+- Evidence: `frontend/scripts/pi-a60-repeat-smoke.mjs:4-24` runs standalone A60 with per-run timing and a hard timeout.
+- Blockers: repeated grouped acceptance remains unverified. Related: [BUG-002](BUG.md#bug-002--a60-grouped-timeout).
 
 ## CA-177 — Accessible Assistant and mobile close
-- Priority: P1. Status: pending. Source: backlog 4, observations 2 and 5, P21 P22 P23.
+- Priority: P1. Status: implemented-unverified. Source: backlog 4, observations 2 and 5, P21 P22 P23.
 - Acceptance: real keyboard and screen-reader checks pass; named, visible, touch-sized mobile close works without Escape.
-- Evidence: `frontend/components/chat/ChatComposer.tsx:453-463` has no explicit label on the textarea; `frontend/components/chat/ChatPanelHeader.tsx:74-77` defines a named 44px minimum hide button. Actual accessibility tree and touch reachability unverified.
-- Blockers: manual assistive-technology verification outstanding. Next: inspect accessible names and exercise complete keyboard, screen-reader and mobile close flows. [BUG-003](BUG.md#bug-003--assistant-textarea-name), [BUG-005](BUG.md#bug-005--mobile-close-verification).
+- Evidence: `frontend/components/chat/ChatComposer.tsx:453-456`, `frontend/components/chat/ChatPanelHeader.tsx:73-77`, and `frontend/tests/chatPanelBehavior.test.tsx:89-100`.
+- Blockers: manual assistive-technology verification outstanding. Related: [BUG-003](BUG.md#bug-003--assistant-textarea-name), [BUG-005](BUG.md#bug-005--mobile-close-verification).
 
 ## CA-178 — Mobile Assistant first paint
-- Priority: P2. Status: pending. Source: observation 1.
+- Priority: P2. Status: implemented-unverified. Source: observation 1.
 - Acceptance: repeat immediate and delayed opens and verify lazy-load first paint and recovery.
-- Evidence: `frontend/App.tsx:303-310` renders lazy ChatPanel under a null Suspense fallback; blank duration is unverified.
-- Blockers: none identified. Next: record repeated cold/warm mobile opens with timings. [BUG-004](BUG.md#bug-004--mobile-first-paint).
+- Evidence: `frontend/App.tsx:300-310` renders a localized status while the lazy ChatPanel loads.
+- Blockers: repeated cold/warm mobile acceptance unverified. Related: [BUG-004](BUG.md#bug-004--mobile-first-paint).
 
 ## CA-179 — Candidate, validation and approval evidence
 - Priority: P1. Status: pending. Source: backlog 1, P01 P04 P06 P10 P11 P12 P14 P18.

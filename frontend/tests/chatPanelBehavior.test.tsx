@@ -86,6 +86,19 @@ describe('ChatPanel behavior', () => {
         vi.unstubAllGlobals();
     });
 
+    it('names the composer and exposes an operable assistant hide control', () => {
+        render(<ChatPanel />);
+        expect(screen.getByRole('textbox', { name: 'Message Assistant' })).toBeTruthy();
+        const hide = screen.getByRole('button', { name: 'Hide Panel' });
+        expect(hide.tabIndex).toBe(0);
+        expect(hide.className).toContain('min-h-[44px]');
+        expect(hide.className).toContain('min-w-[44px]');
+        hide.focus();
+        expect(document.activeElement).toBe(hide);
+        fireEvent.click(hide);
+        expect(state.setIsAsideVisible).toHaveBeenCalledWith(false);
+    });
+
     it('follows content height changes while the user is already at the bottom', async () => {
         state = createState({
             chatHistory: [

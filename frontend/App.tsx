@@ -305,7 +305,7 @@ const App: React.FC = () => {
                         className="fixed inset-0 z-40 flex h-[100dvh] w-full flex-col border-l border-slate-200 bg-white md:static md:z-auto md:h-full md:w-[var(--aside-width)]"
                         style={{ '--aside-width': `${asideWidth}px` } as React.CSSProperties}
                     >
-                        <Suspense fallback={null}>
+                        <Suspense fallback={<div role="status" className="p-4 text-sm text-slate-600">{getTranslation('chat_loading', language)}</div>}>
                             <ChatPanel />
                         </Suspense>
                     </aside>
