@@ -6,7 +6,7 @@ import type {
 } from '../../types';
 import { getCloudAiConsent, saveCloudAiConsent } from '../storageService';
 
-export const CLOUD_AI_DISCLOSURE_VERSION = '2026-07-27-v2';
+export const CLOUD_AI_DISCLOSURE_VERSION = '2026-10-30-v3';
 
 export interface CloudAiConsentRuntimeContext {
     datasetId: string | null;

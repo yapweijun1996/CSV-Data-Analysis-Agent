@@ -1,5 +1,11 @@
 ## Current Work Context
 
+### 2026-10-30 — P1 audit CA-179–182
+
+- Review evidence, privacy/deletion, unit/decimal routes and boundary guidance audited; all four remain partial, with concrete next steps in TASK.md and candidates BUG-006–008.
+- Source scan guidance and sensitive-field disclosure updated; consent disclosure version bumped. No root deployment publication or full build.
+- Node 22 typecheck and lint passed; full Vitest: 535 files, 5,488 tests passed. Isolated browser rendering showed scan guidance; normal synthetic upload hit a vector-worker timeout, so end-to-end UI acceptance remains unverified.
+
 ### 2026-10-30 — Persona review documentation
 
 - Added the review archive, task backlog CA-175 through CA-186, and five linked bug records.

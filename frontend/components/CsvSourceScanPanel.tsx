@@ -36,7 +36,7 @@ export const CsvSourceScanPanel: React.FC = () => {
             <button onClick={() => void act(true)} className="mt-2 rounded bg-blue-600 px-3 py-2 text-white">Resume structural scan</button>
         </>}
         {scan.status === 'failed' && <p>Recoverable limit: {scan.reason}. Re-select the original CSV after resolving its encoding or parser/resource limit. A reload does not restore scan authority.</p>}
-        {scan.status === 'completed_anomalies' && <p className="mt-2">The whole source was inspected, not just a sample. Repair and independent validation are still required. Follow the analysis status for progress or recovery; completing this scan does not mean repair succeeded. File size alone is not a reason for human review. Canonical publication remains blocked.</p>}
+        {scan.status === 'completed_anomalies' && <p className="mt-2">The whole source was inspected, not just a sample. Open scan details to locate the structural evidence, then correct the original CSV and re-import it. Repair and independent validation are still required; completing this scan does not mean repair succeeded. File size alone is not a reason for human review. Canonical publication remains blocked.</p>}
         {scan.status === 'completed_clean' && <p className="mt-2">All bytes parsed and hashed. Schema checks are bounded heuristics, not proof of unchanged structure or business meaning, a repaired candidate, or Dataset Commit approval.</p>}
         <button aria-expanded={details} onClick={() => setDetails(!details)} className="mt-2 font-medium text-blue-800 underline">{details ? 'Hide scan details' : 'Show scan details'}</button>
         {details && <div className="mt-2 break-all">

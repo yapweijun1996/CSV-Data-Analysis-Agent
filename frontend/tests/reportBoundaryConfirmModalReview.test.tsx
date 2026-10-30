@@ -177,6 +177,21 @@ describe('ReportBoundaryConfirmModal review dialog (real fixtures)', () => {
         expect(disclosure.textContent).toContain('Technical details');
     });
 
+    it('explains ambiguous runtime boundaries with an action and no source cells in diagnostic guidance', () => {
+        const store = mockStoreFor(fixtures['w3_three_sections.csv']);
+        store.reportStructureResolution.blockingReasons = ['runtime_boundary_ambiguous'];
+        store.rawIntakeIr = {
+            ...store.rawIntakeIr,
+            normalizedRows: [['PRIVATE_CELL_SENTINEL'], ...store.rawIntakeIr.normalizedRows.slice(1)],
+        };
+        render(<ReportBoundaryConfirmModal />);
+
+        const guidance = screen.getByRole('region', { name: 'Why your review is needed' });
+        expect(guidance).toHaveTextContent('The table boundaries are unclear');
+        expect(guidance).toHaveTextContent('Check where the data starts and ends');
+        expect(guidance).not.toHaveTextContent('PRIVATE_CELL_SENTINEL');
+    });
+
     it('puts the editable boundary and the preview above the column roles', () => {
         mockStoreFor(fixtures['w3_three_sections.csv']);
         render(<ReportBoundaryConfirmModal />);

@@ -25,6 +25,8 @@ This repository contains a browser-only React CSV analysis app. It has an editab
 Assistant starts expanded on desktop (768 px and wider), while mobile starts with the full-screen drawer closed. You can still hide, reopen, and resize Assistant manually. Resizing preserves its 320 px readable minimum; constrained desktop layouts let the main area shrink below its preferred 600 px rather than collapsing Assistant. Closing and immediately reopening a structural semantic review must not let an older preparation cancel the current review. Semantic confirmation is not Dataset Commit approval: independent validation and separate exact approval remain required. A completed source scan is not proof that repair or model execution succeeded.
 
 While the Assistant panel loads, a localized status is shown; its message field and hide control have accessible names. The hide control retains a 44 × 44 CSS-pixel minimum.
+Source-scan anomaly guidance points to scan details and re-import after correcting the original CSV. Cloud consent explains that the bounded sensitive-data scan can miss data and does not mask or remove fields; the updated disclosure asks again for consent.
+
 
 `npm --prefix frontend test` prepares the public DuckDB and demo-data resources before Vitest. For standalone A60 retention/recovery repeats, build the frontend, serve `frontend/dist` on loopback port 4187, then run `node frontend/scripts/pi-a60-repeat-smoke.mjs [base-url] [output-prefix] [runs] [timeout-ms]`; defaults are three runs and 300000 ms per run. The underlying harness requires its configured Chromium executable and a display.
 
