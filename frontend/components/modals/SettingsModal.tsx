@@ -20,6 +20,7 @@ import { createProviderModel } from '../../services/ai/providerConfig';
 import { generateText } from 'ai';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 import { clearAllLocalBrowserData } from '../../services/storageService';
+import type { IncompleteLocalDataStore } from '../../services/storageService';
 import { clearCloudAiConsentRuntimeDecisions } from '../../services/privacy/cloudAiConsent';
 import { usePwaLifecycle } from '../../hooks/usePwaLifecycle';
 import { refreshPwaStorageEstimate } from '../../services/pwa/pwaManager';
@@ -49,6 +50,7 @@ export const SettingsModal: React.FC = () => {
     const [showClearConfirmation, setShowClearConfirmation] = useState(false);
     const [isClearingLocalData, setIsClearingLocalData] = useState(false);
     const [clearLocalDataError, setClearLocalDataError] = useState(false);
+    const [incompleteStores, setIncompleteStores] = useState<IncompleteLocalDataStore[]>([]);
     const language = settings.language;
     const pwaLifecycle = usePwaLifecycle();
     const dialogRef = useDialogAccessibility<HTMLDivElement>(isOpen, onClose);
@@ -61,6 +63,7 @@ export const SettingsModal: React.FC = () => {
         setShowClearConfirmation(false);
         setIsClearingLocalData(false);
         setClearLocalDataError(false);
+        setIncompleteStores([]);
         if (isOpen) void refreshPwaStorageEstimate();
     }, [currentSettings, isOpen]);
 
@@ -158,9 +161,16 @@ export const SettingsModal: React.FC = () => {
     const handleClearAllLocalData = async () => {
         setIsClearingLocalData(true);
         setClearLocalDataError(false);
+        setIncompleteStores([]);
         try {
             clearCloudAiConsentRuntimeDecisions();
-            await clearAllLocalBrowserData();
+            const result = await clearAllLocalBrowserData();
+            if (result.incompleteStores.length > 0) {
+                setIncompleteStores(result.incompleteStores);
+                setClearLocalDataError(true);
+                setIsClearingLocalData(false);
+                return;
+            }
             window.location.reload();
         } catch {
             setClearLocalDataError(true);
@@ -510,6 +520,13 @@ export const SettingsModal: React.FC = () => {
                                     {clearLocalDataError && (
                                         <p role="alert" className="mt-2 text-sm font-medium text-red-800">
                                             {getTranslation('settings_clear_local_data_error', language)}
+                                            {incompleteStores.length > 0 && (
+                                                <> {getTranslation('settings_clear_local_data_incomplete_stores', language, {
+                                                    stores: incompleteStores.map(store =>
+                                                        getTranslation(`settings_clear_local_data_store_${store}`, language),
+                                                    ).join(', '),
+                                                })}</>
+                                            )}
                                         </p>
                                     )}
                                     <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row">

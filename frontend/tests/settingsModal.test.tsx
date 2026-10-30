@@ -18,7 +18,7 @@ const modalState = {
         openAIApiKey: '',
         simpleModel: 'gemini-3-flash-preview',
         complexModel: 'gemini-3-flash-preview',
-        language: 'English' as const,
+        language: 'English' as 'English' | 'Japanese',
         autoConfirmGoal: true,
         maxAgentTurns: 12,
         toolOutputCutoff: 2000,
@@ -115,5 +115,47 @@ describe('SettingsModal', () => {
         expect(await screen.findByRole('alert')).toHaveTextContent(
             'Local data could not be fully cleared. Close other app tabs and retry.',
         );
+    });
+
+    it.each([
+        ['localStorage', 'local storage'],
+        ['sessionStorage', 'session storage'],
+        ['cacheStorage', 'cache storage'],
+    ])(
+        'warns without reloading when %s could not be cleared',
+        async (failedStore, label) => {
+            clearAllLocalBrowserDataMock.mockResolvedValueOnce({
+                indexedDbDeleted: true,
+                localStorageCleared: failedStore !== 'localStorage',
+                sessionStorageCleared: failedStore !== 'sessionStorage',
+                cacheCount: 0,
+                opfsCleared: true,
+                incompleteStores: [failedStore],
+            });
+            render(<SettingsModal />);
+
+            fireEvent.click(screen.getByRole('button', { name: 'Clear all local data' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Delete everything' }));
+
+            expect(await screen.findByRole('alert')).toHaveTextContent(
+                'Local data could not be fully cleared. Close other app tabs and retry.',
+            );
+            expect(screen.getByRole('alert')).toHaveTextContent(`Not fully cleared: ${label}.`);
+            expect(screen.getByRole('button', { name: 'Delete everything' })).toBeEnabled();
+        },
+    );
+
+    it('localizes the incomplete deletion warning', async () => {
+        modalState.settings = { ...modalState.settings, language: 'Japanese' };
+        clearAllLocalBrowserDataMock.mockResolvedValueOnce({ incompleteStores: ['cacheStorage'] });
+        render(<SettingsModal />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'すべてのローカルデータを消去' }));
+        fireEvent.click(screen.getByRole('button', { name: 'すべて削除' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'ローカルデータを完全に消去できませんでした。他のアプリタブを閉じて再試行してください。',
+        );
+        expect(screen.getByRole('alert')).toHaveTextContent('完全に消去されなかった保存領域：キャッシュストレージ。');
     });
 });

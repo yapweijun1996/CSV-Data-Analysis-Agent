@@ -1,5 +1,9 @@
 # CSV Data Analysis Agent
 
+## Local privacy safeguards (source changes)
+
+When clearing local data, failed local storage, session storage or Cache Storage clearing is reported by store without reloading; successful clearing still reloads. IndexedDB and OPFS errors continue to use the existing error path. Boundary review technical details show only recognized diagnostic codes and fixed safe messages; other text is replaced with a localized generic diagnostic. Independent storage read-back and end-to-end disclosure verification remain outstanding.
+
 ## Production startup qualification
 
 The checked-in production bundle must be booted in a real browser, not only checksum-verified or tested through Vite development mode. Shared Zod and SSE-parser modules have an explicit `vendor-ai-shared` chunk so AI SDK top-level schemas cannot import uninitialized definitions from the application lifecycle chunk.

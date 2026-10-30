@@ -46,6 +46,7 @@ describe('clearAllLocalBrowserData', () => {
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         __resetStorageClearStateForTests();
         vi.unstubAllGlobals();
         localStorage.clear();
@@ -66,7 +67,61 @@ describe('clearAllLocalBrowserData', () => {
             sessionStorageCleared: true,
             cacheCount: 2,
             opfsCleared: true,
+            incompleteStores: [],
         });
+    });
+
+    it.each(['localStorage', 'sessionStorage'] as const)(
+        'reports %s failure while attempting the remaining stores',
+        async failedStore => {
+            const clear = Storage.prototype.clear;
+            vi.spyOn(Storage.prototype, 'clear').mockImplementation(function (this: Storage) {
+                if (this === window[failedStore]) throw new Error('storage unavailable');
+                clear.call(this);
+            });
+
+            const result = await clearAllLocalBrowserData();
+
+            expect(result.incompleteStores).toEqual([failedStore]);
+            expect(result.localStorageCleared).toBe(failedStore !== 'localStorage');
+            expect(result.sessionStorageCleared).toBe(failedStore !== 'sessionStorage');
+            expect(caches.delete).toHaveBeenCalledTimes(2);
+            expect(clearAllOpfsDatasetDataMock).toHaveBeenCalledOnce();
+        },
+    );
+
+    it('reports a cache enumeration failure while clearing other stores', async () => {
+        vi.mocked(caches.keys).mockRejectedValueOnce(new Error('cache unavailable'));
+
+        const result = await clearAllLocalBrowserData();
+
+        expect(result.incompleteStores).toEqual(['cacheStorage']);
+        expect(result.cacheCount).toBe(0);
+        expect(result.localStorageCleared).toBe(true);
+        expect(result.sessionStorageCleared).toBe(true);
+        expect(clearAllOpfsDatasetDataMock).toHaveBeenCalledOnce();
+    });
+
+    it.each(['reject', 'false'] as const)(
+        'reports a cache deletion returning %s and continues with other caches',
+        async failure => {
+            if (failure === 'reject') vi.mocked(caches.delete).mockRejectedValueOnce(new Error('cache unavailable'));
+            else vi.mocked(caches.delete).mockResolvedValueOnce(false);
+
+            const result = await clearAllLocalBrowserData();
+
+            expect(result.incompleteStores).toEqual(['cacheStorage']);
+            expect(result.cacheCount).toBe(1);
+            expect(caches.delete).toHaveBeenCalledTimes(2);
+            expect(clearAllOpfsDatasetDataMock).toHaveBeenCalledOnce();
+        },
+    );
+
+    it('allows retry after incomplete clearing', async () => {
+        vi.mocked(caches.keys).mockRejectedValueOnce(new Error('cache unavailable'));
+
+        expect((await clearAllLocalBrowserData()).incompleteStores).toEqual(['cacheStorage']);
+        expect((await clearAllLocalBrowserData()).incompleteStores).toEqual([]);
     });
 
     it('locks persistence after clearing so late async work cannot recreate records', async () => {

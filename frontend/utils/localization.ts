@@ -2531,6 +2531,30 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Data setempat tidak dapat dipadam sepenuhnya. Tutup tab aplikasi lain dan cuba lagi.',
         'Japanese': 'ローカルデータを完全に消去できませんでした。他のアプリタブを閉じて再試行してください。',
     },
+    'settings_clear_local_data_incomplete_stores': {
+        'English': 'Not fully cleared: {stores}.',
+        'Mandarin': '未完全清除：{stores}。',
+        'Malay': 'Tidak dipadam sepenuhnya: {stores}.',
+        'Japanese': '完全に消去されなかった保存領域：{stores}。',
+    },
+    'settings_clear_local_data_store_localStorage': {
+        'English': 'local storage',
+        'Mandarin': '本地存储',
+        'Malay': 'storan setempat',
+        'Japanese': 'ローカルストレージ',
+    },
+    'settings_clear_local_data_store_sessionStorage': {
+        'English': 'session storage',
+        'Mandarin': '会话存储',
+        'Malay': 'storan sesi',
+        'Japanese': 'セッションストレージ',
+    },
+    'settings_clear_local_data_store_cacheStorage': {
+        'English': 'cache storage',
+        'Mandarin': '缓存存储',
+        'Malay': 'storan cache',
+        'Japanese': 'キャッシュストレージ',
+    },
     'settings_reasoning_effort': {
         'English': 'Thinking Depth',
         'Mandarin': '思考深度',
