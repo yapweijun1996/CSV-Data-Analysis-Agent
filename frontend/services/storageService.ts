@@ -407,20 +407,32 @@ export const clearStore = async (storeName: string, protectKeys?: Set<string>): 
     return deleted;
 };
 
-/** Clear all Cache Storage entries. Returns number of caches deleted. */
-export const clearAllCacheStorage = async (): Promise<number> => {
-    let cleared = 0;
+/** Clear all Cache Storage entries, continuing if an individual deletion fails. */
+const clearCacheStorage = async (): Promise<{ count: number; complete: boolean }> => {
+    let count = 0;
+    let complete = true;
     try {
         if (typeof caches !== 'undefined') {
             const keys = await caches.keys();
             for (const key of keys) {
-                await caches.delete(key);
-                cleared += 1;
+                try {
+                    if (await caches.delete(key)) count += 1;
+                    else complete = false;
+                } catch {
+                    complete = false;
+                }
             }
         }
-    } catch { /* non-fatal */ }
+    } catch {
+        complete = false;
+    }
     _cacheStorageBytesEstimate = null;
-    return cleared;
+    return { count, complete };
+};
+
+/** Clear all Cache Storage entries. Returns number of caches deleted. */
+export const clearAllCacheStorage = async (): Promise<number> => {
+    return (await clearCacheStorage()).count;
 };
 
 export const getCloudAiConsent = async (
@@ -503,12 +515,15 @@ export const getRecentLocalDiagnostics = async (
     return active.slice(-Math.max(1, Math.trunc(limit))).reverse();
 });
 
+export type IncompleteLocalDataStore = 'localStorage' | 'sessionStorage' | 'cacheStorage';
+
 export interface ClearAllLocalBrowserDataResult {
     indexedDbDeleted: true;
     localStorageCleared: boolean;
     sessionStorageCleared: boolean;
     cacheCount: number;
     opfsCleared: boolean;
+    incompleteStores: IncompleteLocalDataStore[];
 }
 
 /**
@@ -553,13 +568,15 @@ export const clearAllLocalBrowserData = async (): Promise<ClearAllLocalBrowserDa
         // Storage can be unavailable in hardened/private browser modes.
     }
     let cacheCount: number;
+    let cacheStorageCleared: boolean;
     let opfsCleared: boolean;
     try {
         const [{ clearAllOpfsDatasetData }, clearedCaches] = await Promise.all([
             import('./data/opfsDatasetStorage'),
-            clearAllCacheStorage(),
+            clearCacheStorage(),
         ]);
-        cacheCount = clearedCaches;
+        cacheCount = clearedCaches.count;
+        cacheStorageCleared = clearedCaches.complete;
         opfsCleared = await clearAllOpfsDatasetData();
         const { clearAllRetainedDatasetRows } = await import('./persistence/datasetRetention');
         opfsCleared = await clearAllRetainedDatasetRows() || opfsCleared;
@@ -570,12 +587,19 @@ export const clearAllLocalBrowserData = async (): Promise<ClearAllLocalBrowserDa
         throw new StorageOperationError('clearAllLocalBrowserData', error);
     }
 
+    const incompleteStores: IncompleteLocalDataStore[] = [];
+    if (!localStorageCleared) incompleteStores.push('localStorage');
+    if (!sessionStorageCleared) incompleteStores.push('sessionStorage');
+    if (!cacheStorageCleared) incompleteStores.push('cacheStorage');
+    if (incompleteStores.length) localDataClearInProgress = false;
+
     return {
         indexedDbDeleted: true,
         localStorageCleared,
         sessionStorageCleared,
         cacheCount,
         opfsCleared,
+        incompleteStores,
     };
 };
 

@@ -271,6 +271,64 @@ describe('ReportBoundaryConfirmModal guided repair', () => {
         expect(within(details!).getByText('Technical details')).toBeInTheDocument();
     });
 
+    it('redacts source-derived decision, pipeline message, and unknown codes in expanded details', () => {
+        const store = mockStore({
+            summaryStartIndex: null,
+            normalizedRows: [['Header'], ['Value']],
+            blockingReasons: ['hierarchy_depth_retention_rate', 'PRIVATE_CELL_SENTINEL'],
+        });
+        store.reportStructureResolution.decision.reason = 'Decision includes PRIVATE_CELL_SENTINEL';
+        store.pipelineOutcome.message = 'Pipeline includes PRIVATE_CELL_SENTINEL';
+        store.pipelineOutcome.reasonCode = 'PRIVATE_CELL_SENTINEL';
+
+        render(<ReportBoundaryConfirmModal />);
+        fireEvent.click(screen.getByText('More about this check'));
+        fireEvent.click(screen.getByText('Technical details'));
+        const dialog = screen.getByRole('dialog', { name: 'Review and repair data structure' });
+        const details = within(dialog).getByText('Technical details').closest('details')!;
+        expect(details).toHaveAttribute('open');
+        expect(details).toHaveTextContent('hierarchy_depth_retention_rate');
+        expect(details).toHaveTextContent('unknown_diagnostic');
+        expect(details).toHaveTextContent('The data structure did not pass an automatic check.');
+        expect(dialog).not.toHaveTextContent('PRIVATE_CELL_SENTINEL');
+    });
+
+    it('retains explicitly safe pipeline messages and localizes unknown diagnostic fallback', () => {
+        const store = mockStore({
+            summaryStartIndex: null,
+            normalizedRows: [['Header'], ['Value']],
+            blockingReasons: ['synthetic_secret_code'],
+            language: 'Mandarin',
+        });
+        store.reportStructureResolution.decision.reason = 'synthetic_secret_decision';
+        store.pipelineOutcome.message = 'Structure review is required before automatic analysis.';
+
+        render(<ReportBoundaryConfirmModal />);
+        const details = screen.getByText('技术详情').closest('details')!;
+        fireEvent.click(screen.getByText('关于此检查的更多信息'));
+        fireEvent.click(within(details).getByText('技术详情'));
+        expect(details).toHaveAttribute('open');
+        expect(details).toHaveTextContent('Structure review is required before automatic analysis.');
+        expect(details).toHaveTextContent('数据结构未通过一项自动检查。');
+        expect(details).toHaveTextContent('unknown_diagnostic');
+        expect(screen.getByRole('dialog')).not.toHaveTextContent('synthetic_secret');
+    });
+
+    it('does not fall back to a raw pipeline message when the outcome is not blocked', () => {
+        const store = mockStore({
+            summaryStartIndex: null,
+            normalizedRows: [['Header'], ['Value']],
+            blockingReasons: [],
+        });
+        store.reportStructureResolution.requiresHumanReview = false;
+        store.pipelineOutcome.status = 'ready';
+        store.pipelineOutcome.message = 'synthetic_secret_unblocked';
+        render(<ReportBoundaryConfirmModal />);
+        fireEvent.click(screen.getByText('More about this check'));
+        fireEvent.click(screen.getByText('Technical details'));
+        expect(screen.getByRole('dialog')).not.toHaveTextContent('synthetic_secret_unblocked');
+    });
+
     it('shows the plain-language reason in the selected language', () => {
         mockStore({
             summaryStartIndex: null,

@@ -43,10 +43,10 @@ Statuses: `confirmed` = reproduced or established defect; `candidate` = plausibl
 
 ## BUG-007 — Local-data deletion may silently be incomplete
 - Severity: P1 privacy. Status: candidate.
-- Evidence: `frontend/services/storageService.ts:410-423,541-567` suppresses cache and web-storage failures; `frontend/components/modals/SettingsModal.tsx:158-167` reloads after the operation. Independent browser failure/read-back is not established.
-- Next: surface incomplete deletion and independently verify storage and cache read-back, including failure paths. Linked task: [CA-180](TASK.md#ca-180--local-only-cloud-consent-and-retention-disclosure).
+- Fix implemented, unverified: `frontend/services/storageService.ts:410-430,518-526,556-603` reports incomplete web/cache storage; `frontend/components/modals/SettingsModal.tsx:158-175,522-528` warns without reloading. Failure injection: `frontend/tests/storageClearAllLocalData.test.ts:73-124` and `frontend/tests/settingsModal.test.tsx:120-159`.
+- Next: independently verify IndexedDB, web storage, OPFS and cache read-back, including browser failure paths. Linked task: [CA-180](TASK.md#ca-180--local-only-cloud-consent-and-retention-disclosure).
 
 ## BUG-008 — Technical diagnostic text may expose input-derived errors
 - Severity: P2 privacy. Status: candidate.
-- Evidence: `frontend/components/modals/ReportBoundaryConfirmModal.tsx:130-132,301-309` renders decision and pipeline messages verbatim; `frontend/services/agent/reportStructureResolver.ts:403-406,564-569` can include a shape signal, and `frontend/services/agent/pipelineOutcomeResolver.ts:79-88` can use failure text. The ordinary ambiguity message is static; a cell-bearing error was not independently reproduced.
-- Next: trace and constrain all message producers, then test expanded technical details using synthetic sensitive sentinels without hiding useful safe diagnostics. Linked task: [CA-182](TASK.md#ca-182--safe-guidance-for-boundary-diagnostics).
+- Fix implemented, unverified: `frontend/components/modals/ReportBoundaryConfirmModal.tsx:25-36,143-153,319-326` allowlists codes and messages and replaces unknown input with a localized fallback; `frontend/tests/reportBoundaryConfirmModal.test.tsx:274-329` exercises synthetic sentinels and safe diagnostics.
+- Next: independently verify the complete upload-to-review path and comprehensive disclosure. Linked task: [CA-182](TASK.md#ca-182--safe-guidance-for-boundary-diagnostics).

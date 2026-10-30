@@ -38,7 +38,8 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Priority: P1. Status: partial. Source: backlog 2, P02 P09 P16 P17.
 - Acceptance: refusing cloud still allows local preview; deletion and storage scope have independent read-back; explain sensitive-field handling.
 - Exists: refusal stops cloud calls (`frontend/services/privacy/cloudAiConsent.ts:150-174`); import degrades locally (`frontend/services/agent/orchestration/fileOrchestrator.ts:617-621`) and offers preview (`frontend/components/AnalysisPanel.tsx:435-437`). Storage disclosure is at `frontend/utils/localization.ts:1524-1528`; sensitive scan limits and lack of masking are now disclosed at `:1536-1540`, with consent version bumped (`cloudAiConsent.ts:9`).
-- Missing: independent deletion/storage read-back and provider retention scope; clearing suppresses some failures ([BUG-007](BUG.md#bug-007--local-data-deletion-may-silently-be-incomplete)). Next: surface incomplete deletion and verify IndexedDB, web storage, OPFS and cache read-back, including failures and provider-side policy.
+- Deletion failure reporting: `frontend/services/storageService.ts:410-430,556-603`, `frontend/components/modals/SettingsModal.tsx:158-175,522-528`; injected failure cases: `frontend/tests/storageClearAllLocalData.test.ts:73-124`, `frontend/tests/settingsModal.test.tsx:120-159`.
+- Missing: independent deletion/storage read-back and provider retention scope. Next: verify IndexedDB, web storage, OPFS and cache read-back, including failures and provider-side policy ([BUG-007](BUG.md#bug-007--local-data-deletion-may-silently-be-incomplete)).
 
 ## CA-181 — Currency, unit and DECIMAL precision
 - Priority: P1. Status: partial. Source: backlog 3, P03 P08 P13.
@@ -52,7 +53,8 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Priority: P2. Status: partial. Source: backlog 6, P05 P19.
 - Acceptance: users understand the next step and no raw CSV cell leaks.
 - Exists: `frontend/services/agent/fileProcessor.ts:511-522` blocks on source anomalies; `frontend/components/CsvSourceScanPanel.tsx:39-47` now gives correction/re-import guidance and displays structural coordinates, not cells. `frontend/services/agent/reportStructureResolver.ts:397-398` emits the runtime ambiguity code; `frontend/components/modals/ReportBoundaryConfirmModal.tsx:123-129,261-264` renders a localized reason and action.
-- Missing: independent end-to-end browser and comprehensive disclosure verification. Focused guidance tests are in `frontend/tests/csvSourceScanPanel.test.tsx:35-47` and `frontend/tests/reportBoundaryConfirmModalReview.test.tsx:181-192`; expanded technical details can render unconstrained messages ([BUG-008](BUG.md#bug-008--technical-diagnostic-text-may-expose-input-derived-errors)). Next: constrain message producers and verify the complete upload-to-review path and technical details with synthetic inputs.
+- Diagnostic sanitization: `frontend/components/modals/ReportBoundaryConfirmModal.tsx:25-36,143-153,319-326`; expanded-detail synthetic sentinel and safe-message cases: `frontend/tests/reportBoundaryConfirmModal.test.tsx:274-329`.
+- Missing: independent end-to-end browser and comprehensive disclosure verification. Next: verify the complete upload-to-review path and technical details with synthetic inputs ([BUG-008](BUG.md#bug-008--technical-diagnostic-text-may-expose-input-derived-errors)).
 
 ## CA-183 — Download, offline and stress coverage
 - Priority: P2. Status: pending. Source: backlog 7, P20 P24.

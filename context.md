@@ -1,5 +1,11 @@
 ## Current Work Context
 
+### 2026-10-30 — BUG-007 and BUG-008 source fixes
+
+- Clear-all reports incomplete web/cache stores without reloading; boundary technical diagnostics use safe allowlists and generic fallback. Both bugs remain candidates pending independent acceptance.
+- No full build or root deployment publication; CA-180 and CA-182 remain partial.
+- Node 22 typecheck and lint passed; full Vitest: 535 files, 5501 tests passed. Chromium source smoke exercised an injected localStorage failure and synthetic expanded diagnostics; independent read-back remains open.
+
 ### 2026-10-30 — CA-181 design
 
 - Added a proposed unit/decimal policy and pending CA-187–CA-190; CA-181 remains partial and BUG-006 remains a candidate.

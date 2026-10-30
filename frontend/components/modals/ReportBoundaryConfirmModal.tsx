@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { getPipelineOutcomeUserText, getStructureReviewReasonText, getTranslation } from '../../utils/localization';
+import { getPipelineOutcomeUserText, getStructureReviewReasonText, getTranslation, STRUCTURE_REVIEW_REASON_CODES } from '../../utils/localization';
 import type { ReportBoundary } from '../../types';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 import {
@@ -22,6 +22,19 @@ const ROLE_OPTIONS: Array<{ value: BusinessRole; labelKey: string }> = [
 ];
 
 const MAX_PREVIEW_COLS = 7;
+const SAFE_REASON_CODES: readonly string[] = STRUCTURE_REVIEW_REASON_CODES;
+const SAFE_TECHNICAL_MESSAGES: readonly string[] = [
+    'Structure review is required before automatic analysis.',
+    'Canonical dataset generation did not complete, so automatic analysis remains blocked.',
+    'Shape verification failed after canonicalization.',
+    'Canonical dataset is ready, but SQL precheck blocked the preferred SQL path. Analysis can proceed with degraded guidance.',
+    'Canonical dataset is ready, but SQL precheck could not confirm the preferred SQL path. Analysis can proceed with degraded guidance.',
+    'Waiting for the final SQL readiness checks before automatic analysis continues.',
+    'Structure resolved as row_table.',
+    'Structure resolved as long_fact_table.',
+    'Structure resolved as long_statement_table.',
+];
+
 const MAX_BODY_PREVIEW_ROWS = 4;
 export const ReportBoundaryConfirmModal: React.FC = () => {
     const isOpen = useAppStore(s => s.isReportBoundaryConfirmModalOpen);
@@ -127,9 +140,16 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
             ? [pipelineOutcome.reasonCode]
             : [];
     const reasonTexts = Array.from(new Set(reasonCodes.map(code => getStructureReviewReasonText(code, language))));
+    // Both fields may contain source-derived text, including inside code-looking strings.
+    const safeReasonCodes = Array.from(new Set(reasonCodes.map(code =>
+        SAFE_REASON_CODES.includes(code) ? code : 'unknown_diagnostic',
+    )));
     const technicalMessages = Array.from(new Set(
         [reportStructureResolution.decision?.reason, pipelineOutcome?.message]
-            .filter((message): message is string => Boolean(message)),
+            .filter((message): message is string => Boolean(message))
+            .map(message => SAFE_TECHNICAL_MESSAGES.includes(message)
+                ? message
+                : `${t('structure_review_reason_unknown')} (unknown_diagnostic)`),
     ));
 
     const effectiveSummaryStart = summaryStart !== null && summaryStart < totalRows ? summaryStart : null;
@@ -224,7 +244,6 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
         ?? (structureReviewPending
             ? t('structure_review_required_message')
             : getPipelineOutcomeUserText(pipelineOutcome, language)
-                ?? pipelineOutcome?.message
                 ?? t('guided_repair_default_block_reason'));
     const otherReasonTexts = reasonTexts.slice(1);
     const setAsideRowCounts = setAsideSections.map(section => section.rowCount);
@@ -281,7 +300,6 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                             {structureReviewPending
                                                 ? t('structure_review_required_message')
                                                 : getPipelineOutcomeUserText(pipelineOutcome, language)
-                                                    ?? pipelineOutcome?.message
                                                     ?? t('guided_repair_default_block_reason')}
                                         </dd>
                                     </div>
@@ -302,8 +320,8 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                     <details className="mt-3 text-xs text-slate-600">
                                         <summary className="cursor-pointer font-medium text-slate-700">{t('structure_review_technical_details')}</summary>
                                         <div className="mt-2 space-y-1 break-words font-mono">
-                                            {reasonCodes.length > 0 && (
-                                                <p>{t('structure_review_technical_codes', { codes: reasonCodes.join(', ') })}</p>
+                                            {safeReasonCodes.length > 0 && (
+                                                <p>{t('structure_review_technical_codes', { codes: safeReasonCodes.join(', ') })}</p>
                                             )}
                                             {technicalMessages.map(message => <p key={message}>{message}</p>)}
                                         </div>
