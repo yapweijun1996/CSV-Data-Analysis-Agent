@@ -335,9 +335,12 @@ const countRows = async (sql: string, tableName: string): Promise<number> => {
 
 const handleExecuteCompiledQuery = async (payload: {
     sql: string; countSql: string; selectedColumns: string[]; appliedOrderBy: QueryOrderByClause[];
-    appliedLimit: number; expectedBinding?: SqlBinding;
+    appliedLimit: number; expectedBinding?: SqlBinding; unitGuardSql?: string;
 }) => executeOwnedSql(payload.expectedBinding, async boundary => {
     const startedAt = Date.now(), limit = validateSqlLimit(payload.appliedLimit);
+    if (payload.unitGuardSql && await countRows(payload.unitGuardSql, boundary.tableName) > 0) {
+        throw new Error('mixed_or_missing_units: Cannot calculate: units are missing or mixed. Group or filter by unit.');
+    }
     const sql = await admitSql(sqlEngine, payload.sql, boundary.tableName);
     // The host row ceiling also applies if a low-level caller omits LIMIT.
     const table = await conn!.query(`SELECT * FROM (${sql}\n) AS __bounded LIMIT ${limit + 1}`);

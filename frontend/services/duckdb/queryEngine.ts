@@ -5,11 +5,13 @@ import { executeDataQuery } from '../agent/execution/dataOperationRunner';
 import { executeArqueroQuery } from '../data/arqueroEngine';
 import { isRuntimeAbortError, throwIfAborted } from '../agent/runtime/runtimeAbort';
 import { compileQueryPlanToDuckDbSql } from './queryCompiler';
+import { normalizeQueryAggregateFunction } from '../agent/execution/dataQueryContract';
 import type { DimensionNormalizationConfig } from './dimensionNormalization';
 import { duckDbWorkerClient, DuckDbWorkerClient, exchangeDuckDbWorkerClient } from '../workers/duckDbWorkerClient';
 import type { AcceptedSpillManifest } from '../data/acceptedSpill';
 import type { DatasetCommitMarker } from '../../types/datasetCommit';
 import type { CandidateOutput } from '../data/candidateContract';
+import type { ValidationMetric } from '../data/candidateValidation';
 import type { WorkerDiagnosticsReporter } from '../workers/workerDiagnostics';
 import { collectOrderedColumnNames } from '../data/columnRegistry';
 import { normalizeDecimalCommaColumns } from '../data/numberLocale';
@@ -476,8 +478,28 @@ export const prepareOrdinaryDatasetBinding = async (data: CsvData, current: () =
     } catch (e) { client.retireSession(); throw e; }
 };
 
-type AcceptedTable = { client: DuckDbWorkerClient; tableId: string; columns: string[]; exact: Record<string, string>; binding: DuckDbDatasetBinding };
+type AcceptedTable = { client: DuckDbWorkerClient; tableId: string; columns: string[]; exact: Record<string, string>; metrics: readonly ValidationMetric[]; binding: DuckDbDatasetBinding };
 type AcceptedTables = { primary: string; tables: AcceptedTable[]; dual: boolean; current: () => boolean };
+const unitBindingKey = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
+/** Fixed units without confirmed provenance cannot authorize period arithmetic. */
+export const confirmedExactUnits = (columns: readonly {name:string;unit:string;provenance?:'confirmed'|'inferred'}[]) =>
+    Object.fromEntries(columns.filter(column => column.provenance === undefined || column.provenance === 'confirmed').map(column => [column.name, column.unit]));
+/** Validated row-unit bindings are host custody, not caller-controlled query hints. */
+export const bindAcceptedMetricUnits = (plan: QueryPlan, metrics: readonly ValidationMetric[]): QueryPlan => ({
+    ...plan,
+    aggregates: plan.aggregates?.map(aggregate => {
+        if (!['sum', 'avg'].includes(normalizeQueryAggregateFunction(aggregate.function) ?? '') || typeof aggregate.column !== 'string') return aggregate;
+        const matches = metrics.filter(metric => unitBindingKey(metric.column) === unitBindingKey(aggregate.column!));
+        const columns = [...new Set(matches.flatMap(metric => [metric.unitColumn, metric.currencyColumn])
+            .filter((column): column is string => column !== undefined).map(unitBindingKey))];
+        if (columns.length > 1 || columns.length > 0 && matches.some(metric => metric.provenance !== undefined && metric.provenance !== 'confirmed')
+            || columns.length === 1 && aggregate.unitColumn !== undefined
+            && unitBindingKey(aggregate.unitColumn) !== columns[0]) throw new Error('mixed_or_missing_units: Cannot calculate: units are missing or mixed. Group or filter by unit.');
+        if (!columns.length) return aggregate;
+        const column = matches.flatMap(metric => [metric.unitColumn, metric.currencyColumn]).find(value => value !== undefined)!;
+        return {...aggregate, unitColumn: column};
+    }),
+});
 let acceptedTables: AcceptedTables | null = null;
 // Non-serializable host custody. Copying CsvData/provider metadata cannot inherit workers.
 const acceptedOwners = new WeakMap<CsvData, AcceptedTables>();
@@ -510,12 +532,13 @@ export const prepareAcceptedTablesBinding = async (marker: DatasetCommitMarker, 
         for (const spec of marker.bundle.tables) {
             check(); const table = output.tables.find(t => t.name === spec.name)!;
             const streamed = marker.acceptedStreamedDual?.binding.streamedDual?.meaning.proposal.tables.find(t => t.name === spec.name);
-            const metrics = streamed ? streamed.columns.filter(c => c.dataType === 'number').map(c => ({ column: c.name, scale: c.scale!, unit: c.unit! }))
+            const metrics: ValidationMetric[] = streamed ? streamed.columns.filter(c => c.dataType === 'number').map(c => ({ column: c.name, scale: c.scale!, unit: c.unit!, toleranceMinor: 0 }))
                 : marker.replayManifest!.validationBinding.contract.tables.find(t => t.name === spec.name)!.metrics;
             const client = new DuckDbWorkerClient();
             const binding: DuckDbDatasetBinding = { engine: 'duckdb', tableName: DUCKDB_TABLE_NAME,
                 loadVersion: `${marker.commitId}-${spec.tableId}`, fallbackReason: null, fallbackStage: null };
-            tables.push({ client, tableId: spec.tableId, columns: spec.schema.map(c => c.name), exact: Object.fromEntries(metrics.map(m => [m.column, m.unit])), binding });
+            tables.push({ client, tableId: spec.tableId, columns: spec.schema.map(c => c.name), exact: confirmedExactUnits(metrics.map(m => ({name:m.column,unit:m.unit,provenance:m.provenance}))),
+                metrics: structuredClone(metrics).map(m => ({...m,provenance:m.provenance??'confirmed',source:m.source??'user'})), binding });
             await client.initDuckDb(DUCKDB_INIT_TIMEOUT_MS, signal); check();
             // Quote all text, preserve null separately from empty strings and never normalize locales.
             const quote = (v: unknown) => `"${String(v).replace(/"/g, '""')}"`;
@@ -579,8 +602,8 @@ const executeManagedDataQueryUnlocked = async (
     if (accepted) {
         if (plan.rawSql || Object.hasOwn(plan, 'joins')) throw new Error('accepted_dual_joins_sql_unsupported');
         const table = acceptedOwners.get(data)!.tables.find(t => t.tableId === accepted.tableId)!;
-        const compiled = compileQueryPlanToDuckDbSql(plan, { allowedColumns: table.columns, tableName: DUCKDB_TABLE_NAME,
-            exactDecimalColumns: Object.keys(table.exact), exactDecimalUnits: table.exact,
+        const compiled = compileQueryPlanToDuckDbSql(bindAcceptedMetricUnits(plan, table.metrics), { allowedColumns: table.columns, tableName: DUCKDB_TABLE_NAME,
+            exactDecimalColumns: table.metrics.map(m => m.column), exactDecimalUnits: table.exact,
             maxRows: DEFAULT_MAX_ROWS, maxColumns: DEFAULT_MAX_COLUMNS, maxOrderBy: DEFAULT_MAX_ORDER_BY });
         const result = await table.client.executeCompiledQuery({ ...compiled, expectedBinding: { tableName: DUCKDB_TABLE_NAME, loadVersion: table.binding.loadVersion! } }, DUCKDB_QUERY_TIMEOUT_MS, options?.abortSignal);
         assertGeneration(generation); throwIfAborted(options?.abortSignal);
@@ -610,7 +633,7 @@ const executeManagedDataQueryUnlocked = async (
     const compiled = compileQueryPlanToDuckDbSql(plan, {
         exactDecimalColumns:data.backing?.ephemeral===false?data.backing.exactDecimalColumns?.map(c=>c.name):undefined,
         exactDecimalUnits:data.backing?.ephemeral===false&&data.backing.exactDecimalColumns
-            ?Object.fromEntries(data.backing.exactDecimalColumns.map(c=>[c.name,c.unit])):undefined,
+            ?confirmedExactUnits(data.backing.exactDecimalColumns):undefined,
         allowedColumns,
         tableName: DUCKDB_TABLE_NAME,
         maxRows: DEFAULT_MAX_ROWS,
@@ -622,7 +645,7 @@ const executeManagedDataQueryUnlocked = async (
     throwIfAborted(abortSignal);
 
     // --- Query result cache lookup (AGENT-306) ---
-    const hit = options?.bypassCache ? null : tryQueryCache(loadVersion, compiled.sql);
+    const hit = options?.bypassCache || compiled.unitGuardSql ? null : tryQueryCache(loadVersion, compiled.sql);
     if (hit) return hit;
 
     const prime = await primeDuckDbDatasetUnlocked(data, abortSignal, reportDiagnostics, onSlowLoad, columnRegistry);
@@ -650,6 +673,7 @@ const executeManagedDataQueryUnlocked = async (
         const result = await duckDbWorkerClient.executeCompiledQuery({
             sql: compiled.sql,
             countSql: compiled.countSql,
+            unitGuardSql: compiled.unitGuardSql,
             selectedColumns: compiled.selectedColumns,
             appliedOrderBy: compiled.appliedOrderBy,
             appliedLimit: compiled.appliedLimit,
@@ -658,7 +682,7 @@ const executeManagedDataQueryUnlocked = async (
         assertGeneration(generation);
         throwIfAborted(abortSignal);
 
-        storeQueryCache(loadVersion, compiled.sql, result);
+        if (!compiled.unitGuardSql) storeQueryCache(loadVersion, compiled.sql, result);
 
         return {
             result,
@@ -675,6 +699,7 @@ const executeManagedDataQueryUnlocked = async (
             throw error;
         }
         if (error instanceof Error && error.message.startsWith('sql_')) throw error;
+        if (error instanceof Error && error.message.startsWith('mixed_or_missing_units:')) throw error;
         clearCachedDuckDbBinding();
         if (!allowNativeFallback) {
             throw error instanceof Error ? error : new Error(String(error));

@@ -107,7 +107,9 @@ export const planAcceptedSpill = async(custody:SpillReadCustody,store:StoreApi,c
         program:c.execution.program,environment:c.execution.environmentDigest,grant:c.execution.grant,task:c.requestedChange,
         candidateId:c.candidateId,changeDigest:c.changeDigest,receipt:receipt.receiptDigest,spill:c.spill});current();
     const body={version:1 as const,kind:'accepted-spill-csv' as const,generation:crypto.randomUUID(),identityDigest,
-        source:structuredClone(store.getState().datasetBundle!.source.inspection!),structural:c.spill!.manifest,meaning:c.spill!.meaning,
+        source:structuredClone(store.getState().datasetBundle!.source.inspection!),structural:c.spill!.manifest,meaning:{
+            ...c.spill!.meaning,columns:c.spill!.meaning.columns.map(col=>col.conversion==='decimal'
+                ? {...col,provenance:col.provenance??'confirmed',source:col.source??'user'} : {...col})},
         candidateId:c.candidateId,changeDigest:c.changeDigest,validationDigest:receipt.receiptDigest,programDigest:receipt.programDigest,
         sessionId:c.sessionId,sessionEpoch:c.sessionEpoch,taskId:c.taskId,taskRevision:c.taskRevision,
         sourceBudget:custody.budget(),rowCount:c.tables[0].rowCount,bytes,sha256:hex(hash.digest())};
@@ -165,4 +167,4 @@ export const verifyAcceptedSpillMarker=async(marker:DatasetCommitMarker,proposal
 export const acceptedSpillCsv = (m:AcceptedSpillManifest,preview:CsvData['data']=[]):CsvData=>({fileName:m.source.fileName,data:preview,
     backing:{mode:'duckdb_file',rowCount:m.rowCount,sampleRowCount:preview.length,loadVersion:`accepted-${m.digest}`,datasetVersion:`accepted-${m.digest}`,
         readOnly:true,ephemeral:false,columnNames:m.meaning.columns.map(c=>c.name),
-        exactDecimalColumns:m.meaning.columns.filter(c=>c.conversion==='decimal').map(c=>({name:c.name,scale:c.scale!,unit:c.unit!})),opfsPath:`${ROOT}/${m.generation}/data.csv`,byteSize:m.bytes}});
+        exactDecimalColumns:m.meaning.columns.filter(c=>c.conversion==='decimal').map(c=>({name:c.name,scale:c.scale!,unit:c.unit!,provenance:c.provenance??'confirmed',source:c.source??'user'})),opfsPath:`${ROOT}/${m.generation}/data.csv`,byteSize:m.bytes}});

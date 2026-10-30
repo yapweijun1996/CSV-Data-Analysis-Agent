@@ -1,8 +1,10 @@
 // Pure contract shared by tool discovery and the host compiler. Tool discovery must not load
 // execution/storage/runtime services: the registry is also used while restoring app state.
+import type { UnitProvenance, UnitSource } from './unitMeaning';
+
 export interface SpillCandidateMeaning {
     version: 1; kind: 'ordered-source-records'; table: string; grain: 'source_record';
-    columns: Array<{ name: string; sourceColumn: number; conversion: 'identity' | 'trim' | 'decimal'; scale?: number; unit?: string }>;
+    columns: Array<{ name: string; sourceColumn: number; conversion: 'identity' | 'trim' | 'decimal'; scale?: number; unit?: string; provenance?: UnitProvenance; source?: UnitSource }>;
     headerRow: 0; summary: 'none' | 'last_record_sum';
 }
 const validName = (value: string) => typeof value === 'string' && value.trim() === value && value.length > 0 && value.length <= 240
@@ -15,7 +17,10 @@ export const assertSpillMeaning = (meaning: SpillCandidateMeaning) => {
         || meaning.columns.some(c => !validName(c.name) || !Number.isSafeInteger(c.sourceColumn) || c.sourceColumn < 0 || c.sourceColumn >= meaning.columns.length
             || !['identity', 'trim', 'decimal'].includes(c.conversion) || c.conversion === 'decimal' && (!c.unit?.trim()
                 || !Number.isInteger(c.scale) || c.scale! < 0 || c.scale! > 6)
-            || c.conversion !== 'decimal' && (c.scale !== undefined || c.unit !== undefined))
+                || (c.provenance !== undefined && !['confirmed', 'inferred'].includes(c.provenance))
+                || (c.source !== undefined && !['header', 'unit_column', 'user'].includes(c.source))
+                || (c.provenance === 'inferred' && (c.source ?? 'user') === 'user')
+                || c.conversion !== 'decimal' && (c.scale !== undefined || c.unit !== undefined || c.provenance !== undefined || c.source !== undefined))
         || meaning.summary === 'last_record_sum' && !meaning.columns.some(c => c.conversion === 'decimal')) throw new Error('candidate_spill_meaning_invalid');
 };
 /** Untrusted model declaration. No verdict, values, executable transform or commit authority. */

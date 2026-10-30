@@ -80,6 +80,7 @@ const normalizeQueryAggregateClause = (value: unknown): QueryAggregateClause | n
         function: functionName,
         as: alias,
         ...(column ? { column } : {}),
+        ...(typeof value.unitColumn === 'string' ? { unitColumn: value.unitColumn } : {}),
         ...(percentile !== undefined ? { percentile } : {}),
         ...(where ? { where } : {}),
     };

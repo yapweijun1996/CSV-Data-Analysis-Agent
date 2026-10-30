@@ -22,6 +22,7 @@ export type QueryAggregateFunction = 'count' | 'count_distinct' | 'sum' | 'avg' 
 export interface QueryAggregateClause {
     function: QueryAggregateFunction;
     column?: string;
+    unitColumn?: string;
     as: string;
     percentile?: number;
     where?: QueryWhereClause;

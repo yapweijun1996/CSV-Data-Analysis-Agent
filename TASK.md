@@ -46,8 +46,8 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 ## CA-181 — Currency, unit and DECIMAL precision
 - Priority: P1. Status: partial. Source: backlog 3, P03 P08 P13.
 - Acceptance: mixed units are never summed silently; exact numeric queries are consistent.
-- Exists: validated decimal period columns require matching units (`frontend/services/duckdb/queryCompiler.ts:512-527`); weighted statistics check units when supplied (`frontend/services/agent/execution/weightedMean.ts:19-23`, `weightedMedian.ts:23-27`).
-- Missing: single-column DuckDB sums (`queryCompiler.ts:530-561`), worker/in-memory sums (`frontend/services/agent/execution/dataQueryExecutor.ts:319-383`, `frontend/services/workers/dataWorker.ts:33-35`) and spreadsheet totals (`frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`) lack general row-unit guards; ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). The owner policy is recorded, but the standalone unit contract is not connected to aggregation. Next: implement CA-187 integration and CA-188–190; test per-group and grand totals, filters, precision and overflow. See [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
+- Exists: validated decimal period columns require matching units (`frontend/services/duckdb/queryCompiler.ts:522-533`); weighted statistics check supplied units (`frontend/services/agent/execution/weightedMean.ts:19-23`). Source-only single-column sum/avg row-unit guards now exist in DuckDB and in-memory query paths (`frontend/services/duckdb/queryCompiler.ts:717-748`, `frontend/services/agent/execution/dataQueryExecutor.ts:386-390`).
+- Missing: spreadsheet totals and separate worker analysis aggregation remain unguarded (`frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`, `frontend/services/workers/dataWorker.ts:32-35`); ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). Full unit meaning/result presentation and precision remain open; see [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
 - Design: [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md); staged work: CA-187–CA-190.
 - Verification run (2026-10-30, local Chromium against the built main, 127.0.0.1 only): `frontend/scripts/exact-decimal-period-browser-smoke.mjs` passed for compatible, mixed-types and mixed-units scenarios with 0 page errors and 0 external requests. This covers the exact-decimal period path only; other aggregation paths remain unverified.
 
@@ -87,14 +87,14 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 ## CA-187 — Bind reviewed unit meaning
 - Priority: P1. Status: partial. Source: CA-181.
 - Acceptance: version-bound confirmed or inferred fixed/row units reject stale, blank, ambiguous and conflicting evidence; inferred units are visibly labelled wherever guarded results are shown.
-- Exists: standalone contract, header inference and resolver (`frontend/services/data/unitMeaning.ts:1-51`); focused synthetic cases (`frontend/tests/unitMeaning.test.ts:9-42`).
-- Integration blocker: existing accepted manifests carry only unit strings (`frontend/types/intake.ts:235-236`; `frontend/services/duckdb/queryEngine.ts:479,518,582-584,609-613`), without provenance; the period guard accepts identical nonblank strings (`frontend/services/duckdb/queryCompiler.ts:521-523`), including arbitrary text tested at `frontend/tests/exactDecimalAggregates.test.ts:112-118`. Applying the validator changes existing behavior, and the result path cannot display inferred provenance. No wiring was attempted under the scoped compatibility condition.
-- Next: establish version/provenance custody in manifests and guarded result UI, then integrate without inventing confirmation. See [design](docs/design/ca-181-unit-and-decimal-policy.md).
+- Exists: standalone contract and header inference (`frontend/services/data/unitMeaning.ts:1-51`); validated metric/backing units carry provenance/source with legacy confirmed/user defaults (`frontend/services/data/candidateValidation.ts:5`, `frontend/types/intake.ts:235-236`, `frontend/services/duckdb/queryEngine.ts:528-541`).
+- Missing: visible inferred-unit labels and complete version-bound meaning integration. Inferred accepted row bindings and inferred exact-period units fail closed (`frontend/services/duckdb/queryEngine.ts:484-500`); the existing period guard still accepts identical nonblank strings (`frontend/services/duckdb/queryCompiler.ts:522-533`).
+- Next: integrate version-bound inferred meaning and presentation without changing legacy period behavior.
 
 ## CA-188 — Guard query and worker aggregation units
-- Priority: P1. Status: pending. Source: CA-181; depends on CA-187.
-- Acceptance: filtered mixed/missing units block; explicit unit splits and fallback/worker results agree.
-- Next: enforce complete-scope per-measure and per-group checks across query routes.
+- Priority: P1. Status: partial. Source: CA-181; depends on CA-187.
+- Implemented-unverified slice: accepted candidate row bindings and explicit aggregate `unitColumn` guard single-column sum/avg per filtered group (`frontend/services/duckdb/queryEngine.ts:488-500,604-608`, `frontend/services/duckdb/queryCompiler.ts:717-748`, `frontend/services/workers/duckDbWorker.ts:337-342`, `frontend/services/agent/execution/dataQueryExecutor.ts:386-390`). Conflicting bindings fail closed; no UI sets the optional field.
+- Missing: full coverage of other aggregate paths, multiple bindings, inferred result labels, and independent real browser/worker acceptance. Focused synthetic coverage: `frontend/tests/duckDbAggregateUnits.test.ts`, `frontend/tests/dataQueryUnits.test.ts`, `frontend/tests/dataQueryEngine.test.ts`. Next: complete CA-187 custody and remaining CA-188 routes.
 
 ## CA-189 — Guard spreadsheet aggregation and totals
 - Priority: P1. Status: pending. Source: CA-181; depends on CA-187.

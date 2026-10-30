@@ -1,5 +1,10 @@
 ## Current Work Context
 
+### 2026-10-31 — CA-188 query-unit slice
+
+- Added provenance custody and single-column query sum/avg guards for accepted or explicit row-unit bindings; inferred bound results fail closed pending labels. Spreadsheet and separate analysis aggregation remain unguarded.
+- Node 22 typecheck/lint passed; final full Vitest: 538 files, 5529 tests passed; focused: 6 files, 87 tests passed. Synthetic DuckDB WASM/in-memory smoke agreed on mixed refusal and unit splits. No build or root deployment.
+
 ### 2026-10-30 — CA-187 unit meaning contract
 
 - Added standalone version-bound unit/provenance resolution and ISO-header inference; the owner allows inferred units with visible provenance.

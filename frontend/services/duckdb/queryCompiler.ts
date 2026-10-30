@@ -8,6 +8,7 @@ import { buildEmptyAwareExpression, buildNumericExpression } from './numericSql'
 export interface CompiledDuckDbQuery {
     sql: string;
     countSql: string;
+    unitGuardSql?: string;
     selectedColumns: string[];
     appliedOrderBy: QueryOrderByClause[];
     appliedLimit: number;
@@ -399,6 +400,11 @@ const normalizeAggregateClauses = (
         if (!functionName) {
             throw new Error(`Query aggregate "${alias}" must use one of: count, count_distinct, sum, avg, min, max, median, percentile.`);
         }
+        // Counts do not combine values, so a supplied unit binding is irrelevant.
+        const hasUnitColumn = aggregate.unitColumn !== undefined && functionName !== 'count' && functionName !== 'count_distinct';
+        if (hasUnitColumn && functionName !== 'sum' && functionName !== 'avg') {
+            throw new Error(`Query aggregate "${alias}" unitColumn is supported only for sum and avg.`);
+        }
         const resolveAggregateSource = () => {
             if (!aggregate.column) {
                 return null;
@@ -436,10 +442,14 @@ const normalizeAggregateClauses = (
         if (!aggregateSource) {
             throw new Error(`Query aggregate "${alias}" references missing column: ${aggregate.column}`);
         }
+        if (hasUnitColumn && !aggregateSource.column) {
+            throw new Error(`Query aggregate "${alias}" unitColumn requires a single source column.`);
+        }
         return {
             function: functionName,
             ...(aggregateSource.column ? { column: aggregateSource.column } : {}),
             ...(aggregateSource.sourceColumns ? { sourceColumns: aggregateSource.sourceColumns } : {}),
+            ...(hasUnitColumn ? { unitColumn: normalizeColumn(aggregate.unitColumn, lookup, `Query aggregate "${alias}" unitColumn`) } : {}),
             as: alias,
             ...(functionName === 'percentile' && typeof aggregate.percentile === 'number'
                 ? { percentile: aggregate.percentile }
@@ -661,6 +671,7 @@ export const compileQueryPlanToDuckDbSql = (
 
     let sql: string;
     let countSql: string;
+    let unitGuardSql: string | undefined;
 
     if (isAggregateQuery) {
         const dimNorm = options.dimensionNormalization ?? null;
@@ -703,6 +714,40 @@ export const compileQueryPlanToDuckDbSql = (
                 ? `GROUP BY ${groupByColumns.map((_, i) => String(i + 1)).join(', ')}`
                 : `GROUP BY ${groupByColumns.map(quoteIdentifier).join(', ')}`
             : '';
+        const guardedAggregates = aggregates.filter(aggregate => aggregate.unitColumn !== undefined);
+        if (guardedAggregates.length > 0) {
+            // Validate all filtered groups before post-aggregate filtering and LIMIT.
+            // Keep raw unit equality; whitespace is used only to detect blanks.
+            const whitespace = quoteStringLiteral(' \t\n\r\v\f\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff');
+            const guardAliases = guardedAggregates.map((_, index) => {
+                let alias = `__unit_guard_${index}`;
+                while (groupByColumns.some(column => column.toLowerCase() === alias.toLowerCase())) alias += '_';
+                return alias;
+            });
+            const checks = guardedAggregates.map((aggregate, index) => {
+                const unit = quoteIdentifier(aggregate.unitColumn!);
+                const value = options.exactDecimalColumns?.includes(aggregate.column!)
+                    ? quoteIdentifier(aggregate.column!)
+                    : buildNumericExpression(aggregate.column!);
+                const filter = compileFilterCondition(aggregate.where, undefined, options.exactDecimalColumns);
+                const contributes = `${value} IS NOT NULL${filter ? ` AND (${filter})` : ''}`;
+                const missing = `(${unit} IS NULL OR typeof(${unit}) <> 'VARCHAR' OR TRIM(CAST(${unit} AS VARCHAR), ${whitespace}) = '')`;
+                return `(COUNT(*) FILTER (WHERE ${contributes} AND ${missing}) > 0 OR `
+                    + `COUNT(DISTINCT CAST(${unit} AS VARCHAR)) FILTER (WHERE ${contributes}) > 1) AS ${quoteIdentifier(guardAliases[index])}`;
+            });
+            const guardGroups = groupByColumns.map(column =>
+                dimNorm && isColumnNormalized(column, dimNorm)
+                    ? buildDimensionNormExpr(quoteIdentifier(column), dimNorm)
+                    : quoteIdentifier(column));
+            const guardGroupBy = guardGroups.length > 0
+                ? `GROUP BY ${guardGroups.map((_, index) => String(index + 1)).join(', ')}`
+                : '';
+            const guardBase = [
+                `SELECT ${[...guardGroups, ...checks].join(', ')}`, fromSql, whereSql, guardGroupBy,
+            ].filter(Boolean).join(' ');
+            unitGuardSql = `SELECT COUNT(*) AS total FROM (${guardBase}) AS ${quoteIdentifier('unit_guard')} WHERE `
+                + guardAliases.map(quoteIdentifier).join(' OR ');
+        }
         const aggregateBaseSql = [
             `SELECT ${aggregateSelectSql}`,
             fromSql,
@@ -752,6 +797,7 @@ export const compileQueryPlanToDuckDbSql = (
     return {
         sql,
         countSql,
+        ...(unitGuardSql ? { unitGuardSql } : {}),
         selectedColumns,
         appliedOrderBy: normalizedPlan.orderBy ?? [],
         appliedLimit: normalizedPlan.limit ?? maxRows,

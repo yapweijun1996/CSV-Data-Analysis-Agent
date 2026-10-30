@@ -1,7 +1,8 @@
 import type {CsvCellValue,CsvRow,DatasetColumnSchema,DatasetTableRole} from '../../types';
 import type {CandidateCellOrigin,CandidateRowOrigin,CandidateOutput,CandidateRelationship} from './candidateContract';
+import type {UnitProvenance,UnitSource} from './unitMeaning';
 
-export interface ValidationMetric {column:string;scale:number;toleranceMinor:number;unit:string;currencyColumn?:string;allowedCurrencies?:string[];unitColumn?:string;allowedUnits?:string[]}
+export interface ValidationMetric {column:string;scale:number;toleranceMinor:number;unit:string;provenance?:UnitProvenance;source?:UnitSource;currencyColumn?:string;allowedCurrencies?:string[];unitColumn?:string;allowedUnits?:string[]}
 export interface ValidationCell {column:string;origin:CandidateCellOrigin;conversion:'identity'|'trim'|'decimal'|'iso_date'|'decimal_or_null';scale?:number}
 export interface ValidationTable {name:string;role:DatasetTableRole;schema:readonly DatasetColumnSchema[];grain:string[];groupBy:string[];metrics:ValidationMetric[];mutableColumns:string[];rows:Array<{cells:ValidationCell[]}>}
 export interface ValidationExclusion {origin:CandidateRowOrigin;role:'header'|'group_header'|'note'|'subtotal'|'grand_total'|'duplicate';duplicateOf?:CandidateRowOrigin;checks:Array<{column:string|number;table:string;detailRows:number[];metric:string;scope?:Array<{field:string;origin:CandidateCellOrigin}>}>}
