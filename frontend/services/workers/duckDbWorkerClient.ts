@@ -446,6 +446,7 @@ export class DuckDbWorkerClient {
     async executeCompiledQuery(payload: {
         sql: string;
         countSql: string;
+        unitGuardSql?: string;
         selectedColumns: string[];
         appliedOrderBy: QueryOrderByClause[];
         appliedLimit: number;
@@ -456,6 +457,7 @@ export class DuckDbWorkerClient {
         const binding = load ? {tableName: load.payload.tableName, loadVersion: load.payload.loadVersion} : undefined;
         if (payload.expectedBinding) assertSqlBinding(payload.expectedBinding, binding ?? null);
         validateSqlText(payload.sql); validateSqlText(payload.countSql); validateSqlLimit(payload.appliedLimit);
+        if (payload.unitGuardSql !== undefined) validateSqlText(payload.unitGuardSql);
         const boundedTimeout = sqlTimeout(timeoutMs);
         await this.restoreDatasetIfNeeded(abortSignal, reportDiagnostics);
         this.assertGeneration(generation);

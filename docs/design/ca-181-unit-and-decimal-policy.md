@@ -47,6 +47,14 @@ The native test source asserts matching/missing/mixed units, mixed exact types, 
 
 Each stage needs consumer-level regression tests and actual-path smoke verification; route inventory and exact integration files beyond those listed are UNVERIFIED. Ship fail-closed slices rather than claiming full CA-181 acceptance before all paths are covered.
 
+## CA-188 audit
+
+- Before this slice, accepted DECIMAL backing metadata stored a unit string per column; it now carries provenance and source (`frontend/types/intake.ts:233-236`). Accepted query custody collects metric metadata (`frontend/services/duckdb/queryEngine.ts:528-541`) and passes exact units to the compiler (`:604-607`).
+- The exact-period guard compares nonblank unit strings (`frontend/services/duckdb/queryCompiler.ts:522-533`), not validated semantic meanings. Header inference exists separately at `frontend/services/data/unitMeaning.ts:19-26`; no query-time binding to it was found.
+- Candidate validation can bind a metric to `unitColumn` and restrict its values (`frontend/services/data/candidateValidation.ts:5,63-66,107-108`). Before this slice accepted query custody discarded the row binding. Weighted statistics independently accept a row unit column (`frontend/services/agent/execution/weightedMean.ts:19-23`). No UI to set aggregate bindings was found.
+
+The source slice now propagates accepted candidate row bindings into single-column sum/avg queries; callers can also specify `unitColumn` directly, but no UI sets that optional field. Guard checks run for every filtered group before result limits. Inferred accepted bindings and inferred fixed units for exact-period arithmetic fail closed until guarded results can show provenance; unitless/unbound queries retain existing behavior. Spreadsheet and separate analysis aggregation remain unguarded.
+
 ## Owner decisions (2026-10-30)
 
 1. **Authority — owner-overridden:** automatic inference is allowed from an explicit, unambiguous ISO-4217 header suffix or a unit column, as well as user-confirmed mappings. Every unit carries `confirmed` or `inferred` provenance; inferred units must be visible as “inferred, not confirmed” wherever a unit-guarded result is shown. Ambiguous symbols such as $ or ¥ and conflicting evidence give no unit. Residual risk: an apparently unambiguous inferred unit can still be wrong.

@@ -98,7 +98,7 @@ try {
             assert.equal(result.queries[1].rows[0].n, 4);
             assert.equal(result.queries[8].rows[0].n, '0.00'); assert.equal(result.queries[9].rows[0].n, 2);
             assert.match(result.rawAcceptedCsv, /90071992547409\.90/);
-            assert.deepEqual(result.backing.exactDecimalColumns, pending.columns.filter(c => c.conversion === 'decimal').map(({ name, scale, unit }) => ({ name, scale, unit })));
+            assert.deepEqual(result.backing.exactDecimalColumns, pending.columns.filter(c => c.conversion === 'decimal').map(({ name, scale, unit, provenance = 'confirmed', source = 'user' }) => ({ name, scale, unit, provenance, source })));
             if (mode === 'compatible') {
                 for (const [i, value] of [[2, 4], [3, '0.000000'], [4, '-90071992547409.920000'], [5, '90071992547409.920000'], [6, '180143985094819.830000'], [7, '-180143985094819.830000']]) {
                     assert.equal(result.queries[i].rows[0].n, value); assert.ok(!result.queries[i].sql.includes('AS DOUBLE'));

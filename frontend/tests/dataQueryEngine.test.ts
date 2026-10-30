@@ -22,6 +22,33 @@ vi.mock('../services/data/arqueroEngine', () => ({
 }));
 
 describe('dataQueryEngine', () => {
+    it('binds accepted metric unit and currency columns without letting callers override custody', async () => {
+        // This suite reloads the engine after resetting its mocked worker modules.
+        const { bindAcceptedMetricUnits } = await import('../services/duckdb/queryEngine');
+        const metric = { column:'Amount', scale:2, toleranceMinor:0, unit:'money', unitColumn:'Unit' };
+        const plan = { aggregates:[{function:'sum' as const,column:'amount',as:'total'}] };
+        expect(bindAcceptedMetricUnits(plan,[metric]).aggregates?.[0].unitColumn).toBe('Unit');
+        expect(plan.aggregates[0]).not.toHaveProperty('unitColumn');
+        expect(bindAcceptedMetricUnits({aggregates:[{function:'avg',column:'Amount',as:'mean'}]},[{...metric,unitColumn:undefined,currencyColumn:'Currency'}]).aggregates?.[0].unitColumn).toBe('Currency');
+        expect(bindAcceptedMetricUnits({aggregates:[{function:'max',column:'Amount',as:'max'}]},[metric]).aggregates?.[0].unitColumn).toBeUndefined();
+        expect(() => bindAcceptedMetricUnits({aggregates:[{function:'sum',column:'Amount',unitColumn:'Other',as:'total'}]},[metric])).toThrow('mixed_or_missing_units');
+        expect(() => bindAcceptedMetricUnits(plan,[{...metric,currencyColumn:'Currency'}])).toThrow('mixed_or_missing_units');
+        expect(bindAcceptedMetricUnits(plan,[{...metric,currencyColumn:'Unit'}]).aggregates?.[0].unitColumn).toBe('Unit');
+        expect(() => bindAcceptedMetricUnits(plan,[{...metric,provenance:'inferred',source:'unit_column'}])).toThrow('mixed_or_missing_units');
+        expect(bindAcceptedMetricUnits({aggregates:[{function:'max',column:'Amount',as:'max'}]},[{...metric,provenance:'inferred',source:'unit_column'}]).aggregates?.[0].unitColumn).toBeUndefined();
+    });
+    it('excludes inferred fixed units from period arithmetic while preserving exact columns', async () => {
+        // Reload after the mocked worker modules, as in the other engine tests.
+        const {confirmedExactUnits} = await import('../services/duckdb/queryEngine');
+        const {compileQueryPlanToDuckDbSql} = await import('../services/duckdb/queryCompiler');
+        const columns = ['OCT 2010','NOV 2010','DEC 2010'];
+        const units = confirmedExactUnits([{name:columns[0],unit:'SGD'}, {name:columns[1],unit:'SGD',provenance:'confirmed'}, {name:columns[2],unit:'SGD',provenance:'inferred'}]);
+        expect(units).toEqual({[columns[0]]:'SGD',[columns[1]]:'SGD'});
+        const opts = {tableName:'accepted',allowedColumns:columns,exactDecimalColumns:columns,exactDecimalUnits:units};
+        expect(() => compileQueryPlanToDuckDbSql({aggregates:[{function:'sum',column:columns.join(' + '),as:'n'}]},opts)).toThrow('exact_decimal_period_units_require_meaning');
+        expect(() => compileQueryPlanToDuckDbSql({aggregates:[{function:'count',column:columns.join(' + '),as:'n'}]},opts)).not.toThrow();
+        expect(compileQueryPlanToDuckDbSql({aggregates:[{function:'sum',column:columns[2],as:'n'}]},opts).sql).toContain('SUM("DEC 2010")');
+    });
     it('retires only the exact diagnostic binding and preserves a later dataset',async()=>{
         const config=await import('../config/runtimeConfig');vi.mocked(config.shouldEnableDuckDbQueryEngine).mockReturnValue(true);
         const worker=await import('../services/workers/duckDbWorkerClient');

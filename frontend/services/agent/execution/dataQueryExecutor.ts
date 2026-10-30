@@ -226,11 +226,15 @@ const normalizeAggregateClauses = (
         if (!functionName) {
             throw new Error(`Query aggregate "${alias}" must use one of: count, count_distinct, sum, avg, min, max, median, percentile.`);
         }
+        const unitColumn = aggregate.unitColumn !== undefined
+            ? normalizeColumnName(aggregate.unitColumn, lookup, `Query aggregate "${alias}"`)
+            : undefined;
         if (functionName === 'count') {
             return {
                 function: 'count',
                 as: alias,
                 ...(aggregate.column ? { column: normalizeColumnName(aggregate.column, lookup, `Query aggregate "${alias}"`) } : {}),
+                ...(unitColumn !== undefined ? { unitColumn } : {}),
                 ...(aggregate.where ? { where: normalizeWhereClause(aggregate.where, lookup) } : {}),
             };
         }
@@ -240,6 +244,7 @@ const normalizeAggregateClauses = (
         return {
             function: functionName,
             column: normalizeColumnName(aggregate.column, lookup, `Query aggregate "${alias}"`),
+            ...(unitColumn !== undefined ? { unitColumn } : {}),
             as: alias,
             ...(functionName === 'percentile' ? { percentile: aggregate.percentile } : {}),
             ...(aggregate.where ? { where: normalizeWhereClause(aggregate.where, lookup) } : {}),
@@ -374,9 +379,20 @@ const aggregateRowsForQuery = (
                 return;
             }
 
-            const numericValues = aggregateRows
-                .map(row => robustParseFloat(row[aggregate.column!] ?? null))
-                .filter((value): value is number => value !== null);
+            const numericValues: number[] = [];
+            let unit: string | null = null;
+            for (const row of aggregateRows) {
+                const value = robustParseFloat(row[aggregate.column!] ?? null);
+                if (value === null) continue;
+                if (aggregate.unitColumn && (aggregate.function === 'sum' || aggregate.function === 'avg')) {
+                    const actual = row[aggregate.unitColumn];
+                    if (typeof actual !== 'string' || !actual.trim() || (unit !== null && unit !== actual)) {
+                        throw new Error('mixed_or_missing_units: Cannot calculate: units are missing or mixed. Group or filter by unit.');
+                    }
+                    unit = actual;
+                }
+                numericValues.push(value);
+            }
 
             if (aggregate.function === 'sum') {
                 nextRow[aggregate.as] = numericValues.length > 0

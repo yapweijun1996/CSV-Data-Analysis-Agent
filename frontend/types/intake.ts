@@ -232,8 +232,8 @@ export interface CsvDatasetBacking {
     byteSize: number;
     /** Columns returned by the backing DuckDB table, before preview-only annotations. */
     columnNames?: string[];
-    /** Host-approved DECIMAL columns; scale and resolved unit remain bound in the accepted manifest. */
-    exactDecimalColumns?: Array<{name:string;scale:number;unit:string}>;
+    /** Host-approved DECIMAL columns; legacy metadata omits provenance/source and defaults to confirmed/user. */
+    exactDecimalColumns?: Array<{name:string;scale:number;unit:string;provenance?:'confirmed'|'inferred';source?:'header'|'unit_column'|'user'}>;
     readOnly: true;
     ephemeral: boolean;
     /** Session-scoped OPFS copy used for recovery/worker hand-off when available. */

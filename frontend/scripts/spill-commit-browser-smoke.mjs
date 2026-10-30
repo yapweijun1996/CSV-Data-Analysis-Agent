@@ -96,7 +96,7 @@ try{
             assert.equal(committed.queries[7].rows[0].key,String(rows-1));
             assert.equal(committed.queries[7].rows[0].payload,'x'.repeat(1000)+'α\r\n末尾');
             assert.equal(committed.queries[8].rows[0].key,'0');assert.equal(committed.queries[9].rows.length,2);
-            assert.deepEqual(committed.backing.exactDecimalColumns,[{name:'value',scale:decimal?2:0,unit:decimal?'SGD':'count'}]);
+            assert.deepEqual(committed.backing.exactDecimalColumns,[{name:'value',scale:decimal?2:0,unit:decimal?'SGD':'count',provenance:'confirmed',source:'user'}]);
             assert.match(committed.queries[1].sql,/SUM\("value"\)/);
             if(ceiling)assert.equal(committed.queries[1].rows[0].n,'-180143985094819.80');
             const repeated=await page.evaluate(async()=>{
