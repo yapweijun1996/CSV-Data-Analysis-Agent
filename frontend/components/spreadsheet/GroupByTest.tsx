@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { getTranslation } from '../../utils/localization';
 import type { CsvRow } from '../../types';
 import { IconInsights } from '../../icons/IconInsights';
+import { checkAggregationUnits, resolveCompanionUnitColumn } from '../../services/data/aggregationUnits';
+import { collectOrderedColumnNames } from '../../services/data/columnRegistry';
 
 // --- Helpers ---
 
@@ -27,12 +29,29 @@ const parseNumeric = (value: unknown): number => {
     return Number(str) || 0;
 };
 
+const isContributingNumber = (value: unknown): boolean =>
+    isNumericValue(value) && Number.isFinite(parseNumeric(value));
+
 // --- Aggregation logic ---
 
 const MAX_TABLE_ROWS = 30;
 const MAX_TABLE_COLS = 10;
 const MAX_PIVOT_COLS = 15;
 const MAX_PIVOT_ROWS = 20;
+
+const MIXED_UNITS = 'mixed_or_missing_units' as const;
+type AggregateValue = number | typeof MIXED_UNITS | null;
+
+const guardedValue = (rows: CsvRow[], valueCol: string, unitCol: string, agg: 'sum' | 'avg'): AggregateValue => {
+    if (checkAggregationUnits(rows, valueCol, unitCol, isContributingNumber)) return MIXED_UNITS;
+    const values = rows.filter(row => isContributingNumber(row[valueCol]));
+    if (!values.length) return null;
+    const sum = values.reduce((total, row) => total + parseNumeric(row[valueCol]), 0);
+    return Math.round((agg === 'avg' && values.length ? sum / values.length : sum) * 100) / 100;
+};
+
+const displayAggregate = (value: unknown, language: string): string =>
+    value === MIXED_UNITS ? getTranslation('aggregation_mixed_units_hidden', language) : formatCell(value);
 
 export const detectColumns = (rows: CsvRow[]) => {
     const allCols = rows[0] ? Object.keys(rows[0]) : [];
@@ -50,7 +69,32 @@ export const computeAggregation = (
     groupByCol: string,
     valueCol: string,
     agg: 'sum' | 'count' | 'avg',
-): { rows: CsvRow[]; total: number } => {
+): { rows: CsvRow[]; total: AggregateValue } => {
+    const unitCol = agg === 'count' ? undefined : resolveCompanionUnitColumn(collectOrderedColumnNames(rows));
+    if (unitCol && agg !== 'count') {
+        const groups = new Map<string, CsvRow[]>();
+        for (const row of rows) {
+            const key = String(row[groupByCol] ?? '');
+            if (!key) continue;
+            const group = groups.get(key) ?? [];
+            group.push(row);
+            groups.set(key, group);
+        }
+        const result = [...groups].map(([key, group]) => ({
+            [groupByCol]: key,
+            [valueCol]: guardedValue(group, valueCol, unitCol, agg),
+        }));
+        result.sort((a, b) => {
+            const av = a[valueCol], bv = b[valueCol];
+            if (av === MIXED_UNITS) return bv === MIXED_UNITS ? 0 : 1;
+            if (bv === MIXED_UNITS) return -1;
+            return Number(bv) - Number(av);
+        });
+        return {
+            rows: result.slice(0, 20),
+            total: guardedValue([...groups.values()].flat(), valueCol, unitCol, agg),
+        };
+    }
     const groups = new Map<string, { sum: number; count: number }>();
     for (const row of rows) {
         const key = String(row[groupByCol] ?? '');
@@ -108,18 +152,51 @@ const smartSort = (values: string[]): string[] => {
 interface PivotResult {
     pivotColumns: string[];
     rows: CsvRow[];
-    columnTotals: Record<string, number>;
-    grandTotal: number;
+    columnTotals: Record<string, AggregateValue>;
+    grandTotal: AggregateValue;
     rowCol: string;
 }
 
-const computePivotAggregation = (
+export const computePivotAggregation = (
     rows: CsvRow[],
     rowCol: string,
     pivotCol: string,
     valueCol: string,
     agg: 'sum' | 'count' | 'avg',
 ): PivotResult => {
+    const unitCol = agg === 'count' ? undefined : resolveCompanionUnitColumn(collectOrderedColumnNames(rows));
+    if (unitCol && agg !== 'count') {
+        const groups = new Map<string, Map<string, CsvRow[]>>();
+        const columns = new Set<string>();
+        const contributingRows: CsvRow[] = [];
+        for (const row of rows) {
+            const rk = String(row[rowCol] ?? '');
+            const pk = String(row[pivotCol] ?? '');
+            if (!rk || !pk) continue;
+            columns.add(pk);
+            contributingRows.push(row);
+            const group = groups.get(rk) ?? new Map<string, CsvRow[]>();
+            const cell = group.get(pk) ?? [];
+            cell.push(row);
+            group.set(pk, cell);
+            groups.set(rk, group);
+        }
+        const pivotColumns = smartSort([...columns]).slice(0, MAX_PIVOT_COLS);
+        const columnTotals: Record<string, AggregateValue> = {};
+        for (const pc of pivotColumns) {
+            columnTotals[pc] = guardedValue(contributingRows.filter(row => String(row[pivotCol] ?? '') === pc), valueCol, unitCol, agg);
+        }
+        const grandTotal = guardedValue(contributingRows, valueCol, unitCol, agg);
+        columnTotals.Total = grandTotal;
+        const resultRows = [...groups].map(([rk, group]) => {
+            const row: CsvRow = { [rowCol]: rk };
+            for (const pc of pivotColumns) row[pc] = guardedValue(group.get(pc) ?? [], valueCol, unitCol, agg);
+            row.Total = guardedValue([...group.values()].flat(), valueCol, unitCol, agg);
+            return row;
+        });
+        resultRows.sort((a, b) => String(a[rowCol] ?? '').localeCompare(String(b[rowCol] ?? '')));
+        return { pivotColumns, rows: resultRows.slice(0, MAX_PIVOT_ROWS), columnTotals, grandTotal, rowCol };
+    }
     const groups = new Map<string, Map<string, { sum: number; count: number }>>();
     const pivotValuesSet = new Set<string>();
 
@@ -188,7 +265,8 @@ export const DataTable: React.FC<{
     maxRows?: number;
     highlightCols?: string[];
     totalRow?: { label: string; value: string; colSpan: number } | null;
-}> = ({ rows, maxRows = MAX_TABLE_ROWS, highlightCols, totalRow }) => {
+    aggregateLanguage?: string;
+}> = ({ rows, maxRows = MAX_TABLE_ROWS, highlightCols, totalRow, aggregateLanguage }) => {
     if (rows.length === 0) return null;
     const displayRows = rows.slice(0, maxRows);
     const allCols = Object.keys(rows[0] ?? {});
@@ -215,7 +293,7 @@ export const DataTable: React.FC<{
                         <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-blue-50/40`}>
                             {cols.map(c => (
                                 <td key={c} className={`whitespace-nowrap border-b border-slate-100 px-3 py-1.5 ${highlightSet.has(c) ? 'font-medium text-violet-800' : 'text-slate-700'}`}>
-                                    {formatCell(row[c])}
+                                    {aggregateLanguage && highlightSet.has(c) ? displayAggregate(row[c], aggregateLanguage) : formatCell(row[c])}
                                 </td>
                             ))}
                             {truncatedCols && <td className="border-b border-slate-100 px-3 py-1.5 text-slate-400">…</td>}
@@ -262,9 +340,9 @@ const PivotTableView: React.FC<{ pivot: PivotResult; language: string }> = ({ pi
                         <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-blue-50/40`}>
                             <td className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 font-medium text-violet-800">{formatCell(row[pivot.rowCol])}</td>
                             {pivot.pivotColumns.map(pc => (
-                                <td key={pc} className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 text-right text-slate-700">{formatNumber(parseNumeric(row[pc]))}</td>
+                                <td key={pc} className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 text-right text-slate-700">{displayAggregate(row[pc], language)}</td>
                             ))}
-                            <td className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 text-right font-semibold text-emerald-800 bg-emerald-50/50">{formatNumber(parseNumeric(row['Total']))}</td>
+                            <td className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 text-right font-semibold text-emerald-800 bg-emerald-50/50">{displayAggregate(row['Total'], language)}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -272,9 +350,9 @@ const PivotTableView: React.FC<{ pivot: PivotResult; language: string }> = ({ pi
                     <tr className="bg-emerald-50 font-semibold">
                         <td className="border-t-2 border-emerald-200 px-3 py-2 text-right text-emerald-800">{totalLabel}</td>
                         {pivot.pivotColumns.map(pc => (
-                            <td key={pc} className="border-t-2 border-emerald-200 px-3 py-2 text-right text-emerald-800">{formatNumber(pivot.columnTotals[pc] ?? 0)}</td>
+                            <td key={pc} className="border-t-2 border-emerald-200 px-3 py-2 text-right text-emerald-800">{displayAggregate(pivot.columnTotals[pc], language)}</td>
                         ))}
-                        <td className="border-t-2 border-emerald-300 px-3 py-2 text-right font-bold text-emerald-900 bg-emerald-100">{formatNumber(pivot.grandTotal)}</td>
+                        <td className="border-t-2 border-emerald-300 px-3 py-2 text-right font-bold text-emerald-900 bg-emerald-100">{displayAggregate(pivot.grandTotal, language)}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -315,7 +393,8 @@ export const GroupByTest: React.FC<GroupByTestProps> = ({ rows, language, accent
     );
 
     const t = (key: string, params?: Record<string, string | number>) => getTranslation(key, language, params);
-    const totalValue = pivotResult?.grandTotal ?? flatResult?.total ?? 0;
+    const totalValue = pivotResult ? pivotResult.grandTotal : flatResult ? flatResult.total : null;
+    const inferredUnit = agg !== 'count' && resolveCompanionUnitColumn(collectOrderedColumnNames(rows));
 
     return (
         <div className="flex h-full flex-col gap-3">
@@ -358,7 +437,8 @@ export const GroupByTest: React.FC<GroupByTestProps> = ({ rows, language, accent
                         rows={flatResult.rows}
                         maxRows={30}
                         highlightCols={[groupBy, valueCol]}
-                        totalRow={{ label: t('provenance_step3_total_label'), value: formatNumber(flatResult.total), colSpan: 1 }}
+                        aggregateLanguage={language}
+                        totalRow={{ label: t('provenance_step3_total_label'), value: displayAggregate(flatResult.total, language), colSpan: 1 }}
                     />
                 ) : (
                     <div className="flex h-32 items-center justify-center text-sm text-slate-400">
@@ -366,6 +446,7 @@ export const GroupByTest: React.FC<GroupByTestProps> = ({ rows, language, accent
                     </div>
                 )}
             </div>
+            {(flatResult || pivotResult) && inferredUnit && <div className="text-xs text-slate-500">{t('data_query_inferred_unit_label')}</div>}
             {(flatResult || pivotResult) && groupBy && valueCol && (
                 <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
                     <IconInsights className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -373,18 +454,18 @@ export const GroupByTest: React.FC<GroupByTestProps> = ({ rows, language, accent
                         <span>
                             {pivotBy
                                 ? t('provenance_pivot_excel_hint', { group: groupBy, pivot: pivotBy, agg: agg.toUpperCase(), value: valueCol })
-                                : t('provenance_step3_try_excel', { hint: `${agg.toUpperCase()}IF(${groupBy}, "…", ${valueCol}) = ${formatNumber(totalValue)}` })
+                                : t('provenance_step3_try_excel', { hint: `${agg.toUpperCase()}IF(${groupBy}, "…", ${valueCol}) = ${displayAggregate(totalValue, language)}` })
                             }
                         </span>
-                        {onRequestCard && (
+                        {onRequestCard && !inferredUnit && typeof totalValue === 'number' && (
                             <button
                                 type="button"
                                 onClick={() => {
                                     const dataRows = flatResult?.rows ?? pivotResult?.rows ?? [];
                                     const previewLines = dataRows.slice(0, 5).map(r =>
-                                        `${String(r[groupBy] ?? '?')}: ${formatNumber(parseNumeric(r[valueCol]))}`
+                                        `${String(r[groupBy] ?? '?')}: ${displayAggregate(pivotBy ? r.Total : r[valueCol], language)}`
                                     ).join(', ');
-                                    const filterNote = `IMPORTANT: The user is viewing a filtered subset of the data. The precomputed results below are the ground truth for this card — do NOT re-query the full dataset. Use these exact figures in your response: ${dataRows.length} groups, total=${formatNumber(totalValue)}. Breakdown: ${previewLines}.`;
+                                    const filterNote = `IMPORTANT: The user is viewing a filtered subset of the data. The precomputed results below are the ground truth for this card — do NOT re-query the full dataset. Use these exact figures in your response: ${dataRows.length} groups, total=${displayAggregate(totalValue, language)}. Breakdown: ${previewLines}.`;
                                     const cardDesc = pivotBy
                                         ? `Create a new analysis card: pivot table with rows=${groupBy}, columns=${pivotBy}, values=${agg.toUpperCase()}(${valueCol}). ${filterNote}`
                                         : `Create a new analysis card: ${agg.toUpperCase()}(${valueCol}) grouped by ${groupBy}. ${filterNote}`;

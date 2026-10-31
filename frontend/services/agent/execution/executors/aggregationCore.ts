@@ -1,10 +1,22 @@
 import { CsvData, CsvRow, AnalysisPlan } from '../../../../types';
 import { robustParseFloat } from '../../../data/dataProfiler';
+import { checkAggregationUnits, resolveCompanionUnitColumn } from '../../../data/aggregationUnits';
 import { tryChronologicalSort } from '../../../../utils/chronologicalSort';
 import { getValueCaseInsensitive, calculateAggregation } from './aggregationHelpers';
 import { applyPreFilter } from '../../../../utils/planValidation/preFilterSupport';
 
 export type AggregationSpec = AnalysisPlan & { _internal_groupByColumns?: string[] };
+
+const guardedMeasures = (spec: AggregationSpec) => [
+    { column: spec.valueColumn, aggregation: spec.aggregation },
+    ...(spec.chartType === 'combo' && spec.secondaryValueColumn && spec.secondaryAggregation
+        ? [{ column: spec.secondaryValueColumn, aggregation: spec.secondaryAggregation }]
+        : []),
+].filter(measure => measure.column && (measure.aggregation === 'sum' || measure.aggregation === 'avg'));
+
+export const aggregationHasInferredUnit = (data: CsvData, spec: AggregationSpec): boolean =>
+    guardedMeasures(spec).length > 0 &&
+    resolveCompanionUnitColumn([...new Set(data.data.flatMap(row => Object.keys(row)))]) !== undefined;
 
 export const executeAggregationCore = (data: CsvData, spec: AggregationSpec): CsvRow[] => {
     let dataToProcess = data.data;
@@ -27,6 +39,35 @@ export const executeAggregationCore = (data: CsvData, spec: AggregationSpec): Cs
             ...row,
             [compositeKey]: originalGroupColumns.map(col => getValueCaseInsensitive(row, col)).join(' - '),
         }));
+    }
+
+    const measures = guardedMeasures(spec);
+    if (measures.length) {
+        const columns = [...new Set(data.data.flatMap(row => Object.keys(row)))];
+        const unitColumn = resolveCompanionUnitColumn(columns);
+        if (unitColumn) {
+            const groupedRows = new Map<string, CsvRow[]>();
+            for (const row of dataToProcess) {
+                const key = String(getValueCaseInsensitive(row, spec.groupByColumn));
+                if (key === 'undefined' || key === 'null') continue;
+                const group = groupedRows.get(key);
+                if (group) group.push(row);
+                else groupedRows.set(key, [row]);
+            }
+            for (const measure of measures) {
+                const column = measure.column!;
+                for (const rows of groupedRows.values()) {
+                    // The executor resolves measure names case-insensitively; the shared guard uses exact keys.
+                    const normalizedRows = rows.map(row => ({
+                        ...row,
+                        [column]: getValueCaseInsensitive(row, column) ?? null,
+                    }));
+                    if (checkAggregationUnits(normalizedRows, column, unitColumn, value => robustParseFloat(value) !== null)) {
+                        throw new Error('mixed_or_missing_units: Cannot calculate: units are missing or mixed. Group or filter by unit.');
+                    }
+                }
+            }
+        }
     }
 
     if (spec.chartType === 'combo' && spec.secondaryValueColumn && spec.secondaryAggregation) {

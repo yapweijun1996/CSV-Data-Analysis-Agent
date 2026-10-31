@@ -12,6 +12,7 @@ import { AnalysisCardControls } from './analysis-card/AnalysisCardControls';
 import { AnalysisCardDataTables } from './analysis-card/AnalysisCardDataTables';
 import { getAvailableChartTypes } from '../utils/chartTypeUtils';
 import { getLocalizedText } from '../utils/localizedText';
+import { getTranslation } from '../utils/localization';
 
 
 interface AnalysisCardProps {
@@ -100,6 +101,9 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({ cardId }) => {
                 onChartTypeChange={(newType) => handleChartTypeChange(id, newType)}
                 onExport={handleExport}
             />
+            {cardData.unitInferred && (
+                <div className="text-xs text-slate-500">{getTranslation('data_query_inferred_unit_label', language)}</div>
+            )}
 
             <div className="grid gap-4 flex-grow grid-cols-1">
                 <AnalysisCardChart

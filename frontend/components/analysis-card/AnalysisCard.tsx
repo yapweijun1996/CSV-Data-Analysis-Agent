@@ -448,6 +448,9 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
                 tiedLeadingWindow={tiedLeadingWindow}
                 language={language}
             />
+            {cardData.unitInferred && (
+                <div className="text-xs text-slate-500">{getTranslation('data_query_inferred_unit_label', language)}</div>
+            )}
 
             {!isCardExpanded && (
                 <CompactCardSummary

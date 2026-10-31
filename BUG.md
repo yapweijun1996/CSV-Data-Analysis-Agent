@@ -40,8 +40,8 @@ Statuses: `confirmed` = reproduced or established defect; `candidate` = plausibl
 - Severity: P1 decision integrity. Status: candidate.
 - CA-189a source-only partial mitigation: chat structured single-column sums/averages infer a unique named unit companion and show inferred provenance; mixed/missing units refuse with a chat message. Accepted validated bindings retain precedence. Ambiguous companions are not guessed.
 - 2026-10-31: two built-app Chromium runs uploaded synthetic CSVs through the file input and exercised the managed query entry: mixed-unit refusal, filtered sum 7 with inferred metadata, unitless sum 11 and counts 4/2 passed. Chat refusal, displayed totals, provenance label and counts are NOT_REACHED; the harness blocks external requests and does not use a live LLM. This is not real-chat acceptance.
-- The separate worker analysis path and spreadsheet group/grand totals remain unguarded (`frontend/services/workers/dataWorker.ts:32-35`, `frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`). BUG-006 remains a candidate, not fixed-verified.
-- Next: verify real-user chat/worker behavior and complete version-bound unit custody and total guarding across remaining routes. Linked task: [CA-181](TASK.md#ca-181--currency-unit-and-decimal-precision).
+- CA-189b source-only partial mitigation: spreadsheet flat/pivot groups and full-scope totals suppress mixed/missing inferred companion units (`frontend/components/spreadsheet/GroupByTest.tsx:73-95,167-196`); analysis worker dispatch uses guarded core (`frontend/services/workers/dataWorker.ts:32-33`, `frontend/services/agent/execution/executors/aggregationCore.ts:44-70`). Synthetic isolated component rendering is not a real-user upload/UI or worker check. BUG-006 remains a candidate, not fixed-verified.
+- Next: verify real-user chat/worker/spreadsheet behavior and complete version-bound unit custody across remaining routes. Linked task: [CA-181](TASK.md#ca-181--currency-unit-and-decimal-precision).
 
 ## BUG-007 — Local-data deletion may silently be incomplete
 - Severity: P1 privacy. Status: candidate.

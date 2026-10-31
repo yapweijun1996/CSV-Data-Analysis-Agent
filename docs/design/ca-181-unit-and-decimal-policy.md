@@ -2,7 +2,7 @@
 
 Status: owner decisions recorded; CA-187 contract implemented separately, not integrated into aggregation. [CA-181](../../TASK.md#ca-181--currency-unit-and-decimal-precision) remains partial; [BUG-006](../../BUG.md#bug-006--mixed-unit-aggregation) remains a candidate. The persona review reports 3/3 exact-decimal/mixed-unit scenarios but explicitly treats results as reviewer claims, not independent confirmation (`docs/reviews/2026-10-30-25-persona-review.md:3-5,16`). A row-level mixed-unit consumer scenario is UNVERIFIED.
 
-## Current behavior, by aggregation path
+## Original behavior before CA-188 and CA-189b
 
 Numeric type describes the expression/input arithmetic, not necessarily the result type. JavaScript `number` below means binary floating point (DOUBLE); actual DuckDB `AVG`, median and percentile result types and rounding are UNVERIFIED.
 
@@ -64,6 +64,13 @@ The source slice now propagates accepted candidate row bindings into single-colu
 - Before CA-189a, the agent error handler could turn a unit refusal into a successful compatibility filter (`frontend/services/agent/execution/executorDataActions.ts:739-769`), and result traces did not carry inferred provenance. Both require explicit handling rather than relying on model-generated wording.
 - CA-189a enables unique companion inference only for chat structured queries with a visible trace (`frontend/services/agent/execution/dataQueryExecution.ts:280-281`); the managed engine uses physical schema and sends the same bound plan to DuckDB and native fallback (`frontend/services/duckdb/queryEngine.ts:510-525,625-667`). It does not infer over an accepted metric with existing fixed-unit metadata, because an unrelated companion could conflict. Other consumers, raw SQL and expanded period expressions do not opt in. A file-backed source without physical column names cannot infer.
 - Inferred results retain provenance in the result and history, and chat, spreadsheet and explorer render a localized label (`frontend/services/agent/execution/dataQueryExecution.ts:198`, `frontend/services/agent/queryTraceState.ts:63`, `frontend/components/SpreadsheetPanel.tsx:232`, `frontend/components/modals/DatabaseModal.tsx:584-585`). A unit refusal is shown in chat before compatibility fallback (`frontend/services/agent/execution/executorDataActions.ts:743-770`). This source-only slice does not establish browser acceptance or protect spreadsheet totals.
+
+## CA-189b audit
+
+- Flat grouping collects every row with a nonblank group key, increments a row count and sums parsed values (`frontend/components/spreadsheet/GroupByTest.tsx:48-63`); it rounds group results, sums those results even for averages, and only then truncates to 20 groups (`:64-72`). There is no separate collapsed-group state; truncated groups still enter the original flat total.
+- Pivot groups by row and column keys (`frontend/components/spreadsheet/GroupByTest.tsx:116-137`), truncates pivot columns before computing rounded cell sums and totals (`:139-163`), then truncates rows after totals (`:167-179`). Hidden columns therefore do not enter original row/grand totals, while hidden rows do. Average totals sum cell averages rather than underlying observations.
+- The component computes both modes from its `rows` prop (`frontend/components/spreadsheet/GroupByTest.tsx:287-310`); no accepted metric binding or `unitColumn` is passed there. The available evidence is the row schema, from which CA-189a resolves only a unique named `unit`, `units` or `currency` companion (`frontend/services/duckdb/queryEngine.ts:510-525`). That inference is not version-bound confirmation.
+- The separate worker dispatches analysis to `executeAggregationCore` (`frontend/services/workers/dataWorker.ts:25-35`); it groups the filtered input and computes primary and optional secondary aggregations (`frontend/services/agent/execution/executors/aggregationCore.ts:9-96`). Query guards instead check filtered numeric contributors before limits (`frontend/services/duckdb/queryCompiler.ts:717-749`, `frontend/services/agent/execution/dataQueryExecutor.ts:382-405`); weighted mean excludes zero-weight rows before checking supplied units (`frontend/services/agent/execution/weightedMean.ts:14-24`).
 
 ## Owner decisions (2026-10-30)
 
