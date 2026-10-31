@@ -735,6 +735,7 @@ const executeManagedDataQueryUnlocked = async (
         }
         if (error instanceof Error && error.message.startsWith('sql_')) throw error;
         if (error instanceof Error && error.message.startsWith('mixed_or_missing_units:')) throw error;
+        if (error instanceof Error && error.message === 'exact_decimal_overflow') throw error;
         clearCachedDuckDbBinding();
         if (!allowNativeFallback) {
             throw error instanceof Error ? error : new Error(String(error));

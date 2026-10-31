@@ -48,6 +48,51 @@ describe('spreadsheet aggregation units', () => {
         expect(flat(rows, 'avg').total).toBe(75);
     });
 
+    describe('BUG-009: unitless average totals', () => {
+        const rows: CsvRow[] = [
+            { Region: 'A', Period: 'P1', Amount: 10 },
+            { Region: 'A', Period: 'P1', Amount: 10 },
+            { Region: 'A', Period: 'P1', Amount: 10 },
+            { Region: 'A', Period: 'P2', Amount: 10 },
+            { Region: 'B', Period: 'P1', Amount: 40 },
+        ];
+
+        it('captures legacy totals that add group and pivot cell averages', () => {
+            expect(flat(rows, 'avg')).toEqual({
+                rows: [{ Region: 'B', Amount: 40 }, { Region: 'A', Amount: 10 }],
+                total: 50,
+            });
+            const result = pivot(rows, 'avg');
+            expect(result.rows).toEqual([
+                { Region: 'A', P1: 10, P2: 10, Total: 20 },
+                { Region: 'B', P1: 40, P2: 0, Total: 40 },
+            ]);
+            expect(result.columnTotals).toEqual({ P1: 50, P2: 10, Total: 60 });
+            expect(result.grandTotal).toBe(60);
+            expect(rows.reduce((sum, row) => sum + Number(row.Amount), 0) / rows.length).toBe(16);
+        });
+
+        it('adds rounded pivot cells instead of calculating from underlying values', () => {
+            const roundedRows: CsvRow[] = [1, 1, 2, 2, 2, 3].map((Amount, i) => ({
+                Region: 'A', Period: i < 3 ? 'P1' : 'P2', Amount,
+            }));
+            const result = pivot(roundedRows, 'avg');
+            expect(result.rows[0]).toEqual({ Region: 'A', P1: 1.33, P2: 2.33, Total: 3.66 });
+            expect(result.columnTotals).toEqual({ P1: 1.33, P2: 2.33, Total: 3.66 });
+            expect(result.grandTotal).toBe(3.66);
+            expect(roundedRows.reduce((sum, row) => sum + Number(row.Amount), 0) / roundedRows.length).toBe(11 / 6);
+        });
+
+        // Changing unitless totals requires a deliberate legacy-semantics decision.
+        it.fails('uses the weighted source-row average for a flat grand total', () => {
+            expect(flat(rows, 'avg').total).toBe(16);
+        });
+
+        it.fails('uses the weighted source-row average for a pivot grand total', () => {
+            expect(pivot(rows, 'avg').grandTotal).toBe(16);
+        });
+    });
+
     it('does not infer an ambiguous companion', () => {
         expect(flat([{ Region: 'A', Amount: 2, Unit: 'kg', Currency: 'USD' }, { Region: 'A', Amount: 3, Unit: 'lb', Currency: 'EUR' }]).total).toBe(5);
     });

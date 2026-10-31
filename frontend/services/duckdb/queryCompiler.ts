@@ -148,21 +148,23 @@ const compilePredicate = (
     predicate: FilterPredicate,
     dimNorm?: DimensionNormalizationConfig | null,
     exactDecimalColumns:string[]=[],
+    exactStringColumns: ReadonlySet<string> = new Set(),
 ): string => {
     const column = predicate.column;
     if(exactDecimalColumns.includes(column)){
+        const expression = exactStringColumns.has(column) ? `CAST(${quoteIdentifier(column)} AS DECIMAL(38,6))` : quoteIdentifier(column);
         const operators={eq:'=',neq:'<>',gt:'>',gte:'>=',lt:'<',lte:'<='};
         const operator=operators[predicate.operator as keyof typeof operators];
-        if(operator&&predicate.value!==null)return `${quoteIdentifier(column)} ${operator} ${exactDecimalLiteral(predicate.value)}`;
+        if(operator&&predicate.value!==null)return `${expression} ${operator} ${exactDecimalLiteral(predicate.value)}`;
         if(predicate.operator==='in'||predicate.operator==='not_in'){
             const values=Array.isArray(predicate.value)?predicate.value:[predicate.value];
             if(!values.length)throw new Error(`Filter predicate on "${column}" requires at least one value.`);
-            return `${quoteIdentifier(column)} ${predicate.operator==='in'?'IN':'NOT IN'} (${values.map(exactDecimalLiteral).join(', ')})`;
+            return `${expression} ${predicate.operator==='in'?'IN':'NOT IN'} (${values.map(exactDecimalLiteral).join(', ')})`;
         }
         if(predicate.operator==='between'){
             const values=Array.isArray(predicate.value)?predicate.value:[];
             if(values.length<2)throw new Error(`Between predicate on "${column}" requires two numeric values.`);
-            return `${quoteIdentifier(column)} BETWEEN ${exactDecimalLiteral(values[0])} AND ${exactDecimalLiteral(values[1])}`;
+            return `${expression} BETWEEN ${exactDecimalLiteral(values[0])} AND ${exactDecimalLiteral(values[1])}`;
         }
     }
     const textExpression = buildTextExpression(column);
@@ -241,11 +243,12 @@ const compilePredicateGroup = (
     group: FilterPredicateGroup,
     dimNorm?: DimensionNormalizationConfig | null,
     exactDecimalColumns:string[]=[],
+    exactStringColumns: ReadonlySet<string> = new Set(),
 ): string => {
     if (!Array.isArray(group.predicates) || group.predicates.length === 0) {
         throw new Error('Filter group must contain at least one predicate.');
     }
-    return `(${group.predicates.map(p => compilePredicate(p, dimNorm,exactDecimalColumns)).join(' AND ')})`;
+    return `(${group.predicates.map(p => compilePredicate(p, dimNorm,exactDecimalColumns,exactStringColumns)).join(' AND ')})`;
 };
 
 const normalizePredicateForCompilation = (predicate: unknown, context: string): FilterPredicate => {
@@ -340,14 +343,15 @@ const compileFilterCondition = (
     where: QueryPlan['where'],
     dimNorm?: DimensionNormalizationConfig | null,
     exactDecimalColumns:string[]=[],
+    exactStringColumns: ReadonlySet<string> = new Set(),
 ): string => {
     const predicates = Array.isArray(where?.predicates) ? where?.predicates ?? [] : [];
     const groups = Array.isArray(where?.groups) ? where?.groups ?? [] : [];
     const compiledPredicates = predicates.length > 0
-        ? `(${predicates.map(p => compilePredicate(p, dimNorm,exactDecimalColumns)).join(' AND ')})`
+        ? `(${predicates.map(p => compilePredicate(p, dimNorm,exactDecimalColumns,exactStringColumns)).join(' AND ')})`
         : '';
     const compiledGroups = groups.length > 0
-        ? `(${groups.map(g => compilePredicateGroup(g, dimNorm,exactDecimalColumns)).join(' OR ')})`
+        ? `(${groups.map(g => compilePredicateGroup(g, dimNorm,exactDecimalColumns,exactStringColumns)).join(' OR ')})`
         : '';
     if (!compiledPredicates && !compiledGroups) {
         return '';
@@ -358,8 +362,8 @@ const compileFilterCondition = (
     return compiledPredicates || compiledGroups;
 };
 
-const compileWhere = (plan: QueryPlan, dimNorm?: DimensionNormalizationConfig | null,exactDecimalColumns:string[]=[]): string => {
-    const compiledCondition = compileFilterCondition(plan.where, dimNorm,exactDecimalColumns);
+const compileWhere = (plan: QueryPlan, dimNorm?: DimensionNormalizationConfig | null,exactDecimalColumns:string[]=[],exactStringColumns: ReadonlySet<string> = new Set()): string => {
+    const compiledCondition = compileFilterCondition(plan.where, dimNorm,exactDecimalColumns,exactStringColumns);
     return compiledCondition ? `WHERE ${compiledCondition}` : '';
 };
 
@@ -537,6 +541,26 @@ const buildPeriodNumericExpression = (columns: string[], exactDecimalColumns: st
     return buildMultiColumnNumericExpression(columns, quoteIdentifier);
 };
 
+// DuckDB AVG(DECIMAL) returns DOUBLE. Divide the scaled integer SUM by the
+// non-null count and round once, half-even, without a floating-point operation.
+const buildExactAverageExpression = (value: string, filter: string) => {
+    const sum = `SUM(${value})${filter}`;
+    const count = `COUNT(${value})${filter}`;
+    return `(SELECT CASE WHEN v IS NULL THEN NULL ELSE `
+        + `(CASE WHEN v < 0 THEN '-' ELSE '' END) || `
+        + `CASE WHEN s = 0 THEN CAST(ABS(v) AS VARCHAR) `
+        + `WHEN LENGTH(CAST(ABS(v) AS VARCHAR)) <= s THEN '0.' || LPAD(CAST(ABS(v) AS VARCHAR), s, '0') `
+        + `ELSE LEFT(CAST(ABS(v) AS VARCHAR), LENGTH(CAST(ABS(v) AS VARCHAR)) - s) || '.' || RIGHT(CAST(ABS(v) AS VARCHAR), s) END END `
+        + `FROM (SELECT s, CASE WHEN ABS(r) > d // 2 OR (d % 2 = 0 AND ABS(r) = d // 2 AND ABS(q) % 2 = 1) `
+        + `THEN q + SIGN(n) ELSE q END AS v FROM `
+        + `(SELECT s, n, d, n // NULLIF(d, 0) AS q, n % NULLIF(d, 0) AS r FROM `
+        + `(SELECT s, CASE WHEN ABS(raw_n) > 99999999999999999999999999999999999999::HUGEINT `
+        + `THEN ERROR('exact_decimal_overflow') ELSE raw_n END AS n, d FROM `
+        + `(SELECT CAST(LENGTH(SPLIT_PART(t, '.', 2)) AS INTEGER) AS s, CAST(REPLACE(t, '.', '') AS HUGEINT) AS raw_n, d `
+        + `FROM (SELECT CAST(total AS VARCHAR) AS t, CAST(cnt AS HUGEINT) AS d `
+        + `FROM (SELECT ${sum} AS total, ${count} AS cnt)))))))`;
+};
+
 const compileAggregateExpression = (aggregate: NormalizedQueryAggregateClause, tableName: string,exactDecimalColumns:string[]=[],exactDecimalUnits?:Readonly<Record<string,string>>) => {
     const numeric=(column:string)=>exactDecimalColumns.includes(column)?quoteIdentifier(column):buildNumericExpression(column);
     const aggregateFilterSql = compileAggregateFilter(aggregate.where,exactDecimalColumns);
@@ -571,7 +595,11 @@ const compileAggregateExpression = (aggregate: NormalizedQueryAggregateClause, t
         return `SUM(${numericExpression})${aggregateFilterSql} AS ${quoteIdentifier(aggregate.as)}`;
     }
     if (aggregate.function === 'avg') {
-        return `AVG(${numericExpression})${aggregateFilterSql} AS ${quoteIdentifier(aggregate.as)}`;
+        const sources = aggregate.sourceColumns ?? [aggregate.column!];
+        const expression = sources.every(column => exactDecimalColumns.includes(column))
+            ? buildExactAverageExpression(numericExpression, aggregateFilterSql)
+            : `AVG(${numericExpression})${aggregateFilterSql}`;
+        return `${expression} AS ${quoteIdentifier(aggregate.as)}`;
     }
     if (aggregate.function === 'min') {
         return `MIN(${numericExpression})${aggregateFilterSql} AS ${quoteIdentifier(aggregate.as)}`;
@@ -664,8 +692,11 @@ export const compileQueryPlanToDuckDbSql = (
         });
     }
 
+    const exactAverageAliases = new Set(aggregates.filter(aggregate => aggregate.function === 'avg'
+        && (aggregate.sourceColumns ?? [aggregate.column!]).every(column => options.exactDecimalColumns?.includes(column)))
+        .map(aggregate => aggregate.as));
     const orderBySql = (normalizedPlan.orderBy ?? []).length > 0
-        ? `ORDER BY ${(normalizedPlan.orderBy ?? []).map(clause => `${quoteIdentifier(clause.column)} ${clause.direction.toUpperCase()}`).join(', ')}`
+        ? `ORDER BY ${(normalizedPlan.orderBy ?? []).map(clause => `${exactAverageAliases.has(clause.column) ? `CAST(${quoteIdentifier(clause.column)} AS DECIMAL(38,6))` : quoteIdentifier(clause.column)} ${clause.direction.toUpperCase()}`).join(', ')}`
         : '';
     const limitSql = `LIMIT ${normalizedPlan.limit}`;
 
@@ -757,11 +788,11 @@ export const compileQueryPlanToDuckDbSql = (
         // Post-aggregate filter operates on the aliased output columns,
         // which are already normalized — use raw comparison (no dimNorm).
         const exactOutputs=[...groupByColumns.filter(c=>options.exactDecimalColumns?.includes(c)),
-            ...aggregates.filter(a=>['sum','min','max'].includes(a.function)
+            ...aggregates.filter(a=>['sum','avg','min','max'].includes(a.function)
                 &&(a.sourceColumns??[a.column!]).every(c=>options.exactDecimalColumns?.includes(c))).map(a=>a.as)];
         const postAggregateWhereSql = compileWhere({
             where: normalizedPlan.postAggregateFilter as unknown as QueryPlan['where'],
-        },undefined,exactOutputs);
+        },undefined,exactOutputs,exactAverageAliases);
         const projectedSelectSql = selectedColumns.map(quoteIdentifier).join(', ');
         sql = [
             `SELECT ${projectedSelectSql}`,
