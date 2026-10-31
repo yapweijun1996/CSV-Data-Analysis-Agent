@@ -22,6 +22,8 @@ The structure dialog closes before an independent provider-consent dialog can op
 
 Local qualification uses fictional CSVs and deterministic provider replay, not a live AI provider. `frontend/tests/headerRepairBridgeIntegration.test.ts` exercises the real Pi/private-task/QuickJS path. With a local Vite server on port 4199, run `node frontend/scripts/header-repair-bridge-browser-smoke.mjs`; the portable harness blocks all external requests and refuses non-loopback app URLs. Set `BRIDGE_EVIDENCE_DIR` and optionally `CHROMIUM_PATH` for artifacts/browser selection. Native Chromium tests cover header A/B, independently validated two-table exact approval and ready DuckDB binding, plus rejected values, Neither, cancellation and same-source replacement. This proves the bounded continuation, not general arbitrary-layout repair, business correctness of a customer file, full report quality or a network fix for an interrupted Responses stream.
 
+For the unit-guard browser smoke, build `frontend/` with `NODE_OPTIONS=--max-old-space-size=4096 npm run build`, serve `frontend/dist` on `127.0.0.1:4199` (for example, `npx vite preview --host 127.0.0.1 --port 4199 --strictPort`), then run `npm run smoke:unit-guard:browser` in `frontend/`. It uploads synthetic CSVs and tests the managed query entry in Chromium; it blocks external requests and reports chat UI assertions as NOT_REACHED because it does not run a live LLM or the chat tool.
+
 This repository contains a browser-only React CSV analysis app. It has an editable source package and a checked-in static deployment. No Node.js server is needed when users run the deployed app; Node.js is used to build and test the source.
 
 ### Describe diagnostics (source update, pending release qualification)

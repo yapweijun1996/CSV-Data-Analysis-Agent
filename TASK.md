@@ -95,10 +95,11 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Priority: P1. Status: partial. Source: CA-181; depends on CA-187.
 - Implemented-unverified slice: accepted row bindings and explicit aggregate `unitColumn` guard single-column sum/avg per filtered group. CA-189a additionally infers a unique named companion for chat structured queries with visible traces; other routes and ambiguous candidates remain unchanged (`frontend/services/duckdb/queryEngine.ts:510-525`, `frontend/services/agent/execution/dataQueryExecution.ts:280-281`).
 - Missing: full coverage of other aggregate paths, inferred accepted/fixed-unit integration, and independent real browser/worker acceptance. Separate worker analysis and spreadsheet totals remain unguarded.
+- Browser evidence (2026-10-31): two real Chromium uploads and managed-query runs passed mixed-unit refusal, filtered inferred sum 7, unitless sum 11 and counts 4/2. Chat UI refusal, totals, label and counts NOT_REACHED: no live LLM used; managed query entry bypasses chat tool and presentation.
 
 ## CA-189 — Guard spreadsheet aggregation and totals
 - Priority: P1. Status: partial. Source: CA-181; depends on CA-187.
-- CA-189a source-only slice wires deterministic chat query companions and localized inferred labels/refusals; no real-browser verification. Ambiguous columns are not guessed.
+- CA-189a wires deterministic chat query companions and localized inferred labels/refusals; two browser runs verified managed-query metadata only, not visible chat results. Ambiguous columns are not guessed.
 - Acceptance remains open: spreadsheet groups and every subtotal/grand total must respect units; averages use underlying counts. Next: handle pivot, hidden groups and explicitly split totals.
 
 ## CA-190 — Exact decimal arithmetic parity
