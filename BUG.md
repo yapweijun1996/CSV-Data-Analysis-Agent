@@ -54,9 +54,9 @@ Statuses: `confirmed` = reproduced or established defect; `candidate` = plausibl
 - Next: independently verify the complete upload-to-review path and comprehensive disclosure. Linked task: [CA-182](TASK.md#ca-182--safe-guidance-for-boundary-diagnostics).
 
 ## BUG-009 — Spreadsheet unguarded average totals
-- Severity: P1 decision integrity. Status: confirmed.
-- Synthetic unequal groups A=[10,10,10,10], B=[40] produce flat total 50 and pivot grand total 60, versus source-row average 16; pivot also adds rounded cells 1.33 + 2.33 = 3.66 (`frontend/tests/groupByUnits.test.tsx:51-93`).
-- Left unchanged: correcting unitless totals changes legacy semantics. Two `it.fails` cases document the weighted-average expectation. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
+- Severity: P1 decision integrity. Status: fix implemented, unverified.
+- Previously synthetic unequal groups A=[10,10,10,10], B=[40] produced flat 50 and pivot 60 instead of 16, and pivot summed rounded cells 1.33 + 2.33. Source totals now use underlying numeric rows; inferred-unit suppression remains in place. SUM and COUNT are unchanged.
+- Synthetic source-component Chromium smoke showed flat and pivot 16; real-user upload/browser acceptance remains open. Spreadsheet has no exact scale metadata, so exact decimal parity is not claimed. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
 
 ## BUG-010 — Exact decimal AVG uses DOUBLE
 - Severity: P1 decision integrity. Status: fix implemented, unverified.

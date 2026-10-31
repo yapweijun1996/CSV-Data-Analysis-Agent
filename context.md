@@ -1,5 +1,10 @@
 ## Current Work Context
 
+### 2026-10-31 — BUG-009 source fix
+- Flat and pivot AVG totals use underlying numeric rows, including hidden groups; existing unit guard and SUM/COUNT behavior remain. Source-component Chromium smoke: flat/pivot 16.
+- Exact scale metadata and real-user upload/browser acceptance remain open; no root deployment. Manager overrode the negative engineering reuse gate.
+- Typecheck/lint passed; focused 18 tests and full 542 files / 5588 tests passed. Details and earlier unsuccessful runs: `../omp-bug009-report.md`.
+
 ### 2026-10-31 — BUG-010 source fix and BUG-009 reproduction
 - Exact DuckDB AVG uses scaled integer half-even arithmetic; worker maps native overflow to `exact_decimal_overflow`. Manager overrode the negative reuse gate after reviewing 24-digit bounds. No browser acceptance or deployment.
 - BUG-009 confirmed: flat 50 and pivot 60 versus weighted 16; legacy unitless behavior unchanged. CA-190 remains partial.

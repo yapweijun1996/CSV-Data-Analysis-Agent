@@ -32,6 +32,17 @@ const parseNumeric = (value: unknown): number => {
 const isContributingNumber = (value: unknown): boolean =>
     isNumericValue(value) && Number.isFinite(parseNumeric(value));
 
+const averageRows = (rows: CsvRow[], valueCol: string): number | null => {
+    let sum = 0;
+    let count = 0;
+    for (const row of rows) {
+        if (!isContributingNumber(row[valueCol])) continue;
+        sum += parseNumeric(row[valueCol]);
+        count++;
+    }
+    return count ? sum / count : null;
+};
+
 // --- Aggregation logic ---
 
 const MAX_TABLE_ROWS = 30;
@@ -42,8 +53,9 @@ const MAX_PIVOT_ROWS = 20;
 const MIXED_UNITS = 'mixed_or_missing_units' as const;
 type AggregateValue = number | typeof MIXED_UNITS | null;
 
-const guardedValue = (rows: CsvRow[], valueCol: string, unitCol: string, agg: 'sum' | 'avg'): AggregateValue => {
+const guardedValue = (rows: CsvRow[], valueCol: string, unitCol: string, agg: 'sum' | 'avg', total = false): AggregateValue => {
     if (checkAggregationUnits(rows, valueCol, unitCol, isContributingNumber)) return MIXED_UNITS;
+    if (agg === 'avg' && total) return averageRows(rows, valueCol);
     const values = rows.filter(row => isContributingNumber(row[valueCol]));
     if (!values.length) return null;
     const sum = values.reduce((total, row) => total + parseNumeric(row[valueCol]), 0);
@@ -92,7 +104,7 @@ export const computeAggregation = (
         });
         return {
             rows: result.slice(0, 20),
-            total: guardedValue([...groups.values()].flat(), valueCol, unitCol, agg),
+            total: guardedValue([...groups.values()].flat(), valueCol, unitCol, agg, true),
         };
     }
     const groups = new Map<string, { sum: number; count: number }>();
@@ -113,7 +125,9 @@ export const computeAggregation = (
         grandTotal += value;
     }
     result.sort((a, b) => (parseNumeric(b[valueCol]) - parseNumeric(a[valueCol])));
-    return { rows: result.slice(0, 20), total: Math.round(grandTotal * 100) / 100 };
+    return { rows: result.slice(0, 20), total: agg === 'avg'
+        ? averageRows(rows.filter(row => String(row[groupByCol] ?? '') !== ''), valueCol)
+        : Math.round(grandTotal * 100) / 100 };
 };
 
 // Smart sort: detect dates and sort chronologically, otherwise alphabetical ASC
@@ -184,14 +198,14 @@ export const computePivotAggregation = (
         const pivotColumns = smartSort([...columns]).slice(0, MAX_PIVOT_COLS);
         const columnTotals: Record<string, AggregateValue> = {};
         for (const pc of pivotColumns) {
-            columnTotals[pc] = guardedValue(contributingRows.filter(row => String(row[pivotCol] ?? '') === pc), valueCol, unitCol, agg);
+            columnTotals[pc] = guardedValue(contributingRows.filter(row => String(row[pivotCol] ?? '') === pc), valueCol, unitCol, agg, true);
         }
-        const grandTotal = guardedValue(contributingRows, valueCol, unitCol, agg);
+        const grandTotal = guardedValue(contributingRows, valueCol, unitCol, agg, true);
         columnTotals.Total = grandTotal;
         const resultRows = [...groups].map(([rk, group]) => {
             const row: CsvRow = { [rowCol]: rk };
             for (const pc of pivotColumns) row[pc] = guardedValue(group.get(pc) ?? [], valueCol, unitCol, agg);
-            row.Total = guardedValue([...group.values()].flat(), valueCol, unitCol, agg);
+            row.Total = guardedValue([...group.values()].flat(), valueCol, unitCol, agg, true);
             return row;
         });
         resultRows.sort((a, b) => String(a[rowCol] ?? '').localeCompare(String(b[rowCol] ?? '')));
@@ -248,6 +262,34 @@ export const computePivotAggregation = (
         return ak.localeCompare(bk);
     });
     for (const k of Object.keys(columnTotals)) columnTotals[k] = round2(columnTotals[k]);
+
+    if (agg === 'avg') {
+        const contributingRows: CsvRow[] = [];
+        const byRow = new Map<string, CsvRow[]>();
+        const byColumn = new Map<string, CsvRow[]>();
+        for (const source of rows) {
+            const rk = String(source[rowCol] ?? '');
+            const pk = String(source[pivotCol] ?? '');
+            if (!rk || !pk) continue;
+            contributingRows.push(source);
+            const rowGroup = byRow.get(rk) ?? [];
+            rowGroup.push(source);
+            byRow.set(rk, rowGroup);
+            const columnGroup = byColumn.get(pk) ?? [];
+            columnGroup.push(source);
+            byColumn.set(pk, columnGroup);
+        }
+        for (const row of resultRows) {
+            row.Total = averageRows(byRow.get(String(row[rowCol])) ?? [], valueCol);
+        }
+        const averageTotals: Record<string, AggregateValue> = {};
+        for (const pc of pivotColumns) {
+            averageTotals[pc] = averageRows(byColumn.get(pc) ?? [], valueCol);
+        }
+        const grandTotal = averageRows(contributingRows, valueCol);
+        averageTotals.Total = grandTotal;
+        return { pivotColumns, rows: resultRows.slice(0, MAX_PIVOT_ROWS), columnTotals: averageTotals, grandTotal, rowCol };
+    }
 
     return {
         pivotColumns,

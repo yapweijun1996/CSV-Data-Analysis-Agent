@@ -34,6 +34,7 @@ describe('spreadsheet aggregation units', () => {
         const rows = Array.from({ length: 21 }, (_, i) => ({ Region: `R${i}`, Amount: 1, Unit: i === 20 ? 'lb' : 'kg' }));
         expect(flat(rows).rows).toHaveLength(20);
         expect(flat(rows).total).toBe(hidden);
+        expect(flat(rows, 'avg').total).toBe(hidden);
     });
 
     it('uses contributing numeric counts for guarded averages and leaves count independent', () => {
@@ -41,11 +42,6 @@ describe('spreadsheet aggregation units', () => {
         expect(flat(rows, 'avg').total).toBe(20);
         expect(flat(rows, 'count').total).toBe(4);
         expect(flat([{ Region: 'A', Amount: 1, Unit: 'kg' }, { Region: 'A', Amount: 2, Unit: 'lb' }], 'count').total).toBe(2);
-    });
-
-    it('preserves unitless aggregation behavior', () => {
-        const rows = [{ Region: 'A', Amount: 10 }, { Region: 'A', Amount: 20 }, { Region: 'B', Amount: 60 }];
-        expect(flat(rows, 'avg').total).toBe(75);
     });
 
     describe('BUG-009: unitless average totals', () => {
@@ -57,39 +53,64 @@ describe('spreadsheet aggregation units', () => {
             { Region: 'B', Period: 'P1', Amount: 40 },
         ];
 
-        it('captures legacy totals that add group and pivot cell averages', () => {
+        it('uses the weighted source-row average for a flat grand total', () => {
             expect(flat(rows, 'avg')).toEqual({
                 rows: [{ Region: 'B', Amount: 40 }, { Region: 'A', Amount: 10 }],
-                total: 50,
+                total: 16,
             });
-            const result = pivot(rows, 'avg');
-            expect(result.rows).toEqual([
-                { Region: 'A', P1: 10, P2: 10, Total: 20 },
-                { Region: 'B', P1: 40, P2: 0, Total: 40 },
-            ]);
-            expect(result.columnTotals).toEqual({ P1: 50, P2: 10, Total: 60 });
-            expect(result.grandTotal).toBe(60);
-            expect(rows.reduce((sum, row) => sum + Number(row.Amount), 0) / rows.length).toBe(16);
         });
 
-        it('adds rounded pivot cells instead of calculating from underlying values', () => {
+        it('uses the weighted source-row average for a pivot grand total', () => {
+            const result = pivot(rows, 'avg');
+            expect(result.rows).toEqual([
+                { Region: 'A', P1: 10, P2: 10, Total: 10 },
+                { Region: 'B', P1: 40, P2: 0, Total: 40 },
+            ]);
+            expect(result.columnTotals).toEqual({ P1: 17.5, P2: 10, Total: 16 });
+            expect(result.grandTotal).toBe(16);
+        });
+
+        it('computes totals before display rounding', () => {
             const roundedRows: CsvRow[] = [1, 1, 2, 2, 2, 3].map((Amount, i) => ({
                 Region: 'A', Period: i < 3 ? 'P1' : 'P2', Amount,
             }));
             const result = pivot(roundedRows, 'avg');
-            expect(result.rows[0]).toEqual({ Region: 'A', P1: 1.33, P2: 2.33, Total: 3.66 });
-            expect(result.columnTotals).toEqual({ P1: 1.33, P2: 2.33, Total: 3.66 });
-            expect(result.grandTotal).toBe(3.66);
-            expect(roundedRows.reduce((sum, row) => sum + Number(row.Amount), 0) / roundedRows.length).toBe(11 / 6);
+            expect(result.rows[0]).toEqual({ Region: 'A', P1: 1.33, P2: 2.33, Total: 11 / 6 });
+            expect(result.columnTotals).toEqual({ P1: 4 / 3, P2: 7 / 3, Total: 11 / 6 });
+            expect(result.grandTotal).toBe(11 / 6);
         });
 
-        // Changing unitless totals requires a deliberate legacy-semantics decision.
-        it.fails('uses the weighted source-row average for a flat grand total', () => {
-            expect(flat(rows, 'avg').total).toBe(16);
+        it('retains additive sum and row count totals', () => {
+            expect(flat(rows, 'sum').total).toBe(80);
+            expect(flat(rows, 'count').total).toBe(5);
+            expect(pivot(rows, 'sum').columnTotals).toEqual({ P1: 70, P2: 10, Total: 80 });
+            expect(pivot(rows, 'count').columnTotals).toEqual({ P1: 4, P2: 1, Total: 5 });
         });
 
-        it.fails('uses the weighted source-row average for a pivot grand total', () => {
-            expect(pivot(rows, 'avg').grandTotal).toBe(16);
+        it('ignores blank and invalid average inputs but counts rows', () => {
+            const input = [{ Region: 'A', Period: 'P1', Amount: 10 }, { Region: 'A', Period: 'P1', Amount: null }, { Region: 'A', Period: 'P2', Amount: '' }, { Region: 'B', Period: 'P1', Amount: 20 }];
+            expect(flat(input, 'avg').total).toBe(15);
+            expect(pivot(input, 'avg').columnTotals).toEqual({ P1: 15, P2: null, Total: 15 });
+            expect(flat(input, 'count').total).toBe(4);
+            expect(pivot(input, 'count').grandTotal).toBe(4);
+        });
+
+        it('handles empty and single-group totals', () => {
+            expect(flat([], 'avg').total).toBeNull();
+            expect(pivot([], 'avg').grandTotal).toBeNull();
+            expect(flat([{ Region: 'A', Amount: '' }], 'avg').total).toBeNull();
+            expect(flat([{ Region: 'A', Amount: 7 }], 'avg').total).toBe(7);
+            expect(pivot([{ Region: 'A', Period: 'P1', Amount: 7 }], 'avg').grandTotal).toBe(7);
+        });
+
+        it('includes hidden rows and columns in average totals', () => {
+            const input = Array.from({ length: 21 }, (_, i) => ({ Region: `R${String(i).padStart(2, '0')}`, Period: `P${String(i).padStart(2, '0')}`, Amount: i === 20 ? 21 : 0 }));
+            expect(flat(input, 'avg').total).toBe(1);
+            expect(pivot(input, 'avg').grandTotal).toBe(1);
+            const row = input.map(item => ({ ...item, Region: 'A' }));
+            expect(pivot(row, 'avg').rows[0].Total).toBe(1);
+            const column = input.map(item => ({ ...item, Period: 'P1' }));
+            expect(pivot(column, 'avg').columnTotals.P1).toBe(1);
         });
     });
 
@@ -116,10 +137,13 @@ describe('spreadsheet aggregation units', () => {
         expect(result.rows).toHaveLength(20);
         expect(result.pivotColumns).toHaveLength(15);
         expect(result.grandTotal).toBe(hidden);
+        expect(pivot(rows, 'avg').grandTotal).toBe(hidden);
         const hiddenColumn = pivot([...rows.slice(0, 15), { Region: 'R00', Period: 'P99', Amount: 1, Unit: 'lb' }]);
         expect(hiddenColumn.rows[0].Total).toBe(hidden);
+        expect(pivot([...rows.slice(0, 15), { Region: 'R00', Period: 'P99', Amount: 1, Unit: 'lb' }], 'avg').rows[0].Total).toBe(hidden);
         const hiddenRow = pivot([...rows.slice(0, 20).map(row => ({ ...row, Period: 'P00' })), { Region: 'R99', Period: 'P00', Amount: 1, Unit: 'lb' }]);
         expect(hiddenRow.columnTotals.P00).toBe(hidden);
+        expect(pivot([...rows.slice(0, 20).map(row => ({ ...row, Period: 'P00' })), { Region: 'R99', Period: 'P00', Amount: 1, Unit: 'lb' }], 'avg').columnTotals.P00).toBe(hidden);
     });
 
     it('weights guarded pivot averages over source rows, not cell averages', () => {
