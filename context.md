@@ -1,5 +1,9 @@
 ## Current Work Context
 
+### 2026-10-31 — CA-188/189a browser smoke
+- Two built-app Chromium runs: synthetic uploads and managed queries passed mixed refusal, filtered inferred sum 7, unitless sum 11, counts 4/2. Chat refusal, totals, label and counts NOT_REACHED; no live LLM used.
+- Typecheck and lint passed; Vitest 539 files / 5538 tests passed. BUG-006 remains candidate; worker analysis and spreadsheet totals remain open. No root publication.
+
 ### 2026-10-31 — CA-189a source-only query wiring
 
 - Chat structured SUM/AVG can infer a unique named unit column with visible provenance and refuse mixed/missing units; ambiguous candidates remain unbound. Spreadsheet totals and other query routes remain open; BUG-006 remains a candidate.

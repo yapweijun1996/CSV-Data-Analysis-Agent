@@ -18,6 +18,7 @@
     "preview:debug": "npm run assets:pyodide && vite build --sourcemap --minify false && vite preview --host 0.0.0.0 --strictPort --logLevel debug",
     "preview:single": "npm run assets:pyodide && vite build --mode single --sourcemap --minify false && vite preview --host 0.0.0.0 --strictPort --logLevel debug",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "smoke:unit-guard:browser": "node scripts/unit-guard-browser-smoke.mjs",
     "lint": "node scripts/lint-baseline.mjs",
     "pretest": "node ../scripts/prepare-frontend-assets.mjs",
     "test": "vitest run --environment jsdom",
