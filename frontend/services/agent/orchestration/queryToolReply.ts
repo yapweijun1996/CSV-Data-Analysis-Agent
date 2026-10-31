@@ -234,7 +234,8 @@ export const buildObservedQueryReply = (state: AppStore, executedAction: AiActio
             'summary_row_label_singular',
             'summary_row_label_plural',
         );
-        return getTranslation('data_query_summary_reply', language, { summary: summaryRows });
+        const reply = getTranslation('data_query_summary_reply', language, { summary: summaryRows });
+        return query.result.unitInferred ? `${reply}\n${getTranslation('data_query_inferred_unit_label', language)}` : reply;
     }
 
     const matchedRows = formatReturnedSummary(

@@ -38,9 +38,9 @@ Statuses: `confirmed` = reproduced or established defect; `candidate` = plausibl
 
 ## BUG-006 — Mixed-unit aggregation
 - Severity: P1 decision integrity. Status: candidate.
-- Source-only partial mitigation: accepted row-unit bindings and explicit `unitColumn` guard filtered single-column sum/avg in query paths (`frontend/services/duckdb/queryEngine.ts:488-500,604-608`, `frontend/services/duckdb/queryCompiler.ts:717-748`, `frontend/services/agent/execution/dataQueryExecutor.ts:386-390`). No UI sets the optional field.
-- The separate worker analysis path and spreadsheet group/grand totals remain unguarded (`frontend/services/workers/dataWorker.ts:32-35`, `frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`). Inferred result labels are not implemented; inferred bound arithmetic fails closed. BUG-006 remains a candidate.
-- Next: complete version-bound unit custody, inferred labels and total guarding across remaining routes. Linked task: [CA-181](TASK.md#ca-181--currency-unit-and-decimal-precision).
+- CA-189a source-only partial mitigation: chat structured single-column sums/averages infer a unique named unit companion and show inferred provenance; mixed/missing units refuse with a chat message. Accepted validated bindings retain precedence. Ambiguous companions are not guessed.
+- The separate worker analysis path and spreadsheet group/grand totals remain unguarded (`frontend/services/workers/dataWorker.ts:32-35`, `frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`). Independent real-browser verification has not been done; BUG-006 remains a candidate, not fixed-verified.
+- Next: verify real-user chat/worker behavior and complete version-bound unit custody and total guarding across remaining routes. Linked task: [CA-181](TASK.md#ca-181--currency-unit-and-decimal-precision).
 
 ## BUG-007 — Local-data deletion may silently be incomplete
 - Severity: P1 privacy. Status: candidate.

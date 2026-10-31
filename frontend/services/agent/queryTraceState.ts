@@ -60,6 +60,7 @@ export const createQueryTraceEntry = (
             appliedOrderBy: [...query.result.appliedOrderBy],
             appliedLimit: query.result.appliedLimit,
             durationMs: query.result.durationMs,
+            ...(query.result.unitInferred ? { unitInferred: true } : {}),
             previewRows: query.result.rows.slice(0, 20),
         },
         traceContract: buildSurfaceTraceContract({

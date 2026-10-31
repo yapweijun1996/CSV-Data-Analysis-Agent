@@ -34,6 +34,14 @@ const buildActiveDataQuery = (): ActiveDataQuery => ({
 });
 
 describe('queryTraceState', () => {
+    it('retains inferred unit provenance in history', () => {
+        const query = buildActiveDataQuery();
+        query.result.unitInferred = true;
+        expect(createQueryTraceEntry(query, 'analysis').result.unitInferred).toBe(true);
+        delete query.result.unitInferred;
+        expect(createQueryTraceEntry(query, 'analysis').result.unitInferred).toBeUndefined();
+    });
+
     it('propagates runtime identifiers from the active query by default', () => {
         const entry = createQueryTraceEntry(buildActiveDataQuery(), 'analysis');
 

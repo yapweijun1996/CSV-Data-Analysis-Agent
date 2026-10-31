@@ -1,5 +1,10 @@
 ## Current Work Context
 
+### 2026-10-31 — CA-189a source-only query wiring
+
+- Chat structured SUM/AVG can infer a unique named unit column with visible provenance and refuse mixed/missing units; ambiguous candidates remain unbound. Spreadsheet totals and other query routes remain open; BUG-006 remains a candidate.
+- Typecheck/lint passed; full Vitest: 539 files, 5538 tests passed. Synthetic native/DuckDB smoke passed. No browser verification, full build or root deployment.
+
 ### 2026-10-31 — CA-188 query-unit slice
 
 - Added provenance custody and single-column query sum/avg guards for accepted or explicit row-unit bindings; inferred bound results fail closed pending labels. Spreadsheet and separate analysis aggregation remain unguarded.

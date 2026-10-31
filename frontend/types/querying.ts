@@ -153,6 +153,8 @@ export interface DataQueryResult {
     appliedOrderBy: QueryOrderByClause[];
     appliedLimit: number;
     durationMs: number;
+    /** A source companion unit column was inferred and guarded this result. */
+    unitInferred?: boolean;
     /** Actual local SQL boundary proof; historical/non-SQL records may omit it. */
     executionBoundary?: {policyVersion: string; engineVersion: string; locked: true; memoryBytes: number;
         resourceGeneration: number; tableName: string; loadVersion: string; diagnostic?: boolean};
@@ -228,6 +230,7 @@ export interface QueryTraceEntry {
         appliedOrderBy: QueryOrderByClause[];
         appliedLimit: number;
         durationMs: number;
+        unitInferred?: boolean;
         previewRows: CsvRow[];
     };
     traceContract?: RuntimeEventContractDetail;

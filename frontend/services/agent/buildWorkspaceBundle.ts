@@ -240,6 +240,7 @@ export const buildWorkspaceBundle = (state: AppStore): WorkspaceBundle => {
                 appliedOrderBy: state.activeDataQuery.result.appliedOrderBy,
                 appliedLimit: state.activeDataQuery.result.appliedLimit,
                 durationMs: state.activeDataQuery.result.durationMs,
+                ...(state.activeDataQuery.result.unitInferred ? { unitInferred: true } : {}),
                 previewRows: state.activeDataQuery.result.rows.slice(0, 20),
             }
             : null,

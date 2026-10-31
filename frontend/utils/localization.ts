@@ -2771,6 +2771,22 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Saya telah menjalankan kueri ringkasan baca sahaja dan mengembalikan {summary}.',
         'Japanese': '読み取り専用の集計クエリを実行し、{summary} を返しました。',
     },
+    'data_query_inferred_unit_label': {
+        'English': 'unit inferred, not confirmed',
+        'Mandarin': '单位为推断结果，未经确认',
+        'Malay': 'unit disimpulkan, belum disahkan',
+        'Japanese': '単位は推定であり、確認されていません',
+        'Spanish': 'unidad inferida, no confirmada',
+        'French': 'unité déduite, non confirmée',
+    },
+    'data_query_mixed_units_refusal': {
+        'English': 'Cannot calculate: units are missing or mixed. Group or filter by unit.',
+        'Mandarin': '无法计算：单位缺失或不一致。请按单位分组或筛选。',
+        'Malay': 'Tidak dapat mengira: unit tiada atau bercampur. Kumpulkan atau tapis mengikut unit.',
+        'Japanese': '計算できません：単位が欠落しているか混在しています。単位でグループ化またはフィルターしてください。',
+        'Spanish': 'No se puede calcular: faltan unidades o están mezcladas. Agrupe o filtre por unidad.',
+        'French': 'Calcul impossible : les unités sont manquantes ou mélangées. Regroupez ou filtrez par unité.',
+    },
     'data_query_rows_reply': {
         'English': 'I ran the read-only query and returned {summary}.',
         'Mandarin': '我已运行只读查询，返回 {summary}。',

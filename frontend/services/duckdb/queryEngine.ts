@@ -59,6 +59,8 @@ export interface ManagedDataQueryExecutionOptions {
     onSlowLoad?: () => void;
     /** Dimension normalization config for GROUP BY columns. */
     dimensionNormalization?: DimensionNormalizationConfig | null;
+    /** Enable named companion inference only when the caller renders its provenance. */
+    inferUnitColumn?: boolean;
 }
 
 type CachedDuckDbPrime = {
@@ -120,6 +122,10 @@ const getFallbackResult = (
     allowedColumns: string[],
     fallback?: { reason?: string | null; stage?: DuckDbFallbackStage | null },
 ): ManagedDataQueryExecution => {
+    // Arquero does not enforce row-unit guards; use the native guarded executor.
+    if (plan.aggregates?.some(aggregate => aggregate?.unitColumn !== undefined)) {
+        return getNativeResult(rows, plan, allowedColumns, fallback);
+    }
     try {
         const arqueroExecution = executeArqueroQuery(rows, plan, {
             allowedColumns,
@@ -500,6 +506,24 @@ export const bindAcceptedMetricUnits = (plan: QueryPlan, metrics: readonly Valid
         return {...aggregate, unitColumn: column};
     }),
 });
+
+/** Bind only a uniquely named physical companion to single-column aggregates. */
+const bindNamedCompanionUnits = (plan: QueryPlan, columns: readonly string[], metrics: readonly ValidationMetric[] = []) => {
+    if (plan.rawSql) return { plan, inferred: false };
+    const companions = columns.filter(column => ['unit', 'units', 'currency'].includes(column.toLowerCase()));
+    if (companions.length !== 1) return { plan, inferred: false };
+    const schemaKeys = new Set(columns.map(unitBindingKey));
+    let inferred = false;
+    const aggregates = plan.aggregates?.map(aggregate => {
+        if (!aggregate || aggregate.unitColumn !== undefined || typeof aggregate.column !== 'string'
+            || !['sum', 'avg'].includes(normalizeQueryAggregateFunction(aggregate.function) ?? '')
+            || !schemaKeys.has(unitBindingKey(aggregate.column))
+            || metrics.some(metric => unitBindingKey(metric.column) === unitBindingKey(aggregate.column!))) return aggregate;
+        inferred = true;
+        return { ...aggregate, unitColumn: companions[0] };
+    });
+    return { plan: inferred ? { ...plan, aggregates } : plan, inferred };
+};
 let acceptedTables: AcceptedTables | null = null;
 // Non-serializable host custody. Copying CsvData/provider metadata cannot inherit workers.
 const acceptedOwners = new WeakMap<CsvData, AcceptedTables>();
@@ -602,13 +626,17 @@ const executeManagedDataQueryUnlocked = async (
     if (accepted) {
         if (plan.rawSql || Object.hasOwn(plan, 'joins')) throw new Error('accepted_dual_joins_sql_unsupported');
         const table = acceptedOwners.get(data)!.tables.find(t => t.tableId === accepted.tableId)!;
-        const compiled = compileQueryPlanToDuckDbSql(bindAcceptedMetricUnits(plan, table.metrics), { allowedColumns: table.columns, tableName: DUCKDB_TABLE_NAME,
+        const acceptedPlan = bindAcceptedMetricUnits(plan, table.metrics);
+        const bound = options?.inferUnitColumn
+            ? bindNamedCompanionUnits(acceptedPlan, table.columns, table.metrics)
+            : { plan: acceptedPlan, inferred: false };
+        const compiled = compileQueryPlanToDuckDbSql(bound.plan, { allowedColumns: table.columns, tableName: DUCKDB_TABLE_NAME,
             exactDecimalColumns: table.metrics.map(m => m.column), exactDecimalUnits: table.exact,
             maxRows: DEFAULT_MAX_ROWS, maxColumns: DEFAULT_MAX_COLUMNS, maxOrderBy: DEFAULT_MAX_ORDER_BY });
         const result = await table.client.executeCompiledQuery({ ...compiled, expectedBinding: { tableName: DUCKDB_TABLE_NAME, loadVersion: table.binding.loadVersion! } }, DUCKDB_QUERY_TIMEOUT_MS, options?.abortSignal);
         assertGeneration(generation); throwIfAborted(options?.abortSignal);
         acceptedQueryTable(data, accepted.tableId);
-        return { result, ...table.binding, sqlPreview: compiled.sql };
+        return { result: bound.inferred ? { ...result, unitInferred: true } : result, ...table.binding, sqlPreview: compiled.sql };
     }
     const allowNativeFallback = data.backing?.mode === 'duckdb_file'
         ? false
@@ -617,20 +645,26 @@ const executeManagedDataQueryUnlocked = async (
     const reportDiagnostics = options?.reportDiagnostics;
     const columnRegistry = options?.columnRegistry ?? null;
     const onSlowLoad = options?.onSlowLoad;
+    const schema = data.backing?.mode === 'duckdb_file'
+        ? data.backing.columnNames ?? []
+        : getColumns(data.data, columnRegistry);
+    const bound = options?.inferUnitColumn ? bindNamedCompanionUnits(plan, schema) : { plan, inferred: false };
+    const markInferred = (execution: ManagedDataQueryExecution): ManagedDataQueryExecution =>
+        bound.inferred ? { ...execution, result: { ...execution.result, unitInferred: true } } : execution;
     assertGeneration(generation);
     throwIfAborted(abortSignal);
     if (!shouldEnableDuckDbQueryEngine()) {
         if (!allowNativeFallback) {
             throw new Error('duckdb_disabled');
         }
-        return getFallbackResult(data.data, plan, allowedColumns, {
+        return markInferred(getFallbackResult(data.data, bound.plan, allowedColumns, {
             reason: 'duckdb_disabled',
             stage: 'duckdb_disabled',
-        });
+        }));
     }
 
     const loadVersion = getCsvDatasetLoadVersion(data);
-    const compiled = compileQueryPlanToDuckDbSql(plan, {
+    const compiled = compileQueryPlanToDuckDbSql(bound.plan, {
         exactDecimalColumns:data.backing?.ephemeral===false?data.backing.exactDecimalColumns?.map(c=>c.name):undefined,
         exactDecimalUnits:data.backing?.ephemeral===false&&data.backing.exactDecimalColumns
             ?confirmedExactUnits(data.backing.exactDecimalColumns):undefined,
@@ -653,18 +687,18 @@ const executeManagedDataQueryUnlocked = async (
         if (!allowNativeFallback) {
             throw new Error(prime.fallbackReason ?? 'duckdb_unavailable');
         }
-        const fallbackExecution = getFallbackResult(data.data, plan, allowedColumns, {
+        const fallbackExecution = getFallbackResult(data.data, bound.plan, allowedColumns, {
             reason: prime.fallbackReason,
             stage: prime.fallbackStage,
         });
-        return {
+        return markInferred({
             ...fallbackExecution,
             sqlPreview: compiled.sql,
             tableName: DUCKDB_TABLE_NAME,
             loadVersion,
             fallbackReason: prime.fallbackReason,
             fallbackStage: prime.fallbackStage,
-        };
+        });
     }
 
     try {
@@ -684,7 +718,7 @@ const executeManagedDataQueryUnlocked = async (
 
         if (!compiled.unitGuardSql) storeQueryCache(loadVersion, compiled.sql, result);
 
-        return {
+        return markInferred({
             result,
             engine: 'duckdb',
             sqlPreview: compiled.sql,
@@ -692,7 +726,7 @@ const executeManagedDataQueryUnlocked = async (
             loadVersion,
             fallbackReason: null,
             fallbackStage: null,
-        };
+        });
     } catch (error) {
         assertGeneration(generation);
         if (isRuntimeAbortError(error, abortSignal)) {
@@ -704,18 +738,18 @@ const executeManagedDataQueryUnlocked = async (
         if (!allowNativeFallback) {
             throw error instanceof Error ? error : new Error(String(error));
         }
-        const fallbackExecution = getFallbackResult(data.data, plan, allowedColumns, {
+        const fallbackExecution = getFallbackResult(data.data, bound.plan, allowedColumns, {
             reason: error instanceof Error ? error.message : String(error),
             stage: 'query_failed',
         });
-        return {
+        return markInferred({
             ...fallbackExecution,
             sqlPreview: compiled.sql,
             tableName: DUCKDB_TABLE_NAME,
             loadVersion,
             fallbackReason: error instanceof Error ? error.message : String(error),
             fallbackStage: 'query_failed',
-        };
+        });
     }
 };
 
