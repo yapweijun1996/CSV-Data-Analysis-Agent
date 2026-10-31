@@ -1886,3 +1886,8 @@ Final delivery checks: 135 documentation links resolve; 13 source/test hashes an
 - Assistant composer and hide control are named; lazy loading now displays a localized status.
 - Full Vitest: 535 files / 5,487 tests passed; A60 standalone passed three runs. Build needed a 4 GiB Node heap after the default heap exhausted.
 - Root deployment remains unchanged; real assistive-technology and repeated cold/warm acceptance remain open.
+
+## 2026-10-31 — CA-189b source-only unit guards
+- Unique inferred unit companions guard spreadsheet group/pivot totals and analysis aggregation; mixed/missing totals are hidden, and guarded averages use source counts.
+- Inferred provenance is displayed; inferred spreadsheet results cannot create cards until that handoff carries provenance. Ambiguous companions and unitless behavior remain unchanged.
+- Synthetic isolated component browser smoke is not real upload/UI acceptance; BUG-006 remains a candidate. Root deployment and exact arithmetic remain unchanged.

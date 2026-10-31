@@ -596,6 +596,8 @@ export interface AnalysisCardData {
     id: string;
     plan: AnalysisPlan;
     aggregatedData: CsvRow[];
+    /** The aggregation inferred a companion unit column; it was not confirmed. */
+    unitInferred?: boolean;
     /** Absent on cards saved before coverage was recorded and on cards whose rows are aggregated in the client. */
     groupCoverage?: AnalysisCardGroupCoverage | null;
     summary: LocalizedText;

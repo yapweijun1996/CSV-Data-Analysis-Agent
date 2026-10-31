@@ -29,6 +29,21 @@ describe('AnalysisCard table-only evidence presentation', () => {
     beforeEach(() => useAppStore.setState({ ...initialAppState, settings: { ...initialAppState.settings, language: 'English', enableVisualEvaluation: false } }));
     afterEach(() => { cleanup(); useAppStore.setState(initialAppState); vi.restoreAllMocks(); vi.clearAllMocks(); });
 
+    it.each([false, true])('shows inferred-unit provenance when expanded is %s', expanded => {
+        useAppStore.setState({ analysisCards: [{ ...card('pass'), unitInferred: true }] });
+        render(<AnalysisCard cardId="table-only-card" isSpotlighted={expanded} />);
+        expect(screen.getByText('unit inferred, not confirmed')).toBeInTheDocument();
+    });
+
+    it('persists inferred provenance when creating and reusing a card', async () => {
+        const existing = card('pass');
+        useAppStore.setState({ currentDatasetId: 'synthetic-inferred', csvData: { fileName: 'synthetic.csv', data: existing.aggregatedData } });
+        const original = await createNewCard(existing.plan, existing.aggregatedData, useAppStore);
+        const reused = await createNewCard(existing.plan, existing.aggregatedData, useAppStore, { unitInferred: true });
+        expect(reused.id).toBe(original.id);
+        expect(useAppStore.getState().analysisCards[0].unitInferred).toBe(true);
+    });
+
     it('creates restricted cards in table mode and preserves a passing chart plan', async () => {
         const restricted = card('table_only');
         const created = await createNewCard(restricted.plan, restricted.aggregatedData, useAppStore, { evidenceValueGate: restricted.evidenceValueGate });

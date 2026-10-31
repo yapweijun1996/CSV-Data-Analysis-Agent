@@ -95,7 +95,7 @@ export const createNewCard = async (
     plan: AnalysisPlan,
     aggregatedData: CsvRow[],
     store: StoreApi,
-    annotations?: Pick<AnalysisCardData, 'sourceTopic' | 'sourceStepIds' | 'analysisSessionRunId' | 'autoAnalysisEvaluation' | 'evidenceValueGate' | 'qualityWarnings' | 'provenance' | 'groupCoverage'> & {
+    annotations?: Pick<AnalysisCardData, 'sourceTopic' | 'sourceStepIds' | 'analysisSessionRunId' | 'autoAnalysisEvaluation' | 'evidenceValueGate' | 'qualityWarnings' | 'provenance' | 'groupCoverage' | 'unitInferred'> & {
         queryTrace?: QueryTraceEntry | null;
     },
 ): Promise<AnalysisCardData> => {
@@ -132,16 +132,19 @@ export const createNewCard = async (
         const restricted = annotations?.evidenceValueGate?.decision === 'table_only'
             ? { ...duplicateCard, evidenceValueGate: annotations.evidenceValueGate }
             : null;
-        const reusedCard = restricted
-            ? { ...restricted, plan: resolveCardPresentationPlan(restricted), isDataVisible: true }
-            : duplicateCard;
+        const reusedCard = {
+            ...(restricted
+                ? { ...restricted, plan: resolveCardPresentationPlan(restricted), isDataVisible: true }
+                : duplicateCard),
+            ...(annotations?.unitInferred ? { unitInferred: true } : {}),
+        };
         const duplicateTitle = buildDisplayAnalysisIr(
             reusedCard,
             getState().analysisCards,
             getState().columnProfiles,
         ).displayTitle;
         setState(previous => ({
-            ...(restricted ? { analysisCards: previous.analysisCards.map(card => card.id === reusedCard.id ? reusedCard : card) } : {}),
+            ...(restricted || annotations?.unitInferred ? { analysisCards: previous.analysisCards.map(card => card.id === reusedCard.id ? reusedCard : card) } : {}),
             progressMessages: trimProgressMessages([
                 ...previous.progressMessages,
                 createProgressMessage({
@@ -158,6 +161,7 @@ export const createNewCard = async (
         id: 'card-preview',
         plan,
         aggregatedData,
+        unitInferred: annotations?.unitInferred,
         summary: { language, text: '' },
         displayChartType: resolveDisplayChartType(plan, aggregatedData),
         isDataVisible: isTableOnlyPresentation(plan) || (plan.defaultDataVisible ?? false),
@@ -201,6 +205,7 @@ export const createNewCard = async (
         id: `card-${Date.now()}-${Math.random()}`,
         plan,
         aggregatedData,
+        unitInferred: annotations?.unitInferred,
         ...(annotations?.groupCoverage ? { groupCoverage: annotations.groupCoverage } : {}),
         summary,
         displayChartType: resolveDisplayChartType(plan, aggregatedData),

@@ -2779,6 +2779,14 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Spanish': 'unidad inferida, no confirmada',
         'French': 'unité déduite, non confirmée',
     },
+    'aggregation_mixed_units_hidden': {
+        'English': 'mixed or missing units, total hidden',
+        'Mandarin': '单位混杂或缺失，已隐藏合计',
+        'Malay': 'unit bercampur atau tiada, jumlah disembunyikan',
+        'Japanese': '単位が混在または欠落しているため、合計を非表示',
+        'Spanish': 'unidades mezcladas o ausentes, total oculto',
+        'French': 'unités mélangées ou manquantes, total masqué',
+    },
     'data_query_mixed_units_refusal': {
         'English': 'Cannot calculate: units are missing or mixed. Group or filter by unit.',
         'Mandarin': '无法计算：单位缺失或不一致。请按单位分组或筛选。',

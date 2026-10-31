@@ -15,6 +15,7 @@ import type { ValidationMetric } from '../data/candidateValidation';
 import type { WorkerDiagnosticsReporter } from '../workers/workerDiagnostics';
 import { collectOrderedColumnNames } from '../data/columnRegistry';
 import { normalizeDecimalCommaColumns } from '../data/numberLocale';
+import { resolveCompanionUnitColumn } from '../data/aggregationUnits';
 import { DUCKDB_QUERY_TIMEOUT_MS, resolveDuckDbQueryTimeoutMs } from './queryTimeout';
 import { validateSqlLimit, validateSqlText, SQL_POLICY_VERSION } from './sqlSecurity';
 
@@ -510,8 +511,8 @@ export const bindAcceptedMetricUnits = (plan: QueryPlan, metrics: readonly Valid
 /** Bind only a uniquely named physical companion to single-column aggregates. */
 const bindNamedCompanionUnits = (plan: QueryPlan, columns: readonly string[], metrics: readonly ValidationMetric[] = []) => {
     if (plan.rawSql) return { plan, inferred: false };
-    const companions = columns.filter(column => ['unit', 'units', 'currency'].includes(column.toLowerCase()));
-    if (companions.length !== 1) return { plan, inferred: false };
+    const companion = resolveCompanionUnitColumn(columns);
+    if (!companion) return { plan, inferred: false };
     const schemaKeys = new Set(columns.map(unitBindingKey));
     let inferred = false;
     const aggregates = plan.aggregates?.map(aggregate => {
@@ -520,7 +521,7 @@ const bindNamedCompanionUnits = (plan: QueryPlan, columns: readonly string[], me
             || !schemaKeys.has(unitBindingKey(aggregate.column))
             || metrics.some(metric => unitBindingKey(metric.column) === unitBindingKey(aggregate.column!))) return aggregate;
         inferred = true;
-        return { ...aggregate, unitColumn: companions[0] };
+        return { ...aggregate, unitColumn: companion };
     });
     return { plan: inferred ? { ...plan, aggregates } : plan, inferred };
 };

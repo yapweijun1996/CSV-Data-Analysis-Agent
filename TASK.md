@@ -47,7 +47,7 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Priority: P1. Status: partial. Source: backlog 3, P03 P08 P13.
 - Acceptance: mixed units are never summed silently; exact numeric queries are consistent.
 - Exists: validated decimal period columns require matching units (`frontend/services/duckdb/queryCompiler.ts:522-533`); weighted statistics check supplied units (`frontend/services/agent/execution/weightedMean.ts:19-23`). Source-only single-column sum/avg row-unit guards now exist in DuckDB and in-memory query paths (`frontend/services/duckdb/queryCompiler.ts:717-748`, `frontend/services/agent/execution/dataQueryExecutor.ts:386-390`).
-- Missing: spreadsheet totals and separate worker analysis aggregation remain unguarded (`frontend/components/spreadsheet/GroupByTest.tsx:48-72,116-163`, `frontend/services/workers/dataWorker.ts:32-35`); ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). Full unit meaning/result presentation and precision remain open; see [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
+- Missing: full version-bound unit meaning and result presentation remain open; spreadsheet and worker now guard a uniquely named inferred companion only (`frontend/components/spreadsheet/GroupByTest.tsx:73-95,167-196`, `frontend/services/agent/execution/executors/aggregationCore.ts:44-70`); ordinary numeric SQL uses DOUBLE (`frontend/services/duckdb/numericSql.ts:55-56`). See [BUG-006](BUG.md#bug-006--mixed-unit-aggregation).
 - Design: [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md); staged work: CA-187–CA-190.
 - Verification run (2026-10-30, local Chromium against the built main, 127.0.0.1 only): `frontend/scripts/exact-decimal-period-browser-smoke.mjs` passed for compatible, mixed-types and mixed-units scenarios with 0 page errors and 0 external requests. This covers the exact-decimal period path only; other aggregation paths remain unverified.
 
@@ -94,13 +94,14 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 ## CA-188 — Guard query and worker aggregation units
 - Priority: P1. Status: partial. Source: CA-181; depends on CA-187.
 - Implemented-unverified slice: accepted row bindings and explicit aggregate `unitColumn` guard single-column sum/avg per filtered group. CA-189a additionally infers a unique named companion for chat structured queries with visible traces; other routes and ambiguous candidates remain unchanged (`frontend/services/duckdb/queryEngine.ts:510-525`, `frontend/services/agent/execution/dataQueryExecution.ts:280-281`).
-- Missing: full coverage of other aggregate paths, inferred accepted/fixed-unit integration, and independent real browser/worker acceptance. Separate worker analysis and spreadsheet totals remain unguarded.
+- Missing: full coverage of other aggregate paths, inferred accepted/fixed-unit integration, and independent real browser/worker acceptance. Separate worker analysis now guards inferred companions (`frontend/services/agent/execution/executors/aggregationCore.ts:44-70`).
 - Browser evidence (2026-10-31): two real Chromium uploads and managed-query runs passed mixed-unit refusal, filtered inferred sum 7, unitless sum 11 and counts 4/2. Chat UI refusal, totals, label and counts NOT_REACHED: no live LLM used; managed query entry bypasses chat tool and presentation.
 
 ## CA-189 — Guard spreadsheet aggregation and totals
 - Priority: P1. Status: partial. Source: CA-181; depends on CA-187.
 - CA-189a wires deterministic chat query companions and localized inferred labels/refusals; two browser runs verified managed-query metadata only, not visible chat results. Ambiguous columns are not guessed.
-- Acceptance remains open: spreadsheet groups and every subtotal/grand total must respect units; averages use underlying counts. Next: handle pivot, hidden groups and explicitly split totals.
+- CA-189b source-only slice: flat and pivot groups, subtotals and full-scope grand totals check inferred companions, suppress unsafe results, and weight guarded averages by source counts (`frontend/components/spreadsheet/GroupByTest.tsx:45-50,73-95,167-196`); worker analysis guards grouped sums/averages (`frontend/services/agent/execution/executors/aggregationCore.ts:44-70`). Inferred provenance displays on spreadsheet and cards (`frontend/components/spreadsheet/GroupByTest.tsx:449`, `frontend/components/analysis-card/AnalysisCard.tsx:451-452`).
+- Acceptance remains open: real-user UI/worker check, version-bound bindings and other aggregation routes; unitless behavior is unchanged. Spreadsheet-to-card handoff is disabled for inferred units until provenance can be preserved.
 
 ## CA-190 — Exact decimal arithmetic parity
 - Priority: P1. Status: pending. Source: CA-181; depends on CA-187–CA-189.

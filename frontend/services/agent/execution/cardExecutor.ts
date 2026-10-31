@@ -1,6 +1,7 @@
 import type { AppStore } from '../../../store/useAppStore';
 import { AnalysisCardData, CsvData, AnalysisPlan, CsvRow } from '../../../types';
 import type { AggregationSpec } from './executors/aggregationCore';
+import { aggregationHasInferredUnit } from './executors/aggregationCore';
 import { executeAggregationWithWorker } from '../../workers/dataWorkerClient';
 import { executeNonAggregatingPlan } from './executors/nonAggregatingExecutor';
 
@@ -158,6 +159,7 @@ export const executePlanAndCreateCard = async (
         const qualityWarnings = insights.qualityWarning ? [insights.qualityWarning] : [];
         const card = await createNewCard(validPlan, processedData, store, {
             qualityWarnings,
+            unitInferred: isAggregatingPlan && aggregationHasInferredUnit(data, validPlan),
             ...(seriesScope.evidenceValueGate ? { evidenceValueGate: seriesScope.evidenceValueGate } : {}),
         });
         if (card) {
