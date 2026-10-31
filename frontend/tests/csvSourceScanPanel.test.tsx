@@ -7,7 +7,7 @@ import { beginSessionTransition } from '../services/session/sessionOwnership';
 import { scanCsvSourceForImport } from '../services/data/csvSourceScan';
 
 const store = { getState: useAppStore.getState, setState: useAppStore.setState };
-afterEach(() => { beginSessionTransition(store); cleanup(); });
+afterEach(() => { beginSessionTransition(store); useAppStore.setState({ isBusy: false, csvData: null, datasetBundle: null, csvSourceScan: null }); cleanup(); });
 
 describe('actual source scan UI actions', () => {
     it('shows real progress, cancels/resumes, and reopens retained details without granting authority', async () => {
@@ -51,7 +51,7 @@ describe('actual source scan UI actions', () => {
         const scan = await scanCsvSourceForImport(store, file);
         useAppStore.setState({
             csvData: { fileName: file.name, data: [{ id: 'A', amount: 10 }, { id: 'B', amount: 20 }], summaryRows: [['Total', '30']], metadataRows: [], headerDepth: 1 } as never,
-            datasetBundle: { datasetVersion: 'accepted-v1', acceptedCommit: { revision: 3, commitId: 'accepted-v1' } } as never,
+            datasetBundle: { datasetVersion: 'accepted-v1', acceptedCommit: { revision: 3, commitId: 'accepted-v1' }, source: { fileName: file.name, inspection: { sha256: scan.sha256 } } } as never,
         });
         render(<CsvSourceScanPanel />);
         expect(screen.getByRole('region', { name: 'Source trust summary' })).toBeInTheDocument();
@@ -61,6 +61,53 @@ describe('actual source scan UI actions', () => {
         expect(screen.getByText('Excluded rows: unknown')).toBeInTheDocument();
         expect(screen.getByText(/Current accepted dataset: accepted-v1/)).toBeInTheDocument();
         expect(screen.getByText(/Structural scan completion is not Dataset Commit approval/)).toBeInTheDocument();
+    });
+    it('does not show zero business rows for an empty upload placeholder while the source scan is running', async () => {
+        const file = new File(['id,amount\nA,10\n'], 'pending.csv');
+        await scanCsvSourceForImport(store, file);
+        const completed = useAppStore.getState().csvSourceScan!;
+        useAppStore.setState({ isBusy: true, csvData: { fileName: file.name, data: [] } as never,
+            csvSourceScan: { ...completed, status: 'running', sha256: null } });
+        render(<CsvSourceScanPanel />);
+        expect(screen.getByText('Business rows: pending')).toBeInTheDocument();
+        expect(screen.queryByText('Business rows: 0')).toBeNull();
+    });
+    it('does not show zero while the import remains busy even after the structural scan completes', async () => {
+        const file = new File(['id,amount\nA,10\n'], 'still-importing.csv');
+        await scanCsvSourceForImport(store, file);
+        useAppStore.setState({ isBusy: true, csvData: { fileName: file.name, data: [] } as never });
+        render(<CsvSourceScanPanel />);
+        expect(screen.getByText('Business rows: pending')).toBeInTheDocument();
+        expect(screen.queryByText('Business rows: 0')).toBeNull();
+    });
+    it('shows unavailable instead of pending or zero for a cancelled or failed scan', async () => {
+        const file = new File(['id,amount\\nA,10\\n'], 'cancelled.csv');
+        await scanCsvSourceForImport(store, file);
+        const completed = useAppStore.getState().csvSourceScan!;
+        useAppStore.setState({ isBusy: true, csvData: { fileName: file.name, data: [] } as never,
+            csvSourceScan: { ...completed, status: 'cancelled', sha256: null } });
+        render(<CsvSourceScanPanel />);
+        expect(screen.getByText('Business rows: unavailable')).toBeInTheDocument();
+        expect(screen.queryByText('Business rows: pending')).toBeNull();
+    });
+    it('only reports an actual zero after the completed scan and completed import', async () => {
+        const file = new File(['id,amount\n'], 'header-only.csv');
+        await scanCsvSourceForImport(store, file);
+        useAppStore.setState({ isBusy: false, csvData: { fileName: file.name, data: [], summaryRows: [] } as never });
+        render(<CsvSourceScanPanel />);
+        expect(screen.getByText('Business rows: 0')).toBeInTheDocument();
+    });
+    it('does not label a prior accepted dataset as current when its source is not bound to this scan', async () => {
+        const file = new File(['id,amount\nA,10\n'], 'different.csv');
+        await scanCsvSourceForImport(store, file);
+        useAppStore.setState({
+            isBusy: false,
+            csvData: { fileName: file.name, data: [{ id: 'A', amount: 10 }] } as never,
+            datasetBundle: { datasetVersion: 'old-accepted', acceptedCommit: { commitId: 'old-accepted' }, source: { fileName: 'other.csv' } } as never,
+        });
+        render(<CsvSourceScanPanel />);
+        expect(screen.getByText(/Previous accepted dataset: old-accepted/)).toBeInTheDocument();
+        expect(screen.queryByText('Current accepted dataset: old-accepted')).toBeNull();
     });
     it('withholds row counts when the current CSV filename differs from the scanned source', async () => {
         await scanCsvSourceForImport(store, new File(['id\nA\n'], 'scanned.csv'));
