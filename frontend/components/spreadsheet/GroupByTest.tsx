@@ -40,18 +40,87 @@ const MAX_PIVOT_COLS = 15;
 const MAX_PIVOT_ROWS = 20;
 
 const MIXED_UNITS = 'mixed_or_missing_units' as const;
-type AggregateValue = number | typeof MIXED_UNITS | null;
+const UNSUPPORTED_DECIMAL = 'unsupported_decimal_precision' as const;
+type AggregateValue = number | string | typeof MIXED_UNITS | typeof UNSUPPORTED_DECIMAL | null;
+
+const decimalToMinorUnits = (value: unknown, scale: number): bigint | null => {
+    if (typeof value === 'number' && (!Number.isFinite(value) || Math.abs(value) > Number.MAX_SAFE_INTEGER)) return null;
+    const raw = typeof value === 'number' ? String(value) : String(value ?? '').trim();
+    const match = raw.match(/^([+-]?)(\d+)(?:\.(\d+))?$/);
+    if (!match) return null;
+    const fraction = match[3] ?? '';
+    if (match[2].length > 38 || fraction.length > 6 || fraction.length > scale) return null;
+    const digits = `${match[2]}${fraction.padEnd(scale, '0')}`;
+    const amount = BigInt(digits);
+    return match[1] === '-' ? -amount : amount;
+};
+
+const sumExactDecimals = (values: CsvRow[], valueCol: string): string | null => {
+    let scale = 0;
+    for (const row of values) {
+        const fraction = String(row[valueCol] ?? '').match(/\.(\d+)/)?.[1];
+        scale = Math.max(scale, fraction?.length ?? 0);
+    }
+    let total = 0n;
+    for (const row of values) {
+        const amount = decimalToMinorUnits(row[valueCol], scale);
+        if (amount === null) return null;
+        total += amount;
+    }
+    const negative = total < 0n;
+    const absoluteDigits = (total < 0n ? -total : total).toString();
+    if (Math.max(1, absoluteDigits.length - scale) > 38) return null;
+    const digits = absoluteDigits.padStart(scale + 1, '0');
+    const whole = scale ? digits.slice(0, -scale) : digits;
+    const fraction = scale ? `.${digits.slice(-scale)}` : '';
+    return `${negative ? '-' : ''}${whole}${fraction}`;
+};
+
+const decimalNumberMatches = (exact: string, numeric: number, scale: number): boolean => {
+    const exactAmount = decimalToMinorUnits(exact, scale);
+    return exactAmount !== null && decimalToMinorUnits(numeric, scale) === exactAmount;
+};
+
+const averageExactDecimals = (exactSum: string, count: number): string | null => {
+    const scale = exactSum.match(/\.(\d+)/)?.[1].length ?? 0;
+    const total = decimalToMinorUnits(exactSum, scale);
+    if (total === null) return null;
+    const divisor = BigInt(count) * (10n ** BigInt(scale));
+    const numerator = total * 100n;
+    const negative = numerator < 0n;
+    const absoluteNumerator = negative ? -numerator : numerator;
+    let cents = absoluteNumerator / divisor;
+    if ((absoluteNumerator % divisor) * 2n >= divisor) cents += 1n;
+    const signedCents = negative ? -cents : cents;
+    const average = `${signedCents < 0n ? '-' : ''}${(signedCents < 0n ? -signedCents : signedCents) / 100n}.${((signedCents < 0n ? -signedCents : signedCents) % 100n).toString().padStart(2, '0')}`;
+    return average;
+};
 
 const guardedValue = (rows: CsvRow[], valueCol: string, unitCol: string, agg: 'sum' | 'avg'): AggregateValue => {
     if (checkAggregationUnits(rows, valueCol, unitCol, isContributingNumber)) return MIXED_UNITS;
     const values = rows.filter(row => isContributingNumber(row[valueCol]));
     if (!values.length) return null;
-    const sum = values.reduce((total, row) => total + parseNumeric(row[valueCol]), 0);
-    return Math.round((agg === 'avg' && values.length ? sum / values.length : sum) * 100) / 100;
+    const exact = sumExactDecimals(values, valueCol);
+    if (exact === null) return UNSUPPORTED_DECIMAL;
+    if (agg === 'sum') {
+        const fractionalDigits = exact.match(/\.(\d+)/)?.[1].replace(/0+$/, '').length ?? 0;
+        const numeric = Number(exact);
+        return fractionalDigits <= 2 && Number.isFinite(numeric) && decimalNumberMatches(exact, numeric, exact.match(/\.(\d+)/)?.[1].length ?? 0)
+            ? numeric
+            : exact;
+    }
+    const average = averageExactDecimals(exact, values.length);
+    if (average === null) return UNSUPPORTED_DECIMAL;
+    const numeric = Number(average);
+    return Number.isFinite(numeric) && decimalNumberMatches(average, numeric, 2) ? numeric : average;
 };
 
+
+
 const displayAggregate = (value: unknown, language: string): string =>
-    value === MIXED_UNITS ? getTranslation('aggregation_mixed_units_hidden', language) : formatCell(value);
+    value === MIXED_UNITS ? getTranslation('aggregation_mixed_units_hidden', language)
+        : value === UNSUPPORTED_DECIMAL ? getTranslation('aggregation_unsupported_decimal_hidden', language)
+            : formatCell(value);
 
 export const detectColumns = (rows: CsvRow[]) => {
     const allCols = rows[0] ? Object.keys(rows[0]) : [];

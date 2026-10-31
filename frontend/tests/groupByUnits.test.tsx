@@ -52,6 +52,72 @@ describe('spreadsheet aggregation units', () => {
         expect(flat([{ Region: 'A', Amount: 2, Unit: 'kg', Currency: 'USD' }, { Region: 'A', Amount: 3, Unit: 'lb', Currency: 'EUR' }]).total).toBe(5);
     });
 
+    it('supports fractional Number inputs in guarded exact sums', () => {
+        expect(flat([{ Region: 'A', Amount: 1.25, Unit: 'USD' }, { Region: 'A', Amount: 0.1, Unit: 'USD' }]).total).toBe(1.35);
+        expect(pivot([
+            { Region: 'A', Period: 'P1', Amount: 1.25, Unit: 'USD' },
+            { Region: 'A', Period: 'P1', Amount: 0.1, Unit: 'USD' },
+        ]).grandTotal).toBe(1.35);
+    });
+
+    it('keeps ordinary decimal-string sums numeric for aggregation and card handoff', () => {
+        const result = flat([{ Region: 'A', Amount: '1.25', Unit: 'USD' }, { Region: 'A', Amount: '2.50', Unit: 'USD' }]);
+        expect(result.rows[0].Amount).toBe(3.75);
+        expect(result.total).toBe(3.75);
+
+        const request = vi.fn();
+        render(<GroupByTest rows={[
+            { Region: 'A', Amount: '1.25' },
+            { Region: 'A', Amount: '2.50' },
+        ]} language="English" accentColor="blue" onRequestCard={request} />);
+        const selects = screen.getAllByRole('combobox');
+        fireEvent.change(selects[0], { target: { value: 'Region' } });
+        fireEvent.change(selects[3], { target: { value: 'Amount' } });
+        fireEvent.click(screen.getByRole('button', { name: getTranslation('groupby_create_card', 'English') }));
+        expect(request.mock.calls[0][1]?.[0].Amount).toBe(3.75);
+    });
+
+    it('preserves supported high-precision decimals exactly instead of rounding through Number', () => {
+        const result = flat([
+            { Region: 'A', Amount: '9007199254740992.00', Unit: 'USD' },
+            { Region: 'A', Amount: '0.01', Unit: 'USD' },
+        ]);
+        expect(result.rows[0].Amount).toBe('9007199254740992.01');
+        expect(result.total).toBe('9007199254740992.01');
+    });
+    it('keeps sums numeric only when Number preserves the exact decimal value', () => {
+        expect(flat([{ Region: 'A', Amount: '9007199254740991.01', Unit: 'USD' }]).total).toBe('9007199254740991.01');
+    });
+
+    it('rounds guarded averages from exact fixed-point values', () => {
+        expect(flat([{ Region: 'A', Amount: '1.01', Unit: 'USD' }, { Region: 'A', Amount: '1.02', Unit: 'USD' }], 'avg').total).toBe(1.02);
+        expect(flat([{ Region: 'A', Amount: '-1.01', Unit: 'USD' }, { Region: 'A', Amount: '-1.02', Unit: 'USD' }], 'avg').total).toBe(-1.02);
+        expect(flat([{ Region: 'A', Amount: '1.005001', Unit: 'USD' }, { Region: 'A', Amount: '1.005002', Unit: 'USD' }], 'avg').total).toBe(1.01);
+    });
+
+    it('handles groups larger than the argument-spread limit', () => {
+        const rows = Array.from({ length: 130_000 }, () => ({ Region: 'A', Amount: '0.01', Unit: 'USD' }));
+        expect(flat(rows).total).toBe(1300);
+    });
+
+
+    it('sums signed six-place decimals exactly and fails closed for unsafe or unsupported values', () => {
+        expect(flat([{ Region: 'A', Amount: '-12.125000', Unit: 'USD' }, { Region: 'A', Amount: '0.000001', Unit: 'USD' }]).total).toBe('-12.124999');
+        expect(flat([{ Region: 'A', Amount: 9007199254740992, Unit: 'USD' }]).total).toBe('unsupported_decimal_precision');
+        expect(flat([{ Region: 'A', Amount: '1.0000001', Unit: 'USD' }]).total).toBe('unsupported_decimal_precision');
+        expect(flat([{ Region: 'A', Amount: `${'9'.repeat(38)}`, Unit: 'USD' }, { Region: 'A', Amount: '1', Unit: 'USD' }]).total).toBe('unsupported_decimal_precision');
+        expect(flat([{ Region: 'A', Amount: '1.00', Unit: '' }]).total).toBe(hidden);
+    });
+
+    it('keeps pivot cells and totals exact for supported decimal strings', () => {
+        const result = pivot([
+            { Region: 'A', Period: 'P1', Amount: '9007199254740992.00', Unit: 'USD' },
+            { Region: 'A', Period: 'P1', Amount: '0.01', Unit: 'USD' },
+        ]);
+        expect(result.rows[0].P1).toBe('9007199254740992.01');
+        expect(result.rows[0].Total).toBe('9007199254740992.01');
+        expect(result.grandTotal).toBe('9007199254740992.01');
+    });
     it('checks pivot cells and each subtotal independently against underlying rows', () => {
         const rows = [
             { Region: 'A', Period: 'P1', Amount: 2, Unit: 'kg' },

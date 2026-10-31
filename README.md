@@ -37,6 +37,8 @@ Assistant starts expanded on desktop (768 px and wider), while mobile starts wit
 While the Assistant panel loads, a localized status is shown; its message field and hide control have accessible names. The hide control retains a 44 × 44 CSS-pixel minimum.
 Source-scan anomaly guidance points to scan details and re-import after correcting the original CSV. Cloud consent explains that the bounded sensitive-data scan can miss data and does not mask or remove fields; the updated disclosure asks again for consent.
 
+The full-source CSV panel includes an accessible, read-only source trust summary with scan SHA-256, filename, independently available business/summary counts, unknown excluded-row accounting, and the current accepted dataset. Row counts are withheld when the current CSV/source identity differs from the scan; scan completion is not commit approval. Task Inspection labels Confirm Meaning → Independent Validation → Approve Dataset as a review sequence only; existing live approval gates remain authoritative, and missing/truncated candidate mappings or unknown exclusions are not represented as verified facts.
+
 
 `npm --prefix frontend test` prepares the public DuckDB and demo-data resources before Vitest. For standalone A60 retention/recovery repeats, build the frontend, serve `frontend/dist` on loopback port 4187, then run `node frontend/scripts/pi-a60-repeat-smoke.mjs [base-url] [output-prefix] [runs] [timeout-ms]`; defaults are three runs and 300000 ms per run. The underlying harness requires its configured Chromium executable and a display.
 
@@ -457,3 +459,5 @@ Qualification uses synthetic >25 MiB Files, real QuickJS/OPFS/React approval/Duc
 Required initial-analysis stages run together up to the next optional cleaning decision, failure, or completion. Each stage still checks its lease, approval/cleaning gates, budget and durable checkpoint; optional cleaning remains model-controlled. Mock regression tests verify three coordinator turns for the nine-stage path and two when cleaning is skipped, not reduced total provider usage or unchanged model quality.
 
 The Default gateway limits actual response-request sends in this browser instance to 28 per rolling minute and retries explicit demo IP-limit rejections at most twice. Rate/retry waits remain cancellable and within the existing 45-second whole-request deadline, so a saturated window can time out rather than wait indefinitely. Separate tabs/devices sharing an IP are not coordinated by this browser-local limiter.
+
+UX-03 first batch: unit-guarded spreadsheet SUM/AVG and pivot paths use bounded BigInt fixed-point arithmetic (up to 38 integer and 6 fractional digits). Ordinary safe values remain numeric for existing chart actions; higher precision uses exact decimal strings, and unsupported precision is visibly suppressed. Unitless, arbitrary SQL and real AI paths are not covered by this slice.

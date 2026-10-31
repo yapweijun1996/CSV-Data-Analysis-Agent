@@ -46,4 +46,29 @@ describe('actual source scan UI actions', () => {
         await screen.findByText('Structural scan failed — not verified');
         await waitFor(() => expect(screen.getByText(/scan_unsupported_encoding/)).toBeInTheDocument());
     });
+    it('shows a source-bound trust summary without turning unknown row accounting into zero or scan completion into approval', async () => {
+        const file = new File(['id,amount\nA,10\nB,20\n'], 'trusted.csv');
+        const scan = await scanCsvSourceForImport(store, file);
+        useAppStore.setState({
+            csvData: { fileName: file.name, data: [{ id: 'A', amount: 10 }, { id: 'B', amount: 20 }], summaryRows: [['Total', '30']], metadataRows: [], headerDepth: 1 } as never,
+            datasetBundle: { datasetVersion: 'accepted-v1', acceptedCommit: { revision: 3, commitId: 'accepted-v1' } } as never,
+        });
+        render(<CsvSourceScanPanel />);
+        expect(screen.getByRole('region', { name: 'Source trust summary' })).toBeInTheDocument();
+        expect(screen.getByText(`Source SHA-256: ${scan.sha256}`)).toBeInTheDocument();
+        expect(screen.getByText('Business rows: 2')).toBeInTheDocument();
+        expect(screen.getByText('Summary rows: 1')).toBeInTheDocument();
+        expect(screen.getByText('Excluded rows: unknown')).toBeInTheDocument();
+        expect(screen.getByText(/Current accepted dataset: accepted-v1/)).toBeInTheDocument();
+        expect(screen.getByText(/Structural scan completion is not Dataset Commit approval/)).toBeInTheDocument();
+    });
+    it('withholds row counts when the current CSV filename differs from the scanned source', async () => {
+        await scanCsvSourceForImport(store, new File(['id\nA\n'], 'scanned.csv'));
+        useAppStore.setState({ csvData: { fileName: 'later.csv', data: [{ id: 'PRIVATE_CELL_SENTINEL' }], summaryRows: [['Total']] } as never });
+        render(<CsvSourceScanPanel />);
+        expect(screen.getByText('Business rows: unavailable')).toBeInTheDocument();
+        expect(screen.getByText('Summary rows: unavailable')).toBeInTheDocument();
+        expect(screen.getByText(/Current CSV source does not match this scan/)).toBeInTheDocument();
+        expect(screen.queryByText(/PRIVATE_CELL_SENTINEL/)).toBeNull();
+    });
 });

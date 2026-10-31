@@ -2787,6 +2787,14 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Spanish': 'unidades mezcladas o ausentes, total oculto',
         'French': 'unités mélangées ou manquantes, total masqué',
     },
+    'aggregation_unsupported_decimal_hidden': {
+        'English': 'unsupported or unsafe decimal precision, total hidden',
+        'Mandarin': '小数精度不受支持或不安全，已隐藏合计',
+        'Malay': 'ketepatan perpuluhan tidak disokong atau tidak selamat, jumlah disembunyikan',
+        'Japanese': '小数精度が未対応または安全でないため、合計を非表示',
+        'Spanish': 'precisión decimal no compatible o insegura, total oculto',
+        'French': 'précision décimale non prise en charge ou dangereuse, total masqué',
+    },
     'data_query_mixed_units_refusal': {
         'English': 'Cannot calculate: units are missing or mixed. Group or filter by unit.',
         'Mandarin': '无法计算：单位缺失或不一致。请按单位分组或筛选。',

@@ -57,6 +57,31 @@ describe('task inspection UI', () => {
         state.activeExecution = { runId: 'later-run' }; fireEvent.click(button);
         expect(stop).not.toHaveBeenCalled();
     });
+    it('presents a three-step review without conflating a pending candidate with the current accepted dataset', () => {
+        state.datasetBundle = { datasetVersion: 'accepted-v3', acceptedCommit: { revision: 3, commitId: 'accepted-v3' } };
+        state.taskInspection.candidate = { candidateId: 'candidate-next', taskRevision: 2, scopeDigest: 'scope-next', changeDigest: 'change-next',
+            requirements: 'grain: ID; metric: Amount', requirementsTruncated: false, tables: [{ name: 'facts', rows: 2, columns: ['ID', 'Amount'] }],
+            excludedCount: 0, exclusions: [], diff: 'mappedCells: 4', diffTruncated: false };
+        render(<TaskInspectionView onOpenRecovery={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+        expect(screen.getByText('Confirm Meaning')).toBeInTheDocument();
+        expect(screen.getByText('Independent Validation')).toBeInTheDocument();
+        expect(screen.getByText('Approve Dataset')).toBeInTheDocument();
+        expect(screen.getByText(/Current accepted dataset: accepted-v3/)).toBeInTheDocument();
+        expect(screen.getByText(/Pending candidate: candidate-next/)).toBeInTheDocument();
+        expect(screen.getByText(/Review only/)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Approve Dataset' })).toBeNull();
+    });
+    it('marks truncated candidate mapping unavailable and does not present missing exclusions as verified zero', () => {
+        state.taskInspection.candidate = { candidateId: 'candidate-truncated', taskRevision: 2, scopeDigest: 'scope', changeDigest: 'change',
+            requirements: 'partial mapping preview', requirementsTruncated: true, tables: [{ name: 'facts', rows: 2, columns: ['ID'] }],
+            excludedCount: null, exclusions: [], diff: '', diffTruncated: true };
+        render(<TaskInspectionView onOpenRecovery={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+        expect(screen.getByText(/Mapping unavailable or truncated/)).toBeInTheDocument();
+        expect(screen.getByText(/Excluded rows: unknown/)).toBeInTheDocument();
+        expect(screen.queryByText('Excluded rows: 0')).toBeNull();
+    });
     it('shows captured scope, grain, exclusions and independent reconciliation before review', () => {
         state.taskInspection.candidate = { candidateId: 'candidate', taskRevision: 2, scopeDigest: 'candidate-scope', changeDigest: 'change',
             requirements: 'grain: ID; group: Town', requirementsTruncated: false, tables: [{ name: 'facts', rows: 2, columns: ['ID', 'Amount'] }],
