@@ -1,5 +1,13 @@
 ## Current Work Context
 
+### 2026-10-31 — UX-03 bounded spreadsheet decimal precision
+- Existing unit-guarded spreadsheet SUM/AVG and pivot now use bounded fixed-point decimal arithmetic, preserving safe numeric output and exact high-precision strings; unsupported precision is suppressed. Three red-first regressions covered near-MAX_SAFE cents, half-cent AVG rounding and 130000-row scale detection. Independent full Vitest 541 files / 5574 tests PASS, Typecheck PASS, lint PASS, PWA build 1.0.0-a32997b641cd with 109/109 SHA-256 PASS. Browser visual E2E and other unitless/SQL/AI routes remain unverified; no merge or deployment.
+
+
+### 2026-10-31 — UX-01/02 source trust and candidate review
+- `CsvSourceScanPanel` now shows an accessible read-only source trust summary (scan SHA-256/file, source-bound row counts, unknown excluded rows, accepted dataset) and withholds counts for stale/mismatched source identity; scan completion remains distinct from commit approval. Task Inspection separates current accepted dataset from pending candidate and shows Confirm Meaning → Independent Validation → Approve Dataset as Review only; unknown exclusions and unavailable/truncated mappings remain explicit. Existing live approval checks, focus trap, and scan cancel/resume remain in place.
+- Added a negative filename-mismatch regression; preserved the independently prepared UX-03 test changes without changing UX-03 source. Targeted Vitest: `csvSourceScanPanel.test.tsx` + `taskInspectionUi.test.tsx`, 15/15 passed on Node 22.23.3 with one worker. `npm run typecheck` and `git diff --check` passed. No root generated assets, deployment, or remote Git operations.
+
 ### 2026-10-31 — CA-188/189a browser smoke
 - Two built-app Chromium runs: synthetic uploads and managed queries passed mixed refusal, filtered inferred sum 7, unitless sum 11, counts 4/2. Chat refusal, totals, label and counts NOT_REACHED; no live LLM used.
 - Typecheck and lint passed; Vitest 539 files / 5538 tests passed. BUG-006 remains candidate; worker analysis and spreadsheet totals remain open. No root publication.
