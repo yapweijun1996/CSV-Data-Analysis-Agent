@@ -229,6 +229,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                                         total: activeDataQuery.result.totalMatchedRows,
                                     })}
                                 {activeDataQuery.result.truncated ? ` ${getTranslation('data_explorer_truncated', language, { returned: activeDataQuery.result.returnedRows, total: activeDataQuery.result.totalMatchedRows })}` : ''}
+                                {activeDataQuery.result.unitInferred && <div className="mt-1">{getTranslation('data_query_inferred_unit_label', language)}</div>}
                                 {(activeDataQuery.engine || activeDataQuery.fallbackReason) && (
                                     <details className="mt-1 text-xs text-emerald-900">
                                         <summary>{getTranslation('technical_details', language)}</summary>

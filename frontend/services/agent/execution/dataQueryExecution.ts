@@ -195,7 +195,7 @@ const appendQueryTraceMessage = (
                     ...prev.chatHistory,
                     createChatMessage({
                         sender: 'ai',
-                        text: `**${getDataQueryTraceLabel(options.phase, query.plan, query.fallbackFilterOperation)}**\n${query.explanation}\nRows: ${query.result.returnedRows}/${query.result.totalMatchedRows} | Duration: ${query.result.durationMs}ms${query.fallbackReason ? '\nThe query ran in degraded mode; review technical details if needed.' : ''}`,
+                        text: `**${getDataQueryTraceLabel(options.phase, query.plan, query.fallbackFilterOperation)}**\n${query.explanation}\nRows: ${query.result.returnedRows}/${query.result.totalMatchedRows} | Duration: ${query.result.durationMs}ms${query.result.unitInferred ? `\n${getTranslation('data_query_inferred_unit_label', prev.settings.language)}` : ''}${query.fallbackReason ? '\nThe query ran in degraded mode; review technical details if needed.' : ''}`,
                         timestamp: new Date(),
                         type: 'ai_query_trace',
                         queryTrace: {
@@ -278,6 +278,7 @@ export const executeStructuredDataQuery = async (
             allowedColumns,
             {
                 allowNativeFallback: options.allowNativeFallback,
+                inferUnitColumn: options.origin === 'chat' && options.appendChatTrace === true,
                 bypassCache: Boolean(store.executionContext),
                 abortSignal,
                 reportDiagnostics,

@@ -2,7 +2,7 @@
 
 ## Unit meaning policy (source only)
 
-The CA-187 unit contract records dataset version and confirmed/inferred provenance and supports explicit ISO-currency header suffix inference. Validated unit metadata now carries provenance and source; legacy validated units default to `confirmed`/`user`. Source-only query guards check row-unit bindings for single-column sums and averages, after filters and per group. Accepted validation bindings are propagated; callers can also supply an aggregate `unitColumn`. No UI creates the latter, and this does not cover spreadsheet totals or all aggregation routes. Result presentation and general unit-meaning integration remain incomplete. See the [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md).
+The CA-187 unit contract records dataset version and confirmed/inferred provenance and supports explicit ISO-currency header suffix inference. In source-only chat structured queries, a unique physical column named exactly `unit`, `units`, or `currency` (case-insensitive) is bound to single-column sums and averages and labelled “unit inferred, not confirmed”; accepted validated row-unit bindings take precedence. Mixed or missing units refuse the calculation. Ambiguous companions are not guessed. This does not cover raw SQL, separate analysis routes, spreadsheet totals, or full unit-meaning integration; the root deployment has not been updated. See the [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md).
 
 ## Local privacy safeguards (source changes)
 

@@ -93,13 +93,13 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 
 ## CA-188 — Guard query and worker aggregation units
 - Priority: P1. Status: partial. Source: CA-181; depends on CA-187.
-- Implemented-unverified slice: accepted candidate row bindings and explicit aggregate `unitColumn` guard single-column sum/avg per filtered group (`frontend/services/duckdb/queryEngine.ts:488-500,604-608`, `frontend/services/duckdb/queryCompiler.ts:717-748`, `frontend/services/workers/duckDbWorker.ts:337-342`, `frontend/services/agent/execution/dataQueryExecutor.ts:386-390`). Conflicting bindings fail closed; no UI sets the optional field.
-- Missing: full coverage of other aggregate paths, multiple bindings, inferred result labels, and independent real browser/worker acceptance. Focused synthetic coverage: `frontend/tests/duckDbAggregateUnits.test.ts`, `frontend/tests/dataQueryUnits.test.ts`, `frontend/tests/dataQueryEngine.test.ts`. Next: complete CA-187 custody and remaining CA-188 routes.
+- Implemented-unverified slice: accepted row bindings and explicit aggregate `unitColumn` guard single-column sum/avg per filtered group. CA-189a additionally infers a unique named companion for chat structured queries with visible traces; other routes and ambiguous candidates remain unchanged (`frontend/services/duckdb/queryEngine.ts:510-525`, `frontend/services/agent/execution/dataQueryExecution.ts:280-281`).
+- Missing: full coverage of other aggregate paths, inferred accepted/fixed-unit integration, and independent real browser/worker acceptance. Separate worker analysis and spreadsheet totals remain unguarded.
 
 ## CA-189 — Guard spreadsheet aggregation and totals
-- Priority: P1. Status: pending. Source: CA-181; depends on CA-187.
-- Acceptance: groups and every subtotal/grand total respect units; averages use underlying counts.
-- Next: handle pivot, hidden groups and explicitly split totals.
+- Priority: P1. Status: partial. Source: CA-181; depends on CA-187.
+- CA-189a source-only slice wires deterministic chat query companions and localized inferred labels/refusals; no real-browser verification. Ambiguous columns are not guessed.
+- Acceptance remains open: spreadsheet groups and every subtotal/grand total must respect units; averages use underlying counts. Next: handle pivot, hidden groups and explicitly split totals.
 
 ## CA-190 — Exact decimal arithmetic parity
 - Priority: P1. Status: pending. Source: CA-181; depends on CA-187–CA-189.

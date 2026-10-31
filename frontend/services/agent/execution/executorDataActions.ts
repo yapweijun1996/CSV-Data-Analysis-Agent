@@ -26,6 +26,7 @@ import { executeStructuredDataQuery } from './dataQueryExecution';
 import { executeRawSqlQuery } from '../../duckdb/queryEngine';
 import { DEFAULT_DIMENSION_NORMALIZATION, buildColumnTypeGate } from '../../duckdb/dimensionNormalization';
 import { createChatMessage } from '../../../utils/messageState';
+import { getTranslation } from '../../../utils/localization';
 import { executeStatisticalAnalysis } from './analysisSkillExecutor';
 import { injectDirectivesIntoQueryPlan } from '../../duckdb/directiveInjector';
 import type { RuntimeDirectives } from '../../duckdb/directiveInjector';
@@ -740,6 +741,34 @@ export const executeDataQueryAction = async (
             throw error;
         }
         const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.startsWith('mixed_or_missing_units')) {
+            identity.assertCurrent();
+            throwIfAborted(abortSignal);
+            const refusal = getTranslation('data_query_mixed_units_refusal', getState().settings.language);
+            setState(prev => ({
+                activeDataQuery: null,
+                chatHistory: [...prev.chatHistory, createChatMessage({
+                    sender: 'ai',
+                    text: refusal,
+                    type: 'ai_message',
+                    isError: true,
+                    timestamp: new Date(),
+                })],
+            }));
+            return {
+                status: 'error',
+                toolName: 'data.query',
+                message: refusal,
+                shouldStop: true,
+                observation: {
+                    type: 'tool_result',
+                    status: 'error',
+                    summary: refusal,
+                    toolName: 'data.query',
+                    detail: { code: 'mixed_or_missing_units' },
+                },
+            };
+        }
         if (fallbackOperation && !acceptedTable && !preferredDataset.backing?.readOnly) {
             const fallbackPlan = createQueryPlanFromFilterOperation(fallbackOperation, { limit: action.args.plan.limit });
             identity.assertCurrent();

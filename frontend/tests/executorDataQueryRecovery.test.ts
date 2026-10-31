@@ -47,6 +47,29 @@ describe('executeDataQueryAction recovery', () => {
         vi.resetAllMocks();
     });
 
+    it('shows a unit refusal instead of running the supplied filter fallback', async () => {
+        const store = createRuntimeTestStore({
+            columnProfiles: [{ name: 'Amount', type: 'number' }, { name: 'Unit', type: 'string' }],
+            csvData: { fileName: 'synthetic.csv', data: [{ Amount: 1, Unit: 'kg' }, { Amount: 2, Unit: 'lb' }] },
+        });
+        executeManagedDataQueryMock.mockRejectedValue(new Error('mixed_or_missing_units: mixed units'));
+        const result = await executeDataQueryAction({
+            type: 'tool_call',
+            toolName: 'data.query',
+            args: {
+                explanation: 'Sum amounts.',
+                plan: { aggregates: [{ function: 'sum', column: 'Amount', as: 'total' }] },
+                fallbackFilterOperation: {
+                    id: 'filter', type: 'filter_rows', reason: 'Filter units',
+                    predicates: [{ column: 'Unit', operator: 'eq', value: 'kg' }],
+                },
+            },
+        }, store as never);
+        expect(result.status).toBe('error');
+        expect(store.getState().activeDataQuery).toBeNull();
+        expect(store.getState().chatHistory.at(-1)?.text).toContain('units are missing or mixed');
+    });
+
     it('converts missing filter columns into a recoverable validation_failed observation', async () => {
         const store = createRuntimeTestStore({
             columnProfiles: [

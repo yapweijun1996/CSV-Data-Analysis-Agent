@@ -581,6 +581,9 @@ const DatabaseModalContent: React.FC = () => {
                                             <p className="mt-1 text-sm text-slate-500">
                                                 {getTranslation('explorer_current_result_hint', language)}
                                             </p>
+                                            {resolvedQueryActivity?.result.unitInferred && (
+                                                <p className="mt-1 text-sm text-slate-700">{getTranslation('data_query_inferred_unit_label', language)}</p>
+                                            )}
                                         </div>
                                         <label className="block xl:max-w-xs">
                                             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{getTranslation('explorer_search_result', language)}</span>
