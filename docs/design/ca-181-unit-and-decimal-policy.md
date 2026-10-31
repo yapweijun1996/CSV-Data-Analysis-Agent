@@ -79,6 +79,20 @@ The source slice now propagates accepted candidate row bindings into single-colu
 3. **Exact range and rounding:** input 24 digits, intermediate 38, scale 0–6, half-even at final average. This is design only for CA-187; arithmetic is unchanged.
 4. **Totals and approximate mode:** suppress incompatible totals; use DOUBLE only for labelled approximate results. This is design only for CA-187.
 
+## CA-190 audit
+
+This is a source audit, not a claim of parity or a new arithmetic contract.
+
+| Route | Arithmetic, precision and rounding | Overflow and serialization | Exact-aware? |
+| --- | --- | --- | --- |
+| DuckDB single-column | Accepted input is `DECIMAL(24, scale)` with scale 0–6 (`frontend/services/duckdb/queryEngine.ts:425-426`, `frontend/services/workers/duckDbWorker.ts:289-298`); compiler uses native `SUM` and `AVG`, without explicit half-even rounding (`frontend/services/duckdb/queryCompiler.ts:540-574`). A local DuckDB WASM query of AVG over DECIMAL(24,0) values 2 and 3 returned type `DOUBLE` and value `2.5`. | Native decimal overflow is not translated to a stable CA-190 code. Arrow decimals with positive scale are strings; scale-zero safe integers are numbers and larger integers strings (`frontend/services/workers/duckDbRows.ts:7-22`). | Yes, compiler receives exact column names, but not their scales (`frontend/services/duckdb/queryEngine.ts:634-636,668-671`). |
+| In-memory query / executor | `robustParseFloat` and JS number addition/division; no decimal scale, precision or half-even policy (`frontend/services/agent/execution/dataQueryExecutor.ts:382-405`). | No decimal overflow guard; results are numbers. | No exact metadata in execution options (`frontend/services/agent/execution/dataQueryExecutor.ts:32-37`); worker query dispatch passes rows, plan and options (`frontend/services/workers/dataWorker.ts:34-35`). |
+| Analysis aggregation / worker | JS numbers parsed and grouped for each measure; sum and average use number arithmetic, no decimal rounding (`frontend/services/agent/execution/executors/aggregationCore.ts:73-103,113-129`, `frontend/services/agent/execution/executors/aggregationHelpers.ts:25-35`). | No decimal precision or overflow guard; result cells are numbers. | Worker passes `CsvData` to core (`frontend/services/workers/dataWorker.ts:32-33`), but core does not consult exact backing metadata. |
+| Spreadsheet group-by, pivot and totals | `Number` and JS arithmetic, `Math.round` to two places, not half-even (`frontend/components/spreadsheet/GroupByTest.tsx:19-29,45-50,98-116,167-198`). Unguarded pivot totals add rounded cells (`:200-258`). | No decimal range or overflow guard; aggregate cells are numbers. | No: component receives rows, not exact column metadata (`frontend/components/spreadsheet/GroupByTest.tsx:365-370`). Unit-guarded totals separately check inferred units. |
+| Weighted mean | Safe integer inputs and weights; BigInt numerator and denominator; quotient uses JS number division (`frontend/services/agent/execution/weightedMean.ts:10-29`). Decimal strings and unsafe integers are rejected; no decimal scale or half-even policy. | No 38-digit BigInt bound; numerator and denominator serialize as strings, mean as an approximate number (`frontend/services/agent/execution/weightedMean.ts:4-6,25-29`; approximation labelled in `frontend/services/agent/execution/computationEvidence.ts:138-144`). | Integer rational evidence only, not scaled-decimal aware. |
+
+Metadata custody is a prerequisite for safe fail-closed behavior: a decimal-looking string alone is not evidence that a column is exact. Query output and spreadsheet rows omit the source scale/type; a shared helper alone cannot distinguish exact and ordinary values. The existing DuckDB average is not proof of the requested half-even contract. Full parity, stable overflow codes and unsupported-route refusals remain unimplemented.
+
 ## Non-goals
 
 No FX rates, unit conversion, broad numeric parser rewrite, raw SQL governance redesign, or deployment in this design. No claim that existing tests or reviewer reports prove end-to-end acceptance.

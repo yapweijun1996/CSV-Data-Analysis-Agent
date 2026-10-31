@@ -1,5 +1,10 @@
 ## Current Work Context
 
+### 2026-10-31 — CA-190 route audit
+- Audited DuckDB, native/worker, spreadsheet and weighted mean; local DuckDB WASM AVG over DECIMAL(24,0) returns DOUBLE. Exact type/scale custody and qualified half-even AVG remain open.
+- BUG-009 and BUG-010 candidates recorded. No arithmetic implementation or deployment; CA-190 remains partial.
+- Baseline typecheck and lint passed; full Vitest: 541 files / 5562 tests passed. These do not prove decimal parity.
+
 ### 2026-10-31 — CA-188/189a browser smoke
 - Two built-app Chromium runs: synthetic uploads and managed queries passed mixed refusal, filtered inferred sum 7, unitless sum 11, counts 4/2. Chat refusal, totals, label and counts NOT_REACHED; no live LLM used.
 - Typecheck and lint passed; Vitest 539 files / 5538 tests passed. BUG-006 remains candidate; worker analysis and spreadsheet totals remain open. No root publication.
