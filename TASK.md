@@ -104,6 +104,6 @@ Statuses: `pending` = not established; `partial` = some scope exists; `implement
 - Acceptance remains open: real-user UI/worker check, version-bound bindings and other aggregation routes; unitless behavior is unchanged. Spreadsheet-to-card handoff is disabled for inferred units until provenance can be preserved.
 
 ## CA-190 — Exact decimal arithmetic parity
-- Priority: P1. Status: pending. Source: CA-181; depends on CA-187–CA-189.
-- Acceptance: supported routes agree on exact sums and rounded averages; overflow never falls back to DOUBLE.
-- Next: qualify precision, scale, serialization and fail-closed unsupported paths.
+- Priority: P1. Status: partial. Source: CA-181; depends on CA-187–CA-189.
+- Audit: [CA-190 route inventory](docs/design/ca-181-unit-and-decimal-policy.md#ca-190-audit) records arithmetic, precision, serialization and metadata gaps. `frontend/services/duckdb/queryCompiler.ts:570-574` uses native AVG; `frontend/services/agent/execution/dataQueryExecutor.ts:382-405` uses JS numbers; spreadsheet receives rows without exact metadata (`frontend/components/spreadsheet/GroupByTest.tsx:365-370`).
+- Missing: shared exact helper, parity, stable range/overflow/scale errors and fail-closed unsupported routes. Accepted scales and exact identity must reach each consumer without changing ordinary data semantics. Existing DuckDB AVG is not qualified. See [BUG-009](BUG.md#bug-009--spreadsheet-unguarded-average-totals).

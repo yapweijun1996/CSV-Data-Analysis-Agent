@@ -52,3 +52,13 @@ Statuses: `confirmed` = reproduced or established defect; `candidate` = plausibl
 - Severity: P2 privacy. Status: candidate.
 - Fix implemented, unverified: `frontend/components/modals/ReportBoundaryConfirmModal.tsx:25-36,143-153,319-326` allowlists codes and messages and replaces unknown input with a localized fallback; `frontend/tests/reportBoundaryConfirmModal.test.tsx:274-329` exercises synthetic sentinels and safe diagnostics.
 - Next: independently verify the complete upload-to-review path and comprehensive disclosure. Linked task: [CA-182](TASK.md#ca-182--safe-guidance-for-boundary-diagnostics).
+
+## BUG-009 — Spreadsheet unguarded average totals
+- Severity: P1 decision integrity. Status: candidate.
+- Source evidence: without an inferred unit companion, flat grand totals add group averages (`frontend/components/spreadsheet/GroupByTest.tsx:98-116`); pivot totals add rounded cells rather than recomputing the underlying average (`frontend/components/spreadsheet/GroupByTest.tsx:200-258`). Runtime reproduction not yet performed.
+- Next: independently reproduce with synthetic unequal-sized groups and define a compatible correction. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
+
+## BUG-010 — Exact decimal AVG uses DOUBLE
+- Severity: P1 decision integrity. Status: candidate.
+- The compiler emits native AVG for exact columns (`frontend/services/duckdb/queryCompiler.ts:540-574`). A local DuckDB WASM query using `DECIMAL(24,0)` inputs 2 and 3 returned `typeof(avg(x)) = DOUBLE` and `avg(x) = 2.5`; end-to-end accepted-table impact remains unverified.
+- Next: preserve exact scale and use a bounded half-even average, refusing unsupported paths. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
