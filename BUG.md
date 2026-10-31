@@ -54,11 +54,11 @@ Statuses: `confirmed` = reproduced or established defect; `candidate` = plausibl
 - Next: independently verify the complete upload-to-review path and comprehensive disclosure. Linked task: [CA-182](TASK.md#ca-182--safe-guidance-for-boundary-diagnostics).
 
 ## BUG-009 — Spreadsheet unguarded average totals
-- Severity: P1 decision integrity. Status: candidate.
-- Source evidence: without an inferred unit companion, flat grand totals add group averages (`frontend/components/spreadsheet/GroupByTest.tsx:98-116`); pivot totals add rounded cells rather than recomputing the underlying average (`frontend/components/spreadsheet/GroupByTest.tsx:200-258`). Runtime reproduction not yet performed.
-- Next: independently reproduce with synthetic unequal-sized groups and define a compatible correction. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
+- Severity: P1 decision integrity. Status: confirmed.
+- Synthetic unequal groups A=[10,10,10,10], B=[40] produce flat total 50 and pivot grand total 60, versus source-row average 16; pivot also adds rounded cells 1.33 + 2.33 = 3.66 (`frontend/tests/groupByUnits.test.tsx:51-93`).
+- Left unchanged: correcting unitless totals changes legacy semantics. Two `it.fails` cases document the weighted-average expectation. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
 
 ## BUG-010 — Exact decimal AVG uses DOUBLE
-- Severity: P1 decision integrity. Status: candidate.
-- The compiler emits native AVG for exact columns (`frontend/services/duckdb/queryCompiler.ts:540-574`). A local DuckDB WASM query using `DECIMAL(24,0)` inputs 2 and 3 returned `typeof(avg(x)) = DOUBLE` and `avg(x) = 2.5`; end-to-end accepted-table impact remains unverified.
-- Next: preserve exact scale and use a bounded half-even average, refusing unsupported paths. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
+- Severity: P1 decision integrity. Status: fix implemented, unverified.
+- Exact DuckDB averages use integer-scaled SUM/COUNT and final half-even rounding (`frontend/services/duckdb/queryCompiler.ts:544-604`); worker overflow translation is `frontend/services/duckdb/duckDbErrors.ts:1-8`. DuckDB WASM and focused tests cover ties, signs, scale, NULLs, overflow and ordering; browser acceptance remains open.
+- Exact file-backed/accepted queries do not fall back to in-memory JS numbers; direct in-memory rows lack exact metadata and remain outside this guarantee. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).

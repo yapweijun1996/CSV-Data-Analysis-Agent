@@ -1,5 +1,14 @@
 ## Current Work Context
 
+### 2026-10-31 — BUG-010 source fix and BUG-009 reproduction
+- Exact DuckDB AVG uses scaled integer half-even arithmetic; worker maps native overflow to `exact_decimal_overflow`. Manager overrode the negative reuse gate after reviewing 24-digit bounds. No browser acceptance or deployment.
+- BUG-009 confirmed: flat 50 and pivot 60 versus weighted 16; legacy unitless behavior unchanged. CA-190 remains partial.
+- Typecheck/lint passed; focused 5 files/93 tests passed. Full: 541 files passed, 1 failed; 5585 tests passed, 1 failed (CA-173 preflight); failing case passed alone. Report: `../omp-bug010b-report.md`.
+
+### 2026-10-31 — BUG-010 qualification blocked
+- DuckDB WASM half-even smoke passed basic ties, NULL and scale examples, but native HUGEINT SUM overflow bypassed the candidate's stable error guard. No app fix or BUG-009 runtime reproduction; engineering reuse gate also rejected implementation preflight.
+- Report: `../omp-bug010-report.md`; standalone probe: `/tmp/bug010-qualification.cjs`. No build, deployment or full checks.
+
 ### 2026-10-31 — CA-190 route audit
 - Audited DuckDB, native/worker, spreadsheet and weighted mean; local DuckDB WASM AVG over DECIMAL(24,0) returns DOUBLE. Exact type/scale custody and qualified half-even AVG remain open.
 - BUG-009 and BUG-010 candidates recorded. No arithmetic implementation or deployment; CA-190 remains partial.

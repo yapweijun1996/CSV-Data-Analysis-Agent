@@ -5,6 +5,7 @@ import type { CsvRow, DataQueryResult, QueryOrderByClause } from '../../types';
 import { tableToRows } from './duckDbRows';
 import { inferCompleteResultRowCount } from '../duckdb/queryResultCount';
 import { buildNumericExpression } from '../duckdb/numericSql';
+import { translateDuckDbQueryError } from '../duckdb/duckDbErrors';
 import { admitSql, assertSqlBinding, assertSqlResult, configureSqlDefaults, lockSqlEngine, readOnlySql,
     validateSqlLimit, DUCKDB_WASM_SHA256, DUCKDB_WORKER_SHA256, type SqlBinding, type SqlSecurityProof } from '../duckdb/sqlSecurity';
 import { sha256Bytes } from '../data/sourceDigest';
@@ -322,7 +323,11 @@ const executeOwnedSql = async (expected: SqlBinding | undefined, execute: (bound
     assertSqlBinding(expected, binding);
     if (!security) throw new Error('sql_capability_unavailable');
     const boundary = {...binding!, ...security, resourceGeneration: resourceGeneration!};
-    return readOnlySql(sqlEngine, () => execute(boundary));
+    try {
+        return await readOnlySql(sqlEngine, () => execute(boundary));
+    } catch (error) {
+        throw translateDuckDbQueryError(error);
+    }
 };
 
 const countRows = async (sql: string, tableName: string): Promise<number> => {
