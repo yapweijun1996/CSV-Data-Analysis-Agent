@@ -32,6 +32,17 @@ const parseNumeric = (value: unknown): number => {
 const isContributingNumber = (value: unknown): boolean =>
     isNumericValue(value) && Number.isFinite(parseNumeric(value));
 
+const averageRows = (rows: CsvRow[], valueCol: string): number | null => {
+    let sum = 0;
+    let count = 0;
+    for (const row of rows) {
+        if (!isContributingNumber(row[valueCol])) continue;
+        sum += parseNumeric(row[valueCol]);
+        count++;
+    }
+    return count ? sum / count : null;
+};
+
 // --- Aggregation logic ---
 
 const MAX_TABLE_ROWS = 30;
@@ -182,7 +193,9 @@ export const computeAggregation = (
         grandTotal += value;
     }
     result.sort((a, b) => (parseNumeric(b[valueCol]) - parseNumeric(a[valueCol])));
-    return { rows: result.slice(0, 20), total: Math.round(grandTotal * 100) / 100 };
+    return { rows: result.slice(0, 20), total: agg === 'avg'
+        ? averageRows(rows.filter(row => String(row[groupByCol] ?? '') !== ''), valueCol)
+        : Math.round(grandTotal * 100) / 100 };
 };
 
 // Smart sort: detect dates and sort chronologically, otherwise alphabetical ASC
@@ -317,6 +330,34 @@ export const computePivotAggregation = (
         return ak.localeCompare(bk);
     });
     for (const k of Object.keys(columnTotals)) columnTotals[k] = round2(columnTotals[k]);
+
+    if (agg === 'avg') {
+        const contributingRows: CsvRow[] = [];
+        const byRow = new Map<string, CsvRow[]>();
+        const byColumn = new Map<string, CsvRow[]>();
+        for (const source of rows) {
+            const rk = String(source[rowCol] ?? '');
+            const pk = String(source[pivotCol] ?? '');
+            if (!rk || !pk) continue;
+            contributingRows.push(source);
+            const rowGroup = byRow.get(rk) ?? [];
+            rowGroup.push(source);
+            byRow.set(rk, rowGroup);
+            const columnGroup = byColumn.get(pk) ?? [];
+            columnGroup.push(source);
+            byColumn.set(pk, columnGroup);
+        }
+        for (const row of resultRows) {
+            row.Total = averageRows(byRow.get(String(row[rowCol])) ?? [], valueCol);
+        }
+        const averageTotals: Record<string, AggregateValue> = {};
+        for (const pc of pivotColumns) {
+            averageTotals[pc] = averageRows(byColumn.get(pc) ?? [], valueCol);
+        }
+        const grandTotal = averageRows(contributingRows, valueCol);
+        averageTotals.Total = grandTotal;
+        return { pivotColumns, rows: resultRows.slice(0, MAX_PIVOT_ROWS), columnTotals: averageTotals, grandTotal, rowCol };
+    }
 
     return {
         pivotColumns,

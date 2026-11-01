@@ -138,3 +138,59 @@ describe('native DuckDB WASM exact decimal period aggregates', () => {
         expect(compile(aggregate('sum'), ordinary).sql).toContain('AS DOUBLE');
     });
 });
+
+describe('exact decimal single-column averages', () => {
+    const mean: QueryPlan = { aggregates: [{ function: 'avg', column: columns[0], as: 'n' }] };
+
+    it.each([
+        ['2,0,0\n3,0,0\n', 0, '2'],
+        ['3,0,0\n4,0,0\n', 0, '4'],
+        ['-2,0,0\n-3,0,0\n', 0, '-2'],
+        ['-3,0,0\n-4,0,0\n', 0, '-4'],
+        ['0.12,0,0\n0.13,0,0\n', 2, '0.12'],
+        ['0.13,0,0\n0.14,0,0\n', 2, '0.14'],
+        ['9007199254740993,0,0\n9007199254740995,0,0\n', 0, '9007199254740994'],
+        ['1.000001,0,0\n1.000002,0,0\n', 6, '1.000002'],
+        ['1.00,0,0\n,,\n3.00,0,0\n', 2, '2.00'],
+        [',,\n', 2, null],
+    ])('rounds exact average from %s at scale %i', async (csv, scale, expected) => {
+        await load(csv, columns.map(() => `DECIMAL(24,${scale})`));
+        expect(execute(mean)).toEqual({ n: expected });
+    });
+
+    it('retains legacy DOUBLE averages for non-decimal data', async () => {
+        await load('2,0,0\n3,0,0\n', columns.map(() => 'VARCHAR'));
+        expect(execute(mean, { tableName: 'accepted', allowedColumns: columns })).toEqual({ n: 2.5 });
+    });
+
+    it('averages compatible period values with an aggregate filter', async () => {
+        await load('1.00,0.005,0\n1.01,0.005,0\n2.00,0.000,0\n', ['DECIMAL(24,2)', 'DECIMAL(24,3)', 'DECIMAL(24,0)']);
+        const plan: QueryPlan = { aggregates: [{
+            function: 'avg', column: period, as: 'n',
+            where: { predicates: [{ column: columns[0], operator: 'lt', value: '2' }] },
+        }] };
+        expect(execute(plan)).toEqual({ n: '1.010' });
+    });
+
+    it('orders and filters grouped exact averages numerically', async () => {
+        await load('2,1,0\n10,2,0\n', columns.map(() => 'DECIMAL(24,0)'));
+        const plan: QueryPlan = {
+            groupBy: [columns[1]],
+            aggregates: [{ function: 'avg', column: columns[0], as: 'n' }],
+            orderBy: [{ column: 'n', direction: 'asc' }],
+        };
+        const query = compile(plan);
+        expect(tableToRows(conn.query(query.sql))).toEqual([
+            { [columns[1]]: 1, n: '2' }, { [columns[1]]: 2, n: '10' },
+        ]);
+        const filtered = compile({ ...plan, postAggregateFilter: { predicates: [{ column: 'n', operator: 'gt', value: '2' }] } });
+        expect(tableToRows(conn.query(filtered.sql))).toEqual([{ [columns[1]]: 2, n: '10' }]);
+    });
+
+    it('rejects a sum beyond 38 digits with a stable overflow code', async () => {
+        // Wider-than-accepted synthetic values exercise the otherwise unreachable bound.
+        const huge = '99999999999999999999999999999999999999';
+        await load(`${huge},0,0\n1,0,0\n`, columns.map(() => 'DECIMAL(38,0)'));
+        expect(() => execute(mean)).toThrow(/exact_decimal_overflow/);
+    });
+});

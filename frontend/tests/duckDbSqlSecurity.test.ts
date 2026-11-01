@@ -34,6 +34,15 @@ describe('pinned real DuckDB SQL admission and engine restrictions', () => {
         for(const sql of [compiled.sql,compiled.countSql])await expect(admitSql(engine,sql,'session_clean_dataset')).resolves.toBe(sql.trim());
         expect(rows(await readOnlySql(engine,()=>engine.query(compiled.sql))).map((r:any)=>Number(r.total))).toEqual([5,2]);
     });
+    it('admits and executes the compiled exact average through the read-only boundary', async () => {
+        const compiled = compileQueryPlanToDuckDbSql(
+            { aggregates: [{ function: 'avg', column: 'amount', as: 'mean' }] },
+            { tableName: 'session_clean_dataset', allowedColumns: ['amount'], exactDecimalColumns: ['amount'] },
+        );
+        const sql = await admitSql(engine, compiled.sql, 'session_clean_dataset');
+        expect(rows(await readOnlySql(engine, () => engine.query(sql)))).toEqual([{ mean: '3' }]);
+        await expect(admitSql(engine, compiled.countSql, 'session_clean_dataset')).resolves.toBe(compiled.countSql.trim());
+    });
     it('supports native parser CTE/window/union and harmless literal/comment punctuation', async () => {
         const sql = await admitSql(engine, "/* outer */ WITH q(x) AS (SELECT amount FROM session_clean_dataset) SELECT sum(x) OVER () n, '; DROP TABLE x' note FROM q UNION ALL SELECT 10, '十月'; -- trailing", 'session_clean_dataset');
         const result = await readOnlySql(engine, () => engine.query(`SELECT * FROM (${sql}) result LIMIT 5`));

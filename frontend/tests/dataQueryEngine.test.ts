@@ -152,6 +152,24 @@ describe('dataQueryEngine', () => {
         expect(execution.result.rows).toEqual([{ Region: 'East' }]);
     });
 
+    it('does not fall back to approximate execution after decimal overflow', async () => {
+        // The suite resets mocked modules between cases; load this engine after the reset.
+        const runtimeConfig = await import('../config/runtimeConfig');
+        vi.mocked(runtimeConfig.shouldEnableDuckDbQueryEngine).mockReturnValue(true);
+        const worker = (await import('../services/workers/duckDbWorkerClient')).duckDbWorkerClient;
+        vi.mocked(worker.initDuckDb).mockResolvedValue({ initialized: true });
+        vi.mocked(worker.loadCleanDataset).mockResolvedValue({ loaded: true, loadVersion: 'dataset-1', tableName: 'session_clean_dataset' });
+        vi.mocked(worker.executeCompiledQuery).mockRejectedValue(new Error('exact_decimal_overflow'));
+        const { executeManagedDataQuery } = await import('../services/duckdb/queryEngine');
+        await expect(executeManagedDataQuery(
+            { fileName: 'sales.csv', data: [{ Revenue: 1 }] },
+            { aggregates: [{ function: 'avg', column: 'Revenue', as: 'mean' }] },
+            ['Revenue'],
+        )).rejects.toThrow('exact_decimal_overflow');
+        const { executeArqueroQuery } = await import('../services/data/arqueroEngine');
+        expect(executeArqueroQuery).not.toHaveBeenCalled();
+    });
+
     it('classifies dataset binding failures separately from query execution failures', async () => {
         const runtimeConfig = await import('../config/runtimeConfig');
         vi.mocked(runtimeConfig.shouldEnableDuckDbQueryEngine).mockReturnValue(true);

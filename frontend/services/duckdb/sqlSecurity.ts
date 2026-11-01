@@ -37,7 +37,7 @@ export const assertSqlBinding = (expected: SqlBinding | undefined, actual: SqlBi
 // capabilities from extensions, dynamic SQL, catalogs or replacement scans.
 const functions = new Set(('abs acos asin atan atan2 cos sin tan ceil ceiling floor round trunc sqrt cbrt exp ln log log10 log2 pow power sign pi '
     + 'count sum avg min max median mode quantile quantile_cont quantile_disc approx_quantile approx_count_distinct stddev stddev_pop stddev_samp variance var_pop var_samp covar_pop covar_samp corr '
-    + 'cast try_cast typeof coalesce nullif if ifnull greatest least lower upper trim ltrim rtrim length char_length octet_length substring substr left right '
+    + 'cast try_cast typeof coalesce nullif if ifnull greatest least lower upper trim ltrim rtrim lpad length char_length octet_length substring substr left right error '
     + 'concat concat_ws replace repeat regexp_replace regexp_matches regexp_full_match regexp_extract regexp_extract_all starts_with ends_with contains '
     + 'strptime try_strptime strftime date_part date_trunc date_diff datediff dateadd epoch epoch_ms epoch_us epoch_ns make_date make_timestamp '
     + 'year month day dayofmonth dayofweek week quarter hour minute second last_day current_date current_timestamp now extract '
@@ -49,7 +49,7 @@ const functions = new Set(('abs acos asin atan atan2 cos sin tan ceil ceiling fl
 const writeKeywords = new Set(('INSERT UPDATE DELETE CREATE DROP ALTER COPY ATTACH DETACH INSTALL LOAD SET RESET PRAGMA CALL EXECUTE PREPARE '
     + 'EXPORT IMPORT VACUUM CHECKPOINT GRANT REVOKE BEGIN COMMIT ROLLBACK EXPLAIN').split(' '));
 const identifier = (value: string) => value.startsWith('"') ? value.slice(1, -1).replace(/""/g, '"').toLowerCase() : value.toLowerCase();
-const parenthesizedPredicateKeywords = new Set(['WHERE','HAVING','AND','OR','WHEN']);
+const parenthesizedPredicateKeywords = new Set(['WHERE','HAVING','AND','OR','WHEN','THEN','ELSE']);
 
 const tokenText = (span: string, type: number): string => {
     // Native offsets omit comments, so a span can include a following comment.

@@ -7,6 +7,24 @@
 ### 2026-10-31 — UX-01/02 source trust and candidate review
 - `CsvSourceScanPanel` now shows an accessible read-only source trust summary (scan SHA-256/file, source-bound row counts, unknown excluded rows, accepted dataset) and withholds counts for stale/mismatched source identity; scan completion remains distinct from commit approval. Task Inspection separates current accepted dataset from pending candidate and shows Confirm Meaning → Independent Validation → Approve Dataset as Review only; unknown exclusions and unavailable/truncated mappings remain explicit. Existing live approval checks, focus trap, and scan cancel/resume remain in place.
 - Added a negative filename-mismatch regression; preserved the independently prepared UX-03 test changes without changing UX-03 source. Targeted Vitest: `csvSourceScanPanel.test.tsx` + `taskInspectionUi.test.tsx`, 15/15 passed on Node 22.23.3 with one worker. `npm run typecheck` and `git diff --check` passed. No root generated assets, deployment, or remote Git operations.
+### 2026-10-31 — BUG-009 source fix
+- Flat and pivot AVG totals use underlying numeric rows, including hidden groups; existing unit guard and SUM/COUNT behavior remain. Source-component Chromium smoke: flat/pivot 16.
+- Exact scale metadata and real-user upload/browser acceptance remain open; no root deployment. Manager overrode the negative engineering reuse gate.
+- Typecheck/lint passed; focused 18 tests and full 542 files / 5588 tests passed. Details and earlier unsuccessful runs: `../omp-bug009-report.md`.
+
+### 2026-10-31 — BUG-010 source fix and BUG-009 reproduction
+- Exact DuckDB AVG uses scaled integer half-even arithmetic; worker maps native overflow to `exact_decimal_overflow`. Manager overrode the negative reuse gate after reviewing 24-digit bounds. No browser acceptance or deployment.
+- BUG-009 confirmed: flat 50 and pivot 60 versus weighted 16; legacy unitless behavior unchanged. CA-190 remains partial.
+- Typecheck/lint passed; focused 5 files/93 tests passed. Full: 541 files passed, 1 failed; 5585 tests passed, 1 failed (CA-173 preflight); failing case passed alone. Report: `../omp-bug010b-report.md`.
+
+### 2026-10-31 — BUG-010 qualification blocked
+- DuckDB WASM half-even smoke passed basic ties, NULL and scale examples, but native HUGEINT SUM overflow bypassed the candidate's stable error guard. No app fix or BUG-009 runtime reproduction; engineering reuse gate also rejected implementation preflight.
+- Report: `../omp-bug010-report.md`; standalone probe: `/tmp/bug010-qualification.cjs`. No build, deployment or full checks.
+
+### 2026-10-31 — CA-190 route audit
+- Audited DuckDB, native/worker, spreadsheet and weighted mean; local DuckDB WASM AVG over DECIMAL(24,0) returns DOUBLE. Exact type/scale custody and qualified half-even AVG remain open.
+- BUG-009 and BUG-010 candidates recorded. No arithmetic implementation or deployment; CA-190 remains partial.
+- Baseline typecheck and lint passed; full Vitest: 541 files / 5562 tests passed. These do not prove decimal parity.
 
 ### 2026-10-31 — CA-188/189a browser smoke
 - Two built-app Chromium runs: synthetic uploads and managed queries passed mixed refusal, filtered inferred sum 7, unitless sum 11, counts 4/2. Chat refusal, totals, label and counts NOT_REACHED; no live LLM used.

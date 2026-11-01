@@ -52,3 +52,13 @@ Statuses: `confirmed` = reproduced or established defect; `candidate` = plausibl
 - Severity: P2 privacy. Status: candidate.
 - Fix implemented, unverified: `frontend/components/modals/ReportBoundaryConfirmModal.tsx:25-36,143-153,319-326` allowlists codes and messages and replaces unknown input with a localized fallback; `frontend/tests/reportBoundaryConfirmModal.test.tsx:274-329` exercises synthetic sentinels and safe diagnostics.
 - Next: independently verify the complete upload-to-review path and comprehensive disclosure. Linked task: [CA-182](TASK.md#ca-182--safe-guidance-for-boundary-diagnostics).
+
+## BUG-009 — Spreadsheet unguarded average totals
+- Severity: P1 decision integrity. Status: fix implemented, unverified.
+- Previously synthetic unequal groups A=[10,10,10,10], B=[40] produced flat 50 and pivot 60 instead of 16, and pivot summed rounded cells 1.33 + 2.33. Source totals now use underlying numeric rows; inferred-unit suppression remains in place. SUM and COUNT are unchanged.
+- Synthetic source-component Chromium smoke showed flat and pivot 16; real-user upload/browser acceptance remains open. Spreadsheet has no exact scale metadata, so exact decimal parity is not claimed. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
+
+## BUG-010 — Exact decimal AVG uses DOUBLE
+- Severity: P1 decision integrity. Status: fix implemented, unverified.
+- Exact DuckDB averages use integer-scaled SUM/COUNT and final half-even rounding (`frontend/services/duckdb/queryCompiler.ts:544-604`); worker overflow translation is `frontend/services/duckdb/duckDbErrors.ts:1-8`. DuckDB WASM and focused tests cover ties, signs, scale, NULLs, overflow and ordering; browser acceptance remains open.
+- Exact file-backed/accepted queries do not fall back to in-memory JS numbers; direct in-memory rows lack exact metadata and remain outside this guarantee. Linked task: [CA-190](TASK.md#ca-190--exact-decimal-arithmetic-parity).
