@@ -5,11 +5,15 @@ import { cancelCsvSourceScan, resumeCsvSourceScan } from '../services/data/csvSo
 /** Progress is a display projection; all actions use the private source/version host entry. */
 export const CsvSourceScanPanel: React.FC = () => {
     const scan = useAppStore(state => state.csvSourceScan);
+    const { csvData, bundle, isBusy } = useAppStore(state => ({ csvData: state.csvData, bundle: state.datasetBundle, isBusy: state.isBusy }));
     const [details, setDetails] = useState(false);
     const [error, setError] = useState('');
     if (!scan) return null;
     const store = { getState: useAppStore.getState, setState: useAppStore.setState };
     const percent = scan.totalBytes ? Math.floor(100 * scan.bytesRead / scan.totalBytes) : 0;
+    const sourceMatches = csvData?.fileName === scan.fileName
+        && (!bundle?.source?.fileName || bundle.source.fileName === scan.fileName)
+        && (!bundle?.source?.inspection?.sha256 || bundle.source.inspection.sha256 === scan.sha256);
     const label = {
         running: 'Scanning the whole original CSV locally',
         cancelled: 'Structural scan cancelled — incomplete, not verified',
@@ -24,8 +28,31 @@ export const CsvSourceScanPanel: React.FC = () => {
             else cancelCsvSourceScan(store, scan.scanId, scan.sourceVersion);
         } catch (failure) { setError(failure instanceof Error ? failure.message : 'Scan action is stale.'); }
     };
+    const scanCompleted = scan.status === 'completed_clean' || scan.status === 'completed_anomalies';
+    const rowAccountingReady = scanCompleted && !isBusy && sourceMatches && Array.isArray(csvData?.data);
+    const rowCountLabel = (count: number | undefined) => {
+        if (!sourceMatches) return 'unavailable';
+        if (scan.status === 'running' || (scanCompleted && isBusy)) return 'pending';
+        return rowAccountingReady && count !== undefined ? count : 'unavailable';
+    };
+    const acceptedDataset = bundle?.acceptedCommit
+        ? bundle.datasetVersion || bundle.acceptedCommit.commitId
+        : null;
+    const acceptedSourceMatches = Boolean(acceptedDataset && scanCompleted && bundle?.source?.fileName === scan.fileName
+        && bundle.source.inspection?.sha256 === scan.sha256);
     return <section aria-label="Full-source CSV scan" className="my-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-left text-sm text-slate-900">
         <p role="status" className="font-semibold">{label}</p>
+        <section aria-label="Source trust summary" className="mt-3 grid grid-cols-1 gap-2 rounded border border-blue-200 bg-white p-3 sm:grid-cols-2">
+            <h3 className="font-semibold sm:col-span-2">Source trust summary</h3>
+            <p className="break-all">File: {scan.fileName}</p>
+            <p className="break-all">Source SHA-256: {scan.sha256 ?? 'unverified'}</p>
+            <p>Business rows: {rowCountLabel(csvData?.data.length)}</p>
+            <p>Summary rows: {rowCountLabel(csvData?.summaryRows?.length ?? csvData?.summaryRowCount)}</p>
+            <p>Excluded rows: unknown</p>
+            <p className="sm:col-span-2">{acceptedDataset && !acceptedSourceMatches ? 'Previous accepted dataset' : 'Current accepted dataset'}: {acceptedDataset ?? 'none'}</p>
+            {!sourceMatches && <p role="status" className="sm:col-span-2">Current CSV source does not match this scan; dataset row counts are unavailable.</p>}
+            <p className="sm:col-span-2">Structural scan completion is not Dataset Commit approval.</p>
+        </section>
         <p className="mt-1">{scan.bytesRead.toLocaleString()} / {scan.totalBytes.toLocaleString()} bytes ({percent}%) · {scan.rows.toLocaleString()} logical records scanned</p>
         {scan.status === 'running' && <>
             <progress aria-label="Source bytes scanned" max={scan.totalBytes || 1} value={scan.bytesRead} className="mt-2 w-full" />
@@ -41,7 +68,8 @@ export const CsvSourceScanPanel: React.FC = () => {
         <button aria-expanded={details} onClick={() => setDetails(!details)} className="mt-2 font-medium text-blue-800 underline">{details ? 'Hide scan details' : 'Show scan details'}</button>
         {details && <div className="mt-2 break-all">
             <p>Parsing coverage: {scan.parsingCoverage}; schema coverage: {scan.schemaCoverage}; schema confidence: {scan.schemaConfidence}.</p>
-            <p>Source version: {scan.sourceVersion}</p><p>SHA-256: {scan.sha256 ?? 'unverified'}</p>
+            <p>Source version: {scan.sourceVersion}</p>
+            {scan.sha256 === null && <p>SHA-256: unverified</p>}
             <p>Header hypothesis: logical row {scan.headerRow === null ? 'unknown' : scan.headerRow + 1}; width {scan.expectedWidth ?? 'unknown'}. This is not confirmed business meaning.</p>
             <p>{Object.entries(scan.counts).map(([kind, count]) => `${kind}: ${count}`).join(' · ') || 'No structural anomalies recorded.'}</p>
             <ul>{scan.examples.map((example, i) => <li key={i}>{example.kind}: logical row {example.row + 1}, physical lines {example.startLine}–{example.endLine}, bytes [{example.byteStart}, {example.byteEnd}), width {example.width}</li>)}</ul>

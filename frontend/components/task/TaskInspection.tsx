@@ -107,16 +107,23 @@ export const TaskInspectionView: React.FC<{ onReturnToChat?: () => void; onOpenR
             {section === 'Review' && <section className="space-y-3 text-sm text-slate-700">
                 <h3 className="font-semibold text-slate-900">Candidate review</h3>
                 {view.candidateError && <p role="alert">Candidate unavailable: {view.candidateError}</p>}
-                {candidate ? <><p className="break-all text-xs">{candidate.candidateId} · task revision {candidate.taskRevision}</p>
+                {candidate ? <>
+                    <ol aria-label="Read-only candidate review status" className="grid grid-cols-1 gap-2 rounded border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3">
+                        <li><span>1.</span> <span>Confirm Meaning</span></li><li><span>2.</span> <span>Independent Validation</span></li><li><span>3.</span> <span>Approve Dataset</span></li>
+                    </ol>
+                    <p>Current accepted dataset: {bundle?.acceptedCommit ? bundle.datasetVersion || bundle.acceptedCommit.commitId : 'none'}</p>
+                    <p>Pending candidate: {candidate.candidateId}</p>
+                    <p role="note">Review only. This view adds no action that can commit a dataset; the existing candidate approval gate remains authoritative.</p>
+                    <p className="break-all text-xs">{candidate.candidateId} · task revision {candidate.taskRevision}</p>
                     <p className="break-all text-xs">Scope: {candidate.scopeDigest}</p><p className="break-all text-xs">Change: {candidate.changeDigest}</p>
                     <h4 className="font-medium">Host grain and scope requirements</h4><pre className={pre}>{candidate.requirements}</pre>
-                    {candidate.requirementsTruncated && <p>Requirements preview truncated.</p>}
+                    {(candidate.requirementsTruncated || !candidate.requirements || candidate.tables.some(table => !Array.isArray(table.columns) || table.columns.length === 0)) && <p role="status">Mapping unavailable or truncated.</p>}
                     {candidate.commitRestriction === 'candidate_multi_table_atomic_promotion_unavailable' && <p role="status">Multi-table Draft / Uncommitted. Atomic all-table promotion is unavailable; neither table can be accepted. Meaning selection is not exact Dataset Commit approval.</p>}
-                    {candidate.tables.map(t => <p key={t.name} className="break-words">{t.name}: {t.rows} rows · {t.columns.join(', ')}</p>)}
+                    {candidate.tables.map(t => <p key={t.name} className="break-words">{t.name}: {t.rows} rows · {t.columns?.join(', ') || 'mapping unavailable'}</p>)}
                     <h4 className="font-medium">Structural diff</h4><p>This comparison is structural; independent validation supplies the semantic decision.</p><pre className={pre}>{candidate.diff}</pre>
                     {candidate.diffTruncated && <p>Diff preview truncated.</p>}
-                    <h4 className="font-medium">Excluded rows: {candidate.excludedCount}</h4>{candidate.exclusions.map((e, i) => <p key={i} className="break-words">{e}</p>)}
-                    {candidate.excludedCount > candidate.exclusions.length && <p>Exclusions preview truncated.</p>}
+                    <h4 className="font-medium">Excluded rows: {candidate.excludedCount ?? 'unknown'}</h4>{candidate.exclusions.map((e, i) => <p key={i} className="break-words">{e}</p>)}
+                    {candidate.excludedCount !== null && candidate.excludedCount !== undefined && candidate.excludedCount > candidate.exclusions.length && <p>Exclusions preview truncated.</p>}
                     <h4 className="font-medium">Independent validation</h4>
                     {candidate.validationError && <p role="alert">Validation unavailable: {candidate.validationError}</p>}
                     {!candidate.validationError && candidate.validation?.decision === 'validated' && candidate.validation.receiptDigest && candidate.tables.map(table =>
