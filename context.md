@@ -12,6 +12,8 @@ The owner authorized focused verification, main push and the existing manual Pag
 
 `26504ab` is deployed through the successful lightweight Pages workflow (run 44013051743), build `1.0.0-89457e9eb0ea`. Public COE local preview passed. Fresh Windows checkout preserved all 109 hashes. Detailed outcomes and honest remaining acceptance are in the review linked above; this is not full production certification.
 
+Execution clarification: the tool's automatic safety policy rejected only batch cleanup of temporary test files (`blocked by policy`, no specific rationale). It did not block continued development, testing, push or deployment. The agent wrapped up before TASK.md was complete; do not carry forward a global blocked status or attribute unfinished work to cleanup. TASK.md records the continuation priorities and task-specific dependencies. This documentation correction does not change application behavior or add acceptance evidence.
+
 ### 2026-10-31 — UX-03 bounded spreadsheet decimal precision
 - Existing unit-guarded spreadsheet SUM/AVG and pivot now use bounded fixed-point decimal arithmetic, preserving safe numeric output and exact high-precision strings; unsupported precision is suppressed. Three red-first regressions covered near-MAX_SAFE cents, half-cent AVG rounding and 130000-row scale detection. Independent full Vitest 541 files / 5574 tests PASS, Typecheck PASS, lint PASS, PWA build 1.0.0-a32997b641cd with 109/109 SHA-256 PASS. Browser visual E2E and other unitless/SQL/AI routes remain unverified; no merge or deployment.
 

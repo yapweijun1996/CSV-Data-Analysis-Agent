@@ -4,6 +4,15 @@
 
 The owner authorized autonomous amendments, targeted tests, main push and the existing lightweight Pages deployment, and requested no full CI. That authorization does not turn partial acceptance into completion. [Review evidence](docs/reviews/2026-11-17-production-readiness.md) separates the failed baseline, remedial checks and remaining gaps.
 
+### Execution status clarification
+
+The previous execution stopped before this backlog was complete. The execution tool's automatic safety policy rejected only the final batch deletion of temporary test directories, returning `blocked by policy` without a more specific reason. It did not block development, tests, documentation, Git push or Pages deployment. This was not a user, KB-MCP or GitHub denial, and it is not a global project blocker.
+
+- Temporary test cleanup remains incomplete; retained Temp files do not affect the repository or deployed app. Do not bypass the rejected cleanup operation.
+- Remaining development and acceptance work stays pending or partial under its existing task owner. The agent's early wrap-up must not be attributed to the cleanup rejection.
+- Continue independently executable work under the existing authorization. Record a concrete dependency only against the affected check, such as unavailable MCP fixture-upload access; do not use it to stop unrelated tasks.
+- Prioritize CA-184's terminal-state test observation, CA-191/CA-192's outstanding recovery checks, and the existing P1 data-correctness tasks. Preserve consumed model-call budgets and existing acceptance criteria.
+
 | Tasks | Current bounded evidence / remaining dependency |
 | --- | --- |
 | CA-175 | Fresh local dependency installation and focused Vitest asset preparation passed on Node 22.23.0; independent fresh-clone qualification remains. |
