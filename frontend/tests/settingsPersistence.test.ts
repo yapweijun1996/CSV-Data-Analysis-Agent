@@ -83,6 +83,7 @@ vi.mock('../services/agent/execution/dataOperationRunner', () => ({
 
 vi.mock('../services/agent/cleaningRunState', () => ({
     updateCleaningRun: (run: Record<string, unknown> | null, updates: Record<string, unknown>) => ({ ...(run ?? {}), ...updates }),
+    hasUnfinishedCleaningRun: (run: { status?: string } | null | undefined) => Boolean(run && run.status !== 'idle' && run.status !== 'completed'),
 }));
 
 vi.mock('../services/duckdb/queryEngine', () => ({
@@ -306,6 +307,118 @@ describe('settings persistence during init', () => {
 
         expect(useAppStore.getState().cleaningRun?.status).toBe('paused');
         expect(useAppStore.getState().cleaningRun?.shouldAutoResume).toBe(false);
+        expect(useAppStore.getState().duckDbSessionStatus.status).toBe('ready');
+    }, 45000);
+
+    it('does not restore the idle import placeholder as unfinished cleaning', async () => {
+        sessionStorage.setItem('csv_agent_tab_session_id', 'session-1');
+        storageMocks.getReport.mockImplementation(async (id: string) => {
+            if (id !== 'session-1') {
+                return undefined;
+            }
+
+            return {
+                id,
+                filename: 'Current Session',
+                createdAt: new Date('2026-03-11T00:00:00.000Z'),
+                updatedAt: new Date('2026-03-11T00:00:00.000Z'),
+                appState: {
+                    sessionId: id,
+                    settings: storageMocks.defaultSettings,
+                    csvData: {
+                        fileName: 'sales.csv',
+                        data: [{ Region: 'East', Revenue: 1 }],
+                        metadataRows: [],
+                        summaryRows: [],
+                        headerDepth: 1,
+                    },
+                    chatHistory: [],
+                    cleaningRun: {
+                        runId: 'run-idle',
+                        status: 'idle',
+                        currentStep: 0,
+                        steps: [],
+                        startedAt: new Date('2026-03-11T00:00:00.000Z'),
+                        updatedAt: new Date('2026-03-11T00:00:00.000Z'),
+                        targetPath: '/dataset/cleaned.csv',
+                        shouldAutoResume: false,
+                    },
+                    cardEnhancementSuggestions: [],
+                    workspaceFiles: {},
+                    workspaceActionHistory: [],
+                    queryHistory: [],
+                    agentEvents: [],
+                    agentToolLogs: [],
+                    dataPreparationPlan: null,
+                },
+            };
+        });
+
+        const { useAppStore } = await import('../store/useAppStore');
+        await useAppStore.getState().init();
+
+        expect(useAppStore.getState().cleaningRun?.status).toBe('idle');
+        expect(useAppStore.getState().chatHistory).not.toEqual(expect.arrayContaining([
+            expect.objectContaining({ text: UNFINISHED_CLEANING_SESSION_RESTORE_TEXT }),
+        ]));
+        expect(useAppStore.getState().duckDbSessionStatus.status).toBe('ready');
+    }, 45000);
+
+    it('does not restore a legacy paused local-only placeholder as unfinished cleaning', async () => {
+        sessionStorage.setItem('csv_agent_tab_session_id', 'session-1');
+        storageMocks.getReport.mockImplementation(async (id: string) => {
+            if (id !== 'session-1') {
+                return undefined;
+            }
+
+            return {
+                id,
+                filename: 'Current Session',
+                createdAt: new Date('2026-03-11T00:00:00.000Z'),
+                updatedAt: new Date('2026-03-11T00:00:00.000Z'),
+                appState: {
+                    sessionId: id,
+                    settings: storageMocks.defaultSettings,
+                    csvData: {
+                        fileName: 'sales.csv',
+                        data: [{ Region: 'East', Revenue: 1 }],
+                        metadataRows: [],
+                        summaryRows: [],
+                        headerDepth: 1,
+                    },
+                    chatHistory: [],
+                    initialAnalysisStatus: 'degraded',
+                    initialAnalysisFailureKind: 'cloud_consent_declined',
+                    cleaningRun: {
+                        runId: 'run-legacy-local-only',
+                        status: 'paused',
+                        currentStep: 0,
+                        steps: [],
+                        lastError: 'Cloud analysis was not started because cloud AI was not authorized.',
+                        userFacingMessage: 'Cloud analysis was not started because cloud AI was not authorized.',
+                        startedAt: new Date('2026-03-11T00:00:00.000Z'),
+                        updatedAt: new Date('2026-03-11T00:00:00.000Z'),
+                        targetPath: '/dataset/cleaned.csv',
+                        shouldAutoResume: false,
+                    },
+                    cardEnhancementSuggestions: [],
+                    workspaceFiles: {},
+                    workspaceActionHistory: [],
+                    queryHistory: [],
+                    agentEvents: [],
+                    agentToolLogs: [],
+                    dataPreparationPlan: null,
+                },
+            };
+        });
+
+        const { useAppStore } = await import('../store/useAppStore');
+        await useAppStore.getState().init();
+
+        expect(useAppStore.getState().cleaningRun?.status).toBe('idle');
+        expect(useAppStore.getState().chatHistory).not.toEqual(expect.arrayContaining([
+            expect.objectContaining({ text: UNFINISHED_CLEANING_SESSION_RESTORE_TEXT }),
+        ]));
         expect(useAppStore.getState().duckDbSessionStatus.status).toBe('ready');
     }, 45000);
 

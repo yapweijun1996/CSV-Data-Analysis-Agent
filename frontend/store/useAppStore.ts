@@ -222,7 +222,7 @@ export const useAppStore = createWithEqualityFn<AppStore>()((set, get, store) =>
             rawPersistedSettings,
             { isProviderConfigured },
             { normalizeDataPreparationPlan },
-            { updateCleaningRun },
+            { updateCleaningRun, hasUnfinishedCleaningRun },
         ] = await Promise.all([
             getSettings(),
             import('../services/ai/providerConfig'),
@@ -271,6 +271,7 @@ export const useAppStore = createWithEqualityFn<AppStore>()((set, get, store) =>
             if (currentSession && !hasExternalPayloadPending) {
                 const normalizeStart = performance.now();
                 const normalizedAppState = normalizeRestoredAppState(currentSession.appState);
+                const hasUnfinishedRestoredCleaning = hasUnfinishedCleaningRun(normalizedAppState.cleaningRun);
                 const restoredMemoryScope = normalizedAppState.reportMemoryScope
                     ?? (currentSession.lineage
                         ? {
@@ -348,9 +349,9 @@ export const useAppStore = createWithEqualityFn<AppStore>()((set, get, store) =>
                     initialAnalysisFailureKind: normalizedAppState.initialAnalysisFailureKind ?? null,
                     cleaningRun: normalizedAppState.cleaningRun
                         ? updateCleaningRun(normalizedAppState.cleaningRun, {
-                            status: normalizedAppState.cleaningRun.status === 'completed'
-                                ? 'completed'
-                                : 'paused',
+                            status: hasUnfinishedRestoredCleaning
+                                ? 'paused'
+                                : normalizedAppState.cleaningRun.status,
                             shouldAutoResume: false,
                         })
                         : null,
@@ -441,7 +442,7 @@ export const useAppStore = createWithEqualityFn<AppStore>()((set, get, store) =>
                         );
                     }
                 }
-                if (normalizedAppState.cleaningRun && normalizedAppState.cleaningRun.status !== 'completed') {
+                if (hasUnfinishedRestoredCleaning) {
                     set(prev => ({
                         chatHistory: appendUnfinishedCleaningNotice(prev.chatHistory, 'session_restore'),
                     }));

@@ -78,7 +78,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
         const assertTransition = () => ownsTransition(store, token);
         try {
         get().addProgress(`Loading report ${id}...`);
-        let [report, { normalizeDataPreparationPlan }, { updateCleaningRun }] = await Promise.all([
+        let [report, { normalizeDataPreparationPlan }, { updateCleaningRun, hasUnfinishedCleaningRun }] = await Promise.all([
             getReport(id),
             import('../../services/agent/execution/dataOperationRunner'),
             import('../../services/agent/cleaningRunState'),
@@ -94,6 +94,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
             if (!report) throw new Error('The selected report is no longer available.');
             await discardPiSessionCheckpoint(outgoing.sessionId);
             const normalizedAppState = normalizeRestoredAppState(report.appState);
+            const hasUnfinishedRestoredCleaning = hasUnfinishedCleaningRun(normalizedAppState.cleaningRun);
             const restoredMemoryScope = normalizedAppState.reportMemoryScope
                 ?? (report.lineage
                     ? {
@@ -152,22 +153,24 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
                 ),
                 cleaningRun: normalizedAppState.cleaningRun
                     ? updateCleaningRun(normalizedAppState.cleaningRun, {
-                        status: normalizedAppState.cleaningRun.status === 'completed' ? 'completed' : 'paused',
+                        status: hasUnfinishedRestoredCleaning
+                            ? 'paused'
+                            : normalizedAppState.cleaningRun.status,
                         shouldAutoResume: false,
                     })
                     : null,
-                analysisCards: normalizedAppState.cleaningRun && normalizedAppState.cleaningRun.status !== 'completed'
+                analysisCards: hasUnfinishedRestoredCleaning
                     ? []
                     : normalizedAppState.analysisCards,
-                finalSummary: normalizedAppState.cleaningRun && normalizedAppState.cleaningRun.status !== 'completed'
+                finalSummary: hasUnfinishedRestoredCleaning
                     ? null
                     : normalizedAppState.finalSummary,
-                aiCoreAnalysisSummary: normalizedAppState.cleaningRun && normalizedAppState.cleaningRun.status !== 'completed'
+                aiCoreAnalysisSummary: hasUnfinishedRestoredCleaning
                     ? null
                     : normalizedAppState.aiCoreAnalysisSummary,
                 initialAnalysisStatus: normalizedAppState.initialAnalysisStatus
                     ?? (
-                        (normalizedAppState.cleaningRun && normalizedAppState.cleaningRun.status !== 'completed')
+                        hasUnfinishedRestoredCleaning
                             ? 'idle'
                             : ((normalizedAppState.analysisCards?.length ?? 0) > 0 || Boolean(normalizedAppState.finalSummary)
                                 ? 'ready'
@@ -236,7 +239,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
                     }),
                 );
             }
-            if (normalizedAppState.cleaningRun?.status === 'completed' || !normalizedAppState.cleaningRun) {
+            if (!hasUnfinishedRestoredCleaning) {
                 await get().refreshDuckDbSession(undefined, restoredScope);
                 if (!ownsSessionScope(store, restoredScope)) return;
             } else {

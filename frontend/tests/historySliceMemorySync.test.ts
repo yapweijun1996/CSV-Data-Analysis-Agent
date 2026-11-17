@@ -52,8 +52,17 @@ vi.mock('../services/duckdb/queryEngine', () => ({
     disposeDuckDbQueryEngine: vi.fn(async () => undefined),
 }));
 
+// History owns session replacement; runtime checkpoint internals have their own
+// tests. Avoid loading the entire AI runtime during this isolated slice test.
+vi.mock('../services/agent/runtime/pi/piInitialAnalysisRuntimeService', () => ({
+    discardPiInitialAnalysisCheckpoint: vi.fn(),
+    purgePiInitialAnalysisCheckpoints: vi.fn(),
+    recoverPiInitialAnalysisIfNeeded: vi.fn(async () => null),
+}));
+
 vi.mock('../services/agent/cleaningRunState', () => ({
     updateCleaningRun: (run: Record<string, unknown> | null, updates: Record<string, unknown>) => ({ ...(run ?? {}), ...updates }),
+    hasUnfinishedCleaningRun: (run: { status?: string } | null | undefined) => Boolean(run && run.status !== 'idle' && run.status !== 'completed'),
 }));
 
 describe('history slice load guards', () => {

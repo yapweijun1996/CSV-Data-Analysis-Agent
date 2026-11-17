@@ -1,8 +1,67 @@
 # Review task backlog
 
+## Current execution boundary — 2026-11-17
+
+The owner authorized autonomous amendments, targeted tests, main push and the existing lightweight Pages deployment, and requested no full CI. That authorization does not turn partial acceptance into completion. [Review evidence](docs/reviews/2026-11-17-production-readiness.md) separates the failed baseline, remedial checks and remaining gaps.
+
+| Tasks | Current bounded evidence / remaining dependency |
+| --- | --- |
+| CA-175 | Fresh local dependency installation and focused Vitest asset preparation passed on Node 22.23.0; independent fresh-clone qualification remains. |
+| CA-176 | Repeated A60 retained-data recovery not rerun in this targeted release. |
+| CA-177, CA-178 | Named controls, mobile open/close, focus return and bounded viewport checks passed; screen-reader, complete keyboard and repeated cold-load qualification remain. |
+| CA-179, CA-182 | Source trust summary observed; boundary tests passed. All candidate lanes and full customer-layout review remain unverified. |
+| CA-180 | Local refusal/preview and normal deletion read-back passed in an isolated context; provider retention and browser failure-path coverage remain. |
+| CA-181, CA-187–CA-190 | Unit meaning/worker guard tests passed; full version custody and exact arithmetic parity across every presentation route remain partial. |
+| CA-183 | Offline emulation was ineffective in this environment; stress/resource acceptance remains unrun. |
+| CA-184 | Authorized GPT-6 Luna returned HTTP 200 on three exact-model requests; final answer not accepted within bounded test. Representative quality qualification remains incomplete. |
+| CA-185 | No local Playwright Firefox/WebKit binaries found; not installed during the requested fast targeted release. |
+| CA-186 | Complete version-bound convenience feature inventory remains pending, not inferred from existing exports. |
+| CA-193 | Advisor review and responsive static preview prepared; broad visual implementation awaits design acceptance. |
+
+## CA-193 — AI Analyst layout and state hierarchy
+- Priority: P2. Status: pending. Source: [KB-backed UI advisor](docs/reviews/2026-11-17-ui-advisor.md).
+- Acceptance: clear dataset/mode/readiness state, truthful blocked/restore surfaces, primary summary and contextual Assistant; preserve consent and exact approval. Verify responsive/accessibility cases listed in the proposal.
+- Next: review the completed [responsive preview](docs/design/ai-analyst-layout-preview.html) before broad implementation; apply functional correctness fixes independently. No chart-library migration is implied.
+
+## CA-191 — Preserve release bytes across Windows checkouts
+- Priority: P1. Status: partial. Source: [2026-11-17 review](docs/reviews/2026-11-17-production-readiness.md).
+- Reproduced: 102/109 manifest entries differ only by CRLF; local COE preview and Retry fail with `sql_wasm_integrity_failed`.
+- Acceptance: fresh Windows checkout preserves manifest and integrity-pinned worker bytes; real local preview and independently checked aggregate succeed, including reload/rebind. Retain integrity enforcement.
+- Verified: byte-preserving attributes, 109/109 rebuilt manifest hashes, local preview (25/1,990 rows, seven columns), and grouped counts (five categories, 398 each) against an independent CSV oracle. Integrity checks remain unchanged.
+- Remaining: fresh Windows checkout and source reattachment/rebind acceptance; fixture upload was blocked by MCP path access.
+
+## CA-192 — Correct local-only restore guidance
+- Priority: P2. Status: partial. Source: 2026-11-17 review.
+- Reproduced: local-only import, reload, open Assistant; it claims unfinished cleaning although cleaning was not started.
+- Acceptance: local-only restore requests source reattachment without claiming active cleaning; genuine interrupted cleaning retains explicit recovery. Test refresh, cancellation and source identity boundaries without unauthorized provider calls.
+- Next: trace persisted pipeline state and restore-message selection, then verify focused regression and real UI.
+
 Follow-up work from the [review archive](docs/reviews/2026-10-30-25-persona-review.md); source evidence is not acceptance proof. See [bugs](BUG.md).
 
 Statuses: `pending` = not established; `partial` = some scope exists; `implemented-unverified` = implementation identified but acceptance not checked; `verified-complete` = acceptance tested; `blocked` = prerequisite prevents progress; `obsolete` = no longer applicable.
+
+- Verified: final built UI local-only import and reload retain the honest source-reattachment prompt without unfinished-cleaning text or Continue cleaning. Unit checks preserve genuine paused/running/failed states and normalize only empty legacy consent-declined placeholders. Cancellation and source identity end-to-end cases remain open.
+
+## Product goal and delivery order
+
+Vision: [GOAL.md](GOAL.md). Current qualification: [Chrome DevTools review](docs/reviews/2026-11-17-production-readiness.md). CA-191 has bounded local-query acceptance; fresh-checkout and rebind coverage remain open. Excel import and ECharts require scope/inventory before implementation commitments.
+
+The [product goal and success criteria](README.md#product-goal) define the intended outcome: supported business reports become trustworthy, traceable analysis through a browser-first Assistant. This backlog tracks acceptance gaps toward that outcome, not a promise of arbitrary CSV support.
+
+Use the existing task owners below instead of creating parallel feature lists. The order expresses dependencies and value; it does not change existing priorities, statuses or authorize paid evaluation or deployment.
+
+| Delivery focus | Existing tasks | Required acceptance evidence |
+| --- | --- | --- |
+| Establish trustworthy source meaning and dataset changes | CA-179, CA-182 | Source-bound grain, mappings and included/excluded counts are understandable; unknowns remain explicit; a pending candidate cannot replace accepted data without independent validation and separate exact approval. |
+| Make analytical numbers reliable | CA-181, CA-187 through CA-190 | Unit meaning and precision follow the dataset version across supported queries, workers, spreadsheet totals and presentation; incompatible units and unsupported arithmetic fail visibly. |
+| Make local exploration and continued conversation usable | CA-177, CA-178, CA-180 | Local preview works without cloud consent; Assistant is operable on desktop/mobile and with assistive technology; storage and deletion claims have read-back evidence. |
+| Qualify repeatability and supported environments | CA-175, CA-176, CA-183, CA-185 | Fresh setup, recovery, offline/resource boundaries and supported browser flows have scoped reproducible evidence. |
+| Establish real analytical usefulness | CA-184 | Authorized representative reports and real-model runs exercise import, meaning review, any required exact approval, calculation, presentation and follow-up; report denominators, failures and unsupported cases. |
+| Extend convenience without losing provenance | CA-186 | Saved queries, exports and convenience features retain the appropriate dataset-version binding. |
+
+For end-to-end acceptance, include supported clean tables and complex report shapes, negative ambiguity cases, and summary rows that would otherwise cause double counting. Check both the answer and its source/version evidence. Preserve original data, consent boundaries and rejection/recovery behavior throughout. Reuse existing fixtures and qualification tooling; synthetic replay establishes only its tested scope. CA-184 owns the remaining real-model acceptance gate.
+
+Documentation alignment on 2026-11-17 changes no task completion status. The application capability gaps below remain open until their stated acceptance is demonstrated.
 
 ## CA-175 — Vitest build-asset preflight
 - Priority: P2. Status: implemented-unverified. Source: backlog 5, observation 4, P15 P17.

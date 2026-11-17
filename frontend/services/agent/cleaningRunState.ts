@@ -69,5 +69,12 @@ export const updateCleaningRun = (
     };
 };
 
+/**
+ * An idle run is the persisted placeholder created when a dataset is imported.
+ * Only runs that have started, paused, or failed represent unfinished cleaning.
+ */
+export const hasUnfinishedCleaningRun = (run: CleaningRun | null | undefined): boolean =>
+    Boolean(run && run.status !== 'idle' && run.status !== 'completed');
+
 export const shouldResumeCleaningRun =(run: CleaningRun | null) =>
     Boolean(run && (run.status === 'running' || run.shouldAutoResume));

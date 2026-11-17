@@ -1,5 +1,13 @@
 ## Current Work Context
 
+### Product direction
+
+The product vision and acceptance criteria are maintained in [GOAL.md](GOAL.md), [README.md](README.md#product-goal), and [TASK.md](TASK.md#product-goal-and-delivery-order).
+
+The [2026-11-17 review](docs/reviews/2026-11-17-production-readiness.md) records the checkout-byte integrity defect, local-only recovery correction, focused source tests and browser evidence. Git attributes preserve pinned resource bytes. New local-only imports remain idle; restore normalizes only empty legacy consent-declined placeholders and preserves genuine interrupted runs. The [UI advisor proposal](docs/reviews/2026-11-17-ui-advisor.md) includes a responsive preview for owner review.
+
+The owner authorized focused verification, main push and the existing manual Pages workflow without full CI. Full production qualification remains open: exact-model HTTP success did not establish final-answer quality, and complex acceptance, offline/stress and cross-browser gaps remain explicit in TASK.md. Historical evidence below is not a substitute for current release evidence.
+
 ### 2026-10-31 — UX-03 bounded spreadsheet decimal precision
 - Existing unit-guarded spreadsheet SUM/AVG and pivot now use bounded fixed-point decimal arithmetic, preserving safe numeric output and exact high-precision strings; unsupported precision is suppressed. Three red-first regressions covered near-MAX_SAFE cents, half-cent AVG rounding and 130000-row scale detection. Independent full Vitest 541 files / 5574 tests PASS, Typecheck PASS, lint PASS, PWA build 1.0.0-a32997b641cd with 109/109 SHA-256 PASS. Browser visual E2E and other unitless/SQL/AI routes remain unverified; no merge or deployment.
 
@@ -1917,3 +1925,6 @@ Final delivery checks: 135 documentation links resolve; 13 source/test hashes an
 - Unique inferred unit companions guard spreadsheet group/pivot totals and analysis aggregation; mixed/missing totals are hidden, and guarded averages use source counts.
 - Inferred provenance is displayed; inferred spreadsheet results cannot create cards until that handoff carries provenance. Ambiguous companions and unitless behavior remain unchanged.
 - Synthetic isolated component browser smoke is not real upload/UI acceptance; BUG-006 remains a candidate. Root deployment and exact arithmetic remain unchanged.
+
+## Local E2E credential template
+- Root `.env.sample` documents `OPENAI_API_KEY` for local testing; `.env` and `.env.*` are ignored except the sample. Test tooling must explicitly load the local file, and the browser app continues to use its Settings flow.

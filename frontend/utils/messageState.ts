@@ -166,88 +166,102 @@ export const normalizeRestoredGoalState = (
     }
 };
 
-export const normalizeRestoredAppState = <T extends Partial<AppState>>(state: T): T => ({
-    ...state,
-    settings: state.settings
-        ? {
-            ...state.settings,
-            language: normalizeAppLanguage(state.settings.language),
-        }
-        : state.settings,
-    progressMessages: ensureProgressMessageIds(state.progressMessages),
-    chatHistory: ensureChatMessageIds(state.chatHistory),
-    analysisCards: (state.analysisCards ?? []).map(card => ({
-        ...card,
-        hideZeroValueRows: card.hideZeroValueRows ?? false,
-        pivotColumnTopN: card.pivotColumnTopN ?? 8,
-        pivotHideOtherColumns: card.pivotHideOtherColumns ?? false,
-        hiddenPivotSeriesLabels: card.hiddenPivotSeriesLabels ?? [],
-        summary: normalizeLocalizedText(card.summary, normalizeAppLanguage(state.settings?.language)) ?? {
-            language: normalizeAppLanguage(state.settings?.language),
-            text: '',
-        },
-    })),
-    aiCoreAnalysisSummary: normalizeLocalizedText(state.aiCoreAnalysisSummary, normalizeAppLanguage(state.settings?.language)),
-    finalSummary: normalizeLocalizedText(state.finalSummary, normalizeAppLanguage(state.settings?.language)),
-    agentEvents: trimAgentEvents(state.agentEvents ?? []),
-    runtimeEvents: normalizeRuntimeEvents(state.runtimeEvents),
-    queuedAgentRuns: normalizeQueuedAgentRuns(state.queuedAgentRuns),
-    runtimeRunHistory: normalizeRuntimeRunHistory(state.runtimeRunHistory),
-    queryHistory: normalizeQueryHistory(state.queryHistory),
-    workspaceActionHistory: trimWorkspaceActionHistory(state.workspaceActionHistory ?? []),
-    duckDbSessionStatus: normalizeDuckDbSessionStatus(state.duckDbSessionStatus),
-    cleaningRun: state.cleaningRun
-        ? {
-            ...state.cleaningRun,
-            recoveryState: state.cleaningRun.recoveryState
-                ? {
-                    activeStrategyId: state.cleaningRun.recoveryState.activeStrategyId ?? null,
-                    attemptedStrategies: Array.isArray(state.cleaningRun.recoveryState.attemptedStrategies)
-                        ? state.cleaningRun.recoveryState.attemptedStrategies
-                        : [],
-                    lastReasonCode: state.cleaningRun.recoveryState.lastReasonCode ?? null,
-                    recoveredBy: state.cleaningRun.recoveryState.recoveredBy ?? null,
-                    analysisMode: state.cleaningRun.recoveryState.analysisMode ?? 'normal',
-                }
-                : null,
-            userFacingMessage: state.cleaningRun.userFacingMessage ?? null,
-            actionTakenMessage: state.cleaningRun.actionTakenMessage ?? null,
-            dataSafetyMessage: state.cleaningRun.dataSafetyMessage ?? null,
-            nextStateMessage: state.cleaningRun.nextStateMessage ?? null,
-            technicalDetail: state.cleaningRun.technicalDetail ?? null,
-        }
-        : state.cleaningRun,
-    columnRegistry: state.columnRegistry
-        ? {
-            ...state.columnRegistry,
-            columns: Array.isArray(state.columnRegistry.columns)
-                ? state.columnRegistry.columns.map(column => ({
-                    ...column,
-                    aliases: Array.isArray(column.aliases) ? column.aliases : [],
-                }))
-                : [],
-        }
-        : null,
-    datasetSemanticSnapshot: state.datasetSemanticSnapshot
-        ? {
-            ...state.datasetSemanticSnapshot,
-            rowAnnotations: Array.isArray(state.datasetSemanticSnapshot.rowAnnotations)
-                ? state.datasetSemanticSnapshot.rowAnnotations
-                : [],
-            columnAnnotations: Array.isArray(state.datasetSemanticSnapshot.columnAnnotations)
-                ? state.datasetSemanticSnapshot.columnAnnotations
-                : [],
-            recommendedAnalysisView: state.datasetSemanticSnapshot.recommendedAnalysisView
-                ? {
-                    ...state.datasetSemanticSnapshot.recommendedAnalysisView,
-                    includedRowIndices: Array.isArray(state.datasetSemanticSnapshot.recommendedAnalysisView.includedRowIndices)
-                        ? state.datasetSemanticSnapshot.recommendedAnalysisView.includedRowIndices
-                        : [],
-                    excludedRowIndices: Array.isArray(state.datasetSemanticSnapshot.recommendedAnalysisView.excludedRowIndices)
-                        ? state.datasetSemanticSnapshot.recommendedAnalysisView.excludedRowIndices
-                        : [],
-                }
-                : state.datasetSemanticSnapshot.recommendedAnalysisView,
-        }
-        : null,
-}) as T;
+export const normalizeRestoredAppState = <T extends Partial<AppState>>(state: T): T => {
+    // Before local-only imports were represented as idle, the consent-declined
+    // branch persisted an empty paused run. Canonicalize that legacy snapshot at
+    // the restore boundary so every downstream surface shares the same state.
+    const restoredCleaningRun = state.cleaningRun
+        && state.initialAnalysisFailureKind === 'cloud_consent_declined'
+        && state.cleaningRun.status === 'paused'
+        && state.cleaningRun.currentStep === 0
+        && Array.isArray(state.cleaningRun.steps)
+        && state.cleaningRun.steps.length === 0
+        ? { ...state.cleaningRun, status: 'idle' as const, shouldAutoResume: false }
+        : state.cleaningRun;
+
+    return {
+        ...state,
+        settings: state.settings
+            ? {
+                ...state.settings,
+                language: normalizeAppLanguage(state.settings.language),
+            }
+            : state.settings,
+        progressMessages: ensureProgressMessageIds(state.progressMessages),
+        chatHistory: ensureChatMessageIds(state.chatHistory),
+        analysisCards: (state.analysisCards ?? []).map(card => ({
+            ...card,
+            hideZeroValueRows: card.hideZeroValueRows ?? false,
+            pivotColumnTopN: card.pivotColumnTopN ?? 8,
+            pivotHideOtherColumns: card.pivotHideOtherColumns ?? false,
+            hiddenPivotSeriesLabels: card.hiddenPivotSeriesLabels ?? [],
+            summary: normalizeLocalizedText(card.summary, normalizeAppLanguage(state.settings?.language)) ?? {
+                language: normalizeAppLanguage(state.settings?.language),
+                text: '',
+            },
+        })),
+        aiCoreAnalysisSummary: normalizeLocalizedText(state.aiCoreAnalysisSummary, normalizeAppLanguage(state.settings?.language)),
+        finalSummary: normalizeLocalizedText(state.finalSummary, normalizeAppLanguage(state.settings?.language)),
+        agentEvents: trimAgentEvents(state.agentEvents ?? []),
+        runtimeEvents: normalizeRuntimeEvents(state.runtimeEvents),
+        queuedAgentRuns: normalizeQueuedAgentRuns(state.queuedAgentRuns),
+        runtimeRunHistory: normalizeRuntimeRunHistory(state.runtimeRunHistory),
+        queryHistory: normalizeQueryHistory(state.queryHistory),
+        workspaceActionHistory: trimWorkspaceActionHistory(state.workspaceActionHistory ?? []),
+        duckDbSessionStatus: normalizeDuckDbSessionStatus(state.duckDbSessionStatus),
+        cleaningRun: restoredCleaningRun
+            ? {
+                ...restoredCleaningRun,
+                recoveryState: restoredCleaningRun.recoveryState
+                    ? {
+                        activeStrategyId: restoredCleaningRun.recoveryState.activeStrategyId ?? null,
+                        attemptedStrategies: Array.isArray(restoredCleaningRun.recoveryState.attemptedStrategies)
+                            ? restoredCleaningRun.recoveryState.attemptedStrategies
+                            : [],
+                        lastReasonCode: restoredCleaningRun.recoveryState.lastReasonCode ?? null,
+                        recoveredBy: restoredCleaningRun.recoveryState.recoveredBy ?? null,
+                        analysisMode: restoredCleaningRun.recoveryState.analysisMode ?? 'normal',
+                    }
+                    : null,
+                userFacingMessage: restoredCleaningRun.userFacingMessage ?? null,
+                actionTakenMessage: restoredCleaningRun.actionTakenMessage ?? null,
+                dataSafetyMessage: restoredCleaningRun.dataSafetyMessage ?? null,
+                nextStateMessage: restoredCleaningRun.nextStateMessage ?? null,
+                technicalDetail: restoredCleaningRun.technicalDetail ?? null,
+            }
+            : restoredCleaningRun,
+        columnRegistry: state.columnRegistry
+            ? {
+                ...state.columnRegistry,
+                columns: Array.isArray(state.columnRegistry.columns)
+                    ? state.columnRegistry.columns.map(column => ({
+                        ...column,
+                        aliases: Array.isArray(column.aliases) ? column.aliases : [],
+                    }))
+                    : [],
+            }
+            : null,
+        datasetSemanticSnapshot: state.datasetSemanticSnapshot
+            ? {
+                ...state.datasetSemanticSnapshot,
+                rowAnnotations: Array.isArray(state.datasetSemanticSnapshot.rowAnnotations)
+                    ? state.datasetSemanticSnapshot.rowAnnotations
+                    : [],
+                columnAnnotations: Array.isArray(state.datasetSemanticSnapshot.columnAnnotations)
+                    ? state.datasetSemanticSnapshot.columnAnnotations
+                    : [],
+                recommendedAnalysisView: state.datasetSemanticSnapshot.recommendedAnalysisView
+                    ? {
+                        ...state.datasetSemanticSnapshot.recommendedAnalysisView,
+                        includedRowIndices: Array.isArray(state.datasetSemanticSnapshot.recommendedAnalysisView.includedRowIndices)
+                            ? state.datasetSemanticSnapshot.recommendedAnalysisView.includedRowIndices
+                            : [],
+                        excludedRowIndices: Array.isArray(state.datasetSemanticSnapshot.recommendedAnalysisView.excludedRowIndices)
+                            ? state.datasetSemanticSnapshot.recommendedAnalysisView.excludedRowIndices
+                            : [],
+                    }
+                    : state.datasetSemanticSnapshot.recommendedAnalysisView,
+            }
+            : null,
+    } as T;
+};

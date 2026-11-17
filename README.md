@@ -1,5 +1,33 @@
 # CSV Data Analysis Agent
 
+## Product goal
+
+The authoritative vision is [Universal AI Business Data Analyst](GOAL.md).
+
+**Production readiness (2026-11-17): scoped fixes verified; full qualification remains open.** Release-byte preservation and local-only recovery guidance are corrected. The rebuilt app passed local preview, independently checked grouped counts, refresh guidance and cold/warm startup. See the [review and coverage limits](docs/reviews/2026-11-17-production-readiness.md) and [TASK.md](TASK.md). Representative AI answer quality, complex recovery and broader production gates remain incomplete.
+
+CSV Data Analysis Agent is a domain-agnostic, browser-first report intelligence application. Its goal is to turn supported business CSV reports into trustworthy, traceable analysis through natural-language interaction. Purchase, sales, finance and marketing reports are intended use cases, not a claim that every layout or business rule is already supported.
+
+The intended user journey is:
+
+1. Import a report and preserve its original data and source identity.
+2. Understand headers, business-record grain, units, repeated groups and summary rows through local inspection, AI assistance and verification.
+3. Review ambiguous meaning and proposed cleaning or reshaping. Independently validate a repair candidate and obtain separate exact Dataset Commit approval before adopting it.
+4. Query and calculate against the appropriate dataset version, then present useful tables, charts and metric cards with traceable evidence.
+5. Continue exploring through the Assistant with report-scoped context and history.
+
+The application owns the data pipeline, persistence, validation and approval boundaries. The agent runtime enables bounded reasoning and tool execution within those boundaries. Local preview remains useful without cloud AI consent; browser-first processing does not mean that approved cloud AI requests stay on the device.
+
+### What success means
+
+- Correct business meaning: original records and expanded metric facts retain distinct grain; reconciled subtotals and totals do not inflate business aggregates.
+- Trustworthy calculations: units, missing values, precision and query scope are explicit; unsupported or ambiguous cases stop visibly rather than produce guessed results.
+- Traceable changes and answers: preserve originals and bind accepted transformations and analytical evidence to the relevant source and dataset version.
+- Useful interaction: users can inspect local data, understand review decisions and ask follow-up questions without writing SQL for every task.
+- Honest qualification: distinguish source implementation, generated deployment, synthetic checks and real-model acceptance. A passing fixture does not establish arbitrary-report correctness.
+
+This goal follows the recorded 2026-07-23 product direction in KB MCP and its clarification on 2026-11-17. The sections below describe implementation scope and known limits; [TASK.md](TASK.md#product-goal-and-delivery-order) maps the goal to the existing acceptance backlog. This section does not mark pending capabilities as delivered.
+
 ## Unit meaning policy (source only)
 
 Source-only structured queries and spreadsheet/analysis aggregations infer a unique physical column named exactly `unit`, `units`, or `currency` (case-insensitive); inferred results are labelled “unit inferred, not confirmed”. Accepted validated query bindings take precedence; ambiguous companions are not guessed. For a resolved companion, spreadsheet groups and pivot subtotals/grand totals suppress mixed or missing units, including hidden groups and columns; guarded averages use underlying numeric counts. Analysis aggregation refuses incompatible groups. Counts and unitless paths retain their existing behavior. Spreadsheet card creation is unavailable for inferred-unit results until its precomputed-data handoff can preserve provenance. Raw SQL, full version-bound unit custody and exact arithmetic are not covered; the root deployment has not been updated. See the [unit and decimal policy](docs/design/ca-181-unit-and-decimal-policy.md).

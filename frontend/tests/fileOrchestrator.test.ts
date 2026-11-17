@@ -11,6 +11,7 @@ const {
     enqueueDatasetMemoryDocsMock,
     resolveReportStructureArtifactsWithProposalMock,
     saveOriginalDataMock,
+    saveReportMock,
     hasDeclinedCloudAiConsentMock,
     replayDatasetBundleProgramsMock,
 } = vi.hoisted(() => ({
@@ -23,6 +24,7 @@ const {
     enqueueDatasetMemoryDocsMock: vi.fn(),
     resolveReportStructureArtifactsWithProposalMock: vi.fn(),
     saveOriginalDataMock: vi.fn(),
+    saveReportMock: vi.fn(),
 }));
 
 vi.mock('../services/data/datasetBundleReplay', async importOriginal => {
@@ -47,7 +49,7 @@ vi.mock('../services/agent/orchestration/autonomousCleaningPipeline', () => ({
 vi.mock('../services/storageService', () => ({
     deleteReport: vi.fn().mockResolvedValue(undefined),
     getReport: vi.fn().mockResolvedValue(null),
-    saveReport: vi.fn().mockResolvedValue(undefined),
+    saveReport: saveReportMock,
     getAgentMemoryRuns: getAgentMemoryRunsMock,
     saveOriginalData: saveOriginalDataMock,
     CURRENT_SESSION_KEY: 'current-session',
@@ -228,6 +230,7 @@ describe('orchestrateFileUpload post-import pipeline timing', () => {
         vi.useFakeTimers();
         getAgentMemoryRunsMock.mockResolvedValue([]);
         saveOriginalDataMock.mockResolvedValue(undefined);
+        saveReportMock.mockResolvedValue(undefined);
         vectorInitMock.mockImplementation(async () => undefined);
         enqueueDatasetMemoryDocsMock.mockImplementation(() => undefined);
         processAndCleanFileMock.mockImplementation(() => (async function* () {
@@ -300,6 +303,8 @@ describe('orchestrateFileUpload post-import pipeline timing', () => {
         expect(state.initialAnalysisStatus).toBe('degraded');
         // The results page uses this kind to offer "allow cloud AI" instead of evidence review.
         expect(state.initialAnalysisFailureKind).toBe('cloud_consent_declined');
+        expect(state.cleaningRun?.status).toBe('idle');
+        expect(state.cleaningRun?.shouldAutoResume).toBe(false);
     });
 
     it('does not block import completion when optional memory history remains pending', async () => {

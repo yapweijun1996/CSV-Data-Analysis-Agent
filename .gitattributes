@@ -1,2 +1,24 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Published files are verified byte-for-byte by SHA256SUMS.txt and fetched by
+# browser workers. Keep Git from converting these integrity-pinned bytes on
+# Windows checkouts with core.autocrlf=true.
+SHA256SUMS.txt text eol=lf
+404.html -text
+_headers -text
+_redirects -text
+app-icon.svg -text
+favicon.svg -text
+index.html -text
+# Keep the Vite HTML entry LF-stable so its generated script boundary cannot
+# acquire a CRCRLF when Windows checks out the source template.
+frontend/index.html text eol=lf
+manifest.webmanifest -text
+offline.html -text
+service-worker.js -text
+assets/** -text
+demo-data/** -text
+duckdb/** -text
+pyodide/** -text
+sandbox/** -text

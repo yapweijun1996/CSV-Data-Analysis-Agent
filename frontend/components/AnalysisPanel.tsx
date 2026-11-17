@@ -218,7 +218,7 @@ const AnalysisPanelComponent: React.FC = () => {
         const analysisAlreadyStarted = initialAnalysisStatus === 'ready' || initialAnalysisStatus === 'degraded' || cards.length > 0;
         const structureReviewPending = isStructureReviewPending(pipelineOutcome, reportStructureResolution);
         const showCleaningBanner = cleaningRun
-            && (cleaningRun.status !== 'completed' || dataPreparationPlan?.sqlPrecheck?.status === 'blocked' || dataPreparationPlan?.sqlPrecheck?.status === 'warning')
+            && (cleaningRun.status !== 'idle' && (cleaningRun.status !== 'completed' || dataPreparationPlan?.sqlPrecheck?.status === 'blocked' || dataPreparationPlan?.sqlPrecheck?.status === 'warning'))
             && !isSpreadsheetVisible
             && !analysisAlreadyStarted
             // Cleaning cannot continue without the provider or the cloud AI consent; the next step covers both.

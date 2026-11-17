@@ -621,7 +621,9 @@ export async function* orchestrateFileUpload(
             initialAnalysisFailureKind: 'cloud_consent_declined',
             cleaningRun: {
                 ...createCleaningRun(),
-                status: 'paused',
+                // Cloud analysis never started, so this is an idle import
+                // placeholder rather than an interrupted cleaning run.
+                status: 'idle',
                 lastError: message,
                 userFacingMessage: message,
             },
