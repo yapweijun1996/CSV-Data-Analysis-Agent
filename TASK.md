@@ -28,23 +28,22 @@ The owner authorized autonomous amendments, targeted tests, main push and the ex
 - Reproduced: 102/109 manifest entries differ only by CRLF; local COE preview and Retry fail with `sql_wasm_integrity_failed`.
 - Acceptance: fresh Windows checkout preserves manifest and integrity-pinned worker bytes; real local preview and independently checked aggregate succeed, including reload/rebind. Retain integrity enforcement.
 - Verified: byte-preserving attributes, 109/109 rebuilt manifest hashes, local preview (25/1,990 rows, seven columns), and grouped counts (five categories, 398 each) against an independent CSV oracle. Integrity checks remain unchanged.
-- Remaining: fresh Windows checkout and source reattachment/rebind acceptance; fixture upload was blocked by MCP path access.
+- Remaining: source reattachment/rebind acceptance; fixture upload was blocked by MCP path access. Fresh Windows clone/checkout with core.autocrlf=true passed all 109 hashes.
 
 ## CA-192 — Correct local-only restore guidance
 - Priority: P2. Status: partial. Source: 2026-11-17 review.
 - Reproduced: local-only import, reload, open Assistant; it claims unfinished cleaning although cleaning was not started.
 - Acceptance: local-only restore requests source reattachment without claiming active cleaning; genuine interrupted cleaning retains explicit recovery. Test refresh, cancellation and source identity boundaries without unauthorized provider calls.
-- Next: trace persisted pipeline state and restore-message selection, then verify focused regression and real UI.
+- Verified: final built UI local-only import and reload retain the honest source-reattachment prompt without unfinished-cleaning text or Continue cleaning. Unit checks preserve genuine paused/running/failed states and normalize only empty legacy consent-declined placeholders. Cancellation and source identity end-to-end cases remain open.
+- Next: exercise cancellation and matching/mismatching source reattachment once upload access is available.
 
 Follow-up work from the [review archive](docs/reviews/2026-10-30-25-persona-review.md); source evidence is not acceptance proof. See [bugs](BUG.md).
 
 Statuses: `pending` = not established; `partial` = some scope exists; `implemented-unverified` = implementation identified but acceptance not checked; `verified-complete` = acceptance tested; `blocked` = prerequisite prevents progress; `obsolete` = no longer applicable.
 
-- Verified: final built UI local-only import and reload retain the honest source-reattachment prompt without unfinished-cleaning text or Continue cleaning. Unit checks preserve genuine paused/running/failed states and normalize only empty legacy consent-declined placeholders. Cancellation and source identity end-to-end cases remain open.
-
 ## Product goal and delivery order
 
-Vision: [GOAL.md](GOAL.md). Current qualification: [Chrome DevTools review](docs/reviews/2026-11-17-production-readiness.md). CA-191 has bounded local-query acceptance; fresh-checkout and rebind coverage remain open. Excel import and ECharts require scope/inventory before implementation commitments.
+Vision: [GOAL.md](GOAL.md). Current qualification: [Chrome DevTools review](docs/reviews/2026-11-17-production-readiness.md). CA-191 has bounded local-query acceptance; source rebind coverage remains open. Excel import and ECharts require scope/inventory before implementation commitments.
 
 The [product goal and success criteria](README.md#product-goal) define the intended outcome: supported business reports become trustworthy, traceable analysis through a browser-first Assistant. This backlog tracks acceptance gaps toward that outcome, not a promise of arbitrary CSV support.
 

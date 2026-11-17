@@ -76,3 +76,11 @@ Final focused recovery checks covered 48 tests across cleaning state, file orche
 The UI proposal remains a reviewable static preview, not an implemented redesign. The live-model attempt above remains inconclusive and its three inference calls remain consumed.
 
 Final typecheck passed after all source/test edits. The staged Git index independently matched all 109 manifest hashes. A bounded staged-file scan (72 files) found neither the authorized local key nor OpenAI key-shaped strings; `.env` remains ignored and unstaged.
+
+### Published release and remaining acceptance
+
+Commit `26504abeaa878516baafba10c19821c8179769c6` was pushed to `origin/main`. The existing manual [Pages workflow](https://github.com/yapweijun1996/CSV-Data-Analysis-Agent/actions/runs/44013051743) completed successfully; no full CI campaign was triggered. A fresh local Windows clone/checkout with `core.autocrlf=true` preserved all 109 manifest hashes and the LF frontend HTML template.
+
+A fresh Chrome DevTools context at the [public site](https://yapweijun1996.github.io/CSV-Data-Analysis-Agent/) displayed build `89457e9`. The COE demo, local-only consent and Data Explorer preview passed online: 25/1,990 rows, seven columns, 5ms. Public reload also required source reattachment without false unfinished-cleaning or Continue cleaning guidance. This is a real deployment smoke check, not full analytical E2E qualification.
+
+CA-191 remains partial only for original-file reattachment/rebind coverage. CA-192's reproduced false recovery message is fixed; cancellation and source identity end-to-end coverage remain open. The wider TASK backlog is not complete: representative final AI answer quality, precision/version custody across routes, complex approval/recovery, offline/stress, Firefox/WebKit and broad accessibility/design acceptance need further evidence. No credentials were committed or included in the published assets. Verified byte-preservation and local-only restore lessons were saved to KB-MCP with source references; the facade retains its default unverified metadata label.

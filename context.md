@@ -8,6 +8,10 @@ The [2026-11-17 review](docs/reviews/2026-11-17-production-readiness.md) records
 
 The owner authorized focused verification, main push and the existing manual Pages workflow without full CI. Full production qualification remains open: exact-model HTTP success did not establish final-answer quality, and complex acceptance, offline/stress and cross-browser gaps remain explicit in TASK.md. Historical evidence below is not a substitute for current release evidence.
 
+### 2026-11-17 release
+
+`26504ab` is deployed through the successful lightweight Pages workflow (run 44013051743), build `1.0.0-89457e9eb0ea`. Public COE local preview passed. Fresh Windows checkout preserved all 109 hashes. Detailed outcomes and honest remaining acceptance are in the review linked above; this is not full production certification.
+
 ### 2026-10-31 — UX-03 bounded spreadsheet decimal precision
 - Existing unit-guarded spreadsheet SUM/AVG and pivot now use bounded fixed-point decimal arithmetic, preserving safe numeric output and exact high-precision strings; unsupported precision is suppressed. Three red-first regressions covered near-MAX_SAFE cents, half-cent AVG rounding and 130000-row scale detection. Independent full Vitest 541 files / 5574 tests PASS, Typecheck PASS, lint PASS, PWA build 1.0.0-a32997b641cd with 109/109 SHA-256 PASS. Browser visual E2E and other unitless/SQL/AI routes remain unverified; no merge or deployment.
 
