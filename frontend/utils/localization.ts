@@ -2331,6 +2331,30 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Kunci API OpenAI',
         'Japanese': 'OpenAI API キー',
     },
+    'settings_anthropic_api_key': {
+        'English': 'Anthropic API Key',
+        'Mandarin': 'Anthropic API Key',
+        'Malay': 'Kunci API Anthropic',
+        'Japanese': 'Anthropic API キー',
+    },
+    'settings_openrouter_api_key': {
+        'English': 'OpenRouter API Key',
+        'Mandarin': 'OpenRouter API Key',
+        'Malay': 'Kunci API OpenRouter',
+        'Japanese': 'OpenRouter API キー',
+    },
+    'settings_enter_anthropic_api_key': {
+        'English': 'Enter your API key (sk-ant-...)',
+        'Mandarin': '输入你的 API Key（sk-ant-...）',
+        'Malay': 'Masukkan kunci API anda (sk-ant-...)',
+        'Japanese': 'API キーを入力してください（sk-ant-...）',
+    },
+    'settings_enter_openrouter_api_key': {
+        'English': 'Enter your API key (sk-or-...)',
+        'Mandarin': '输入你的 API Key（sk-or-...）',
+        'Malay': 'Masukkan kunci API anda (sk-or-...)',
+        'Japanese': 'API キーを入力してください（sk-or-...）',
+    },
     'settings_enter_api_key': {
         'English': 'Enter your API key',
         'Mandarin': '输入你的 API Key',

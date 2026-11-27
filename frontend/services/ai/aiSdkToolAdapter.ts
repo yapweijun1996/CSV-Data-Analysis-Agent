@@ -1,10 +1,10 @@
 import { jsonSchema, tool } from 'ai';
-import type { ToolDescriptor } from '../../types';
+import type { Settings, ToolDescriptor } from '../../types';
 import { prepareSchemaForProvider } from './googleSchemaAdapter';
 
 export const buildAiSdkTools = (
     descriptors: ToolDescriptor[],
-    options?: { provider?: 'google' | 'openai' | 'default' },
+    options?: { provider?: Settings['provider'] },
 ) =>
     Object.fromEntries(
         descriptors.map(descriptor => [

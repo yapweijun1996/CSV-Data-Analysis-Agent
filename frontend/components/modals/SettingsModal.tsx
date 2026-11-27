@@ -14,9 +14,14 @@ import {
 } from '../../services/agent/runtime/runtimePolicySettings';
 import { getTranslation } from '../../utils/localization';
 import { SUPPORTED_APP_LANGUAGES } from '../../utils/localizedText';
-import { GOOGLE_MODELS, OPENAI_MODELS, DEFAULT_FALLBACK_MODEL, DEFAULT_GOOGLE_MODEL } from '../../config/modelDefaults';
+import {
+    GOOGLE_MODELS, OPENAI_MODELS, ANTHROPIC_MODELS, OPENROUTER_MODELS,
+    DEFAULT_FALLBACK_MODEL, DEFAULT_GOOGLE_MODEL,
+    DEFAULT_ANTHROPIC_SIMPLE_MODEL, DEFAULT_ANTHROPIC_COMPLEX_MODEL,
+    DEFAULT_OPENROUTER_SIMPLE_MODEL, DEFAULT_OPENROUTER_COMPLEX_MODEL,
+} from '../../config/modelDefaults';
 import { DEFAULT_GATEWAY_MODEL } from '../../config/defaultGatewayConfig';
-import { createProviderModel } from '../../services/ai/providerConfig';
+import { createProviderModel, resolveProviderApiKey, resolveProviderDisplayName } from '../../services/ai/providerConfig';
 import { generateText } from 'ai';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 import { clearAllLocalBrowserData } from '../../services/storageService';
@@ -30,6 +35,39 @@ import { McpConnectorsSection } from './McpConnectorsSection';
 const languages: Settings['language'][] = SUPPORTED_APP_LANGUAGES;
 const googleModels = [...GOOGLE_MODELS];
 const openAIModels = [...OPENAI_MODELS];
+const anthropicModels = [...ANTHROPIC_MODELS];
+const openRouterModels = [...OPENROUTER_MODELS];
+const modelOptionsFor = (provider: Settings['provider']): string[] => {
+    switch (provider) {
+        case 'google': return googleModels;
+        case 'anthropic': return anthropicModels;
+        case 'openrouter': return openRouterModels;
+        default: return openAIModels;
+    }
+};
+
+type ByokProvider = Exclude<Settings['provider'], 'default'>;
+interface ByokKeyField {
+    keyName: 'geminiApiKey' | 'openAIApiKey' | 'anthropicApiKey' | 'openRouterApiKey';
+    labelKey: string;
+    placeholderKey: string;
+    linkLabel: string;
+    linkUrl: string;
+}
+// One entry per BYOK provider: which Settings field stores its key and where users get one.
+const BYOK_KEY_FIELDS: Record<ByokProvider, ByokKeyField> = {
+    google: { keyName: 'geminiApiKey', labelKey: 'settings_gemini_api_key', placeholderKey: 'settings_enter_api_key', linkLabel: 'Google AI Studio', linkUrl: 'https://aistudio.google.com/app/apikey' },
+    openai: { keyName: 'openAIApiKey', labelKey: 'settings_openai_api_key', placeholderKey: 'settings_enter_openai_api_key', linkLabel: 'OpenAI Platform', linkUrl: 'https://platform.openai.com/api-keys' },
+    anthropic: { keyName: 'anthropicApiKey', labelKey: 'settings_anthropic_api_key', placeholderKey: 'settings_enter_anthropic_api_key', linkLabel: 'Anthropic Console', linkUrl: 'https://console.anthropic.com/settings/keys' },
+    openrouter: { keyName: 'openRouterApiKey', labelKey: 'settings_openrouter_api_key', placeholderKey: 'settings_enter_openrouter_api_key', linkLabel: 'OpenRouter', linkUrl: 'https://openrouter.ai/keys' },
+};
+const PROVIDER_BUTTONS: { id: Settings['provider']; label: string | null }[] = [
+    { id: 'default', label: null },
+    { id: 'google', label: 'Google Gemini' },
+    { id: 'openai', label: 'OpenAI' },
+    { id: 'anthropic', label: 'Anthropic' },
+    { id: 'openrouter', label: 'OpenRouter' },
+];
 const numericSettingNames = new Set<keyof Pick<Settings, 'maxAgentTurns' | 'toolOutputCutoff'>>(['maxAgentTurns', 'toolOutputCutoff']);
 const reasoningEffortLevels: NonNullable<Settings['reasoningEffort']>[] = ['off', 'low', 'medium', 'high'];
 
@@ -79,13 +117,11 @@ export const SettingsModal: React.FC = () => {
     const handleTestConnection = async () => {
         const apiKey = settings.provider === 'default'
             ? 'configured' // the default gateway key is bundled — never blank
-            : settings.provider === 'google'
-                ? settings.geminiApiKey.trim()
-                : settings.openAIApiKey.trim();
+            : resolveProviderApiKey(settings).trim();
         if (!apiKey) {
             setTestStatus('fail');
             setTestMessage(getTranslation('settings_api_key_required_error', language, {
-                provider: settings.provider === 'google' ? 'Gemini' : 'OpenAI',
+                provider: resolveProviderDisplayName(settings.provider),
             }));
             return;
         }
@@ -122,12 +158,10 @@ export const SettingsModal: React.FC = () => {
 
     const handleSave = () => {
         if (settings.provider !== 'default') {
-            const activeApiKey = settings.provider === 'google'
-                ? settings.geminiApiKey.trim()
-                : settings.openAIApiKey.trim();
+            const activeApiKey = resolveProviderApiKey(settings).trim();
             if (!activeApiKey) {
                 setValidationError(getTranslation('settings_api_key_required_error', language, {
-                    provider: settings.provider === 'google' ? 'Gemini' : 'OpenAI',
+                    provider: resolveProviderDisplayName(settings.provider),
                 }));
                 return;
             }
@@ -178,7 +212,7 @@ export const SettingsModal: React.FC = () => {
         }
     };
 
-    const handleProviderChange = (provider: 'google' | 'openai' | 'default') => {
+    const handleProviderChange = (provider: Settings['provider']) => {
         setValidationError(null);
         setSettings(prev => {
             if (provider === 'google') {
@@ -188,6 +222,24 @@ export const SettingsModal: React.FC = () => {
                     simpleModel: DEFAULT_GOOGLE_MODEL,
                     complexModel: DEFAULT_GOOGLE_MODEL,
                     fallbackModel: DEFAULT_FALLBACK_MODEL.google,
+                };
+            }
+            if (provider === 'anthropic') {
+                return {
+                    ...prev,
+                    provider,
+                    simpleModel: DEFAULT_ANTHROPIC_SIMPLE_MODEL,
+                    complexModel: DEFAULT_ANTHROPIC_COMPLEX_MODEL,
+                    fallbackModel: DEFAULT_FALLBACK_MODEL.anthropic,
+                };
+            }
+            if (provider === 'openrouter') {
+                return {
+                    ...prev,
+                    provider,
+                    simpleModel: DEFAULT_OPENROUTER_SIMPLE_MODEL,
+                    complexModel: DEFAULT_OPENROUTER_COMPLEX_MODEL,
+                    fallbackModel: DEFAULT_FALLBACK_MODEL.openrouter,
                 };
             }
             if (provider === 'openai') {
@@ -235,16 +287,17 @@ export const SettingsModal: React.FC = () => {
                             <label className="mb-1 block text-sm font-medium text-slate-700">
                                 {getTranslation('settings_ai_provider', language)}
                             </label>
-                            <div className="flex gap-2 rounded-card bg-slate-200 p-1">
-                                <button onClick={() => handleProviderChange('default')} className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === 'default' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
-                                    {getTranslation('settings_ai_provider_default_label', language)}
-                                </button>
-                                <button onClick={() => handleProviderChange('google')} className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === 'google' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
-                                    Google Gemini
-                                </button>
-                                <button onClick={() => handleProviderChange('openai')} className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === 'openai' ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}>
-                                    OpenAI
-                                </button>
+                            <div className="grid grid-cols-3 gap-2 rounded-card bg-slate-200 p-1">
+                                {PROVIDER_BUTTONS.map(({ id, label }) => (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        onClick={() => handleProviderChange(id)}
+                                        className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === id ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}
+                                    >
+                                        {label ?? getTranslation('settings_ai_provider_default_label', language)}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -254,49 +307,30 @@ export const SettingsModal: React.FC = () => {
                             </p>
                         )}
 
-                        {settings.provider === 'google' && (
-                            <div>
-                                <label htmlFor="geminiApiKey" className="block text-sm font-medium text-slate-700">
-                                    {getTranslation('settings_gemini_api_key', language)}
-                                </label>
-                                <input
-                                    type="password"
-                                    id="geminiApiKey"
-                                    name="geminiApiKey"
-                                    value={settings.geminiApiKey}
-                                    onChange={handleInputChange}
-                                    aria-invalid={validationError ? 'true' : 'false'}
-                                    className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder={getTranslation('settings_enter_api_key', language)}
-                                />
-                                <p className="text-xs text-slate-500 mt-1">
-                                    {getTranslation('settings_get_key_from', language, { provider: 'Google AI Studio' })}{' '}
-                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google AI Studio</a>.
-                                </p>
-                            </div>
-                        )}
-                        
-                        {settings.provider === 'openai' && (
-                            <div>
-                                <label htmlFor="openAIApiKey" className="block text-sm font-medium text-slate-700">
-                                    {getTranslation('settings_openai_api_key', language)}
-                                </label>
-                                <input
-                                    type="password"
-                                    id="openAIApiKey"
-                                    name="openAIApiKey"
-                                    value={settings.openAIApiKey}
-                                    onChange={handleInputChange}
-                                    aria-invalid={validationError ? 'true' : 'false'}
-                                    className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder={getTranslation('settings_enter_openai_api_key', language)}
-                                />
-                                <p className="text-xs text-slate-500 mt-1">
-                                    {getTranslation('settings_get_key_from', language, { provider: 'OpenAI Platform' })}{' '}
-                                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">OpenAI Platform</a>.
-                                </p>
-                            </div>
-                        )}
+                        {settings.provider !== 'default' && (() => {
+                            const field = BYOK_KEY_FIELDS[settings.provider];
+                            return (
+                                <div>
+                                    <label htmlFor={field.keyName} className="block text-sm font-medium text-slate-700">
+                                        {getTranslation(field.labelKey, language)}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        id={field.keyName}
+                                        name={field.keyName}
+                                        value={settings[field.keyName] ?? ''}
+                                        onChange={handleInputChange}
+                                        aria-invalid={validationError ? 'true' : 'false'}
+                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder={getTranslation(field.placeholderKey, language)}
+                                    />
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        {getTranslation('settings_get_key_from', language, { provider: field.linkLabel })}{' '}
+                                        <a href={field.linkUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{field.linkLabel}</a>.
+                                    </p>
+                                </div>
+                            );
+                        })()}
 
                         <div>
                             <button
@@ -341,7 +375,7 @@ export const SettingsModal: React.FC = () => {
                                         name="simpleModel"
                                         value={settings.simpleModel}
                                         onChange={handleInputChange}
-                                        options={settings.provider === 'google' ? googleModels : openAIModels}
+                                        options={modelOptionsFor(settings.provider)}
                                         className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
@@ -358,7 +392,7 @@ export const SettingsModal: React.FC = () => {
                                         name="complexModel"
                                         value={settings.complexModel}
                                         onChange={handleInputChange}
-                                        options={settings.provider === 'google' ? googleModels : openAIModels}
+                                        options={modelOptionsFor(settings.provider)}
                                         className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
@@ -375,7 +409,7 @@ export const SettingsModal: React.FC = () => {
                                         name="fallbackModel"
                                         value={settings.fallbackModel || DEFAULT_FALLBACK_MODEL[settings.provider] || ''}
                                         onChange={handleInputChange}
-                                        options={settings.provider === 'google' ? googleModels : openAIModels}
+                                        options={modelOptionsFor(settings.provider)}
                                         className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">

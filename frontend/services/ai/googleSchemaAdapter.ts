@@ -1,3 +1,4 @@
+import type { Settings } from '../../types';
 const cloneSchema = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -305,7 +306,7 @@ export const prepareGatewayStructuredOutputSchema = <T extends Record<string, un
 
 export const prepareSchemaForProvider = <T extends Record<string, unknown>>(
     schema: T,
-    provider?: 'google' | 'openai' | 'default',
+    provider?: Settings['provider'],
 ): Record<string, unknown> => {
     const cloned = cloneSchema(schema);
     if (provider === 'google') return sanitizeGoogleSchemaNode(cloned);

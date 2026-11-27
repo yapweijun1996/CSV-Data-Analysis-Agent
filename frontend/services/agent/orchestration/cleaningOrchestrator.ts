@@ -1,5 +1,5 @@
 import { generateText } from 'ai';
-import type { AiAction, ToolName } from '../../../types';
+import type { AiAction, Settings, ToolName } from '../../../types';
 import type { LlmError } from '../../ai/llmLogger';
 import { buildAiSdkTools } from '../../ai/aiSdkToolAdapter';
 import { createProviderModel, isProviderConfigured } from '../../ai/providerConfig';
@@ -103,7 +103,7 @@ const resolveCleaningActions = (content: string, toolCalls: GeneratedToolCall[] 
     return parseAiActionResponse(content).actions;
 };
 
-const isProviderContractError = (error: unknown, provider: 'google' | 'openai' | 'default') => {
+const isProviderContractError = (error: unknown, provider: Settings['provider']) => {
     const llmError = error as LlmError | undefined;
     const message = error instanceof Error ? error.message : String(error);
     if (provider !== 'google') return false;

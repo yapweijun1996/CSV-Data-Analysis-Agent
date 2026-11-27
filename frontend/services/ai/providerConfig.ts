@@ -1,11 +1,14 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateText, wrapLanguageModel, extractJsonMiddleware, type LanguageModelMiddleware } from 'ai';
 import type { Settings } from '../../types';
 import {
     PROVIDER_GEMINI_CONTEXT_WINDOW,
     PROVIDER_GEMMA_CONTEXT_WINDOW,
     PROVIDER_GPT_CONTEXT_WINDOW,
+    PROVIDER_ANTHROPIC_CONTEXT_WINDOW,
     PROVIDER_CONTEXT_WINDOW_CAP,
     PROVIDER_RESERVE_RATIO,
     PROVIDER_KEEP_RECENT_RATIO,
@@ -37,7 +40,22 @@ export interface ProviderModelOptions {
 
 export const resolveProviderApiKey = (settings: Settings): string => {
     if (settings.provider === 'default') return DEFAULT_GATEWAY_API_KEY_PLACEHOLDER;
-    return settings.provider === 'google' ? settings.geminiApiKey : settings.openAIApiKey;
+    switch (settings.provider) {
+        case 'google': return settings.geminiApiKey;
+        case 'anthropic': return settings.anthropicApiKey ?? '';
+        case 'openrouter': return settings.openRouterApiKey ?? '';
+        default: return settings.openAIApiKey;
+    }
+};
+
+/** Human-readable BYOK provider name used in key-required messages. */
+export const resolveProviderDisplayName = (provider: Settings['provider']): string => {
+    switch (provider) {
+        case 'google': return 'Gemini';
+        case 'anthropic': return 'Anthropic';
+        case 'openrouter': return 'OpenRouter';
+        default: return 'OpenAI';
+    }
 };
 
 // The 'default' provider opens its own short-lived demo session — always
@@ -89,6 +107,21 @@ export const resolveModelContextProfile = (
         };
     }
 
+    // Anthropic and OpenRouter models advertise very different windows; fall back to the
+    // static strategy unless the model is a known Claude model on a 200k window.
+    if (
+        (settings.provider === 'anthropic' || settings.provider === 'openrouter')
+        && /claude/.test(modelId)
+    ) {
+        const contextWindow = Math.min(PROVIDER_ANTHROPIC_CONTEXT_WINDOW, PROVIDER_CONTEXT_WINDOW_CAP);
+        return {
+            contextWindow,
+            reserveTokens: Math.max(PROVIDER_MIN_RESERVE_TOKENS, Math.floor(contextWindow * PROVIDER_RESERVE_RATIO)),
+            keepRecentTokens: Math.max(PROVIDER_MIN_KEEP_RECENT_TOKENS, Math.floor(contextWindow * PROVIDER_KEEP_RECENT_RATIO)),
+            strategy: 'model_aware',
+        };
+    }
+
     return {
         contextWindow: null,
         reserveTokens: 0,
@@ -128,6 +161,21 @@ const OPENAI_REASONING_EFFORT_BY_EFFORT: Record<NonNullable<Settings['reasoningE
     high: 'high',
 };
 
+// Anthropic extended thinking takes a raw token budget (minimum 1024), like Gemini.
+const ANTHROPIC_THINKING_BUDGET_BY_EFFORT: Record<Exclude<NonNullable<Settings['reasoningEffort']>, 'off'>, number> = {
+    low: 1024,
+    medium: 8192,
+    high: 24576,
+};
+
+// OpenRouter's unified `reasoning.effort` parameter; 'none' disables reasoning.
+const OPENROUTER_REASONING_EFFORT_BY_EFFORT: Record<NonNullable<Settings['reasoningEffort']>, 'none' | 'low' | 'medium' | 'high'> = {
+    off: 'none',
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+};
+
 /**
  * Injects the user's reasoning/thinking preference into every call made
  * through this model, via transformParams — so individual generateText/
@@ -137,7 +185,7 @@ const OPENAI_REASONING_EFFORT_BY_EFFORT: Record<NonNullable<Settings['reasoningE
  */
 const createReasoningMiddleware = (
     settings: Settings,
-    sdkProviderKey: 'google' | 'openai',
+    sdkProviderKey: 'google' | 'openai' | 'anthropic' | 'openrouter',
 ): LanguageModelMiddleware => {
     const effort = settings.reasoningEffort ?? 'medium';
     return {
@@ -146,9 +194,19 @@ const createReasoningMiddleware = (
             const existing = params.providerOptions?.[sdkProviderKey];
             if (existing) return params;
 
+            // Anthropic rejects extended thinking combined with the forced tool choice the
+            // SDK uses for JSON-schema output, so structured-output calls skip thinking.
+            if (sdkProviderKey === 'anthropic' && params.responseFormat?.type === 'json') return params;
+
             const addition = sdkProviderKey === 'google'
                 ? { thinkingConfig: { thinkingBudget: GEMINI_THINKING_BUDGET_BY_EFFORT[effort] } }
-                : { reasoningEffort: OPENAI_REASONING_EFFORT_BY_EFFORT[effort] };
+                : sdkProviderKey === 'anthropic'
+                    ? { thinking: effort === 'off'
+                        ? { type: 'disabled' as const }
+                        : { type: 'enabled' as const, budgetTokens: ANTHROPIC_THINKING_BUDGET_BY_EFFORT[effort] } }
+                    : sdkProviderKey === 'openrouter'
+                        ? { reasoning: { effort: OPENROUTER_REASONING_EFFORT_BY_EFFORT[effort] } }
+                        : { reasoningEffort: OPENAI_REASONING_EFFORT_BY_EFFORT[effort] };
 
             return {
                 ...params,
@@ -234,6 +292,35 @@ const buildWrappedProviderModel = (
                     fetch: fetchWithoutForbiddenUserAgent,
                 })(modelId),
                 middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'openai')],
+            }),
+        };
+    }
+
+    if (settings.provider === 'anthropic') {
+        return {
+            modelId,
+            model: wrapLanguageModel({
+                // Anthropic blocks browser-origin calls unless this opt-in header is sent.
+                model: createAnthropic({
+                    apiKey,
+                    headers: { 'anthropic-dangerous-direct-browser-access': 'true' },
+                    fetch: fetchWithoutForbiddenUserAgent,
+                })(modelId),
+                middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'anthropic')],
+            }),
+        };
+    }
+
+    if (settings.provider === 'openrouter') {
+        return {
+            modelId,
+            model: wrapLanguageModel({
+                model: createOpenRouter({
+                    apiKey,
+                    fetch: fetchWithoutForbiddenUserAgent,
+                    compatibility: 'strict',
+                }).chat(modelId),
+                middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'openrouter')],
             }),
         };
     }

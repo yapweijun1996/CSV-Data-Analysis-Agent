@@ -1,6 +1,8 @@
 import { createModels, clampThinkingLevel, type Api, type Model } from '@earendil-works/pi-ai';
 import { googleProvider } from '@earendil-works/pi-ai/providers/google';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
+import { anthropicProvider } from '@earendil-works/pi-ai/providers/anthropic';
+import { openrouterProvider } from '@earendil-works/pi-ai/providers/openrouter';
 import type { AgentMessage, StreamFn } from '@earendil-works/pi-agent-core';
 import type { Settings } from '../../../../types';
 import { emitSilentFailure } from '../../monitoring/silentFailureTracker';
@@ -22,13 +24,30 @@ import {
 const models = createModels();
 models.setProvider(openaiProvider());
 models.setProvider(googleProvider());
+models.setProvider(anthropicProvider());
+models.setProvider(openrouterProvider());
+
+type PiCatalogProvider = 'openai' | 'google' | 'anthropic' | 'openrouter';
+
+// Family model used when the typed/selected id is not in the Pi catalog, so the API shape
+// (Anthropic Messages, OpenAI Completions, ...) is still inherited from a sibling model.
+const PI_FAMILY_MODEL: Record<PiCatalogProvider, string> = {
+    openai: 'gpt-5.4-mini',
+    google: 'gemini-3.1-pro-preview',
+    anthropic: 'claude-sonnet-4-5',
+    openrouter: 'anthropic/claude-sonnet-4.5',
+};
+
+const resolvePiCatalogProvider = (settings: Settings): PiCatalogProvider =>
+    settings.provider === 'google' || settings.provider === 'anthropic' || settings.provider === 'openrouter'
+        ? settings.provider
+        : 'openai';
 
 export const resolvePiModel = (settings: Settings): Model<Api> => {
-    const provider = settings.provider === 'google' ? 'google' : 'openai';
+    const provider = resolvePiCatalogProvider(settings);
     const id = resolveProviderModelId(settings);
     const catalogModel = models.getModel(provider, id);
-    const familyModel = models.getModel(provider,
-        provider === 'google' ? 'gemini-3.1-pro-preview' : 'gpt-5.4-mini');
+    const familyModel = models.getModel(provider, PI_FAMILY_MODEL[provider]);
     const model = catalogModel ?? familyModel;
     if (!model) throw new Error(`Pi has no model configuration for ${provider}.`);
     return {
@@ -60,6 +79,7 @@ export const resolvePiThinkingLevel = (settings: Settings) =>
  */
 export const resolvePiProviderFetch = (settings: Settings): typeof fetch | undefined => {
     if (settings.provider === 'default') return fetchDefaultGateway;
+    // pi-ai's Anthropic adapter already adds anthropic-dangerous-direct-browser-access for browsers.
     return settings.provider === 'google' ? undefined : fetchWithoutForbiddenUserAgent;
 };
 

@@ -232,7 +232,7 @@ export const assertInitialAnalysisRunRequest = (
         throw new Error('initial_analysis_invalid_provider');
     }
     const provider = request.provider as Record<string, unknown>;
-    if (!['default', 'google', 'openai'].includes(String(provider.provider))) {
+    if (!['default', 'google', 'openai', 'anthropic', 'openrouter'].includes(String(provider.provider))) {
         throw new Error('initial_analysis_invalid_provider');
     }
     requireNonEmptyString(provider.modelId, 'model_id');

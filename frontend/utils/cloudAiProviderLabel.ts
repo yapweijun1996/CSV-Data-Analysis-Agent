@@ -11,5 +11,7 @@ export const getCloudAiProviderLabel = (
         return getTranslation('cloud_ai_provider_default', language);
     }
     if (provider === 'google') return 'Google Gemini';
+    if (provider === 'anthropic') return 'Anthropic';
+    if (provider === 'openrouter') return 'OpenRouter';
     return 'OpenAI';
 };

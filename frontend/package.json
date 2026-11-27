@@ -30,6 +30,7 @@
     "security:audit": "npm audit --audit-level=low"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.145",
     "@ai-sdk/google": "^3.0.43",
     "@ai-sdk/openai": "^3.0.41",
     "@duckdb/duckdb-wasm": "1.33.1-dev20.0",
@@ -39,6 +40,7 @@
     "@jitl/quickjs-wasmfile-release-sync": "0.32.0",
     "@modelcontextprotocol/client": "2.3.1",
     "@monaco-editor/react": "^4.7.0",
+    "@openrouter/ai-sdk-provider": "^2.10.0",
     "@tanstack/react-virtual": "^3.13.12",
     "ai": "^6.0.116",
     "arquero": "^8.0.3",

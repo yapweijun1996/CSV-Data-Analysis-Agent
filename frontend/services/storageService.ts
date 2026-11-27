@@ -1655,6 +1655,8 @@ const staticDefaultSettings: Settings = {
     provider: 'default',
     geminiApiKey: '',
     openAIApiKey: '',
+    anthropicApiKey: '',
+    openRouterApiKey: '',
     simpleModel: DEFAULT_GATEWAY_MODEL,
     complexModel: DEFAULT_GATEWAY_MODEL,
     reasoningEffort: 'medium',

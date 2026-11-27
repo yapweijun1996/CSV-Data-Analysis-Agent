@@ -31,16 +31,19 @@ import type { DatasetBundle } from './datasetBundle';
 
 export interface Settings {
     /** 'default' uses the maintainer's shared demo gateway — no user API key needed. */
-    provider: 'google' | 'openai' | 'default';
+    provider: 'google' | 'openai' | 'anthropic' | 'openrouter' | 'default';
     geminiApiKey: string;
     openAIApiKey: string;
+    anthropicApiKey?: string;
+    openRouterApiKey?: string;
     simpleModel: string;
     complexModel: string;
     /** Fallback model used when the primary model returns a transient error (e.g. 503). */
     fallbackModel?: string;
     /**
      * Reasoning/thinking depth applied to every model call. Maps to Gemini's
-     * thinkingConfig.thinkingBudget or OpenAI/gateway's reasoningEffort
+     * thinkingConfig.thinkingBudget, Anthropic's extended-thinking budget,
+     * OpenRouter's reasoning parameter, or OpenAI/gateway's reasoningEffort
      * provider option depending on the active provider.
      */
     reasoningEffort?: 'off' | 'low' | 'medium' | 'high';

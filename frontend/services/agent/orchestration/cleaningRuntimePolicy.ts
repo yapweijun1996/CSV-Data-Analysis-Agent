@@ -1,4 +1,4 @@
-import type { AiAction, CsvData, ReportIntakeIr, RuntimeTableAssessment, ToolCallEnvelope, ToolExecutionResult, ToolGroup, ToolName } from '../../../types';
+import type { AiAction, CsvData, ReportIntakeIr, RuntimeTableAssessment, Settings, ToolCallEnvelope, ToolExecutionResult, ToolGroup, ToolName } from '../../../types';
 import { WORKSPACE_DATASET_CLEAN_CSV, WORKSPACE_DATASET_RAW_CSV } from '../workspaceFileUtils';
 import { validateDataMutatePayload } from '../execution/dataMutateContract';
 import { getOperationContractSummary } from '../execution/dataOperationManifest';
@@ -16,7 +16,7 @@ export type CleaningFailureCode =
     | 'failed_provider_contract';
 
 type ActivePhase = Exclude<CleaningPhase, 'done' | 'failed'>;
-type ProviderName = 'google' | 'openai' | 'default';
+type ProviderName = Settings['provider'];
 
 export type CleaningRuntimeState = {
     phase: CleaningPhase;

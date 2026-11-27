@@ -1,5 +1,8 @@
 ## Current Work Context
 
+### 2026-11-27 — Anthropic and OpenRouter providers
+- `Settings.provider` now includes `anthropic` and `openrouter` (keys `anthropicApiKey`/`openRouterApiKey`, optional for old stored settings). Settings modal uses a provider table for key fields, model lists (`ANTHROPIC_MODELS`, `OPENROUTER_MODELS`, free-text ids allowed), defaults and fallbacks; Test Connection runs the same AI SDK health call. AI SDK paths use `@ai-sdk/anthropic` (browser opt-in header, `thinking` budget or `disabled`) and `@openrouter/ai-sdk-provider` (`reasoning.effort`); Pi uses pi-ai's `anthropic` and `openrouter` catalogs with family-model fallback for unknown ids. New `tests/anthropicOpenRouterProviders.test.ts` inspects the real serialized requests. Full Vitest: 543 files pass, 1 pre-existing failure (`duckDbSqlSecurity` needs `public/duckdb` binaries absent from this clone). Checked-in root bundle (`assets/`) was NOT rebuilt; no live Anthropic/OpenRouter key was available, so live API calls and Pi live runs are unverified.
+
 ### Product direction
 
 The product vision and acceptance criteria are maintained in [GOAL.md](GOAL.md), [README.md](README.md#product-goal), and [TASK.md](TASK.md#product-goal-and-delivery-order).

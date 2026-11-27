@@ -9,6 +9,15 @@ const OPENAI_OVERFLOW_PATTERNS = [
     'too many tokens',
 ];
 
+// Anthropic (direct or via OpenRouter) reports overflow as "prompt is too long" or a token-count message.
+const ANTHROPIC_OVERFLOW_PATTERNS = [
+    'prompt is too long',
+    'exceed context limit',
+    'maximum context length',
+    'context length',
+    'too many tokens',
+];
+
 const GOOGLE_OVERFLOW_PATTERNS = [
     'token count',
     'input token limit',
@@ -33,7 +42,9 @@ export const isContextOverflowError = (
     const message = getErrorMessage(error);
     const patterns = provider === 'openai'
         ? OPENAI_OVERFLOW_PATTERNS
-        : GOOGLE_OVERFLOW_PATTERNS;
+        : provider === 'anthropic' || provider === 'openrouter'
+            ? ANTHROPIC_OVERFLOW_PATTERNS
+            : GOOGLE_OVERFLOW_PATTERNS;
 
     return patterns.some(pattern => message.includes(pattern));
 };
