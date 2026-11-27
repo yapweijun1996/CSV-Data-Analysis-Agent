@@ -6,6 +6,7 @@
 - The preflight now records the real unbounded limits (`Number.MAX_SAFE_INTEGER`). Paid live evaluation therefore has no runtime ceiling from the app; existing launch blockers are unchanged.
 - Verified: typecheck, lint, stage-pages tests, build, bundle budget, Vitest 560 files / 5,600 tests, `npm run e2e -- --full` 5/5 twice, reattach 8/8 (before the final Retry-locator edit).
 - Not repaired: other manual smoke scripts still read the store through `.u` (for example spill-commit, pi-dual-grain, pi-large-coordinator); they are not part of `npm run e2e`. The `upload-review-privacy` multi-section check still reports NOT_REACHED.
+- Rebased onto `8575476` (four later `main` commits, not reviewed here) before pushing to `main`: typecheck, lint, publish tests, build, bundle budget, Vitest 561 files / 5,606 tests and `npm run e2e -- --full` 5/5 passed. Not deployed.
 
 ### 2026-11-27 — Pages deployment of c552a1d (includes lazy provider SDKs)
 
