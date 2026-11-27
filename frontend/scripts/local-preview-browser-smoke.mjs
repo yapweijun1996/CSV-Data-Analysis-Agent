@@ -22,7 +22,7 @@ const contexts = [];
 async function open(label, { width = 1365, height = 900, language = 'English', blockEngine = false, holdQueryResponse = false } = {}) {
     const profile = await mkdtemp('/tmp/local-preview-profile-'); profiles.push(profile);
     const context = await chromium.launchPersistentContext(profile, {
-        executablePath: '/snap/chromium/current/usr/lib/chromium-browser/chrome', headless: false,
+        ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}), headless: process.env.HEADED !== '1',
         args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
         viewport: { width, height }, serviceWorkers: 'block',
     }); contexts.push(context);

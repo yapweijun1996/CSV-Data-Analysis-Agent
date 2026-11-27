@@ -1937,3 +1937,6 @@ Final delivery checks: 135 documentation links resolve; 13 source/test hashes an
 
 ## Local E2E credential template
 - Root `.env.sample` documents `OPENAI_API_KEY` for local testing; `.env` and `.env.*` are ignored except the sample. Test tooling must explicitly load the local file, and the browser app continues to use its Settings flow.
+
+## Unified e2e command
+- `npm run e2e` (frontend `scripts/e2e.mjs`) starts `vite preview` and runs the browser smoke scripts; `-- --full` adds the slow source-record-stream smoke. Smoke scripts now honor `CHROMIUM_PATH` instead of a hardcoded /snap chromium path. Verified 2026-11-27 headless: all four fast scripts pass.

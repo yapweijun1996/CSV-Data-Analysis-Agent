@@ -16,7 +16,7 @@ const evidence = { browser: '', pageErrors: [], externalAttempts: [], workerCoun
 let context;
 try {
     context = await chromium.launchPersistentContext(profile, {
-        executablePath: '/snap/chromium/current/usr/lib/chromium-browser/chrome', headless: true,
+        ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}), headless: true,
         args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'], serviceWorkers: 'block',
     });
     evidence.browser = context.browser()?.version() ?? 'persistent Chromium';

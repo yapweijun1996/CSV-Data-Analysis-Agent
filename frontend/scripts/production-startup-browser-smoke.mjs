@@ -5,7 +5,7 @@ const base = process.env.CSV_BASE_URL || 'http://127.0.0.1:4201';
 assert.ok(['127.0.0.1','localhost'].includes(new URL(base).hostname));
 const out = process.env.STARTUP_EVIDENCE_DIR || '/tmp/csv-production-startup';
 await mkdir(out, {recursive:true});
-const browser = await chromium.launch({executablePath: process.env.CHROMIUM_PATH || '/snap/chromium/current/usr/lib/chromium-browser/chrome', headless:true,args:['--no-sandbox']});
+const browser = await chromium.launch({...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}), headless:true,args:['--no-sandbox']});
 const evidence = {errors:[],external:[],checks:[]};
 try {
  const context = await browser.newContext({serviceWorkers:'block'});

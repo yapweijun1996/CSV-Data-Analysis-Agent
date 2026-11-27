@@ -9,6 +9,7 @@
     "preview": "npm --prefix frontend run preview",
     "typecheck": "npm --prefix frontend run typecheck",
     "test": "npm --prefix frontend run test",
+    "e2e": "npm --prefix frontend run e2e --",
     "test:publish": "node --test scripts/publish-frontend-build.test.mjs scripts/stage-pages-artifact.test.mjs",
     "stage:pages": "node scripts/stage-pages-artifact.mjs",
     "publish:root": "npm run build && node scripts/publish-frontend-build.mjs",
