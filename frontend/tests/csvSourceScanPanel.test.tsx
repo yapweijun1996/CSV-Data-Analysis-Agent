@@ -1,5 +1,5 @@
 import React from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { CsvSourceScanPanel } from '../components/CsvSourceScanPanel';
 import { useAppStore } from '../store/useAppStore';
@@ -7,7 +7,8 @@ import { beginSessionTransition } from '../services/session/sessionOwnership';
 import { scanCsvSourceForImport } from '../services/data/csvSourceScan';
 
 const store = { getState: useAppStore.getState, setState: useAppStore.setState };
-afterEach(() => { beginSessionTransition(store); useAppStore.setState({ isBusy: false, csvData: null, datasetBundle: null, csvSourceScan: null }); cleanup(); });
+beforeEach(() => { window.history.replaceState({}, '', '/?debug_yn=y'); });
+afterEach(() => { window.history.replaceState({}, '', '/'); beginSessionTransition(store); useAppStore.setState({ isBusy: false, csvData: null, datasetBundle: null, csvSourceScan: null }); cleanup(); });
 
 describe('actual source scan UI actions', () => {
     it('shows real progress, cancels/resumes, and reopens retained details without granting authority', async () => {
@@ -117,5 +118,14 @@ describe('actual source scan UI actions', () => {
         expect(screen.getByText('Summary rows: unavailable')).toBeInTheDocument();
         expect(screen.getByText(/Current CSV source does not match this scan/)).toBeInTheDocument();
         expect(screen.queryByText(/PRIVATE_CELL_SENTINEL/)).toBeNull();
+    });
+});
+
+describe('source scan panel visibility', () => {
+    it('renders nothing for end users without debug_yn=y', () => {
+        window.history.replaceState({}, '', '/');
+        useAppStore.setState({ csvSourceScan: { scanId: 's', sourceVersion: 'v', fileName: 'a.csv', status: 'completed_clean', bytesRead: 1, totalBytes: 1, rows: 1, sha256: 'x', counts: {}, examples: [] } as never });
+        const { container } = render(<CsvSourceScanPanel />);
+        expect(container).toBeEmptyDOMElement();
     });
 });

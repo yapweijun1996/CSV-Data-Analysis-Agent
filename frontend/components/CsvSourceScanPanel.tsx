@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { isDebugModeEnabled } from '../utils/debugMode';
 import { cancelCsvSourceScan, resumeCsvSourceScan } from '../services/data/csvSourceScan';
 
 /** Progress is a display projection; all actions use the private source/version host entry. */
@@ -8,7 +9,7 @@ export const CsvSourceScanPanel: React.FC = () => {
     const { csvData, bundle, isBusy } = useAppStore(state => ({ csvData: state.csvData, bundle: state.datasetBundle, isBusy: state.isBusy }));
     const [details, setDetails] = useState(false);
     const [error, setError] = useState('');
-    if (!scan) return null;
+    if (!scan || !isDebugModeEnabled()) return null;
     const store = { getState: useAppStore.getState, setState: useAppStore.setState };
     const percent = scan.totalBytes ? Math.floor(100 * scan.bytesRead / scan.totalBytes) : 0;
     const sourceMatches = csvData?.fileName === scan.fileName
