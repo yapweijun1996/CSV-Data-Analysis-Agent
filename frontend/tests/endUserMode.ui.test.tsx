@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppHeader } from '../components/AppHeader';
+import { ModalHost } from '../components/ui/ModalHost';
 import { ChatPanel } from '../components/ChatPanel';
 import { FileUpload } from '../components/FileUpload';
 import { __resetRuntimeConfigForTests } from '../config/runtimeConfig';
@@ -107,7 +108,7 @@ describe('end user mode UI surfaces', () => {
         };
         useAppStoreMock.mockImplementation((selector: (value: typeof state) => unknown) => selector(state));
 
-        render(<AppHeader />);
+        render(<><AppHeader /><ModalHost /></>);
         const newButton = screen.getByRole('button', { name: 'New' });
         fireEvent.click(newButton);
 
@@ -121,7 +122,7 @@ describe('end user mode UI surfaces', () => {
 
         fireEvent.click(newButton);
         fireEvent.click(screen.getByRole('button', { name: 'Start new analysis' }));
-        expect(handleNewSession).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(handleNewSession).toHaveBeenCalledTimes(1));
     });
 
     it('keeps dataset-only actions unavailable before a CSV is loaded', () => {

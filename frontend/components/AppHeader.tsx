@@ -19,7 +19,7 @@ import {
 } from '../config/runtimeConfig';
 import { useAppStore, AppStore } from '../store/useAppStore';
 import { getTranslation } from '../utils/localization';
-import { useDialogAccessibility } from '../hooks/useDialogAccessibility';
+import { confirmModal } from '../services/ui/modalService';
 import { PwaUpdateButton } from './PwaUpdateButton';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -69,7 +69,6 @@ export const AppHeader: React.FC = () => {
     const showChangeGoalButton = shouldShowChangeGoalButton();
     const showAssistantToggleButton = shouldShowAssistantToggleButton();
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-    const [isNewSessionConfirmOpen, setIsNewSessionConfirmOpen] = useState(false);
     const advancedRootRef = useRef<HTMLDivElement>(null);
     const advancedMenuRef = useRef<HTMLDivElement>(null);
     const advancedButtonRef = useRef<HTMLButtonElement>(null);
@@ -78,11 +77,6 @@ export const AppHeader: React.FC = () => {
         left: 12,
         top: 56,
     });
-    const newSessionDialogRef = useDialogAccessibility<HTMLDivElement>(
-        isNewSessionConfirmOpen,
-        () => setIsNewSessionConfirmOpen(false),
-        { restoreFocusSelector: '[data-new-session-trigger="true"]' },
-    );
     const showAdvancedMenu = Boolean(
         showAnalysisTools && (
             showWorkflowButton
@@ -146,9 +140,14 @@ export const AppHeader: React.FC = () => {
         action();
     };
 
-    const confirmNewSession = () => {
-        setIsNewSessionConfirmOpen(false);
-        void onNewSession();
+    const requestNewSession = async () => {
+        const confirmed = await confirmModal({
+            title: getTranslation('new_session_confirm_title', language),
+            message: getTranslation('new_session_confirm_description', language),
+            confirmLabel: getTranslation('new_session_confirm_action', language),
+            cancelLabel: getTranslation('new_session_confirm_cancel', language),
+        });
+        if (confirmed) void onNewSession();
     };
 
     return (
@@ -175,7 +174,7 @@ export const AppHeader: React.FC = () => {
                 <LanguageSwitcher buttonClassName={secondaryButtonClass} />
                 {showNewSessionButton && (showAnalysisTools || hasPendingRestore) && (
                     <button
-                        onClick={() => setIsNewSessionConfirmOpen(true)}
+                        onClick={() => void requestNewSession()}
                         data-new-session-trigger="true"
                         className={`${primaryButtonClass} bg-blue-600 text-white hover:bg-blue-700`}
                         title={getTranslation('header_new_title', language)}
@@ -298,48 +297,6 @@ export const AppHeader: React.FC = () => {
                 )}
             </nav>
         </header>
-        {isNewSessionConfirmOpen && createPortal(
-            <div
-                className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
-                onClick={() => setIsNewSessionConfirmOpen(false)}
-            >
-                <div
-                    ref={newSessionDialogRef}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="new-session-confirm-title"
-                    aria-describedby="new-session-confirm-description"
-                    tabIndex={-1}
-                    className="w-full max-w-md rounded-card border border-slate-200 bg-white p-5 shadow-2xl"
-                    onClick={event => event.stopPropagation()}
-                >
-                    <h2 id="new-session-confirm-title" className="text-lg font-bold text-slate-950">
-                        {getTranslation('new_session_confirm_title', language)}
-                    </h2>
-                    <p id="new-session-confirm-description" className="mt-2 text-sm leading-6 text-slate-600">
-                        {getTranslation('new_session_confirm_description', language)}
-                    </p>
-                    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                        <button
-                            type="button"
-                            data-dialog-initial-focus
-                            onClick={() => setIsNewSessionConfirmOpen(false)}
-                            className="min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                        >
-                            {getTranslation('new_session_confirm_cancel', language)}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={confirmNewSession}
-                            className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                        >
-                            {getTranslation('new_session_confirm_action', language)}
-                        </button>
-                    </div>
-                </div>
-            </div>,
-            document.body,
-        )}
         </>
     );
 };

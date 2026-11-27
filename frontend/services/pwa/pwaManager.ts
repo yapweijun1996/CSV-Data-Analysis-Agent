@@ -9,7 +9,23 @@ export type PwaLifecycleStatus =
 
 export type PwaCheckStatus = 'idle' | 'checking' | 'up_to_date' | 'update_found' | 'error';
 
+/**
+ * Phases of one update run, for the full-screen loader. `flowManual` is true only when the
+ * user pressed the button (or an update is being applied), so silent background checks
+ * never cover the screen.
+ */
+export type PwaUpdateFlow =
+    | 'idle'
+    | 'checking'
+    | 'downloading'
+    | 'reloading'
+    | 'up_to_date'
+    | 'deferred'
+    | 'error';
+
 export interface PwaLifecycleState {
+    flow: PwaUpdateFlow;
+    flowManual: boolean;
     status: PwaLifecycleStatus;
     /** Result of the latest update check, for the manual check button. */
     checkStatus: PwaCheckStatus;
@@ -20,6 +36,8 @@ export interface PwaLifecycleState {
 }
 
 let state: PwaLifecycleState = {
+    flow: 'idle',
+    flowManual: false,
     status: typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'idle',
     checkStatus: 'idle',
     isOnline: typeof navigator === 'undefined' || navigator.onLine !== false,
@@ -34,6 +52,12 @@ let reloadOnControllerChange = false;
 let autoUpdateGuard: () => boolean = () => true;
 const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 const INSTALL_WAIT_TIMEOUT_MS = 30_000;
+/** A manual check shows its "checking" phase at least this long so the loader never flashes. */
+const MIN_MANUAL_CHECK_MS = 800;
+/** If the new worker never takes control, stop the loader instead of spinning forever. */
+const APPLY_TIMEOUT_MS = 20_000;
+const RELOAD_NOTICE_MS = 900;
+let applyTimer: ReturnType<typeof setTimeout> | null = null;
 const listeners = new Set<() => void>();
 const runtimeCleanup: Array<() => void> = [];
 
@@ -95,23 +119,47 @@ const waitForInstalled = (worker: ServiceWorker): Promise<boolean> => new Promis
  * the periodic/visibility checks. A found update is applied automatically when
  * the app is idle; otherwise the banner keeps the explicit refresh action.
  */
-export const checkForPwaUpdate = async (): Promise<PwaCheckStatus> => {
-    if (!registration) return 'error';
-    emit({ checkStatus: 'checking' });
+export const checkForPwaUpdate = async (options: { manual?: boolean } = {}): Promise<PwaCheckStatus> => {
+    if (!registration) {
+        if (options.manual) emit({ flow: 'error', flowManual: true });
+        return 'error';
+    }
+    if (state.checkStatus === 'checking' || state.status === 'applying_update') return state.checkStatus;
+    const manual = Boolean(options.manual);
+    emit({ checkStatus: 'checking', flow: manual ? 'checking' : state.flow, flowManual: manual });
+    const minimumShown = manual
+        ? new Promise<void>(resolve => setTimeout(resolve, MIN_MANUAL_CHECK_MS))
+        : Promise.resolve();
     try {
         await registration.update();
-        if (!registration.waiting && registration.installing) await waitForInstalled(registration.installing);
+        if (!registration.waiting && registration.installing) {
+            if (manual) emit({ flow: 'downloading' });
+            const installed = await waitForInstalled(registration.installing);
+            if (!installed && !registration.waiting) throw new Error('pwa_install_failed');
+            if (manual) await new Promise<void>(resolve => setTimeout(resolve, MIN_MANUAL_CHECK_MS));
+        }
+        await minimumShown;
         if (registration.waiting) {
             emit({ checkStatus: 'update_found' });
             markWaitingWorker(registration.waiting);
+            const applied = await autoApplyPwaUpdate();
+            // Held back (a run is active): the banner keeps the explicit action.
+            if (!applied && manual) emit({ flow: 'deferred' });
             return 'update_found';
         }
-        emit({ checkStatus: 'up_to_date' });
+        emit({ checkStatus: 'up_to_date', flow: manual ? 'up_to_date' : 'idle', flowManual: manual });
         return 'up_to_date';
     } catch {
-        emit({ checkStatus: 'error' });
+        await minimumShown;
+        emit({ checkStatus: 'error', flow: manual ? 'error' : 'idle', flowManual: manual });
         return 'error';
     }
+};
+
+/** Called by the loader once it has told the user the outcome (toast) and can go away. */
+export const acknowledgePwaFlow = (): void => {
+    if (state.flow === 'idle' && !state.flowManual) return;
+    emit({ flow: 'idle', flowManual: false });
 };
 
 export const registerPwa = async (): Promise<void> => {
@@ -180,17 +228,29 @@ export const registerPwa = async (): Promise<void> => {
 
 export const applyPwaUpdate = async (): Promise<boolean> => {
     if (!registration) return false;
+    if (state.status === 'applying_update') return true;
     if (!registration.waiting) await registration.update();
     if (!registration.waiting) return false;
     reloadOnControllerChange = true;
-    emit({ status: 'applying_update' });
-    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    const waiting = registration.waiting;
+    emit({ status: 'applying_update', flow: 'reloading', flowManual: true });
+    // Let the "installing and reloading" step be readable before the page restarts.
+    await new Promise<void>(resolve => setTimeout(resolve, RELOAD_NOTICE_MS));
+    waiting.postMessage({ type: 'SKIP_WAITING' });
+    if (applyTimer) clearTimeout(applyTimer);
+    applyTimer = setTimeout(() => {
+        if (state.status !== 'applying_update') return;
+        reloadOnControllerChange = false;
+        emit({ status: 'update_available', flow: 'error', flowManual: true });
+    }, APPLY_TIMEOUT_MS);
     return true;
 };
 
 export const __resetPwaManagerForTests = (): void => {
     runtimeCleanup.splice(0).forEach(cleanup => cleanup());
     state = {
+        flow: 'idle',
+        flowManual: false,
         status: typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'idle',
         checkStatus: 'idle',
         isOnline: typeof navigator === 'undefined' || navigator.onLine !== false,
@@ -199,6 +259,8 @@ export const __resetPwaManagerForTests = (): void => {
         storageQuotaBytes: null,
     };
     autoUpdateGuard = () => true;
+    if (applyTimer) clearTimeout(applyTimer);
+    applyTimer = null;
     registration = null;
     initialized = false;
     reloadOnControllerChange = false;

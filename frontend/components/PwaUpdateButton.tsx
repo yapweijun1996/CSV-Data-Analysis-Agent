@@ -42,7 +42,7 @@ export const PwaUpdateButton: React.FC<{ className: string; language: Settings['
         <button
             type="button"
             data-pwa-update-trigger="true"
-            onClick={() => void checkForPwaUpdate()}
+            onClick={() => void checkForPwaUpdate({ manual: true })}
             disabled={!pwa.isOnline || checking || updating}
             className={`${className} disabled:cursor-not-allowed disabled:opacity-60`}
             title={getTranslation('pwa_check_title', language)}

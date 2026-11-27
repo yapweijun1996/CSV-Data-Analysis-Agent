@@ -1,3 +1,4 @@
+import { toast } from '../../services/ui/toastService';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { shallow } from 'zustand/shallow';
@@ -164,7 +165,6 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
         }
     }, [expandOverrideKey, expandOverrideValue]);
 
-    const setGlobalErrorToast = useAppStore(state => state.setGlobalErrorToast);
     const handleExport = useCallback(async (format: 'png' | 'png_full' | 'csv' | 'html') => {
         if (!cardRef.current) return;
         const expandedForExport = !isCardExpanded && (format === 'png_full' || tableOnly && format !== 'csv');
@@ -191,9 +191,9 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
                 ); break;
             }
             if (result && !result.success) {
-                setGlobalErrorToast({
-                    message: getTranslation('export_format_failed', language, { format: format.toUpperCase() }),
-                    errorSummary: result.error,
+                toast.error(getTranslation('export_format_failed', language, { format: format.toUpperCase() }), {
+                    id: 'export-failed',
+                    detail: result.error,
                 });
             }
         } finally {
@@ -201,7 +201,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
             if (tableShownForExport) setLocalDataVisible(false);
             setIsExporting(false);
         }
-    }, [cardData?.plan?.title, cardData?.summary, exportMetadata, isCardExpanded, localDataVisible, tableOnly, tableDataForDisplay, language, setGlobalErrorToast]);
+    }, [cardData?.plan?.title, cardData?.summary, exportMetadata, isCardExpanded, localDataVisible, tableOnly, tableDataForDisplay, language]);
     const handleChartClick = useCallback((index: number, event: MouseEvent) => {
         const isMultiSelect = event.ctrlKey || event.metaKey;
         setSelectedIndices(prev => {

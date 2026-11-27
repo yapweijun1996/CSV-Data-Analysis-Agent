@@ -22,13 +22,6 @@ const MIN_ASIDE_WIDTH = 320;
 const MAX_ASIDE_WIDTH = 800;
 const MIN_MAIN_WIDTH = 600;
 
-export interface GlobalErrorToast {
-    /** User-facing message (already translated). */
-    message: string;
-    /** Optional one-line technical summary for the collapsed detail section. */
-    errorSummary?: string;
-}
-
 export interface IUISlice {
     resultsViewMode: 'simple' | 'explore';
     isAsideVisible: boolean;
@@ -52,8 +45,6 @@ export interface IUISlice {
     isResizing: boolean;
     /** Transient: precomputed aggregate rows from GroupByTest, consumed by executeAggregateTableAction. */
     pendingPrecomputedCardData: CsvRow[] | null;
-    globalErrorToast: GlobalErrorToast | null;
-    setGlobalErrorToast: (toast: GlobalErrorToast | null) => void;
     setResultsViewMode: (mode: 'simple' | 'explore') => void;
     setPendingPrecomputedCardData: (data: CsvRow[] | null) => void;
     handleAsideMouseDown: (e: ReactMouseEvent) => void;
@@ -117,8 +108,6 @@ export const createUISlice: StateCreator<AppStore, [], [], IUISlice> = (set, get
     cloudAiConsentError: null,
     isResizing: false,
     pendingPrecomputedCardData: null,
-    globalErrorToast: null,
-    setGlobalErrorToast: (toast) => set({ globalErrorToast: toast }),
     setResultsViewMode: (mode) => {
         try {
             window.sessionStorage.setItem('csv_agent_results_view', mode);

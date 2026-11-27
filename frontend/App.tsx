@@ -26,7 +26,10 @@ import {
 } from './config/runtimeConfig';
 import { isRecoverableChunkLoadError } from './utils/staleChunkRecovery';
 import { formatUserError } from './utils/userErrorMessage';
-import { GlobalErrorToast } from './components/GlobalErrorToast';
+import { ToastHost } from './components/ui/ToastHost';
+import { ModalHost } from './components/ui/ModalHost';
+import { UpdateOverlay } from './components/UpdateOverlay';
+import { toast } from './services/ui/toastService';
 import { useDialogAccessibility } from './hooks/useDialogAccessibility';
 import { getTranslation } from './utils/localization';
 import { PwaStatusBanner } from './components/PwaStatusBanner';
@@ -98,8 +101,6 @@ const App: React.FC = () => {
         isApiKeyRequiredModalOpen,
         pendingCloudAiConsent,
         language,
-        globalErrorToast,
-        setGlobalErrorToast,
     } = useAppStore(
         (state: AppStore) => ({
             init: state.init,
@@ -124,8 +125,6 @@ const App: React.FC = () => {
             isApiKeyRequiredModalOpen: state.isApiKeyRequiredModalOpen,
             pendingCloudAiConsent: state.pendingCloudAiConsent,
             language: state.settings.language,
-            globalErrorToast: state.globalErrorToast,
-            setGlobalErrorToast: state.setGlobalErrorToast,
         }),
         shallow
     );
@@ -169,16 +168,19 @@ const App: React.FC = () => {
                 responseType: 'unhandled_rejection',
                 detail: userError.technicalDetail,
             });
-            setGlobalErrorToast({
-                // Combine message + suggestion so the toast body is complete
-                message: userError.fullText,
-                errorSummary: userError.technicalDetail,
+            toast.error(userError.fullText, {
+                id: 'global-unhandled-rejection',
+                detail: userError.technicalDetail,
+                actions: [
+                    { label: getTranslation('global_error_restart_button', language), onClick: () => { void handleNewSession(); } },
+                    { label: getTranslation('global_error_dismiss_button', language), onClick: () => undefined },
+                ],
             });
         };
 
         window.addEventListener('unhandledrejection', handleUnhandledRejection);
         return () => window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    }, [language, logTelemetryEvent, setGlobalErrorToast]);
+    }, [language, logTelemetryEvent, handleNewSession]);
 
     const showAgentThinking = shouldShowAgentThinkingModal();
     const showLongTermMemory = shouldShowLongTermMemory();
@@ -244,15 +246,9 @@ const App: React.FC = () => {
             <AutoSaveManager />
             <PwaStatusBanner />
 
-            {/* Global async error boundary toast */}
-            {globalErrorToast && (
-                <GlobalErrorToast
-                    toast={globalErrorToast}
-                    language={language}
-                    onDismiss={() => setGlobalErrorToast(null)}
-                    onStartOver={() => { setGlobalErrorToast(null); void handleNewSession(); }}
-                />
-            )}
+            <ToastHost />
+            <ModalHost />
+            <UpdateOverlay />
             <Suspense fallback={null}>
                 {canUseSettingsSurface && isSettingsModalOpen && <SettingsModal />}
                 {showAgentThinking && canUseAgentThinkingSurface && isAgentModalOpen && <AgentMonitorModal />}

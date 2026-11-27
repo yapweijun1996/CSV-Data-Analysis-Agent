@@ -1,3 +1,4 @@
+import { getToasts } from '../services/ui/toastService';
 import { cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalysisCardData } from '../types';
@@ -108,7 +109,7 @@ describe('AnalysisCard table-only evidence presentation', () => {
         fireEvent.click(screen.getByRole('button', { name: /export chart or data/i }));
         fireEvent.click(screen.getByRole('menuitem', { name: /PNG — Full card/i }));
         await waitFor(() => expect(toPngMock).toHaveBeenCalledOnce());
-        await waitFor(() => expect(useAppStore.getState().globalErrorToast).toBeNull());
+        await waitFor(() => expect(getToasts()).toHaveLength(0));
         expect(screen.getByRole('button', { name: 'Expand Analysis' })).toBeInTheDocument();
     });
 
@@ -127,7 +128,7 @@ describe('AnalysisCard table-only evidence presentation', () => {
         fireEvent.click(screen.getByRole('button', { name: /export chart or data/i }));
         fireEvent.click(screen.getByRole('menuitem', { name: /PNG — Full card/i }));
         await waitFor(() => expect(toPngMock).toHaveBeenCalledOnce());
-        await waitFor(() => expect(useAppStore.getState().globalErrorToast).toBeNull());
+        await waitFor(() => expect(getToasts()).toHaveLength(0));
         expect(screen.queryByRole('table')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: expanded ? 'Collapse Analysis' : 'Expand Analysis' })).toBeInTheDocument();
     });

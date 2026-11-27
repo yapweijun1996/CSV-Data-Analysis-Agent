@@ -66,8 +66,8 @@ describe('PWA lifecycle manager', () => {
     it('applies a waiting update automatically when the app is idle', async () => {
         await registerPwa();
 
-        expect(waitingWorker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
         expect(getPwaLifecycleState().status).toBe('applying_update');
+        await vi.waitFor(() => expect(waitingWorker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' }), { timeout: 3000 });
     });
 
     it('holds the update while a run is active, then applies it once idle', async () => {
@@ -79,7 +79,7 @@ describe('PWA lifecycle manager', () => {
 
         busy = false;
         await expect(autoApplyPwaUpdate()).resolves.toBe(true);
-        expect(waitingWorker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
+        await vi.waitFor(() => expect(waitingWorker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' }), { timeout: 3000 });
     });
 
     it('still lets the explicit action apply a held update', async () => {
@@ -113,7 +113,7 @@ describe('PWA lifecycle manager', () => {
         registration.update.mockImplementationOnce(async () => { registration.waiting = waitingWorker; });
 
         await expect(checkForPwaUpdate()).resolves.toBe('update_found');
-        expect(waitingWorker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' });
+        await vi.waitFor(() => expect(waitingWorker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' }), { timeout: 3000 });
     });
 
     it('manual check reports an error when the update request fails', async () => {
@@ -131,5 +131,30 @@ describe('PWA lifecycle manager', () => {
         window.dispatchEvent(new Event('offline'));
 
         expect(getPwaLifecycleState()).toMatchObject({ status: 'offline', isOnline: false });
+    });
+
+    it('drives the manual loader flow: checking, then up to date', async () => {
+        registration.waiting = null;
+        await registerPwa();
+        vi.useFakeTimers();
+        const run = checkForPwaUpdate({ manual: true });
+        expect(getPwaLifecycleState()).toMatchObject({ flow: 'checking', flowManual: true });
+        await vi.advanceTimersByTimeAsync(900);
+        await expect(run).resolves.toBe('up_to_date');
+        expect(getPwaLifecycleState()).toMatchObject({ flow: 'up_to_date', flowManual: true });
+        vi.useRealTimers();
+    });
+
+    it('moves to the reloading loader when an update is applied', async () => {
+        await registerPwa();
+        await applyPwaUpdate();
+        expect(getPwaLifecycleState()).toMatchObject({ status: 'applying_update', flow: 'reloading', flowManual: true });
+    });
+
+    it('never shows the loader for silent background checks', async () => {
+        registration.waiting = null;
+        await registerPwa();
+        await checkForPwaUpdate();
+        expect(getPwaLifecycleState()).toMatchObject({ flow: 'idle', flowManual: false });
     });
 });
