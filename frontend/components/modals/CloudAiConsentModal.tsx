@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { shallow } from 'zustand/shallow';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { ModalFrame } from '../ui/ModalFrame';
+import { BUTTON_PRIMARY_CLASS, BUTTON_SECONDARY_CLASS } from '../ui/formStyles';
 import { useAppStore } from '../../store/useAppStore';
 import { getCloudAiProviderLabel } from '../../utils/cloudAiProviderLabel';
 import { getTranslation } from '../../utils/localization';
@@ -22,7 +23,6 @@ export const CloudAiConsentModal: React.FC = () => {
     const handleDecline = useCallback(() => {
         if (!isSaving) void resolveConsent(false);
     }, [isSaving, resolveConsent]);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(isOpen, handleDecline);
 
     if (!request) return null;
 
@@ -44,30 +44,40 @@ export const CloudAiConsentModal: React.FC = () => {
     ] as const;
 
     return (
-        <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-scrim/60 p-4"
-            onClick={handleDecline}
+        <ModalFrame
+            isOpen={isOpen}
+            onClose={handleDecline}
+            titleId="cloud-ai-consent-title"
+            title={getTranslation('cloud_ai_consent_title', language)}
+            subtitle={<span id="cloud-ai-consent-description">{getTranslation('cloud_ai_consent_intro', language, { provider: providerLabel })}</span>}
+            describedById="cloud-ai-consent-description"
+            closeLabel={getTranslation('cloud_ai_consent_decline', language)}
+            hideClose
+            maxWidthClass="max-w-lg"
+            zClass="z-[70]"
+            bodyClassName="space-y-3 px-4 py-4 sm:px-6"
+            footer={
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button
+                        type="button"
+                        data-dialog-initial-focus
+                        onClick={handleDecline}
+                        disabled={isSaving}
+                        className={BUTTON_SECONDARY_CLASS}
+                    >
+                        {getTranslation('cloud_ai_consent_decline', language)}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => void handleAccept()}
+                        disabled={isSaving}
+                        className={BUTTON_PRIMARY_CLASS}
+                    >
+                        {getTranslation('cloud_ai_consent_accept', language)}
+                    </button>
+                </div>
+            }
         >
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="cloud-ai-consent-title"
-                aria-describedby="cloud-ai-consent-description"
-                tabIndex={-1}
-                className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-card border border-slate-200 bg-white shadow-2xl"
-                onClick={event => event.stopPropagation()}
-            >
-                <header className="border-b border-slate-200 px-5 py-4">
-                    <h2 id="cloud-ai-consent-title" className="text-xl font-bold text-slate-950">
-                        {getTranslation('cloud_ai_consent_title', language)}
-                    </h2>
-                    <p id="cloud-ai-consent-description" className="mt-2 text-sm leading-6 text-slate-600">
-                        {getTranslation('cloud_ai_consent_intro', language, { provider: providerLabel })}
-                    </p>
-                </header>
-
-                <div className="space-y-3 overflow-y-auto px-5 py-4">
                     {sensitiveWarning && (
                         <div role="alert" className="rounded-lg border border-warning-300 bg-warning-50 p-3 text-sm text-warning-950">
                             <strong className="font-semibold">
@@ -112,28 +122,6 @@ export const CloudAiConsentModal: React.FC = () => {
                             {getTranslation('cloud_ai_consent_save_error', language)}
                         </p>
                     )}
-                </div>
-
-                <footer className="flex flex-col-reverse gap-2 border-t border-slate-200 px-5 py-3 sm:flex-row sm:justify-end">
-                    <button
-                        type="button"
-                        data-dialog-initial-focus
-                        onClick={handleDecline}
-                        disabled={isSaving}
-                        className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-                    >
-                        {getTranslation('cloud_ai_consent_decline', language)}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => void handleAccept()}
-                        disabled={isSaving}
-                        className="min-h-[44px] rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-60"
-                    >
-                        {getTranslation('cloud_ai_consent_accept', language)}
-                    </button>
-                </footer>
-            </div>
-        </div>
+        </ModalFrame>
     );
 };

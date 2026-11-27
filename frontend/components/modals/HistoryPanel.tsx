@@ -3,14 +3,13 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 import { useAppStore, AppStore } from '../../store/useAppStore';
 import { CURRENT_SESSION_KEY, getStorageBreakdown } from '../../services/storageService';
-import { IconClose } from '../../icons/IconClose';
 import { HistoryStackIcon, HistorySearchIcon, HistoryTrashIcon, HistoryChevronIcon } from './HistoryIcons';
 import { getTranslation } from '../../utils/localization';
 import { confirmModal } from '../../services/ui/modalService';
 import { HistoryReportRow, ReportGroup } from './HistoryReportRow';
 import { StorageBreakdown } from './StorageBreakdown';
 import type { ReportListItem } from '../../types';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { ModalFrame } from '../ui/ModalFrame';
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -106,11 +105,6 @@ export const HistoryPanel: React.FC = () => {
     const [isPurging, setIsPurging] = useState(false);
     const [showStorageInspector, setShowStorageInspector] = useState(false);
     const overflowRef = useRef<HTMLDivElement>(null);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(
-        isOpen,
-        onClose,
-        { restoreFocusSelector: '[data-history-trigger="true"]' },
-    );
 
     // Fetch actual IDB storage breakdown when modal opens
     const refreshStorageInfo = async () => {
@@ -256,45 +250,36 @@ export const HistoryPanel: React.FC = () => {
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-[2px]" onClick={onClose}>
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="history-dialog-title"
-                tabIndex={-1}
-                className="relative flex h-full max-h-[80vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl"
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="relative flex items-center justify-between gap-3 px-6 pb-3 pt-5">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-accent-100/80 via-accent-50/50 to-transparent" aria-hidden="true" />
-                    <div className="relative flex items-center gap-3">
-                        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 text-white shadow-md shadow-accent-200">
-                            <HistoryStackIcon className="h-6 w-6" />
-                        </span>
-                        <div>
-                            <h2 id="history-dialog-title" className="text-lg font-semibold text-slate-900">
-                                {getTranslation('history_title', language)}
-                            </h2>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                                {getTranslation('history_footer', language)}
-                            </p>
-                        </div>
+        <ModalFrame
+            isOpen={isOpen}
+            onClose={onClose}
+            titleId="history-dialog-title"
+            title={getTranslation('history_title', language)}
+            closeLabel={getTranslation('history_close', language)}
+            closeInitialFocus
+            restoreFocusSelector='[data-history-trigger="true"]'
+            maxWidthClass="max-w-3xl"
+            heightClass="h-[85dvh]"
+            bodyClassName="px-4 pb-4 pt-2"
+            headerContent={
+                <>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent-600 text-white shadow-sm">
+                        <HistoryStackIcon className="h-6 w-6" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <h2 id="history-dialog-title" className="text-xl font-bold text-slate-900">
+                            {getTranslation('history_title', language)}
+                        </h2>
+                        <p className="mt-0.5 text-sm text-slate-600">
+                            {getTranslation('history_footer', language)}
+                        </p>
                     </div>
-                    <button
-                        data-dialog-initial-focus
-                        onClick={onClose}
-                        className="relative flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-white hover:text-slate-900"
-                        title={getTranslation('history_close', language)}
-                        aria-label={getTranslation('history_close', language)}
-                    >
-                        <IconClose />
-                    </button>
-                </div>
-
+                </>
+            }
+            fixedTop={
+                <div className="shrink-0">
                 {/* Search */}
-                <div className="px-6 pb-3">
+                <div className="px-6 pb-3 pt-4">
                     <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 shadow-sm transition focus-within:border-accent-300 focus-within:ring-2 focus-within:ring-accent-100">
                         <HistorySearchIcon className="h-4 w-4 flex-shrink-0 text-slate-400" />
                         <input
@@ -404,7 +389,7 @@ export const HistoryPanel: React.FC = () => {
 
                 {/* Storage Inspector (expandable) */}
                 {showStorageInspector && (
-                    <div className="border-y border-slate-100 bg-slate-50/60 px-6 py-3">
+                    <div className="max-h-48 overflow-y-auto border-y border-slate-100 bg-slate-50/60 px-6 py-3">
                         <StorageBreakdown
                             activeSessionId={currentSessionId}
                             onStorageChanged={() => void refreshStorageInfo()}
@@ -412,8 +397,40 @@ export const HistoryPanel: React.FC = () => {
                     </div>
                 )}
 
-                {/* Report list */}
-                <div className="flex-grow overflow-y-auto px-4 pb-4">
+                </div>
+            }
+            overlay={
+                <>
+                {/* Inline confirmation overlay */}
+                {confirmLoadId && (
+                    <div className="absolute inset-0 z-30 flex items-center justify-center rounded-card bg-scrim/40 backdrop-blur-[2px]">
+                        <div className="mx-6 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+                            <h3 className="text-sm font-semibold text-slate-800">
+                                {getTranslation('history_switch_session', language)}
+                            </h3>
+                            <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                                {getTranslation('history_switch_session_desc', language)}
+                            </p>
+                            <div className="mt-4 flex justify-end gap-2">
+                                <button
+                                    onClick={() => setConfirmLoadId(null)}
+                                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                                >
+                                    {getTranslation('history_switch_cancel', language)}
+                                </button>
+                                <button
+                                    onClick={() => void doLoad(confirmLoadId)}
+                                    className="rounded-lg bg-accent-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-700"
+                                >
+                                    {getTranslation('history_switch_confirm', language)}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                </>
+            }
+        >
                     {filteredGroups.length === 0 ? (
                         <div className="flex items-center justify-center h-full px-5">
                             <p className="text-sm text-slate-500">
@@ -447,36 +464,6 @@ export const HistoryPanel: React.FC = () => {
                             ))}
                         </ul>
                     )}
-                </div>
-
-                {/* Inline confirmation overlay */}
-                {confirmLoadId && (
-                    <div className="absolute inset-0 z-30 flex items-center justify-center rounded-3xl bg-scrim/40 backdrop-blur-[2px]">
-                        <div className="mx-6 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
-                            <h3 className="text-sm font-semibold text-slate-800">
-                                {getTranslation('history_switch_session', language)}
-                            </h3>
-                            <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                                {getTranslation('history_switch_session_desc', language)}
-                            </p>
-                            <div className="mt-4 flex justify-end gap-2">
-                                <button
-                                    onClick={() => setConfirmLoadId(null)}
-                                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
-                                >
-                                    {getTranslation('history_switch_cancel', language)}
-                                </button>
-                                <button
-                                    onClick={() => void doLoad(confirmLoadId)}
-                                    className="rounded-lg bg-accent-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-700"
-                                >
-                                    {getTranslation('history_switch_confirm', language)}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
+                </ModalFrame>
     );
 };

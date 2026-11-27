@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { ModalFrame } from '../ui/ModalFrame';
+import { BUTTON_PRIMARY_CLASS, BUTTON_SECONDARY_CLASS, FIELD_CLASS } from '../ui/formStyles';
 import {
     closeProblemReport,
     isProblemReportOpen,
@@ -16,7 +17,6 @@ import { copyText } from '../../services/utils/copyText';
 import { toast } from '../../services/ui/toastService';
 import { getTranslation } from '../../utils/localization';
 import { IconBug } from '../../icons/IconBug';
-import { IconClose } from '../../icons/IconClose';
 
 const downloadJson = (contents: string, fileName: string): void => {
     const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }));
@@ -39,7 +39,6 @@ const OpenReportProblemModal: React.FC = () => {
     const [includeSample, setIncludeSample] = useState(false);
     const [note, setNote] = useState('');
     const [report, setReport] = useState<ProblemReport | null>(null);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(true, closeProblemReport);
     const t = (key: string, params?: Record<string, string | number>) => getTranslation(key, language, params);
 
     // Rebuild on every option change so the preview is exactly what Copy/Download will send.
@@ -77,31 +76,26 @@ const OpenReportProblemModal: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [json, report, language]);
 
-    const primary = 'min-h-[44px] rounded-md bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50';
-    const secondary = 'min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50';
-
     return (
-        <div className="fixed inset-0 z-[9400] flex items-end justify-center bg-scrim/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={closeProblemReport}>
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="report-problem-title"
-                tabIndex={-1}
-                className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-t-card border border-slate-200 bg-white shadow-2xl outline-none sm:rounded-card"
-                onClick={event => event.stopPropagation()}
-                data-testid="report-problem-modal"
-            >
-                <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
-                    <h2 id="report-problem-title" className="flex items-center gap-2 text-lg font-bold text-slate-950">
-                        <IconBug className="h-5 w-5 text-red-600" />{t('report_problem_title')}
-                    </h2>
-                    <button type="button" onClick={closeProblemReport} aria-label={t('report_problem_close')}
-                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-slate-500 hover:bg-slate-100">
-                        <IconClose className="h-5 w-5" />
-                    </button>
+        <ModalFrame
+            isOpen
+            onClose={closeProblemReport}
+            titleId="report-problem-title"
+            title={t('report_problem_title')}
+            icon={<IconBug className="h-6 w-6 text-danger-600" />}
+            closeLabel={t('report_problem_close')}
+            maxWidthClass="max-w-2xl"
+            zClass="z-[9400]"
+            mobileSheet
+            testId="report-problem-modal"
+            bodyClassName="space-y-4 px-4 py-4 text-sm text-slate-700 sm:px-6"
+            footer={
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button type="button" className={BUTTON_SECONDARY_CLASS} disabled={!report} onClick={handleDownload} data-testid="report-problem-download">{t('report_problem_download')}</button>
+                    <button type="button" data-dialog-initial-focus className={BUTTON_PRIMARY_CLASS} disabled={!report} onClick={() => { void handleCopy(); }} data-testid="report-problem-copy">{t('report_problem_copy')}</button>
                 </div>
-                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 text-sm text-slate-700">
+            }
+        >
                     <p>{t('report_problem_intro')}</p>
                     {summary && (
                         <dl className="grid gap-2 rounded-card border border-slate-200 bg-slate-50 p-3 text-xs sm:grid-cols-2" data-testid="report-problem-summary">
@@ -118,7 +112,7 @@ const OpenReportProblemModal: React.FC = () => {
                         <span className="font-semibold text-slate-900">{t('report_problem_note_label')}</span>
                         <textarea value={note} onChange={event => setNote(event.target.value)} rows={3} maxLength={1000}
                             placeholder={t('report_problem_note_placeholder')}
-                            className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-300" />
+                            className={`mt-1 ${FIELD_CLASS}`} />
                     </label>
                     <label className="flex min-h-[44px] items-start gap-2">
                         <input type="checkbox" checked={includeSample} onChange={event => setIncludeSample(event.target.checked)} className="mt-1 h-4 w-4" />
@@ -132,13 +126,6 @@ const OpenReportProblemModal: React.FC = () => {
                         <summary className="cursor-pointer text-xs font-semibold text-slate-700">{t('report_problem_preview')}</summary>
                         <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded bg-ink-950 p-3 text-xs text-ink-100" data-testid="report-problem-json">{json}</pre>
                     </details>
-                </div>
-                <div className="flex flex-col-reverse gap-2 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end">
-                    <button type="button" className={secondary} onClick={closeProblemReport}>{t('report_problem_close')}</button>
-                    <button type="button" className={secondary} disabled={!report} onClick={handleDownload} data-testid="report-problem-download">{t('report_problem_download')}</button>
-                    <button type="button" data-dialog-initial-focus className={primary} disabled={!report} onClick={() => { void handleCopy(); }} data-testid="report-problem-copy">{t('report_problem_copy')}</button>
-                </div>
-            </div>
-        </div>
+        </ModalFrame>
     );
 };

@@ -4,7 +4,6 @@ import { vectorStore } from '../../services/vectorStore';
 import { VectorStoreDocument } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import { flushPendingVectorMemoryDocs } from '../../services/agent/memory/vectorMemorySync';
-import { IconClose } from '../../icons/IconClose';
 import { IconMemory } from '../../icons/IconMemory';
 import { IconDelete } from '../../icons/IconDelete';
 import { IconSearch } from '../../icons/IconSearch';
@@ -16,7 +15,7 @@ import { getTranslation } from '../../utils/localization';
 import { confirmModal } from '../../services/ui/modalService';
 import { showToast as toast } from '../../services/ui/toastService';
 import { resolveReportMemoryScope } from '../../services/agent/memory/memoryScope';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { ModalFrame } from '../ui/ModalFrame';
 
 type SearchResult = {
     text: string;
@@ -175,7 +174,6 @@ export const MemoryPanel: React.FC = () => {
     const [modelError, setModelError] = useState(vectorStore.getLastError());
     const language = useAppStore(state => state.settings.language);
     const t = useCallback((key: string, params?: Record<string, string | number>) => getTranslation(key, language, params), [language]);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(isOpen, onClose);
 
     const isModelReady = modelStatus === 'ready';
     const activeMemoryScope = resolveReportMemoryScope(useAppStore.getState());
@@ -341,22 +339,18 @@ export const MemoryPanel: React.FC = () => {
         : `${t('memory_model_error')} ${modelError ?? ''}`.trim();
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-2 backdrop-blur-sm sm:p-4"
-            onClick={onClose}
-        >
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="memory-dialog-title"
-                tabIndex={-1}
-                className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-b from-accent-50/80 via-white to-white shadow-2xl sm:h-[85vh]"
-                onClick={e => e.stopPropagation()}
-            >
-                <header className="shrink-0 px-4 pb-3 pt-4 sm:px-6 sm:pt-5">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 items-start gap-3">
+        <ModalFrame
+            isOpen={isOpen}
+            onClose={onClose}
+            titleId="memory-dialog-title"
+            title={t('memory_title')}
+            closeLabel={t('memory_close')}
+            closeInitialFocus
+            maxWidthClass="max-w-5xl"
+            heightClass="sm:h-[85dvh]"
+            bodyClassName="grid grid-cols-1 gap-4 px-4 pb-4 pt-4 sm:px-6 sm:pb-6 md:grid-cols-[minmax(0,5fr),minmax(0,7fr)] md:overflow-hidden"
+            headerContent={
+                <div className="flex min-w-0 flex-1 items-start gap-3">
                             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-100 text-accent-600" aria-hidden="true">
                                 <IconMemory />
                             </span>
@@ -383,16 +377,8 @@ export const MemoryPanel: React.FC = () => {
                                 )}
                             </div>
                         </div>
-                        <button
-                            data-dialog-initial-focus
-                            onClick={onClose}
-                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                            title={t('memory_close')}
-                            aria-label={t('memory_close')}
-                        >
-                            <IconClose />
-                        </button>
-                    </div>
+            }
+            headerBelow={
                     <div
                         className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-200"
                         role="progressbar"
@@ -402,9 +388,8 @@ export const MemoryPanel: React.FC = () => {
                     >
                         <div className="h-1.5 rounded-full bg-accent-600 transition-all" style={{ width: `${barWidth}%` }} />
                     </div>
-                </header>
-
-                <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6 md:grid-cols-[minmax(0,5fr),minmax(0,7fr)] md:overflow-hidden">
+            }
+        >
                     {/* Left: similarity search */}
                     <section className="flex min-h-0 flex-col md:overflow-y-auto">
                         <div className="shrink-0 rounded-xl border border-accent-100 bg-white/80 p-4 shadow-sm">
@@ -545,8 +530,6 @@ export const MemoryPanel: React.FC = () => {
                             )}
                         </div>
                     </section>
-                </div>
-            </div>
-        </div>
+        </ModalFrame>
     );
 };

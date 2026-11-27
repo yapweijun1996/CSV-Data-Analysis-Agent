@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useAppStore } from '../../store/useAppStore';
 import { getPipelineOutcomeUserText, getStructureReviewReasonText, getTranslation, STRUCTURE_REVIEW_REASON_CODES } from '../../utils/localization';
 import type { ReportBoundary } from '../../types';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { ModalFrame } from '../ui/ModalFrame';
+import { BUTTON_PRIMARY_CLASS, BUTTON_SECONDARY_CLASS } from '../ui/formStyles';
 import {
     countSummaryContentRows,
     resolveEffectiveSummaryStartIndex,
@@ -91,7 +92,6 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
     const handleClose = useCallback(() => {
         if (!confirming && !isBusy) setModalOpen(false);
     }, [confirming, isBusy, setModalOpen]);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(isOpen, handleClose);
 
     useEffect(() => {
         if (isOpen && reportStructureResolution) {
@@ -110,19 +110,25 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
     // Do not present positional header guesses or role suggestions as trusted repair evidence.
     // Compacted headers may also have no provisional boundary; local review must remain reachable.
     if (!reportStructureResolution || repairRequired) return rawIntakeIr ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4" onClick={handleClose}>
-            <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="repair-review-title" tabIndex={-1}
-                onClick={event => event.stopPropagation()} className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto p-6 space-y-4">
-                <h2 id="repair-review-title" className="text-base font-semibold">{reportStructureResolution ? t('guided_repair_title') : 'Review structural interpretations'}</h2>
-                <CsvSourceScanPanel />
-                {semanticReviewRequired && <StructureRepairReviewPanel />}
-                <p className="text-sm text-warning-950">Boundary confirmation cannot approve structural repair. Full validation and separate exact Dataset Commit approval remain required.</p>
+        <ModalFrame
+            isOpen={isOpen}
+            onClose={handleClose}
+            titleId="repair-review-title"
+            title={reportStructureResolution ? t('guided_repair_title') : 'Review structural interpretations'}
+            closeLabel={t('boundary_confirm_cancel')}
+            hideClose
+            bodyClassName="space-y-4 px-4 py-4 sm:px-6"
+            footer={
                 <div className="flex justify-end gap-3">
-                    <button onClick={handleClose} className="rounded border px-4 py-2 text-sm">Cancel</button>
-                    <button disabled className="rounded bg-accent-600 px-4 py-2 text-sm text-white opacity-50">{t('boundary_confirm_button')}</button>
+                    <button type="button" onClick={handleClose} className={BUTTON_SECONDARY_CLASS}>Cancel</button>
+                    <button type="button" disabled className={BUTTON_PRIMARY_CLASS}>{t('boundary_confirm_button')}</button>
                 </div>
-            </div>
-        </div>
+            }
+        >
+            <CsvSourceScanPanel />
+            {semanticReviewRequired && <StructureRepairReviewPanel />}
+            <p className="text-sm text-warning-950">Boundary confirmation cannot approve structural repair. Full validation and separate exact Dataset Commit approval remain required.</p>
+        </ModalFrame>
     ) : null;
 
     const rows = rawIntakeIr?.normalizedRows ?? [];
@@ -250,29 +256,45 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
 
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4"
-            onClick={handleClose}
-        >
-            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="boundary-confirm-title"
-                aria-describedby="boundary-confirm-desc"
-                tabIndex={-1}
-                onClick={e => e.stopPropagation()}
-                className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] outline-none"
-            >
-                {/* Header */}
-                <div className="px-6 py-4 border-b border-slate-200 flex-shrink-0">
-                    <h2 id="boundary-confirm-title" className="text-base font-semibold text-slate-800">{t('guided_repair_title')}</h2>
-                    <p id="boundary-confirm-desc" className="text-sm text-slate-500 mt-0.5">
-                        {t('guided_repair_description')}
-                    </p>
+        <ModalFrame
+            isOpen={isOpen}
+            onClose={handleClose}
+            titleId="boundary-confirm-title"
+            title={t('guided_repair_title')}
+            subtitle={<span id="boundary-confirm-desc">{t('guided_repair_description')}</span>}
+            describedById="boundary-confirm-desc"
+            closeLabel={t('boundary_confirm_cancel')}
+            hideClose
+            bodyClassName="relative flex flex-col overflow-hidden p-0"
+            footerClassName="px-4 py-3 sm:px-6 sm:py-4"
+            footer={
+                <div className="flex flex-col items-end gap-2">
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setModalOpen(false)}
+                            disabled={confirming || isBusy}
+                            title={t('boundary_confirm_cancel_hint')}
+                            className={BUTTON_SECONDARY_CLASS}
+                        >
+                            {t('boundary_confirm_cancel')}
+                        </button>
+                        <button
+                            onClick={() => void triggerConfirm()}
+                            disabled={confirming || isBusy || repairRequired}
+                            className={BUTTON_PRIMARY_CLASS}
+                        >
+                            {confirming ? (
+                                <>
+                                    <span className="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    {t('boundary_confirm_processing')}
+                                </>
+                            ) : t('boundary_confirm_button')}
+                        </button>
+                    </div>
+                    <p className="text-xs text-slate-500">{repairRequired ? 'Boundary confirmation cannot approve structural repair. Use the bound semantic review above; dataset commit is separate.' : t('review_confirm_reassurance')}</p>
                 </div>
-
+            }
+        >
                 {/* Body: one scroll area, so no list is clipped inside another */}
                 <div className="relative flex min-h-0 flex-1 flex-col">
                     <div ref={scrollRef} onScroll={updateScrollCue} className="px-6 py-4 overflow-y-auto flex-1 space-y-4">
@@ -534,34 +556,6 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                         </div>
                     )}
                 </div>
-
-                {/* Footer */}
-                <div className="px-6 py-4 border-t border-slate-200 flex flex-col items-end gap-2 flex-shrink-0">
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => setModalOpen(false)}
-                            disabled={confirming || isBusy}
-                            title={t('boundary_confirm_cancel_hint')}
-                            className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
-                        >
-                            {t('boundary_confirm_cancel')}
-                        </button>
-                        <button
-                            onClick={() => void triggerConfirm()}
-                            disabled={confirming || isBusy || repairRequired}
-                            className="px-4 py-2 text-sm bg-accent-600 text-white rounded-lg hover:bg-accent-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {confirming ? (
-                                <>
-                                    <span className="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    {t('boundary_confirm_processing')}
-                                </>
-                            ) : t('boundary_confirm_button')}
-                        </button>
-                    </div>
-                    <p className="text-xs text-slate-500">{repairRequired ? 'Boundary confirmation cannot approve structural repair. Use the bound semantic review above; dataset commit is separate.' : t('review_confirm_reassurance')}</p>
-                </div>
-            </div>
-        </div>
+        </ModalFrame>
     );
 };
