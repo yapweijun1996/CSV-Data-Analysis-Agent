@@ -11,6 +11,11 @@ The [2026-11-17 review](docs/reviews/2026-11-17-production-readiness.md) records
 
 The owner authorized focused verification, main push and the existing manual Pages workflow without full CI. Full production qualification remains open: exact-model HTTP success did not establish final-answer quality, and complex acceptance, offline/stress and cross-browser gaps remain explicit in TASK.md. Historical evidence below is not a substitute for current release evidence.
 
+### 2026-11-27 — Pages deployment of 5147cb4
+
+- Owner-authorized manual Pages run 45930086554 succeeded. The live build is `1.0.0-289d16534321`, matching the locally verified build.
+- Live check with external hosts blocked and one synthetic CSV: both mobile web-app meta tags present, local-only preview returned 3 rows, no page errors or failed responses. No AI path or gateway was exercised.
+
 ### 2026-11-27 — Rebase onto latest main, mobile meta tag, push
 
 - Rebased the dependency work onto `c67231d` (no checked-in build; `publish:root` removed). The earlier numbers below were measured on the older base `7dc3b73`. Added `<meta name="mobile-web-app-capable">` to `frontend/index.html`, keeping the `apple-` tag.
