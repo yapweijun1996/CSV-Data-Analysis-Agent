@@ -37,6 +37,7 @@ const fail = code => { throw new Error(code); };
 const relativePath = value => typeof value === 'string' && value.length <= 240
   && !value.includes('\\') && !path.posix.isAbsolute(value) && path.posix.normalize(value) === value
   && value.split('/').every(part => part && part !== '.' && part !== '..');
+export const DEPLOYMENT_DIRECTORY = 'frontend/dist';
 const regularRoot = async root => {
   const stat = await lstat(root);
   if (!stat.isDirectory() || stat.isSymbolicLink()) fail('repository_root_invalid');
@@ -79,16 +80,17 @@ const repositoryPins = async root => {
   if (new Set(sources).size !== sources.length || sources.length > 4096) fail('pin_count_invalid');
   const source = await Promise.all(sources.sort().map(file => pin(root, file)));
   const evaluators = await Promise.all(evaluatorFiles.map(file => pin(root, file)));
-  await regularFile(root, 'SHA256SUMS.txt', 1024 * 1024);
-  const checksum = await readManifest(root);
+  // The deployment is the CI-style production build (`npm run build`); it is no longer checked in at the repository root.
+  await regularFile(root, `${DEPLOYMENT_DIRECTORY}/SHA256SUMS.txt`, 1024 * 1024);
+  const checksum = await readManifest(path.join(root, DEPLOYMENT_DIRECTORY));
   if (checksum.size < 1 || checksum.size > 512 || !checksum.has('index.html')) fail('deployment_manifest_invalid');
   const deployment = [];
   for (const [file, expected] of [...checksum].sort(([a], [b]) => a.localeCompare(b))) {
-    const actual = await pin(root, file);
+    const actual = await pin(root, `${DEPLOYMENT_DIRECTORY}/${file}`);
     if (actual.sha256 !== expected) fail('deployment_hash_mismatch');
     deployment.push(actual);
   }
-  return { source, evaluator: evaluators, deployment, deploymentManifest: await pin(root, 'SHA256SUMS.txt') };
+  return { source, evaluator: evaluators, deployment, deploymentManifest: await pin(root, `${DEPLOYMENT_DIRECTORY}/SHA256SUMS.txt`) };
 };
 const literal = (source, regex) => {
   const value = source.match(regex)?.[1];

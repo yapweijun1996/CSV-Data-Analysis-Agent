@@ -1941,3 +1941,7 @@ Final delivery checks: 135 documentation links resolve; 13 source/test hashes an
 ## Unified e2e command
 - `npm run e2e` (frontend `scripts/e2e.mjs`) starts `vite preview` and runs the browser smoke scripts; `-- --full` adds the slow source-record-stream smoke. Smoke scripts now honor `CHROMIUM_PATH` instead of a hardcoded /snap chromium path. Verified 2026-11-27 headless: all four fast scripts pass.
 - Redesigned the Analysis History modal (frontend/components/modals/History*.tsx): header icon, search with icon, All/Last 7 days/Has versions tabs with counts, sort dropdown, Clear all with trash icon, CSV file icons, icon action buttons. Dropped mockup's Created by Me/Shared tabs and filter dropdown (no backing data) and kept the honest 'saved unencrypted' subtitle. Root build not yet republished.
+
+## 2026-11-27 Deployment change
+
+The production build is no longer checked in. `assets/`, `index.html`, `service-worker.js`, `SHA256SUMS.txt`, root `pyodide/`, `sandbox/` and the root copies of the PWA files were removed from git. The `Publish verified GitHub Pages site` workflow now runs `npm ci --prefix frontend --ignore-scripts`, typecheck, `npm run build`, then stages `frontend/dist` with checksum verification. `npm run publish:root` and `scripts/publish-frontend-build*.mjs` were removed. The coding-agent qualification tooling pins the deployment from `frontend/dist` (its test skips unless a build exists). Older entries above that mention `publish:root` or a checked-in deployment are historical.

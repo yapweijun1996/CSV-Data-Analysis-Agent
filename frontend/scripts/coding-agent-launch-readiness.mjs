@@ -4,7 +4,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {readManifest} from '../../scripts/site-manifest.mjs';
 import {atomicWrite,json,sha256,assertFixtureRuntime} from './coding-agent-evaluation/fixtureKit.mjs';
-import {inspectQualification} from './coding-agent-evaluation/qualificationPreflight.mjs';
+import {inspectQualification,DEPLOYMENT_DIRECTORY} from './coding-agent-evaluation/qualificationPreflight.mjs';
 import {captureBrowserConfiguration,validateRuntimeCapture} from './coding-agent-evaluation/runtimeCapture.mjs';
 import {assessLiveReadiness,summarizeGatewayReply,readinessExitCode} from './coding-agent-evaluation/launchReadiness.mjs';
 
@@ -26,9 +26,10 @@ try{
   const stat=await lstat(target);if(!stat.isFile()||stat.isSymbolicLink()||stat.size>2097152)fail('readiness_manifest_invalid');
   manifest=JSON.parse(await readFile(target,'utf8'));preflight=await inspectQualification(repository,suite,manifest);
   if(preflight.status!=='preflight_complete')fail('readiness_preflight_invalid');
-  siteManifestSha256=sha256(await readFile(path.join(repository,'SHA256SUMS.txt')));
-  const pins=await readManifest(repository),snapshot=new Map();
-  for(const [file,digest]of pins){const bytes=await readFile(path.join(repository,file));if(sha256(bytes)!==digest)fail('readiness_build_drift');snapshot.set(file,bytes);}
+  const deploymentRoot=path.join(repository,DEPLOYMENT_DIRECTORY);
+  siteManifestSha256=sha256(await readFile(path.join(deploymentRoot,'SHA256SUMS.txt')));
+  const pins=await readManifest(deploymentRoot),snapshot=new Map();
+  for(const [file,digest]of pins){const bytes=await readFile(path.join(deploymentRoot,file));if(sha256(bytes)!==digest)fail('readiness_build_drift');snapshot.set(file,bytes);}
   const index=[...pins.keys()].find(p=>/^assets\/csv_data_analysis_index-.*\.js$/.test(p));
   if(!index)fail('readiness_bundle_missing');
   output=destination;

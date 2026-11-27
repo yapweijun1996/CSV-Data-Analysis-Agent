@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { existingRegularFile, hashFile, readManifest } from './site-manifest.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const sourceRoot = path.resolve(process.argv[2] ?? repositoryRoot);
+const sourceRoot = path.resolve(process.argv[2] ?? path.join(repositoryRoot, 'frontend', 'dist'));
 const outputRoot = path.resolve(process.argv[3] ?? path.join(repositoryRoot, 'pages-artifact'));
 const rootFiles = new Set([
   '404.html', '_headers', '_redirects', 'app-icon.svg', 'favicon.svg',

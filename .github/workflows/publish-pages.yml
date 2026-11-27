@@ -19,10 +19,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: Verify artifact preparation
         run: node --test scripts/stage-pages-artifact.test.mjs
-      - name: Stage manifest-managed site files
-        run: node scripts/stage-pages-artifact.mjs
+      - name: Install frontend dependencies
+        # --ignore-scripts skips the optional onnxruntime-node native download; the browser build does not use it.
+        run: npm ci --prefix frontend --ignore-scripts
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build production site (writes frontend/dist and its SHA256SUMS.txt)
+        run: npm run build
+      - name: Stage checksum-verified site files
+        run: node scripts/stage-pages-artifact.mjs frontend/dist pages-artifact
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:

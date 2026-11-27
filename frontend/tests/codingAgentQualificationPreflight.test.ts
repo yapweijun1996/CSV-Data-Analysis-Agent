@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm, readFile, writeFile, stat, symlink, readdir, mkdir, copyFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -11,15 +12,18 @@ let temporary: string;
 let suite: string;
 let frozen: Awaited<ReturnType<typeof freezeQualification>>;
 const repository = path.resolve('..');
+// The pinned deployment is the production build in frontend/dist; it is no longer checked in, so run `npm run build` first.
+const hasDeploymentBuild = existsSync(path.join(repository, 'frontend/dist/SHA256SUMS.txt'));
 beforeAll(async () => {
+    if (!hasDeploymentBuild) return;
     temporary = await mkdtemp(path.join(tmpdir(), 'coding-qualification-'));
     suite = path.join(temporary, 'suite');
     await writeFixtureSuite(suite);
     frozen = await freezeQualification(repository, suite);
 }, 30000);
-afterAll(async () => { await rm(temporary, { recursive: true, force: true }); });
+afterAll(async () => { if (temporary) await rm(temporary, { recursive: true, force: true }); });
 
-describe('CA-173 offline qualification preflight', () => {
+describe.skipIf(!hasDeploymentBuild)('CA-173 offline qualification preflight', () => {
     it('pins public evaluator artifacts without requiring ignored operator reports', () => {
         const paths = frozen.pins.evaluator.map((pin: { path: string }) => pin.path);
         const ignored = spawnSync('git', ['check-ignore', '--no-index', '--stdin'], {
@@ -48,7 +52,7 @@ describe('CA-173 offline qualification preflight', () => {
         expect(manifest.candidate.runtime.preflightNode).toBe(process.versions.node);
         expect(manifest.candidate.skills).toHaveLength(11);
         // Every checksum-verified deployment file is pinned; derive the count so new demo data does not need a manual bump.
-        const deploymentEntries = (await readFile(path.join(repository, 'SHA256SUMS.txt'), 'utf8')).split('\n').filter(line => line.trim()).length;
+        const deploymentEntries = (await readFile(path.join(repository, 'frontend/dist/SHA256SUMS.txt'), 'utf8')).split('\n').filter(line => line.trim()).length;
         expect(manifest.pins.deployment).toHaveLength(deploymentEntries);
         expect(manifest.candidate.settings.taskLimits).toEqual({ toolCalls: 40, skillReads: 8,
             providerTurns: 32, transformationAttempts: 3, activeMs: 900000 });
@@ -135,11 +139,11 @@ describe('CA-173 offline qualification preflight', () => {
         expect(await inspectQualification(isolated, suite, frozen)).toMatchObject({ status: 'invalid',
             reasons: ['qualification_manifest_drift'] });
         await writeFile(source, sourceBytes);
-        const deployment = path.join(isolated, 'index.html');
+        const deployment = path.join(isolated, 'frontend/dist/index.html');
         await writeFile(deployment, 'changed deployment');
         expect(await inspectQualification(isolated, suite, frozen)).toMatchObject({ status: 'invalid',
             reasons: ['deployment_hash_mismatch'] });
-        await copyFile(path.join(repository, 'index.html'), deployment);
+        await copyFile(path.join(repository, 'frontend/dist/index.html'), deployment);
         await rm(source); await symlink(path.join(isolated, 'frontend/index.tsx'), source);
         expect(await inspectQualification(isolated, suite, frozen)).toMatchObject({ status: 'invalid',
             reasons: ['pin_symlink_denied'] });
