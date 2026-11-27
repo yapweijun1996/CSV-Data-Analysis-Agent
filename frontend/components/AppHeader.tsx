@@ -170,7 +170,7 @@ export const AppHeader: React.FC = () => {
             )}
             <nav
                 aria-label={getTranslation('header_analysis_actions', language)}
-                className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-visible"
+                className="ml-auto flex w-full min-w-0 flex-wrap items-center justify-between gap-1.5 overflow-visible md:w-auto md:flex-nowrap md:justify-end"
             >
                 <LanguageSwitcher buttonClassName={secondaryButtonClass} />
                 {showNewSessionButton && (showAnalysisTools || hasPendingRestore) && (
