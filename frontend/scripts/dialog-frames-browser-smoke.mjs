@@ -6,11 +6,11 @@ import { chromium } from '@playwright/test';
 // Screenshot + layout regression for the shared dialog frames (ModalFrame / FullScreenFrame).
 // For each viewport x colour scheme it opens the real dialogs and asserts: inside the viewport, no
 // horizontal overflow, header/footer pinned while the body scrolls, focus trapped, Escape closes.
-// Screenshots go to argv[3] (default: a temp dir) so a human can diff them after a failure.
+// Screenshots go to argv[3] or $E2E_OUTPUT_DIR (default: a temp dir) so a human can diff them after a failure.
 // No provider/network access: every non-local request is aborted; consent uses "local processing only".
 const base = process.argv[2] ?? 'http://127.0.0.1:4191';
 assert.equal(new URL(base).hostname, '127.0.0.1');
-const output = process.argv[3] ?? await mkdtemp('/tmp/dialog-frames-');
+const output = process.argv[3] ?? process.env.E2E_OUTPUT_DIR ?? await mkdtemp('/tmp/dialog-frames-');
 await mkdir(output, { recursive: true });
 const fixture = join(output, 'messy-structure.csv');
 await writeFile(fixture, [
