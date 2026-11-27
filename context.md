@@ -17,6 +17,7 @@ The owner authorized focused verification, main push and the existing manual Pag
 - Measured: `bundle:check` passes (`vendor-ai-sdk` 1,092,292 to 749,305 bytes); cold start in Chrome fell from 18 JS requests / 11,884,586 bytes to 16 / 10,774,487. Default gateway bodies were identical, and mocked browser runs for all five provider settings sent requests without page errors. No live provider was called.
 - Verified: typecheck, lint, stage-pages tests, build, reattach 8/8. Vitest 5,680 of 5,681 passed; `npm run e2e` passed unit-guard and production-startup.
 - Pre-existing on `main` (reproduced without this change): the `endUserMode.ui.test.tsx` header test, and the `local-preview` and `upload-review-privacy` e2e scripts.
+- After rebasing onto the latest `main`: typecheck, lint, build, bundle budget, reattach 8/8 and the five mocked provider flows passed; cold start 16 requests / 10,805,155 bytes. Vitest: 5,648 passed, 28 skipped, with `codingAgentRunner` and `codingAgentQualificationPreflight` suites failing (`source_default_unresolved`), and `npm run e2e` passed only production-startup. A clean `main` build shows the same suite error and e2e failures.
 - Open finding: the entry still statically imports `app-agent` (about 7.2 MB). `bundle:check` only measures preload links, so it does not see it. `ai` core also still loads at startup.
 
 ### 2026-11-27 — Pages deployment of 5147cb4
