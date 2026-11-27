@@ -37,14 +37,16 @@ The previous execution stopped before this backlog was complete. The execution t
 - Reproduced: 102/109 manifest entries differ only by CRLF; local COE preview and Retry fail with `sql_wasm_integrity_failed`.
 - Acceptance: fresh Windows checkout preserves manifest and integrity-pinned worker bytes; real local preview and independently checked aggregate succeed, including reload/rebind. Retain integrity enforcement.
 - Verified: byte-preserving attributes, 109/109 rebuilt manifest hashes, local preview (25/1,990 rows, seven columns), and grouped counts (five categories, 398 each) against an independent CSV oracle. Integrity checks remain unchanged.
-- Remaining: source reattachment/rebind acceptance; fixture upload was blocked by MCP path access. Fresh Windows clone/checkout with core.autocrlf=true passed all 109 hashes.
+- Verified (2026-11-27, checked-in root build `1.0.0-89457e9eb0ea`, headless Chrome for Testing 159.0.8154.6 on macOS, self-served loopback without the `_headers` hosting headers, synthetic CSV, local-only): `frontend/scripts/source-reattach-browser-smoke.mjs` passed 8/8 checks in two consecutive runs: reload prompt with restored Assistant history and no unfinished-cleaning text, empty file selection, same-name/same-size altered file rejection, prompt retention across a further reload, and original-file reattachment followed by a three-row local preview with no not-ready/rebind error. No page errors or external requests.
+- Remaining: independently checked aggregate after rebind and independent acceptance. Fresh Windows clone/checkout with core.autocrlf=true passed all 109 hashes.
 
 ## CA-192 — Correct local-only restore guidance
 - Priority: P2. Status: partial. Source: 2026-11-17 review.
 - Reproduced: local-only import, reload, open Assistant; it claims unfinished cleaning although cleaning was not started.
 - Acceptance: local-only restore requests source reattachment without claiming active cleaning; genuine interrupted cleaning retains explicit recovery. Test refresh, cancellation and source identity boundaries without unauthorized provider calls.
 - Verified: final built UI local-only import and reload retain the honest source-reattachment prompt without unfinished-cleaning text or Continue cleaning. Unit checks preserve genuine paused/running/failed states and normalize only empty legacy consent-declined placeholders. Cancellation and source identity end-to-end cases remain open.
-- Next: exercise cancellation and matching/mismatching source reattachment once upload access is available.
+- Verified (2026-11-27): same run and limits as the CA-191 entry above (`source-reattach-browser-smoke.mjs`, 8/8), covering reload guidance and matching/mismatching source identity for the local-only path.
+- Next: in-flight run/reattach cancellation (not covered; only an empty file selection was), genuine interrupted-run recovery in a real browser (unit tests only), Pi checkpoint reattachment, transformation replay, and Firefox/WebKit.
 
 Follow-up work from the [review archive](docs/reviews/2026-10-30-25-persona-review.md); source evidence is not acceptance proof. See [bugs](BUG.md).
 

@@ -70,6 +70,8 @@ The full-source CSV panel includes an accessible, read-only source trust summary
 
 `npm --prefix frontend test` prepares the public DuckDB and demo-data resources before Vitest. For standalone A60 retention/recovery repeats, build the frontend, serve `frontend/dist` on loopback port 4187, then run `node frontend/scripts/pi-a60-repeat-smoke.mjs [base-url] [output-prefix] [runs] [timeout-ms]`; defaults are three runs and 300000 ms per run. The underlying harness requires its configured Chromium executable and a display.
 
+`node frontend/scripts/source-reattach-browser-smoke.mjs` checks local-only reload and original-source reattachment against the checked-in root; it serves its own loopback port. Optional `SITE_ROOT` (absolute site directory) and `CHROMIUM_PATH`.
+
 ## Incomplete provider responses
 
 A Responses stream that ends without a terminal event remains a failed run. Its exact SDK error is classified as a provider failure for the existing explicit recovery UI, not a successful partial result or an automatic retry. Structural/business-meaning blocks still take priority; resolving them and any separate Dataset Commit approval remain necessary. This classification does not identify or fix the underlying network cause.

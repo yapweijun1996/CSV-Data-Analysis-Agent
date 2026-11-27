@@ -11,6 +11,17 @@ The [2026-11-17 review](docs/reviews/2026-11-17-production-readiness.md) records
 
 The owner authorized focused verification, main push and the existing manual Pages workflow without full CI. Full production qualification remains open: exact-model HTTP success did not establish final-answer quality, and complex acceptance, offline/stress and cross-browser gaps remain explicit in TASK.md. Historical evidence below is not a substitute for current release evidence.
 
+### 2026-11-27 — Baseline and CA-191/CA-192 reattachment check
+
+- Baseline on Node 22.23.3: typecheck, lint, publisher tests 4/4 and full Vitest 543 files / 5,615 tests passed. The local `node@22` Homebrew link points to Node 23, so another Node 22 binary was used.
+- Added `frontend/scripts/source-reattach-browser-smoke.mjs`. 8/8 checks passed twice against checked-in root build `1.0.0-89457e9eb0ea` in Chrome for Testing 159.0.8154.6; the server does not reproduce `_headers`. No application source, bundle or deployment changed. Limits are under CA-191/CA-192 in `TASK.md`.
+- Observation for owner classification (CA-180/CA-192), not a confirmed defect: after reload, reattachment showed the cloud AI consent dialog again although local-only had been chosen, and it appears before the source fingerprint check.
+- npm audit (2026-11-27): 35 findings (2 critical, 13 high), 12 in the production tree. A lock-only trial outside the repository (`npm audit fix` plus bumped overrides for brace-expansion, js-yaml, qs, sharp, dompurify) left 4 dev-only findings (Vitest major upgrade, `@hono/node-server`) and 0 production; it was not installed, built or tested and nothing was changed here. `monaco-editor` 0.56.0 vendors its own DOMPurify 3.4.8, which the override and `npm audit` do not cover.
+
+### 2026-11-27 — Read-only codebase orientation
+
+Reviewed docs, layout and entry points only. No application code, tests or deployment changed. Local checkout has no `frontend/node_modules`, and the shell Node (23.10.0) is outside the `>=22.13 <23` engine range.
+
 ### 2026-11-17 release
 
 `26504ab` is deployed through the successful lightweight Pages workflow (run 44013051743), build `1.0.0-89457e9eb0ea`. Public COE local preview passed. Fresh Windows checkout preserved all 109 hashes. Detailed outcomes and honest remaining acceptance are in the review linked above; this is not full production certification.
