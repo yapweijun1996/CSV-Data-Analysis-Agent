@@ -37,7 +37,7 @@ describe('AppHeader mobile layout', () => {
         const nav = header.querySelector('nav')!;
 
         expect(header.classList).toContain('flex-wrap');
-        expect(header.classList).toContain('md:flex-nowrap');
+        expect(header.classList).toContain('lg:flex-nowrap');
         expect(header.classList).not.toContain('flex-nowrap');
         expect(title.textContent).toBe('AI Analysis');
         expect(title.classList).toContain('whitespace-nowrap');
