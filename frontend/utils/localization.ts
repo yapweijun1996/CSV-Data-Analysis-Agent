@@ -2615,6 +2615,12 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Malay': 'Tinggi',
         'Japanese': '高',
     },
+    'settings_reasoning_effort_xhigh': {
+        'English': 'Extra high',
+        'Mandarin': '超高',
+        'Malay': 'Sangat tinggi',
+        'Japanese': '最高',
+    },
     'settings_test_connection': {
         'English': 'Test Connection',
         'Mandarin': '测试连接',

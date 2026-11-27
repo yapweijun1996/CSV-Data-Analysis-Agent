@@ -46,7 +46,9 @@ export interface Settings {
      * OpenRouter's reasoning parameter, or OpenAI/gateway's reasoningEffort
      * provider option depending on the active provider.
      */
-    reasoningEffort?: 'off' | 'low' | 'medium' | 'high';
+    reasoningEffort?: 'off' | 'low' | 'medium' | 'high' | 'xhigh';
+    /** When false, external (MCP) tools are not offered to the Pi agent. Defaults to true. */
+    externalToolsEnabled?: boolean;
     language: AppLanguage;
     reportTemplate: 'board_pack' | 'executive_brief' | 'management_review' | 'audit_appendix';
     autoConfirmGoal: boolean;

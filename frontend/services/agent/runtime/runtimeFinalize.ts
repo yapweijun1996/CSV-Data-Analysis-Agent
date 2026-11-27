@@ -290,6 +290,7 @@ export const finalizeRuntimeOutcome = ({
                     type: 'ai_message',
                     isError: normalizedOutcome.assistantMessageIsError ?? false,
                     cardId: normalizedOutcome.assistantCardId ?? undefined,
+                    ...(normalizedOutcome.assistantTelemetry ? { telemetry: normalizedOutcome.assistantTelemetry } : {}),
                 }),
             ];
         }

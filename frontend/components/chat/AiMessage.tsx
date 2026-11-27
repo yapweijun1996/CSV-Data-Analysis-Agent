@@ -6,6 +6,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { getTranslation } from '../../utils/localization';
 import type { AppLanguage } from '../../types/localization';
 import { CopyButton } from './CopyButton';
+import { ReplyMetricsBar } from './ReplyMetricsBar';
 
 interface AiMessageProps {
     msg: ChatMessage;
@@ -191,6 +192,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                             → {getTranslation('chat_show_related_card', language)}
                         </button>
                     )}
+                    {msg.telemetry && !isActiveError && <ReplyMetricsBar telemetry={msg.telemetry} />}
                     {/* Suggested actions are rendered only in the ChatComposer NEXT STEPS section to avoid duplication */}
                 </div>
             </div>
