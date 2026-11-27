@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getTranslation } from '../../utils/localization';
+import { MarkdownRenderer } from '../MarkdownRenderer';
 
 interface ReasoningBlockProps {
     text: string;
@@ -7,6 +8,10 @@ interface ReasoningBlockProps {
     /** Open and follow the newest text while the model is still thinking. */
     live?: boolean;
 }
+
+/** Models emit step titles as a lone **Bold** line; promote them to headings so steps read as separate sections. */
+const normalizeReasoning = (raw: string): string =>
+    raw.replace(/\r\n/g, '\n').replace(/^\s*\*\*([^*\n]{2,120})\*\*\s*$/gm, '### $1');
 
 /** Collapsible view of the model's reasoning. Streams open while thinking, collapsed on a finished reply. */
 export const ReasoningBlock: React.FC<ReasoningBlockProps> = ({ text, language, live = false }) => {
@@ -30,8 +35,8 @@ export const ReasoningBlock: React.FC<ReasoningBlockProps> = ({ text, language, 
                 <span className={live ? 'chat-thinking-text' : ''}>{getTranslation('chat_reasoning_label', language)}</span>
             </button>
             {expanded && (
-                <div ref={bodyRef} className="max-h-56 overflow-y-auto whitespace-pre-wrap border-t border-slate-200 px-3 py-2 leading-relaxed">
-                    {text}
+                <div ref={bodyRef} className="max-h-[min(28rem,60vh)] overflow-y-auto border-t border-slate-200 px-3.5 py-3 text-[13px] leading-relaxed" data-testid="reasoning-body">
+                    <MarkdownRenderer content={normalizeReasoning(text)} compact={true} />
                 </div>
             )}
         </div>
