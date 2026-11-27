@@ -25,6 +25,7 @@ const suite = [
     ['unit-guard', 'unit-guard-browser-smoke.mjs'],
     ['upload-review-privacy', 'upload-review-privacy-browser-smoke.mjs'],
     ['production-startup', 'production-startup-browser-smoke.mjs'],
+    ['dialog-frames', 'dialog-frames-browser-smoke.mjs'],
 ];
 if (args.has('--full')) suite.push(['source-record-stream', 'source-record-stream-browser-smoke.mjs']);
 

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useSyncExternalStore } from 'react';
+import { BUTTON_PRIMARY_CLASS } from '../ui/formStyles';
 import type { Settings } from '../../types';
 import { getTranslation } from '../../utils/localization';
 import { resolveSkillEntries } from '../../services/agent/skills/skillRegistry';
@@ -149,7 +150,7 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
                                             const outcome = saveEditedUserSkill(skill.name, editing.text,supportingSources);
                                             setEditing(outcome.ok ? null : { ...editing, error: outcome.reason ?? null });
                                         }}
-                                        className="min-h-[44px] rounded-lg bg-accent-600 px-3 py-2 text-sm font-semibold text-white hover:bg-accent-700 md:min-h-0"
+                                        className={BUTTON_PRIMARY_CLASS}
                                     >
                                         {getTranslation('settings_skills_save', language)}
                                     </button>

@@ -16,6 +16,7 @@ import { confirmModal } from '../../services/ui/modalService';
 import { showToast as toast } from '../../services/ui/toastService';
 import { resolveReportMemoryScope } from '../../services/agent/memory/memoryScope';
 import { ModalFrame } from '../ui/ModalFrame';
+import { BUTTON_PRIMARY_CLASS, FIELD_CLASS } from '../ui/formStyles';
 
 type SearchResult = {
     text: string;
@@ -418,13 +419,13 @@ export const MemoryPanel: React.FC = () => {
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder={isModelReady ? t('memory_search_placeholder') : modelStatus === 'loading' ? t('memory_search_placeholder_loading') : t('memory_search_placeholder_idle')}
                                         disabled={modelStatus === 'loading' || isSearching}
-                                        className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30 disabled:opacity-50"
+                                        className={`${FIELD_CLASS} pl-10`}
                                     />
                                 </label>
                                 <button
                                     type="submit"
                                     disabled={modelStatus === 'loading' || isSearching || !searchQuery.trim()}
-                                    className="min-h-[44px] rounded-lg bg-accent-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-accent-700 disabled:cursor-not-allowed disabled:bg-accent-300"
+                                    className={BUTTON_PRIMARY_CLASS}
                                 >
                                     {isSearching ? '...' : t('memory_search_button')}
                                 </button>

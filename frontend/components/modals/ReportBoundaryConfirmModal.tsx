@@ -4,7 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { getPipelineOutcomeUserText, getStructureReviewReasonText, getTranslation, STRUCTURE_REVIEW_REASON_CODES } from '../../utils/localization';
 import type { ReportBoundary } from '../../types';
 import { ModalFrame } from '../ui/ModalFrame';
-import { BUTTON_PRIMARY_CLASS, BUTTON_SECONDARY_CLASS } from '../ui/formStyles';
+import { BUTTON_PRIMARY_CLASS, BUTTON_SECONDARY_CLASS, FIELD_CLASS } from '../ui/formStyles';
 import {
     countSummaryContentRows,
     resolveEffectiveSummaryStartIndex,
@@ -421,7 +421,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                                 setSummaryStart(v + 1 < totalRows ? v + 1 : null);
                                             }
                                         }}
-                                        className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:outline-none"
+                                        className={FIELD_CLASS}
                                     />
                                 </div>
                                 <div>
@@ -442,7 +442,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                             if (Number.isNaN(parsed)) return;
                                             setSummaryStart(Math.max(bStart + 1, parsed - 1));
                                         }}
-                                        className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:outline-none"
+                                        className={FIELD_CLASS}
                                     />
                                 </div>
                             </div>

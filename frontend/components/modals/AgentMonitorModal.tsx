@@ -2,12 +2,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { shallow } from 'zustand/shallow';
 import { useAppStore } from '../../store/useAppStore';
-import { IconClose } from '../../icons/IconClose';
 import { AiTaskStatusBubble } from '../AiTaskStatusBubble';
 import { AgentMemoryView } from '../agent-monitor/AgentMemoryView';
 import { DatasetKnowledgeView } from '../agent-monitor/DatasetKnowledgeView';
 import { AgentActivityView } from '../agent-activity/AgentActivityView';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { ModalFrame } from '../ui/ModalFrame';
+import { BUTTON_PRIMARY_CLASS } from '../ui/formStyles';
 
 export const AgentMonitorModal: React.FC = () => {
     // Sync shadow telemetry buffers into the store on mount so the modal shows fresh data.
@@ -56,7 +56,6 @@ export const AgentMonitorModal: React.FC = () => {
     }), shallow);
     const [activeTab, setActiveTab] = useState<'timeline' | 'tools' | 'memory' | 'knowledge'>('timeline');
     const closeModal = () => setIsAgentModalOpen(false);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(isAgentModalOpen, closeModal);
 
     const historyOptions = useMemo(
         () => [...agentMemoryHistory].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
@@ -83,22 +82,25 @@ export const AgentMonitorModal: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/60" onClick={closeModal}>
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="agent-monitor-dialog-title"
-                tabIndex={-1}
-                className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-card border border-slate-200 bg-white shadow-2xl"
-                onClick={event => event.stopPropagation()}
-            >
-                <header className="border-b border-slate-200 px-4 py-3">
-                    <p className="text-xs uppercase text-slate-500 tracking-wider">Assistant activity</p>
-                    <h2 id="agent-monitor-dialog-title" className="text-xl font-semibold text-slate-900 leading-tight mt-1">Run progress and outcomes</h2>
-                    <p className="text-sm text-slate-500 mt-1">Visible lifecycle events, tools, memory, and dataset knowledge in one place.</p>
-                </header>
-                <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <ModalFrame
+            isOpen
+            onClose={closeModal}
+            titleId="agent-monitor-dialog-title"
+            title="Run progress and outcomes"
+            closeLabel="Close agent monitor"
+            closeInitialFocus
+            maxWidthClass="max-w-3xl"
+            heightClass="h-[85dvh]"
+            bodyClassName="space-y-4 p-4"
+            headerContent={
+                <div className="min-w-0 flex-1">
+                    <p className="text-xs uppercase tracking-wider text-slate-500">Assistant activity</p>
+                    <h2 id="agent-monitor-dialog-title" className="mt-1 text-xl font-semibold leading-tight text-slate-900">Run progress and outcomes</h2>
+                    <p className="mt-1 text-sm text-slate-600">Visible lifecycle events, tools, memory, and dataset knowledge in one place.</p>
+                </div>
+            }
+            fixedTop={
+                <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="grid grid-cols-2 rounded-card bg-slate-100 p-0.5 sm:flex sm:rounded-full">
                         {(['timeline', 'tools', 'memory', 'knowledge'] as const).map(tab => (
                             <button
@@ -136,15 +138,8 @@ export const AgentMonitorModal: React.FC = () => {
                         </select>
                     </div>
                 </div>
-                <button
-                    data-dialog-initial-focus
-                    onClick={closeModal}
-                    className="absolute right-4 top-4 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    aria-label="Close agent monitor"
-                >
-                    <IconClose />
-                </button>
-                <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            }
+        >
                     {activeTab === 'timeline' ? (
                         <>
                             {aiTaskStatus && <AiTaskStatusBubble task={aiTaskStatus} />}
@@ -165,9 +160,7 @@ export const AgentMonitorModal: React.FC = () => {
                                 <button
                                     onClick={() => runCardEnhancementReview()}
                                     disabled={isCardReviewInProgress}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium shadow transition ${
-                                        isCardReviewInProgress ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-accent-600 text-white hover:bg-accent-700'
-                                    }`}
+                                    className={BUTTON_PRIMARY_CLASS}
                                 >
                                     {isCardReviewInProgress ? 'Reviewing...' : 'Review Cards'}
                                 </button>
@@ -281,8 +274,6 @@ export const AgentMonitorModal: React.FC = () => {
                     ) : (
                         <DatasetKnowledgeView />
                     )}
-                </div>
-            </div>
-        </div>
+        </ModalFrame>
     );
 };

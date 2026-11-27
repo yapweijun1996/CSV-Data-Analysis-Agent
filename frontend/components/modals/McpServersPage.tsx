@@ -5,6 +5,7 @@ import { IconArrowLeft } from '../../icons/IconArrowLeft';
 import { IconDelete } from '../../icons/IconDelete';
 import { IconMcpServer } from '../../icons/IconMcpServer';
 import { IconLoadingSpinner } from '../../icons/IconLoadingSpinner';
+import { BUTTON_PRIMARY_CLASS, BUTTON_SECONDARY_CLASS, FIELD_CLASS } from '../ui/formStyles';
 import { confirmModal } from '../../services/ui/modalService';
 import { toast } from '../../services/ui/toastService';
 import { normalizeHttpMcpConfig } from '../../services/agent/connectors/httpMcpContract';
@@ -22,8 +23,8 @@ import {
 
 type Language = Settings['language'];
 const t = (key: string, language: Language, params?: Record<string, string | number>) => getTranslation(key, language, params);
-const FIELD = 'mt-1 block min-h-[44px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500 sm:text-sm';
-const BUTTON = 'min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50';
+const FIELD = `mt-1 ${FIELD_CLASS}`;
+const BUTTON = BUTTON_SECONDARY_CLASS;
 
 const subscribeConnections = (listener: () => void) => subscribeMcpConnections(mcpAppStore, listener);
 
@@ -222,7 +223,7 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
                     {formError && <p role="alert" className="text-xs font-medium text-danger-700">{formError}</p>}
                     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         {records.length > 0 && <button type="button" className={BUTTON} onClick={() => { setAdding(false); setFormError(''); }}>{t('mcp_cancel', language)}</button>}
-                        <button type="submit" className="min-h-[44px] rounded-md bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{t('mcp_add_submit', language)}</button>
+                        <button type="submit" className={BUTTON_PRIMARY_CLASS}>{t('mcp_add_submit', language)}</button>
                     </div>
                 </form>
             ) : (
