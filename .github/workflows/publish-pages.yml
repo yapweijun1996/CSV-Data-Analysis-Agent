@@ -31,7 +31,9 @@ jobs:
       - name: Build production site (writes frontend/dist and its SHA256SUMS.txt)
         run: npm run build
       - name: Install Chromium for browser checks
-        run: npx --prefix frontend playwright install --with-deps chromium
+        working-directory: frontend
+        # Run from frontend/ so npx resolves the pinned @playwright/test; `npx --prefix` does not select a project.
+        run: npx playwright install --with-deps chromium
       - name: Dialog layout and screenshot regression (blocks deploy on failure)
         timeout-minutes: 15
         run: npm run e2e -- --no-build --only dialog-frames
