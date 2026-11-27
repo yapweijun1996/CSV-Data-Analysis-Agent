@@ -243,9 +243,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
             )}
             {!isWorkspaceRestoring && datasetBundle && !fileName && (
                 <div role="status" className="mb-6 w-full max-w-xl rounded-card border border-amber-300 bg-amber-50 p-4 text-left">
-                    <p className="font-semibold text-amber-950">{initialAnalysisRecovery ? 'Re-select the original CSV to resume the interrupted analysis' : 'Re-select the original CSV to restore this analysis'}</p>
+                    <p className="font-semibold text-amber-950">{getTranslation(initialAnalysisRecovery ? 'file_upload_reselect_resume_title' : 'file_upload_reselect_restore_title', language)}</p>
                     <p className="mt-1 text-sm leading-6 text-amber-900">
-                        History keeps the source fingerprint and transformation lineage, not the CSV rows. Select {datasetBundle.source.fileName}; the app will verify its fingerprint before replaying any transformation.
+                        {getTranslation('file_upload_reselect_detail', language, { fileName: datasetBundle.source.fileName })}
                     </p>
                     {initialAnalysisRecovery && <p className="mt-2 text-sm leading-6 text-amber-900">
                         Recovery: {initialAnalysisRecovery.status}. {initialAnalysisRecovery.reason

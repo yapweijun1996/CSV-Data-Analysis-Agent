@@ -50,10 +50,13 @@ vi.mock('../services/agent/memory/vectorMemorySync', () => ({
     rebuildVectorMemoryFromState: vi.fn(),
 }));
 
-const createHarness = () => {
+const createHarness = (overrides: Record<string, unknown> = {}) => {
     let state = {
         sessionId: 'session-1',
         addProgress: vi.fn(),
+        settings: { language: 'Mandarin' },
+        csvData: { fileName: 'a.csv', data: [] },
+        ...overrides,
     } as unknown as AppStore;
 
     const setState = (partial: Partial<AppStore> | ((current: AppStore) => Partial<AppStore>)) => {
@@ -107,30 +110,32 @@ describe('historySlice report artifact actions', () => {
         expect(printReportArtifactMock).toHaveBeenCalledWith('<!DOCTYPE html><html><body>Archive</body></html>');
     });
 
-    it('reports missing persisted artifacts safely', async () => {
-        getReportMock
-            .mockResolvedValueOnce({
-                id: 'report-2',
-                filename: 'Fallback Report',
-                createdAt: new Date('2026-03-14T09:00:00.000Z'),
-                updatedAt: new Date('2026-03-14T09:10:00.000Z'),
-                appState: {
-                    workspaceFiles: {
-                        '/workspace/reports/latest-analyst-report.manifest.json': JSON.stringify({
-                            reportId: 'artifact-2',
-                            artifactStatus: 'ready',
-                        }),
-                    },
-                },
-            })
-            .mockResolvedValueOnce(undefined);
-        loadReportArtifactHtmlMock.mockResolvedValueOnce(null);
+    it('warns in the user language (not an error) when a loaded analysis has no saved report page', async () => {
+        getReportMock.mockResolvedValue({ id: 'report-2', appState: { workspaceFiles: {} } });
         const harness = createHarness();
 
         await harness.getState().openPersistedReportArtifact('report-2');
-        await harness.getState().openPersistedReportArtifact('missing-report');
+        await harness.getState().exportPersistedReportPdf('report-2');
 
-        expect(harness.getState().addProgress).toHaveBeenCalledWith('No saved report artifact was found for report-2.', 'error');
-        expect(harness.getState().addProgress).toHaveBeenCalledWith('No saved report artifact was found for missing-report.', 'error');
+        const calls = (harness.getState().addProgress as ReturnType<typeof vi.fn>).mock.calls;
+        expect(calls).toHaveLength(2);
+        for (const [text, type] of calls) {
+            expect(type).toBe('warning');
+            expect(text).toContain('报告');
+            expect(text).not.toContain('No saved report artifact');
+        }
+    });
+
+    it('restores the saved analysis instead of failing when nothing is loaded and no report page exists', async () => {
+        getReportMock.mockResolvedValue({ id: 'session-x', appState: { workspaceFiles: {} } });
+        const handleLoadReport = vi.fn(async () => undefined);
+        const harness = createHarness({ csvData: null, handleLoadReport });
+        // The slice spreads its own handleLoadReport over the state; override after creation.
+        (harness.getState() as unknown as { handleLoadReport: unknown }).handleLoadReport = handleLoadReport;
+
+        await harness.getState().openPersistedReportArtifact('session-x');
+
+        expect(handleLoadReport).toHaveBeenCalledWith('session-x');
+        expect(harness.getState().addProgress).not.toHaveBeenCalled();
     });
 });

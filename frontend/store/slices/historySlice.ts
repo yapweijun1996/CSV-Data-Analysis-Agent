@@ -21,6 +21,7 @@ import { createAndStoreTabSessionId, startDeliberateRepairBudgetSession } from '
 import { openReportArtifact, printReportArtifact } from '../../services/reporting/reportArtifactViewer';
 import { hydrateLatestReportWorkspaceFiles, loadReportArtifactHtml } from '../../services/reporting/reportArtifactStorage';
 import { parseReportArtifactManifest } from '../../services/reporting/reportArtifactManifest';
+import { getTranslation } from '../../utils/localization';
 import { restoreAgentActivityHistory } from '../../services/agent/activity/agentActivity';
 import {
     normalizeSavedAgentMemoryRun,
@@ -29,6 +30,19 @@ import {
     normalizeSavedReportPendingMemoryDocuments,
     resolveReportMemoryScope,
 } from '../../services/agent/memory/memoryScope';
+
+/**
+ * A saved entry without a report page is not an error. When nothing is loaded
+ * (for example after a reload) the row's primary action should restore the saved
+ * analysis; otherwise explain in the user's language that no report page exists yet.
+ */
+const createMissingArtifactHandler = (get: () => AppStore) => async (id: string): Promise<void> => {
+    if (!get().csvData) {
+        await get().handleLoadReport(id);
+        return;
+    }
+    get().addProgress(getTranslation('history_report_artifact_missing', get().settings.language), 'warning');
+};
 
 const discardPiSessionCheckpoint = async (sessionId: string) => {
     const { discardPiInitialAnalysisCheckpoint } =
@@ -276,12 +290,13 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
         }
     },
     openPersistedReportArtifact: async (id) => {
+        const handleMissingReportArtifact = createMissingArtifactHandler(get);
         const report = await getReport(id);
         const manifest = parseReportArtifactManifest(report?.appState?.workspaceFiles?.['/workspace/reports/latest-analyst-report.manifest.json']);
         const html = manifest ? await loadReportArtifactHtml(manifest.reportId) : null;
 
         if (!html) {
-            get().addProgress(`No saved report artifact was found for ${id}.`, 'error');
+            await handleMissingReportArtifact(id);
             return;
         }
 
@@ -291,12 +306,13 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
         }
     },
     exportPersistedReportPdf: async (id) => {
+        const handleMissingReportArtifact = createMissingArtifactHandler(get);
         const report = await getReport(id);
         const manifest = parseReportArtifactManifest(report?.appState?.workspaceFiles?.['/workspace/reports/latest-analyst-report.manifest.json']);
         const html = manifest ? await loadReportArtifactHtml(manifest.reportId) : null;
 
         if (!html) {
-            get().addProgress(`No saved report artifact was found for ${id}.`, 'error');
+            await handleMissingReportArtifact(id);
             return;
         }
 
