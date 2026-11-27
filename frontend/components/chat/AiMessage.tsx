@@ -7,6 +7,7 @@ import { getTranslation } from '../../utils/localization';
 import type { AppLanguage } from '../../types/localization';
 import { CopyButton } from './CopyButton';
 import { ReplyMetricsBar } from './ReplyMetricsBar';
+import { ReplyActionBar } from './ReplyActionBar';
 
 interface AiMessageProps {
     msg: ChatMessage;
@@ -69,6 +70,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
         : null;
     const displayText = sanitizeAssistantDisplayText(msg.text);
     const isOperationalMessage = msg.type === 'ai_cleaning_step' || msg.type === 'ai_query_trace';
+    const showReplyActions = !isOperationalMessage && !isActiveError && !msg.resolved && (msg.type ?? 'ai_message') === 'ai_message';
     const titleKey = isActiveError
         ? 'chat_error'
         : msg.resolved
@@ -87,7 +89,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                         {getTranslation(titleKey, language)}
                     </h4>
                     <div className="flex items-center gap-1">
-                        <CopyButton text={displayText} className="text-slate-300 hover:text-slate-500" />
+                        {!showReplyActions && <CopyButton text={displayText} className="text-slate-300 hover:text-slate-500" />}
                         {timestamp && (
                             <span className="text-[11px] text-slate-400">{timestamp}</span>
                         )}
@@ -192,6 +194,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                             → {getTranslation('chat_show_related_card', language)}
                         </button>
                     )}
+                    {showReplyActions && <ReplyActionBar msg={msg} copyText={displayText} />}
                     {msg.telemetry && !isActiveError && <ReplyMetricsBar telemetry={msg.telemetry} />}
                     {/* Suggested actions are rendered only in the ChatComposer NEXT STEPS section to avoid duplication */}
                 </div>

@@ -174,6 +174,7 @@ export const part06: Record<string, TranslationEntry> = {
         'Japanese': '分析の根拠を確認',
         'Malay': 'Semak bukti analisis',
     },
+    'chat_retry': { 'English': 'Retry', 'Mandarin': '重试', 'Japanese': '再試行', 'Malay': 'Cuba semula' },
     'chat_copy': { 'English': 'Copy', 'Mandarin': '复制', 'Japanese': 'コピー', 'Malay': 'Salin' },
     'chat_copied': { 'English': 'Copied', 'Mandarin': '已复制', 'Japanese': 'コピーしました', 'Malay': 'Disalin' },
     'mutation_review_filter': { 'English': 'Review delete filter and preview', 'Mandarin': '检查删除筛选与预览', 'Japanese': '削除フィルターとプレビューを確認', 'Malay': 'Semak penapis pemadaman dan pratonton' },

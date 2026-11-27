@@ -7,6 +7,7 @@ import { shouldAllowSettingsSurface } from '../../config/runtimeConfig';
 import { getTranslation } from '../../utils/localization';
 import { createChatMessage } from '../../utils/messageState';
 import { createId } from '../../utils/createId';
+import { selectReplyVersion } from '../../utils/replyVersions';
 import { parseCardMentions } from '../../utils/cardMentionParser';
 
 // Lazy caches for agent/AI modules — populated on first chat action.
@@ -29,7 +30,12 @@ export interface IChatSlice {
     streamingMessage: StreamingMessage | null;
     setStreamingMessage: (text: string) => void;
     clearStreamingMessage: () => void;
-    handleChatMessage: (message: string, options?: { source?: 'composer' | 'action'; displayText?: string }) => Promise<void>;
+    /** Assistant message whose next finished reply is stored as a new version instead of a new bubble. */
+    pendingReplyRetryId: string | null;
+    retryAssistantReply: (messageId: string) => Promise<void>;
+    selectReplyVersion: (messageId: string, index: number) => void;
+    deleteChatMessage: (messageId: string) => void;
+    handleChatMessage: (message: string, options?: { source?: 'composer' | 'action' | 'retry'; displayText?: string }) => Promise<void>;
     handleClarificationResponse: (userChoice: ClarificationOption) => Promise<void>;
     handleNaturalLanguageQuery: (query: string) => Promise<void>;
     clearAiFilter: () => void;
@@ -312,6 +318,29 @@ export const createChatSlice: StateCreator<AppStore, [], [], IChatSlice> = (set,
     return {
         isAiFiltering: false,
         streamingMessage: null,
+        pendingReplyRetryId: null,
+        retryAssistantReply: async (messageId) => {
+            const state = get();
+            if (state.isBusy || hasRunningTurn()) return;
+            const history = state.chatHistory;
+            const index = history.findIndex(m => m.id === messageId);
+            if (index < 0) return;
+            // Retry only the newest answer: the model context after it would otherwise be inconsistent.
+            if (history.slice(index + 1).some(m => m.sender === 'ai' && (m.type ?? 'ai_message') === 'ai_message')) return;
+            const prompt = [...history.slice(0, index)].reverse().find(m => m.sender === 'user' && m.type === 'user_message');
+            if (!prompt?.text.trim()) return;
+            set({ pendingReplyRetryId: messageId });
+            await get().handleChatMessage(prompt.text, { source: 'retry' });
+            // The turn may have been blocked before it produced a reply; never leave a stale target behind.
+            if (!get().isBusy && !hasRunningTurn() && get().pendingReplyRetryId === messageId) set({ pendingReplyRetryId: null });
+        },
+        selectReplyVersion: (messageId, index) => {
+            set(prev => ({ chatHistory: prev.chatHistory.map(m => m.id === messageId ? selectReplyVersion(m, index) : m) }));
+        },
+        deleteChatMessage: (messageId) => {
+            if (get().isBusy) return;
+            set(prev => ({ chatHistory: prev.chatHistory.filter(m => m.id !== messageId) }));
+        },
         setStreamingMessage: (text: string) => {
             set(prev => ({
                 streamingMessage: prev.streamingMessage
