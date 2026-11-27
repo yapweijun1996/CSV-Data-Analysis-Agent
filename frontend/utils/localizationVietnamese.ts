@@ -144,5 +144,11 @@ export const vietnameseTranslations: Readonly<Record<string, string>> = {
     memory_cancel: 'Hủy',
     memory_cleared_toast: 'Đã xóa bộ nhớ báo cáo.',
     memory_deleted_toast: 'Đã xóa bộ nhớ.',
+    memory_filter_label: 'Lọc theo loại',
+    memory_filter_all: 'Tất cả',
+    memory_sort_label: 'Sắp xếp',
+    memory_sort_newest: 'Mới nhất trước',
+    memory_sort_oldest: 'Cũ nhất trước',
+    memory_created: 'Tạo lúc',
     history_confirm_purge_cache: 'Xóa toàn bộ dữ liệu bộ nhớ đệm (bản sao CSV gốc, lần chạy bộ nhớ, tạo phẩm) để giải phóng dung lượng?',
 };

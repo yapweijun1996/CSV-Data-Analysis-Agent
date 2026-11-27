@@ -46,6 +46,29 @@ const KIND_STYLE: Record<MemoryKind, { icon: React.FC<React.SVGProps<SVGSVGEleme
     note: { icon: IconNote, tint: 'bg-slate-100 text-slate-600', labelKey: 'memory_type_note' },
 };
 
+const docTime = (doc: VectorStoreDocument): number => {
+    const raw = doc.metadata?.origin?.createdAt ?? doc.metadata?.extractedAt;
+    const time = raw ? Date.parse(raw) : NaN;
+    return Number.isFinite(time) ? time : 0;
+};
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const extractTerms = (query: string): string[] =>
+    Array.from(new Set(query.toLowerCase().split(/\s+/).filter(term => term.length >= 2)));
+
+const HighlightedText: React.FC<{ text: string; terms: string[] }> = ({ text, terms }) => {
+    if (terms.length === 0) return <>{text}</>;
+    const pattern = new RegExp(`(${terms.map(escapeRegExp).join('|')})`, 'gi');
+    return (
+        <>
+            {text.split(pattern).map((part, index) => index % 2 === 1
+                ? <mark key={index} className="rounded bg-yellow-200 px-0.5 text-slate-900">{part}</mark>
+                : <React.Fragment key={index}>{part}</React.Fragment>)}
+        </>
+    );
+};
+
 const IdValue: React.FC<{ id: string; copyLabel: string; onCopy: (id: string) => void }> = ({ id, copyLabel, onCopy }) => (
     <span className="inline-flex min-w-0 items-center gap-1">
         <span className="truncate font-mono text-[12px]" title={id}>{shortenId(id)}</span>
@@ -67,7 +90,9 @@ const MemoryCard: React.FC<{
     highlighted: boolean;
     onDelete: (id: string) => void;
     onCopy: (id: string) => void;
-}> = ({ doc, t, highlighted, onDelete, onCopy }) => {
+    terms: string[];
+    language: string;
+}> = ({ doc, t, highlighted, onDelete, onCopy, terms, language }) => {
     const [expanded, setExpanded] = useState(false);
     const kind = KIND_STYLE[detectKind(doc.text)];
     const KindIcon = kind.icon;
@@ -76,6 +101,11 @@ const MemoryCard: React.FC<{
     const rows: Array<{ label: string; node: React.ReactNode }> = [
         { label: t('memory_origin'), node: <span className="break-words">{doc.metadata?.origin?.label ?? t('memory_origin_legacy')}</span> },
     ];
+    const created = docTime(doc);
+    if (created > 0) {
+        const locale = language === 'Mandarin' ? 'zh-CN' : language === 'Japanese' ? 'ja-JP' : language === 'Malay' ? 'ms-MY' : language === 'Vietnamese' ? 'vi-VN' : 'en-US';
+        rows.push({ label: t('memory_created'), node: <span>{new Date(created).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })}</span> });
+    }
     if (scope) {
         rows.push(
             { label: t('memory_report'), node: <IdValue id={scope.reportId} copyLabel={t('memory_copy_id')} onCopy={onCopy} /> },
@@ -92,7 +122,7 @@ const MemoryCard: React.FC<{
                 <KindIcon />
             </span>
             <div className="min-w-0 flex-1">
-                <p className={`break-words text-sm leading-6 text-slate-800 ${collapsible && !expanded ? 'line-clamp-4' : ''}`}>{doc.text}</p>
+                <p className={`break-words text-sm leading-6 text-slate-800 ${collapsible && !expanded ? 'line-clamp-4' : ''}`}><HighlightedText text={doc.text} terms={terms} /></p>
                 {collapsible && (
                     <button
                         type="button"
@@ -137,6 +167,9 @@ export const MemoryPanel: React.FC = () => {
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const [activeQuery, setActiveQuery] = useState('');
+    const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+    const [kindFilter, setKindFilter] = useState<'all' | MemoryKind>('all');
     const [highlightedDocText, setHighlightedDocText] = useState<string | null>(null);
     const [modelStatus, setModelStatus] = useState(vectorStore.getStatus());
     const [modelError, setModelError] = useState(vectorStore.getLastError());
@@ -157,6 +190,26 @@ export const MemoryPanel: React.FC = () => {
         setModelStatus(vectorStore.getStatus());
         setModelError(vectorStore.getLastError());
     }, []);
+
+    const kindCounts = useMemo(() => {
+        const counts: Record<MemoryKind, number> = { dataset: 0, analysis: 0, note: 0 };
+        documents.forEach(doc => { counts[detectKind(doc.text)] += 1; });
+        return counts;
+    }, [documents]);
+    const activeFilter = kindFilter !== 'all' && kindCounts[kindFilter] === 0 ? 'all' : kindFilter;
+    const visibleDocuments = useMemo(() => {
+        const filtered = activeFilter === 'all' ? documents : documents.filter(doc => detectKind(doc.text) === activeFilter);
+        const direction = sortOrder === 'newest' ? -1 : 1;
+        // Documents without a timestamp keep their stored order and sink to the end.
+        return filtered
+            .map((doc, index) => ({ doc, index, time: docTime(doc) }))
+            .sort((a, b) => {
+                if (a.time === 0 || b.time === 0) return a.time === b.time ? a.index - b.index : (a.time === 0 ? 1 : -1);
+                return (a.time - b.time) * direction || a.index - b.index;
+            })
+            .map(entry => entry.doc);
+    }, [documents, activeFilter, sortOrder]);
+    const highlightTerms = useMemo(() => extractTerms(activeQuery), [activeQuery]);
 
     const memoryUsage = useMemo(() => {
         if (documents.length === 0) return 0;
@@ -199,6 +252,8 @@ export const MemoryPanel: React.FC = () => {
             setSearchQuery('');
             setSearchResults([]);
             setHasSearched(false);
+            setActiveQuery('');
+            setKindFilter('all');
             setHighlightedDocText(null);
         }
     }, [isOpen, refreshDocuments, syncModelState]);
@@ -209,6 +264,7 @@ export const MemoryPanel: React.FC = () => {
         setIsSearching(true);
         setHighlightedDocText(null);
         setHasSearched(true);
+        setActiveQuery(searchQuery);
         syncModelState();
         const scope = resolveReportMemoryScope(useAppStore.getState());
         if (!scope) {
@@ -407,7 +463,7 @@ export const MemoryPanel: React.FC = () => {
                                             <span className="mb-2 block h-1 w-full rounded-full bg-slate-200">
                                                 <span className="block h-1 rounded-full bg-blue-500" style={{ width: `${result.score * 100}%` }} />
                                             </span>
-                                            <span className="line-clamp-3 block break-words italic text-slate-600">"{result.text}"</span>
+                                            <span className="line-clamp-3 block break-words italic text-slate-600">"<HighlightedText text={result.text} terms={highlightTerms} />"</span>
                                             {result.origin && (
                                                 <span className="mt-1 block text-[11px] text-slate-500">{t('memory_origin')}: {result.origin}</span>
                                             )}
@@ -438,6 +494,34 @@ export const MemoryPanel: React.FC = () => {
                                 </button>
                             )}
                         </div>
+                        {documents.length > 0 && (
+                            <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2" role="group" aria-label={t('memory_filter_label')}>
+                                {([['all', t('memory_filter_all'), documents.length], ...(Object.keys(KIND_STYLE) as MemoryKind[])
+                                    .filter(kind => kindCounts[kind] > 0)
+                                    .map(kind => [kind, t(KIND_STYLE[kind].labelKey), kindCounts[kind]])] as Array<[string, string, number]>).map(([key, label, count]) => (
+                                    <button
+                                        type="button"
+                                        key={key}
+                                        aria-pressed={activeFilter === key}
+                                        onClick={() => setKindFilter(key as 'all' | MemoryKind)}
+                                        className={`min-h-[36px] rounded-full border px-3 text-xs font-semibold transition-colors ${activeFilter === key ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-700'}`}
+                                    >
+                                        {label} <span className={activeFilter === key ? 'text-blue-100' : 'text-slate-400'}>{count}</span>
+                                    </button>
+                                ))}
+                                <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-500">
+                                    <span>{t('memory_sort_label')}</span>
+                                    <select
+                                        value={sortOrder}
+                                        onChange={event => setSortOrder(event.target.value as 'newest' | 'oldest')}
+                                        className="min-h-[36px] rounded-lg border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                    >
+                                        <option value="newest">{t('memory_sort_newest')}</option>
+                                        <option value="oldest">{t('memory_sort_oldest')}</option>
+                                    </select>
+                                </label>
+                            </div>
+                        )}
                         <div className="min-h-0 flex-1 md:overflow-y-auto md:pr-1">
                             {documents.length === 0 ? (
                                 <div className="flex h-full min-h-[120px] items-center justify-center text-sm text-slate-500">
@@ -445,7 +529,7 @@ export const MemoryPanel: React.FC = () => {
                                 </div>
                             ) : (
                                 <ul className="space-y-3">
-                                    {documents.map(doc => (
+                                    {visibleDocuments.map(doc => (
                                         <MemoryCard
                                             key={doc.id}
                                             doc={doc}
@@ -453,6 +537,8 @@ export const MemoryPanel: React.FC = () => {
                                             highlighted={highlightedDocText === doc.text}
                                             onDelete={handleDelete}
                                             onCopy={handleCopy}
+                                            terms={highlightTerms}
+                                            language={language}
                                         />
                                     ))}
                                 </ul>

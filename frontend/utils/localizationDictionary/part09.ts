@@ -45,4 +45,10 @@ export const part09: Record<string, TranslationEntry> = {
     memory_cancel: { English: 'Cancel', Mandarin: '取消', Malay: 'Batal', Japanese: 'キャンセル' },
     memory_cleared_toast: { English: 'Report memory cleared.', Mandarin: '报告记忆已清除。', Malay: 'Memori laporan dikosongkan.', Japanese: 'レポートメモリを消去しました。' },
     memory_deleted_toast: { English: 'Memory deleted.', Mandarin: '记忆已删除。', Malay: 'Memori dipadam.', Japanese: 'メモリを削除しました。' },
+    memory_filter_label: { English: 'Filter by type', Mandarin: '按类型筛选', Malay: 'Tapis mengikut jenis', Japanese: '種類で絞り込み' },
+    memory_filter_all: { English: 'All', Mandarin: '全部', Malay: 'Semua', Japanese: 'すべて' },
+    memory_sort_label: { English: 'Sort', Mandarin: '排序', Malay: 'Isih', Japanese: '並び替え' },
+    memory_sort_newest: { English: 'Newest first', Mandarin: '最新优先', Malay: 'Terbaharu dahulu', Japanese: '新しい順' },
+    memory_sort_oldest: { English: 'Oldest first', Mandarin: '最早优先', Malay: 'Terlama dahulu', Japanese: '古い順' },
+    memory_created: { English: 'Created', Mandarin: '创建时间', Malay: 'Dicipta', Japanese: '作成日時' },
 };
