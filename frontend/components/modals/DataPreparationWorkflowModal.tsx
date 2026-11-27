@@ -7,10 +7,10 @@ import {
 } from '../../services/agent/buildHandoffExports';
 import { copyText } from '../../services/utils/copyText';
 import { buildDataPreparationWorkflowBundle } from '../../services/agent/buildDataPreparationWorkflowBundle';
-import { IconClose } from '../../icons/IconClose';
 import { DataPreparationWorkflowContent } from '../data-preparation/DataPreparationWorkflowContent';
 import { pickDataPreparationWorkflowState } from '../data-preparation/workflowStore';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { FullScreenFrame } from '../ui/FullScreenFrame';
+import { BUTTON_PRIMARY_CLASS, BUTTON_SECONDARY_CLASS } from '../ui/formStyles';
 import { exportDatasetToCsv, type ExportResult } from '../../utils/exportUtils';
 import { buildCsvFileName, saveCsv } from '../../utils/csvExport';
 import { getTranslation } from '../../utils/localization';
@@ -83,11 +83,6 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
     const closeExportMenu = () => {
         if (exportMenuRef.current) exportMenuRef.current.open = false;
     };
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(
-        true,
-        closeModal,
-        { restoreFocusSelector: '[data-advanced-trigger="true"]' },
-    );
 
     useEffect(() => {
         if (!hasLoggedOpenRef.current) {
@@ -268,24 +263,17 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-scrim/70" onClick={closeModal}>
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="workflow-dialog-title"
-                tabIndex={-1}
-                className="relative h-screen w-screen bg-[linear-gradient(180deg,#f8fbff_0%,#f3f6fb_45%,#eef3f8_100%)] flex flex-col"
-                onClick={event => event.stopPropagation()}
-            >
-                <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
-                    <div className="flex flex-col gap-2 px-4 py-3 xl:flex-row xl:items-center xl:justify-between">
-                        <div className="max-w-3xl">
-                            <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">AI Data IDE workflow</p>
-                            <h2 id="workflow-dialog-title" className="mt-1 text-2xl font-semibold text-slate-950 leading-tight">Data Preparation Workflow</h2>
-                            <p className="mt-1 text-sm text-slate-600">Fullscreen review for import, inspection, preparation, verification, and analysis readiness.</p>
-                        </div>
-                        <div className="flex flex-wrap items-center justify-end gap-2">
+        <FullScreenFrame
+            isOpen
+            onClose={closeModal}
+            titleId="workflow-dialog-title"
+            eyebrow="AI Data IDE workflow"
+            title="Data Preparation Workflow"
+            description="Fullscreen review for import, inspection, preparation, verification, and analysis readiness."
+            closeLabel="Close workflow modal"
+            restoreFocusSelector='[data-advanced-trigger="true"]'
+            actions={
+                <>
                             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
                                 copyStatus === 'error'
                                     ? 'bg-danger-100 text-danger-700'
@@ -347,28 +335,19 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
                             </details>
                             <button
                                 onClick={handleOpenLogs}
-                                className="min-h-[44px] rounded-card border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                                className={BUTTON_SECONDARY_CLASS}
                             >
                                 Open Logs
                             </button>
                             <button
                                 onClick={handleOpenWorkspace}
-                                className="min-h-[44px] rounded-card bg-ink-950 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-ink-800"
+                                className={BUTTON_PRIMARY_CLASS}
                             >
                                 Open Artifacts
                             </button>
-                            <button
-                                data-dialog-initial-focus
-                                onClick={closeModal}
-                                className="relative z-40 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-card bg-white p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                                aria-label="Close workflow modal"
-                            >
-                                <IconClose />
-                            </button>
-                        </div>
-                    </div>
-                </header>
-
+                </>
+            }
+        >
                 <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-4 lg:px-5 xl:px-6">
                     {!workflow.summary.fileName ? (
                         <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 min-h-[320px] rounded-card border border-slate-200 bg-white">
@@ -393,7 +372,6 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
                         />
                     )}
                 </div>
-            </div>
-        </div>
+        </FullScreenFrame>
     );
 };

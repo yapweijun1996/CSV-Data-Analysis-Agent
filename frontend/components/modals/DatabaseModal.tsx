@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { shallow } from 'zustand/shallow';
 import { TabulatorTable, type TabulatorTableSortState } from '../spreadsheet/TabulatorTable';
 import { useAppStore, type AppStore } from '../../store/useAppStore';
-import { IconClose } from '../../icons/IconClose';
 import type { CsvRow, WorkspaceDataQueryRequest, WorkspaceQueryRunOutcome, WorkspaceQueryTemplateId } from '../../types';
 import {
     buildDatabaseModalQueryActivityFromOutcome,
@@ -20,7 +19,7 @@ import { getPreferredAnalysisDataset } from '../../services/agent/reportStructur
 import { getCsvDataRowCount } from '../../utils/datasetId';
 import { createIdleDuckDbSessionStatus } from '../../services/duckdb/sessionStatus';
 import { buildEffectiveColumnRegistryFromState } from '../../services/data/columnRegistry';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { FullScreenFrame } from '../ui/FullScreenFrame';
 import { getTranslation } from '../../utils/localization';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -176,11 +175,6 @@ const DatabaseModalContent: React.FC = () => {
         return () => { mountedRef.current = false; };
     }, []);
     const autoRefreshAttemptKeyRef = useRef<string | null>(null);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(
-        isOpen,
-        onClose,
-        { restoreFocusSelector: localDataPreviewRequest ? '[data-local-preview-trigger="true"]' : '[data-data-explorer-trigger="true"]' },
-    );
     const resolvedDuckDbSessionStatus = duckDbSessionStatus ?? createIdleDuckDbSessionStatus();
     const effectiveColumnRegistry = useMemo(
         () => buildEffectiveColumnRegistryFromState({
@@ -450,36 +444,16 @@ const DatabaseModalContent: React.FC = () => {
     );
 
     return (
-        <div className="fixed inset-0 z-50 bg-scrim/45 backdrop-blur-sm" onClick={onClose}>
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="database-dialog-title"
-                tabIndex={-1}
-                className="relative flex h-screen w-screen flex-col bg-slate-50"
-                onClick={event => event.stopPropagation()}
-            >
-                <header className="border-b border-slate-200 bg-white/95 backdrop-blur-xl">
-                    <div className="flex items-center justify-between gap-3 px-4 py-3">
-                        <div className="min-w-0">
-                            <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">{getTranslation('header_data_explorer', language)}</p>
-                            <h2 id="database-dialog-title" className="mt-1 text-2xl font-semibold text-slate-950">{getTranslation('explorer_title', language)}</h2>
-                            <p className="mt-1 text-sm text-slate-600">
-                                {getTranslation('explorer_title_hint', language)}
-                            </p>
-                        </div>
-                        <button
-                            data-dialog-initial-focus
-                            onClick={onClose}
-                            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-card p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                            aria-label={getTranslation('explorer_close', language)}
-                        >
-                            <IconClose />
-                        </button>
-                    </div>
-                </header>
-
+        <FullScreenFrame
+            isOpen={isOpen}
+            onClose={onClose}
+            titleId="database-dialog-title"
+            eyebrow={getTranslation('header_data_explorer', language)}
+            title={getTranslation('explorer_title', language)}
+            description={getTranslation('explorer_title_hint', language)}
+            closeLabel={getTranslation('explorer_close', language)}
+            restoreFocusSelector={localDataPreviewRequest ? '[data-local-preview-trigger="true"]' : '[data-data-explorer-trigger="true"]'}
+        >
                 <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4 py-4">
                     <p aria-live="polite" className="text-sm text-slate-700" data-local-preview-summary>
                         {getTranslation('local_preview_counts', language, { visible: currentColumns.length, total: availableColumns.length,
@@ -649,7 +623,6 @@ const DatabaseModalContent: React.FC = () => {
                         />
                     </div>
                 </div>
-            </div>
-        </div>
+        </FullScreenFrame>
     );
 };

@@ -17,7 +17,7 @@ import { DebugLogEntryCard } from './debug-logs/DebugLogEntryCard';
 import { DebugLogsToolbar } from './debug-logs/DebugLogsToolbar';
 import { DebugLogsSidebar } from './debug-logs/DebugLogsSidebar';
 import { AnalysisStepsPanel } from '../AnalysisStepsPanel';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { FullScreenFrame } from '../ui/FullScreenFrame';
 import { loadRecentLocalDiagnostics } from '../../services/observability/localDiagnostics';
 import type { LocalDiagnosticRecord } from '../../types';
 
@@ -106,11 +106,6 @@ const OpenDebugLogsModal: React.FC = () => {
     const [expandedSnapshots, setExpandedSnapshots] = useState<Record<string, boolean>>({});
     const [localDiagnostics, setLocalDiagnostics] = useState<LocalDiagnosticRecord[]>([]);
     const [localDiagnosticsError, setLocalDiagnosticsError] = useState(false);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(
-        true,
-        closeModal,
-        { restoreFocusSelector: '[data-advanced-trigger="true"]' },
-    );
 
     const debugLogScope = useMemo(() => ({
         sessionId,
@@ -261,16 +256,13 @@ const OpenDebugLogsModal: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-scrim/70 backdrop-blur-sm" onClick={closeModal}>
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Diagnostic logs"
-                tabIndex={-1}
-                className="relative h-screen w-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef4fb_48%,#e7eef7_100%)] flex flex-col"
-                onClick={event => event.stopPropagation()}
-            >
+        <FullScreenFrame
+            isOpen
+            onClose={closeModal}
+            titleId="debug-logs-dialog-title"
+            ariaLabel="Diagnostic logs"
+            restoreFocusSelector='[data-advanced-trigger="true"]'
+            header={
                 <DebugLogsToolbar
                     copyStatus={copyStatus}
                     hasPlannerFailure={plannerFailureBundle.hasFailure}
@@ -286,7 +278,8 @@ const OpenDebugLogsModal: React.FC = () => {
                     onOpenWorkspace={() => { closeModal(); openWorkspace(); }}
                     onClose={closeModal}
                 />
-
+            }
+        >
                 <div className="flex-1 min-h-0 overflow-hidden px-4 pb-4 pt-4 lg:px-5 xl:px-6">
                     <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
                         <DebugLogsSidebar
@@ -420,7 +413,6 @@ const OpenDebugLogsModal: React.FC = () => {
                         </section>
                     </div>
                 </div>
-            </div>
-        </div>
+        </FullScreenFrame>
     );
 };

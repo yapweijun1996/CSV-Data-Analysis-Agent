@@ -5,8 +5,8 @@ import { buildWorkspaceBundle } from '../../services/agent/buildWorkspaceBundle'
 import { isWorkspaceWritablePath } from '../../services/agent/workspaceFileUtils';
 import { hasOpenableLatestReport } from '../../services/reporting/reportArtifactManifest';
 import type { WorkspaceFile } from '../../types';
-import { IconClose } from '../../icons/IconClose';
-import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { FullScreenFrame } from '../ui/FullScreenFrame';
+import { BUTTON_SECONDARY_CLASS } from '../ui/formStyles';
 import { DatasetRecoveryPanel } from '../DatasetRecoveryPanel';
 import { TaskInspectionView } from '../task/TaskInspection';
 
@@ -92,7 +92,6 @@ export const WorkspaceModal: React.FC = () => {
             | 'workspaceActionHistory'
         >,
     }), shallow);
-    const dialogRef = useDialogAccessibility<HTMLDivElement>(isOpen, onClose);
     const bundle = useMemo(() => buildWorkspaceBundle(workspaceState as AppStore), [workspaceState]);
 
     const [selectedPath, setSelectedPath] = useState('/dataset/cleaned.json');
@@ -157,46 +156,40 @@ export const WorkspaceModal: React.FC = () => {
     }
 
     return (
-        <div className="fixed inset-0 z-50 bg-scrim/25 backdrop-blur-sm" onClick={onClose}>
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="workspace-dialog-title"
-                tabIndex={-1}
-                className="relative flex h-screen w-screen flex-col bg-[#f8fafc]"
-                onClick={event => event.stopPropagation()}
-            >
-                <header className="border-b border-slate-200 bg-white/95 backdrop-blur-xl">
-                    <div className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
-                        <div className="min-w-0">
-                            <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Artifacts</div>
-                            <div className="mt-1 flex flex-wrap items-center gap-2">
-                                <h2 id="workspace-dialog-title" className="text-lg font-semibold text-slate-900">Session Artifacts</h2>
-                                <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
+        <FullScreenFrame
+            isOpen={isOpen}
+            onClose={onClose}
+            titleId="workspace-dialog-title"
+            eyebrow="Artifacts"
+            title="Session Artifacts"
+            closeLabel="Close workspace modal"
+            titleExtras={
+                <>
+<span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
                                     {bundle.primaryFiles.length} files
                                 </span>
                                 <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
                                     {bundle.editableFiles.length} editable
                                 </span>
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
+                </>
+            }
+            actions={
+                <>
                             <button onClick={() => setInspectTask(current => !current)} aria-expanded={inspectTask}
-                                className="min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+                                className={BUTTON_SECONDARY_CLASS}>
                                 {inspectTask ? 'Browse files' : 'Inspect task'}
                             </button>
                             {hasLatestAnalystReport ? (
                                 <>
                                     <button
                                         onClick={openLatestAnalystReport}
-                                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                                        className={BUTTON_SECONDARY_CLASS}
                                     >
                                         Open Report
                                     </button>
                                     <button
                                         onClick={exportLatestAnalystReportPdf}
-                                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                                        className={BUTTON_SECONDARY_CLASS}
                                     >
                                         Export PDF
                                     </button>
@@ -212,18 +205,9 @@ export const WorkspaceModal: React.FC = () => {
                             >
                                 {showDebugFiles ? 'Hide Debug' : `Show Debug (${bundle.debugFiles.length})`}
                             </button>
-                            <button
-                                data-dialog-initial-focus
-                                onClick={onClose}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                                aria-label="Close workspace modal"
-                            >
-                                <IconClose />
-                            </button>
-                        </div>
-                    </div>
-                </header>
-
+                </>
+            }
+        >
                 <p className="border-b border-slate-200 bg-accent-50 px-4 py-2 text-xs text-slate-700">
                     Task edits are staged. Accepted data changes only after validation and commit. Original CSV bytes are inspected through bounded source ranges; raw.csv is a reconstructed table view.
                 </p>
@@ -373,7 +357,6 @@ export const WorkspaceModal: React.FC = () => {
                     </div>
                     )}
                 </div>
-            </div>
-        </div>
+        </FullScreenFrame>
     );
 };
