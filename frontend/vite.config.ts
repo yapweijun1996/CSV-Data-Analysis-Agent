@@ -134,6 +134,14 @@ export default defineConfig(({ mode }) => {
                             if (id.includes('/node_modules/@ai-sdk/openai/')) {
                               return 'vendor-ai-openai';
                             }
+                            if (id.includes('/node_modules/@ai-sdk/anthropic/')) {
+                                return 'vendor-ai-anthropic';
+                            }
+                            // Without a name this lazy chunk is emitted as a second index-*.js, which
+                            // tools that locate the entry chunk by name would pick up.
+                            if (id.includes('/node_modules/@openrouter/ai-sdk-provider/')) {
+                                return 'vendor-ai-openrouter';
+                            }
                             if (
                               id.includes('/node_modules/@ai-sdk/')
                               || id.includes('/node_modules/ai/')

@@ -73,9 +73,14 @@ describe('AI SDK helpers', () => {
         expect(isProviderConfigured({ ...googleSettings, geminiApiKey: '   ' })).toBe(false);
     });
 
-    it('creates OpenAI and Google models through the official provider factories', () => {
+    it('creates OpenAI and Google models through the official provider factories on first use', async () => {
         const openAiModel = createProviderModel(openAiSettings);
         const googleModel = createProviderModel(googleSettings, 'gemini-2.5-pro');
+
+        // Constructing a model must not load or call a provider SDK.
+        expect(createOpenAIMock).not.toHaveBeenCalled();
+        expect(createGoogleMock).not.toHaveBeenCalled();
+        await Promise.all([openAiModel.model.supportedUrls, googleModel.model.supportedUrls]);
 
         expect(createOpenAIMock).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -84,14 +89,10 @@ describe('AI SDK helpers', () => {
             }),
         );
         expect(createGoogleMock).toHaveBeenCalledWith({ apiKey: 'gemini-key' });
-        expect(openAiModel).toEqual({
-            modelId: 'gpt-5.2',
-            model: { provider: 'openai', modelId: 'gpt-5.2' },
-        });
-        expect(googleModel).toEqual({
-            modelId: 'gemini-2.5-pro',
-            model: { provider: 'google', modelId: 'gemini-2.5-pro' },
-        });
+        expect(createOpenAIMock.mock.results[0]?.value).toHaveBeenCalledWith('gpt-5.2');
+        expect(createGoogleMock.mock.results[0]?.value).toHaveBeenCalledWith('gemini-2.5-pro');
+        expect(openAiModel).toMatchObject({ modelId: 'gpt-5.2', model: { modelId: 'gpt-5.2' } });
+        expect(googleModel).toMatchObject({ modelId: 'gemini-2.5-pro', model: { modelId: 'gemini-2.5-pro' } });
     });
 
     it('builds official AI SDK tools and sanitizes incompatible Google union schemas', () => {

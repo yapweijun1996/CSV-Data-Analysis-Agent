@@ -1,7 +1,5 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+// Provider SDKs are imported inside createLazyLanguageModel loaders only: a static
+// import here would put them back into the startup bundle.
 import { generateText, wrapLanguageModel, extractJsonMiddleware, type LanguageModelMiddleware } from 'ai';
 import type { Settings } from '../../types';
 import {
@@ -23,6 +21,7 @@ import { waitForCloudAiConnectivity } from '../pwa/networkAvailability';
 import { fetchDefaultGateway, fetchWithoutForbiddenUserAgent } from './browserProviderFetch';
 import { createLlmDiagnosticMiddleware } from '../observability/llmDiagnosticMiddleware';
 import { registerProviderRequestPreflight } from './providerActivityGuards';
+import { createLazyLanguageModel } from './lazyLanguageModel';
 
 export type ModelContextStrategy = 'model_aware' | 'fallback_static';
 
@@ -278,11 +277,14 @@ const buildWrappedProviderModel = (
         return {
             modelId,
             model: wrapLanguageModel({
-                model: createOpenAI({
-                    apiKey,
-                    baseURL: DEFAULT_GATEWAY_BASE_URL,
-                    fetch: fetchDefaultGateway,
-                }).responses(modelId),
+                model: createLazyLanguageModel('openai.responses', modelId, async () => {
+                    const { createOpenAI } = await import('@ai-sdk/openai');
+                    return createOpenAI({
+                        apiKey,
+                        baseURL: DEFAULT_GATEWAY_BASE_URL,
+                        fetch: fetchDefaultGateway,
+                    }).responses(modelId);
+                }),
                 middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'openai')],
             }),
         };
@@ -292,10 +294,10 @@ const buildWrappedProviderModel = (
         return {
             modelId,
             model: wrapLanguageModel({
-                model: createOpenAI({
-                    apiKey,
-                    fetch: fetchWithoutForbiddenUserAgent,
-                })(modelId),
+                model: createLazyLanguageModel('openai.responses', modelId, async () => {
+                    const { createOpenAI } = await import('@ai-sdk/openai');
+                    return createOpenAI({ apiKey, fetch: fetchWithoutForbiddenUserAgent })(modelId);
+                }),
                 middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'openai')],
             }),
         };
@@ -306,11 +308,14 @@ const buildWrappedProviderModel = (
             modelId,
             model: wrapLanguageModel({
                 // Anthropic blocks browser-origin calls unless this opt-in header is sent.
-                model: createAnthropic({
-                    apiKey,
-                    headers: { 'anthropic-dangerous-direct-browser-access': 'true' },
-                    fetch: fetchWithoutForbiddenUserAgent,
-                })(modelId),
+                model: createLazyLanguageModel('anthropic.messages', modelId, async () => {
+                    const { createAnthropic } = await import('@ai-sdk/anthropic');
+                    return createAnthropic({
+                        apiKey,
+                        headers: { 'anthropic-dangerous-direct-browser-access': 'true' },
+                        fetch: fetchWithoutForbiddenUserAgent,
+                    })(modelId);
+                }),
                 middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'anthropic')],
             }),
         };
@@ -320,11 +325,14 @@ const buildWrappedProviderModel = (
         return {
             modelId,
             model: wrapLanguageModel({
-                model: createOpenRouter({
-                    apiKey,
-                    fetch: fetchWithoutForbiddenUserAgent,
-                    compatibility: 'strict',
-                }).chat(modelId),
+                model: createLazyLanguageModel('openrouter', modelId, async () => {
+                    const { createOpenRouter } = await import('@openrouter/ai-sdk-provider');
+                    return createOpenRouter({
+                        apiKey,
+                        fetch: fetchWithoutForbiddenUserAgent,
+                        compatibility: 'strict',
+                    }).chat(modelId);
+                }),
                 middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'openrouter')],
             }),
         };
@@ -335,7 +343,10 @@ const buildWrappedProviderModel = (
     return {
         modelId,
         model: wrapLanguageModel({
-            model: createGoogleGenerativeAI({ apiKey })(modelId),
+            model: createLazyLanguageModel('google.generative-ai', modelId, async () => {
+                const { createGoogleGenerativeAI } = await import('@ai-sdk/google');
+                return createGoogleGenerativeAI({ apiKey })(modelId);
+            }),
             middleware: [...consentMiddleware, diagnosticMiddleware, jsonFenceMiddleware, createReasoningMiddleware(settings, 'google')],
         }),
     };

@@ -76,8 +76,10 @@ describe('default gateway provider', () => {
         expect(resolveProviderModelId(settings, 'yet-another-model')).toBe(DEFAULT_GATEWAY_MODEL);
     });
 
-    it('creates a Responses-API model pointed at the gateway base URL', () => {
+    it('creates a Responses-API model pointed at the gateway base URL', async () => {
         createProviderModel(makeSettings());
+        // The SDK loads on first use; wrapLanguageModel receives the lazy model.
+        await (wrapLanguageModelMock.mock.calls.at(-1)?.[0].model as { supportedUrls: Promise<unknown> }).supportedUrls;
         expect(createOpenAIMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 baseURL: DEFAULT_GATEWAY_BASE_URL,
