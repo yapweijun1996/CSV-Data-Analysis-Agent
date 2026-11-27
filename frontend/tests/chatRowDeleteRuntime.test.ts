@@ -74,15 +74,6 @@ describe('chat row delete runtime wiring', () => {
         classifyRowDeleteIntentMock.mockReturnValue({ kind: 'ignored' });
     });
 
-    it('routes supported row-delete requests to preflight instead of the runtime loop', async () => {
-        const store = createStore();
-        classifyRowDeleteIntentMock.mockReturnValue({ kind: 'supported' });
-
-        await orchestrateChatResponse('remove rows where Code = 501001', store as never);
-
-        expect(runRowDeletePreflightMock).toHaveBeenCalledWith('remove rows where Code = 501001', expect.objectContaining({ executionContext: expect.objectContaining({ lease: expect.any(Object) }) }));
-        expect(runPiFollowUpTurnMock).not.toHaveBeenCalled();
-    });
 
     it('handles pending delete confirmations before provider gating or runtime startup', async () => {
         const store = createStore();
@@ -107,7 +98,6 @@ describe('chat row delete runtime wiring', () => {
         expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'confirm delete',
-                intentFindings: expect.objectContaining({ intent: 'conversation' }),
             }),
             expect.objectContaining({ executionContext: expect.objectContaining({ lease: expect.any(Object) }) }),
         );

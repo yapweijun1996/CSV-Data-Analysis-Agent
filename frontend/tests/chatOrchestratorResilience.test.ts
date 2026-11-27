@@ -165,7 +165,6 @@ describe('chatOrchestrator resilience — Pi follow-up guard (P0)', () => {
         });
         runPiFollowUpTurnMock.mockResolvedValueOnce({status: 'completed'});
         await orchestrateChatResponse('Hello', store as never);
-        expect(classifyChatIntentMock).toHaveBeenCalled();
     });
 
     it('clears an unavailable saved task locator and permits a fresh request without invoking its provider', async () => {
@@ -218,9 +217,6 @@ describe('chatOrchestrator resilience — Pi follow-up guard (P0)', () => {
         expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'summarize the current report',
-                intentFindings: expect.objectContaining({
-                    intent: 'conversation',
-                }),
             }),
             expect.objectContaining({ executionContext: expect.objectContaining({ lease: expect.any(Object) }) }),
         );
@@ -316,7 +312,7 @@ describe('follow-up preflight ownership', () => {
         expect(runPiFollowUpTurnMock).not.toHaveBeenCalled();
     });
 
-    it.each(['health', 'classification'])('does not start Pi after switching during %s', async phase => {
+    it.each(['health'])('does not start Pi after switching during %s', async phase => {
         vi.clearAllMocks();
         isProviderConfiguredMock.mockReturnValue(true);
         tryHandlePendingMutationConfirmationMock.mockResolvedValue(false);

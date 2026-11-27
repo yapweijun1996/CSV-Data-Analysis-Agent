@@ -211,17 +211,6 @@ const orchestrateOwnedChatResponse = async (message: string, store: StoreApi) =>
         return;
     }
 
-    const rowDeleteIntent = classifyRowDeleteIntent(message);
-    if (rowDeleteIntent.kind === 'supported') {
-        setState({ isBusy: true, pendingClarification: null });
-        try {
-            await runRowDeletePreflight(message, store);
-        } finally {
-            setState({ isBusy: false });
-        }
-        return;
-    }
-
     if (isRestartCleaningIntent(message) && getState().cleaningRun) {
         console.log(`${LOG_PREFIX} Detected restart-cleaning intent, routing to restartCleaningRun.`);
         setState({ isBusy: true, pendingClarification: null });
@@ -248,47 +237,6 @@ const orchestrateOwnedChatResponse = async (message: string, store: StoreApi) =>
         return;
     }
 
-    // Build query-aware column summary for the classifier (AGENT-101).
-    // Strategy: include columns that the user's message likely references,
-    // plus a compact global context of remaining columns.
-    // This avoids the silent loss of columns beyond a fixed positional cutoff.
-    const columnSummary = buildColumnSummaryForClassifier(message, getState().columnProfiles);
-
-    // Intent classification harness: AI-first with query understanding artifact
-    getState().addProgress(getTranslation('chat_classifying_intent', settings.language));
-    store.piTask?.providerTurn();
-    const routingDirective = await awaitOwned(classifyChatIntent(
-        message,
-        settings,
-        Boolean(getState().csvData),
-        columnSummary,
-        store.executionContext!.lease.signal,
-    ), store, store.executionContext!.lease);
-    console.log(`${LOG_PREFIX} Pi follow-up (intent=${routingDirective.findings.intent}, by=${routingDirective.findings.classifiedBy}, confidence=${routingDirective.findings.confidence}${routingDirective.artifact ? ', artifact=' + routingDirective.artifact.taskSignal : ''})`);
-
-    // AGENT-102: Resolve follow-up references against runtime state
-    const groundingResult = routingDirective.artifact?.needsGrounding
-        ? resolveGrounding(routingDirective.artifact, getState())
-        : undefined;
-    if (groundingResult?.resolvedAnchors.length) {
-        console.log(`${LOG_PREFIX} Grounding: ${groundingResult.groundingConfidence} (${groundingResult.resolvedAnchors.length} resolved, ${groundingResult.unresolvedAnchors.length} unresolved)`);
-    }
-
-    // AGENT-207: Grounding-aware outcome resolution moved to queryUnderstandingResolver.
-    // The contract builder now resolves needs_clarification → concrete outcome via
-    // resolveExpectedOutcomeFromArtifact(artifact, groundingResult). No artifact mutation needed here.
-
-    // Layer 3: Artifact continuity — when responding to a pending clarification,
-    // preserve the ORIGINAL artifact (from the initial request) instead of using
-    // the weak re-classification of "i dont know" / "continue". This prevents
-    // the contract builder from defaulting to 'inspect' taskMode.
-    const pendingClarification = getState().pendingClarification;
-    const effectiveArtifact = pendingClarification?.resumeContext?.queryUnderstandingArtifact ?? routingDirective.artifact;
-    const effectiveGrounding = pendingClarification?.resumeContext?.groundingResult ?? groundingResult;
-    if (pendingClarification?.resumeContext?.queryUnderstandingArtifact) {
-        console.log(`${LOG_PREFIX} Artifact continuity: using original artifact (${effectiveArtifact?.taskSignal}) instead of re-classified (${routingDirective.artifact?.taskSignal})`);
-    }
-
     // Promote app-owned report memory once; it remains the source of truth.
     void import('../memory/followUpMemory')
         .then(({ promoteAppFollowUpMemory }) =>
@@ -305,20 +253,8 @@ const orchestrateOwnedChatResponse = async (message: string, store: StoreApi) =>
         const { runPiFollowUpTurn } = await import(
             '../runtime/pi/piFollowUpRuntimeService'
         );
-        const canonicalArtifact = effectiveArtifact && getState().columnRegistry
-            ? {
-                ...effectiveArtifact,
-                referencedColumns: effectiveArtifact.referencedColumns.map(column =>
-                    resolveColumnReference(column, getState().columnRegistry) ?? column),
-                groupingColumns: effectiveArtifact.groupingColumns.map(column =>
-                    resolveColumnReference(column, getState().columnRegistry) ?? column),
-            }
-            : effectiveArtifact;
         await runPiFollowUpTurn({
             message,
-            intentFindings: routingDirective.findings,
-            queryUnderstandingArtifact: canonicalArtifact,
-            groundingResult: effectiveGrounding,
         }, store);
     } catch (error) {
         console.error(`${LOG_PREFIX} follow-up runtime threw unexpectedly.`, error);

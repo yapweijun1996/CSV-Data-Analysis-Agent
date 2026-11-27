@@ -80,7 +80,6 @@ describe('chatOrchestrator explicit follow-up handling', () => {
         expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'retry',
-                intentFindings: expect.objectContaining({ intent: 'conversation' }),
             }),
             expect.objectContaining({ executionContext: expect.objectContaining({ lease: expect.any(Object) }) }),
         );
@@ -109,7 +108,6 @@ describe('chatOrchestrator explicit follow-up handling', () => {
         expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'retry',
-                intentFindings: expect.objectContaining({ intent: 'conversation' }),
             }),
             expect.objectContaining({ executionContext: expect.objectContaining({ lease: expect.any(Object) }) }),
         );
@@ -144,7 +142,6 @@ describe('chatOrchestrator explicit follow-up handling', () => {
         expect(runPiFollowUpTurnMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'analyze this dataset and show key insights',
-                intentFindings: expect.objectContaining({ intent: 'batch_analysis' }),
             }),
             expect.objectContaining({ executionContext: expect.objectContaining({ lease: expect.any(Object) }) }),
         );

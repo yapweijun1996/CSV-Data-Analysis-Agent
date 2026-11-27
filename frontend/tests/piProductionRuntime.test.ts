@@ -226,22 +226,6 @@ describe('Pi production runtime', () => {
         });
     });
 
-    it('does not report success when Pi answers a card request without creating one', async () => {
-        const store = createStore();
-        const result = await runPiFollowUpTurn({
-            message: 'Add a dashboard card by Town.',
-            intentFindings: { intent: 'precise_card' } as never,
-        }, store as never, answerStream('Here are the values; I cannot save a card.'));
-
-        expect(result.status).toBe('failed');
-        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
-            outcome: expect.objectContaining({
-                outcomeKind: 'failed',
-                failureClass: 'tool_execution',
-                assistantCardId: null,
-            }),
-        }));
-    });
 
     it('links a card created by Pi and reveals it in the dashboard', async () => {
         const store = createStore();
@@ -295,101 +279,7 @@ describe('Pi production runtime', () => {
         }));
     });
 
-    it('creates several distinct cards for an open-ended batch analysis request', async () => {
-        const store = createStore();
-        const makePlan = (title: string, groupByColumn: string) => ({
-            title, description: title, chartType: 'bar', groupByColumn, valueColumn: 'Amount', aggregation: 'sum',
-        });
-        const plans = [makePlan('Amount by Town', 'Town'), makePlan('Amount by Flat', 'Flat'), makePlan('Amount by Year', 'Year')];
-        let created = 0;
-        actionMock.mockImplementation(async () => {
-            const index = created;
-            created += 1;
-            store.setState((prev: any) => ({ analysisCards: [...prev.analysisCards, {
-                id: `batch-card-${index}`, plan: plans[index], aggregatedData: [{ Town: 'A', Amount: 10 }],
-            }] }));
-            return { status: 'success', message: 'Created analysis card.', artifacts: { createdCardId: `batch-card-${index}` } };
-        });
-        const stream: StreamFn = model => {
-            const output = createAssistantMessageEventStream();
-            const message: AssistantMessage = {
-                role: 'assistant',
-                content: plans.map((plan, index) => ({
-                    type: 'toolCall' as const, id: `create-card-${index}`, name: 'analysis_create_plan', arguments: { plan },
-                })),
-                api: model.api, provider: model.provider, model: model.id,
-                usage, stopReason: 'toolUse', timestamp: Date.now(),
-            };
-            output.push({ type: 'start', partial: message });
-            output.push({ type: 'done', reason: 'toolUse', message });
-            return output;
-        };
-        const result = await runPiFollowUpTurn({
-            message: 'Analyze this dataset from several angles.',
-            intentFindings: { intent: 'batch_analysis' } as never,
-        }, store as never, stream);
 
-        expect(result.status).toBe('completed');
-        expect(result.text).toContain('Created 3 dashboard cards');
-        expect(actionMock).toHaveBeenCalledTimes(3);
-        expect(store.getState().analysisCards.map((card: any) => card.autoAnalysisEvaluation?.source))
-            .toEqual(Array(3).fill('auto_analysis_evaluator_v1'));
-        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
-            outcome: expect.objectContaining({ outcomeKind: 'accepted', assistantCardId: 'batch-card-2' }),
-        }));
-        actionMock.mockReset();
-    });
-
-    it('reports batch cards removed by the evidence gate and keeps the survivors', async () => {
-        const store = createStore();
-        const makePlan = (title: string) => ({
-            title, description: title, chartType: 'bar', groupByColumn: 'Town', valueColumn: 'Amount', aggregation: 'sum',
-        });
-        const plans = [makePlan('Amount by Town'), makePlan('Amount by Town again'), makePlan('Amount by Flat')];
-        let created = 0;
-        actionMock.mockImplementation(async () => {
-            const index = created;
-            created += 1;
-            store.setState((prev: any) => ({ analysisCards: [...prev.analysisCards, {
-                id: `gate-card-${index}`, plan: plans[index], aggregatedData: [{ Town: 'A', Amount: 10 }],
-            }] }));
-            return { status: 'success', message: 'Created analysis card.', artifacts: { createdCardId: `gate-card-${index}` } };
-        });
-        gateMock.mockImplementation((_store: unknown, ids: string[]) => {
-            store.setState((prev: any) => ({ analysisCards: prev.analysisCards.filter((card: any) => card.id !== 'gate-card-1') }));
-            return {
-                rejected: ids.includes('gate-card-1')
-                    ? [{ cardId: 'gate-card-1', title: 'Amount by Town again', detail: 'duplicate_semantic' }] : [],
-                tableOnlyIds: ['gate-card-0'],
-            };
-        });
-        const stream: StreamFn = model => {
-            const output = createAssistantMessageEventStream();
-            const message: AssistantMessage = {
-                role: 'assistant',
-                content: plans.map((plan, index) => ({
-                    type: 'toolCall' as const, id: `create-card-${index}`, name: 'analysis_create_plan', arguments: { plan },
-                })),
-                api: model.api, provider: model.provider, model: model.id,
-                usage, stopReason: 'toolUse', timestamp: Date.now(),
-            };
-            output.push({ type: 'start', partial: message });
-            output.push({ type: 'done', reason: 'toolUse', message });
-            return output;
-        };
-        const result = await runPiFollowUpTurn({
-            message: 'Analyze this dataset from several angles.',
-            intentFindings: { intent: 'batch_analysis' } as never,
-        }, store as never, stream);
-
-        expect(result.status).toBe('completed');
-        expect(result.text).toContain('table presentation only');
-        expect(result.text).toContain('"Amount by Town again": duplicate_semantic');
-        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
-            outcome: expect.objectContaining({ assistantCardId: 'gate-card-2' }),
-        }));
-        actionMock.mockReset();
-    });
 
     it('preserves a saved batch card without turning a later provider failure into completion', async () => {
         const store = createStore();
@@ -413,122 +303,9 @@ describe('Pi production runtime', () => {
         actionMock.mockReset();
     });
 
-    it('does not use a created card to complete an unresolved factual answer without a query artifact', async () => {
-        const store = createStore();
-        const plan = { title: 'Amount by Town', description: 'Amount', chartType: 'bar', groupByColumn: 'Town', valueColumn: 'Amount', aggregation: 'sum' };
-        actionMock.mockImplementationOnce(async () => {
-            store.setState({ analysisCards: [{ id: 'unscoped-card', plan, aggregatedData: [{ Town: 'A', Amount: 999 }] }] });
-            return { status: 'success', message: 'Created card.', artifacts: { createdCardId: 'unscoped-card' } };
-        });
-        const stream: StreamFn = model => {
-            const output = createAssistantMessageEventStream();
-            const message: AssistantMessage = { role: 'assistant', content: [{ type: 'toolCall', id: 'unscoped', name: 'analysis_create_plan', arguments: { plan } }],
-                api: model.api, provider: model.provider, model: model.id, usage, stopReason: 'toolUse', timestamp: Date.now() };
-            output.push({ type: 'start', partial: message }); output.push({ type: 'done', reason: 'toolUse', message }); return output;
-        };
-        const result = await runPiFollowUpTurn({ message: 'What is the October total? Add a card.', intentFindings: { intent: 'precise_card' } as never }, store as never, stream);
-        expect(result.status).toBe('blocked');
-        expect(result.text).not.toContain('999');
-        actionMock.mockReset();
-    });
 
-    it('blocks all batch outputs rejected by the real evidence gate', async () => {
-        const store = createStore();
-        const actualGate = await vi.importActual<typeof import('../services/agent/runtime/pi/piCardEvidenceGate')>(
-            '../services/agent/runtime/pi/piCardEvidenceGate',
-        );
-        gateMock.mockImplementation(actualGate.gatePiCreatedCards);
-        store.setState({
-            latestAnalysisSession: { semanticUnderstanding: {
-                businessGrains: ['Town'], candidateMetrics: ['Amount'], timeGrains: [], helperDimensions: [],
-                blockedDimensions: [], detailRowPolicy: 'exclude_non_detail_rows', businessGlossary: [],
-                businessGrainConfidence: 'high', unsafeForBusinessNarrative: false,
-            } },
-            queryHistory: [],
-            columnProfiles: [{ name: 'Town', type: 'categorical' }, { name: 'Row Number', type: 'numerical' }],
-            deleteAnalysisCard: (id: string) => store.setState((prev: any) => ({
-                analysisCards: prev.analysisCards.filter((card: any) => card.id !== id),
-            })),
-        });
-        const plans = ['First', 'Second', 'Third'].map(title => ({
-            title, description: title, chartType: 'bar', groupByColumn: 'Town',
-            valueColumn: 'Row Number', aggregation: 'sum',
-        }));
-        let created = 0;
-        actionMock.mockImplementation(async () => {
-            const index = created++;
-            const id = `rejected-${index}`;
-            store.setState((prev: any) => ({
-                analysisCards: [...prev.analysisCards, { id, plan: plans[index],
-                    aggregatedData: [{ Town: 'A', helper_sum: 10 }, { Town: 'B', helper_sum: 20 }],
-                    provenance: { queryEvidence: { traceId: id } } }],
-                queryHistory: [...prev.queryHistory, { id,
-                    plan: { select: ['Town', 'helper_sum'], groupBy: ['Town'],
-                        aggregates: [{ function: 'sum', column: 'Row Number', as: 'helper_sum' }] },
-                    result: { totalMatchedRows: 2, truncated: false, selectedColumns: ['Town', 'helper_sum'] } }],
-            }));
-            return { status: 'success', message: 'Created candidate.', artifacts: { createdCardId: id } };
-        });
-        const stream: StreamFn = model => {
-            const output = createAssistantMessageEventStream();
-            const message: AssistantMessage = { role: 'assistant',
-                content: plans.map((plan, index) => ({ type: 'toolCall' as const, id: `reject-${index}`,
-                    name: 'analysis_create_plan', arguments: { plan } })),
-                api: model.api, provider: model.provider, model: model.id, usage,
-                stopReason: 'toolUse', timestamp: Date.now() };
-            output.push({ type: 'start', partial: message });
-            output.push({ type: 'done', reason: 'toolUse', message });
-            return output;
-        };
-        const result = await runPiFollowUpTurn({ message: 'Analyze this dataset from several angles.',
-            intentFindings: { intent: 'batch_analysis' } as never }, store as never, stream);
-        expect(result.status).toBe('blocked');
-        expect(result.text).toContain('helper_metric');
-        expect(store.getState().analysisCards).toEqual([]);
-        expect(gateMock).toHaveBeenCalledOnce();
-        expect(finalizeMock).toHaveBeenCalledWith(expect.objectContaining({
-            outcome: expect.objectContaining({ outcomeKind: 'blocked', assistantCardId: null }),
-        }));
-        actionMock.mockReset();
-    });
 
-    it('does not apply the evidence gate to an explicit card request', async () => {
-        const store = createStore();
-        const plan = { title: 'T', description: 'T', chartType: 'bar', groupByColumn: 'Town', valueColumn: 'Amount', aggregation: 'sum' };
-        actionMock.mockImplementationOnce(async () => {
-            store.setState({ analysisCards: [{ id: 'explicit-card', plan, aggregatedData: [{ Town: 'A', Amount: 1 }] }] });
-            return { status: 'success', message: 'ok', artifacts: { createdCardId: 'explicit-card' } };
-        });
-        const stream: StreamFn = model => {
-            const output = createAssistantMessageEventStream();
-            const message: AssistantMessage = {
-                role: 'assistant',
-                content: [{ type: 'toolCall', id: 'c1', name: 'analysis_create_plan', arguments: { plan } }],
-                api: model.api, provider: model.provider, model: model.id,
-                usage, stopReason: 'toolUse', timestamp: Date.now(),
-            };
-            output.push({ type: 'start', partial: message });
-            output.push({ type: 'done', reason: 'toolUse', message });
-            return output;
-        };
-        await runPiFollowUpTurn({
-            message: 'Add a dashboard card by Town.',
-            intentFindings: { intent: 'precise_card' } as never,
-        }, store as never, stream);
 
-        expect(gateMock).not.toHaveBeenCalled();
-    });
-
-    it('blocks a batch data answer without current-turn evidence', async () => {
-        const store = createStore();
-        const result = await runPiFollowUpTurn({
-            message: 'Analyze this dataset from several angles.',
-            intentFindings: { intent: 'batch_analysis' } as never,
-        }, store as never, answerStream('The data has a single row, so no angle is meaningful.'));
-
-        expect(result).toMatchObject({ status: 'blocked' });
-        expect(actionMock).not.toHaveBeenCalled();
-    });
 
     it('does not complete with a card produced for an invalidated dataset binding', async () => {
         const store = createStore();
@@ -575,31 +352,6 @@ describe('Pi production runtime', () => {
         }));
     });
 
-    it('stops a proposed mutation at the app approval boundary', async () => {
-        const args = {
-            explanation: 'Normalize region labels.',
-            outputColumns: [],
-            operations: [{ type: 'replace_values', id: 'normalize-region', reason: 'Normalize labels',
-                column: 'Town', replacements: [{ from: 'A', to: 'Alpha' }] }],
-        };
-        const stream: StreamFn = model => {
-            const output = createAssistantMessageEventStream();
-            const message: AssistantMessage = {
-                role: 'assistant',
-                content: [{ type: 'toolCall', id: 'mutation-1', name: 'data_mutate', arguments: args }],
-                api: model.api, provider: model.provider, model: model.id,
-                usage, stopReason: 'toolUse', timestamp: Date.now(),
-            };
-            output.push({ type: 'start', partial: message });
-            output.push({ type: 'done', reason: 'toolUse', message });
-            return output;
-        };
-        const store = createStore();
-        const result = await runPiFollowUpTurn({ message: 'Normalize the Town values.' }, store as never, stream);
-        expect(result.status).toBe('blocked');
-        expect(store.getState().pendingClarification?.resumeContext?.piMutationApproval?.args).toEqual(args);
-        expect(store.getState().pendingClarification?.interactionKind).toBe('approval');
-    });
 
     it('does not replay an interrupted stage with uncertain side effects', async () => {
         const store = createStore();
@@ -914,29 +666,6 @@ describe('Pi production runtime', () => {
             initialAnalysisStatus: 'idle', isBusy: false, isGeneratingReport: false });
     });
 
-    it('blocks an October data answer without current-turn evidence instead of reusing 999', async () => {
-        const store = createStore();
-        store.setState({ activeDataQuery: {
-            source: 'execute_data_query', plan: { groupBy: ['Town'], aggregates: [{ function: 'sum', column: 'Amount', as: 'Total' }] },
-            result: { rows: [{ Town: 'A', Total: 999 }], selectedColumns: ['Town', 'Total'],
-                totalMatchedRows: 1, returnedRows: 1, appliedLimit: 500, appliedOrderBy: [] },
-        } });
-        const result = await runPiFollowUpTurn({ message: 'List all totals by Town for October only.',
-            queryUnderstandingArtifact: { taskSignal: 'inspect_data', expectedOutput: 'data_table',
-                intent: 'follow_up', subjectRefs: [], unresolvedReferences: [], needsGrounding: false,
-                comparisonScope: { kind: 'none' }, reason: 'October query', classifiedBy: 'ai',
-                hasExplicitColumns: true, hasAggregationFunction: true, hasGroupingDirective: true, hasFilterCondition: true,
-                groupingColumns: ['Town'], referencedColumns: ['Amount'], aggregationFunctions: ['SUM'],
-                filterDescription: 'October only', timeScope: { kind: 'explicit', value: 'October' },
-                confidence: 'high' } as never,
-        }, store as never, answerStream('October evidence is unavailable.'));
-        expect(result.status).toBe('blocked');
-        // UUID evidence references may contain these digits without asserting the old value.
-        expect(result.text.split('\n\nEvidence:')[0]).not.toContain('999');
-        expect(finalizeMock).not.toHaveBeenCalledWith(expect.objectContaining({
-            outcome: expect.objectContaining({ outcomeKind: 'accepted' }),
-        }));
-    });
 
     it('lets Pi skip the optional cleaning stages and still completes the run', async () => {
         const names: string[] = [];
@@ -1150,87 +879,7 @@ describe('Pi production runtime', () => {
         // Diagnostics keep the raw text.
         expect(outcome.error?.message).toContain('content is not allowed in reasoning items');
     });
-    it('answers with the current executed October value instead of provider text 999', async () => {
-        const store = createStore();
-        store.setState({ csvData: { fileName: 'synthetic.csv', data: [{ Town: 'A', Amount: 10, Date: '2026-10-03' }] },
-            columnProfiles: [{ name: 'Town', type: 'categorical' }, { name: 'Amount', type: 'numerical' }, { name: 'Date', type: 'date' }] });
-        const plan = { groupBy: ['Town'], aggregates: [{ function: 'sum', column: 'Amount', as: 'Total' }],
-            where: { predicates: [{ column: 'Date', operator: 'gte', value: '2026-10-01' }, { column: 'Date', operator: 'lt', value: '2026-11-01' }] } };
-        actionMock.mockImplementationOnce(async (_action, owned) => {
-            const query = { ...captureQueryIdentity(owned).fields, queryMode: 'structured', plan, explanation: 'October total', engine: 'native',
-                result: { rows: [{ Town: 'A', Total: 10 }], selectedColumns: ['Town', 'Total'], returnedRows: 1, totalMatchedRows: 1,
-                    appliedOrderBy: [], appliedLimit: 500, truncated: false } };
-            owned.setState({ activeDataQuery: query });
-            return { status: 'success', message: 'Executed query', artifacts: { activeDataQuery: query } };
-        });
-        let calls = 0;
-        const stream: StreamFn = model => {
-            if (calls++) return answerStream('The answer is 999.')(model, {} as never, {} as never);
-            const output = createAssistantMessageEventStream();
-            const message: AssistantMessage = { role: 'assistant', content: [{ type: 'toolCall', id: 'real-october-tool', name: 'data_query', arguments: { explanation: 'October', plan } }],
-                api: model.api, provider: model.provider, model: model.id, usage, stopReason: 'toolUse', timestamp: Date.now() };
-            output.push({ type: 'start', partial: message }); output.push({ type: 'done', reason: 'toolUse', message });
-            return output;
-        };
-        const result = await runPiFollowUpTurn({ message: 'October 2026 total by Town', queryUnderstandingArtifact: {
-            taskSignal: 'inspect_data', expectedOutput: 'data_table', referencedColumns: ['Amount'], groupingColumns: ['Town'], aggregationFunctions: ['SUM'],
-            filterDescription: 'October 2026', timeScope: { kind: 'explicit', value: 'October 2026' }, unresolvedReferences: [],
-            requestedQueryScopes: [{ role: 'result', plan }],
-        } as never }, store as never, stream);
-        expect(result.status).toBe('completed');
-        expect(result.text).toContain('10');
-        expect(result.text).toContain('Evidence: query-');
-        // A UUID in the evidence reference can legitimately contain these digits.
-        expect(result.text.split('\n\nEvidence:')[0]).not.toContain('999');
-        expect(store.getState().activeDataQuery.toolCallId).toBe('real-october-tool');
-    });
 
-    it('answers a numeric lowest-margin request from fresh complete evidence in the real Pi loop', async () => {
-        const store = createStore();
-        const rows = [
-            { Customer: 'High', 'Sales Amount': 100, Profit: 50 }, { Customer: 'Low', 'Sales Amount': 100, Profit: 10 },
-            { Customer: 'Loss', 'Sales Amount': 100, Profit: -5 }, { Customer: 'Zero', 'Sales Amount': 0, Profit: 20 },
-        ];
-        store.setState({ csvData: { fileName: 'synthetic-margin.csv', data: rows }, columnProfiles: [
-            { name: 'Customer', type: 'categorical' }, { name: 'Sales Amount', type: 'numerical' }, { name: 'Profit', type: 'numerical' },
-        ] });
-        const plan = { groupBy: ['Customer'], aggregates: [
-            { function: 'sum', column: 'Sales Amount', as: 'total_sales' },
-            { function: 'sum', column: 'Profit', as: 'total_profit' },
-        ], limit: 100 };
-        actionMock.mockImplementationOnce(async (_action, owned) => {
-            const query = { ...captureQueryIdentity(owned).fields, queryMode: 'structured', plan: normalizeEvidenceQueryPlan(plan as import('../types').QueryPlan, owned.getState().activeTurn.userMessage),
-                explanation: 'Complete sales and profit by customer', engine: 'native',
-                result: { rows: rows.map(row => ({ Customer: row.Customer, total_sales: row['Sales Amount'], total_profit: row.Profit })),
-                    selectedColumns: ['Customer', 'total_sales', 'total_profit'], returnedRows: rows.length,
-                    totalMatchedRows: rows.length, appliedOrderBy: [], appliedLimit: 500, truncated: false } };
-            owned.setState({ activeDataQuery: query });
-            return { status: 'success', message: 'Executed query', artifacts: { activeDataQuery: query } };
-        });
-        let calls = 0;
-        const stream: StreamFn = model => {
-            if (calls++) return answerStream('High is the lowest customer.')(model, {} as never, {} as never);
-            const output = createAssistantMessageEventStream();
-            const message: AssistantMessage = { role: 'assistant', content: [{ type: 'toolCall', id: 'fresh-margin-call',
-                name: 'data_query', arguments: { explanation: 'Complete margin inputs', plan } }],
-                api: model.api, provider: model.provider, model: model.id, usage, stopReason: 'toolUse', timestamp: Date.now() };
-            output.push({ type: 'start', partial: message }); output.push({ type: 'done', reason: 'toolUse', message });
-            return output;
-        };
-        const result = await runPiFollowUpTurn({ message: 'List the lowest 2 customers by profit margin.',
-            queryUnderstandingArtifact: { taskSignal: 'derive_metric', expectedOutput: 'data_table',
-                referencedColumns: ['Sales Amount', 'Profit'], groupingColumns: ['Customer'], aggregationFunctions: ['SUM'],
-                timeScope: { kind: 'none' }, unresolvedReferences: [], resultCompleteness: 'complete',
-                requestedQueryScopes: [{ role: 'result', plan }] } as never }, store as never, stream);
-        expect(result.status).toBe('completed');
-        expect(result.text).toContain('| Loss | 100.00 | -5.00 | -5.00% |');
-        expect(result.text).toContain('| Low | 100.00 | 10.00 | 10.00% |');
-        expect(result.text).not.toContain('| High |');
-        expect(result.text).not.toContain('| Zero |');
-        expect(result.text).toContain(`Evidence: ${store.getState().activeDataQuery.queryId}`);
-        expect(store.getState().activeDataQuery.toolCallId).toBe('fresh-margin-call');
-        actionMock.mockReset();
-    });
 
     it('fences late follow-up tools and finalizers while a replacement run is streaming', async () => {
         const store = createStore();

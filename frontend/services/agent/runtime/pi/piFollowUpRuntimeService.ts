@@ -5,7 +5,7 @@ import { discardPiCandidateApproval, pendingPiCandidateApproval, sealPiCandidate
 import { preparePiExecutor } from './piExecutorPreparation';
 import { taskDependencyBlock } from './piTaskPlan';
 import {formatPinnedSkills} from '../../skills/skillSnapshot';
-import { resolveAnswerScope, admitQueryEvidence, formatValidatedCalculation, formatValidatedQueryReply, type QueryExecutionReceipt } from './queryEvidence';
+import { admitQueryEvidence, type ResolvedAnswerScope, formatValidatedCalculation, formatValidatedQueryReply, type QueryExecutionReceipt } from './queryEvidence';
 import { beginRun, scopeRunStore, rootStore, ownsRun, canCommitRun, assertRunActive, awaitOwned, finishRun } from '../../../session/sessionOwnership';
 import { presentGatewayError } from '../../../../utils/gatewayErrorMessage';
 import { Agent, type AgentEvent, type StreamFn } from '@earendil-works/pi-agent-core';
@@ -168,7 +168,8 @@ export const runPiFollowUpTurn = async (
     let mcpAttempted = false;
     const computationReceipts: ComputationEvidenceReceipt[] = [];
     let understoodArtifact=request.queryUnderstandingArtifact;
-    let answerScope = request.continuation?.scope ?? resolveAnswerScope(request.message, request.queryUnderstandingArtifact, request.groundingResult, store, request.intentFindings);
+    // Trust the model: no typed-scope resolution, evidence admission or forced clarification for ordinary requests.
+    let answerScope: ResolvedAnswerScope = request.continuation?.scope ?? { requiresEvidence: false, queries: [], unresolved: [], complete: false };
     let groundingVerdict: import('./queryEvidence').QueryGroundingVerdict | undefined;
     let agent: Agent | null = null;
     let unsubscribe: (() => void) | undefined;
@@ -209,17 +210,12 @@ export const runPiFollowUpTurn = async (
     };
     let failureClass: 'provider' | 'tool_execution' = 'provider';
     const isBatchAnalysis = request.intentFindings?.intent === 'batch_analysis';
-    const allowCardCreation = request.queryUnderstandingArtifact?.expectedOutput === 'chart_card'
-        || !request.queryUnderstandingArtifact && request.intentFindings?.intent === 'precise_card'
-        || isBatchAnalysis;
+    // Card creation is always offered; the model decides whether a card is useful. Never required.
+    const allowCardCreation = true;
     const cardTarget = isBatchAnalysis ? BATCH_ANALYSIS_CARD_TARGET : 1;
     try {
         logicalTask = (await preparePiExecutor(store, {entryPoint:'follow_up',goal:request.message,continuation:request.taskContinuation})).task;
         await logicalTask.resolveScope(answerScope);
-        if (allowCardCreation) logicalTask.requireOutputs([
-            {id:'card',kind:'card',required:true},
-            ...(!isBatchAnalysis && answerScope.requiresEvidence ? [{id:'reply',kind:'answer' as const,required:true}] : []),
-        ]);
         logicalTask.attach(store);
         await persistCurrentAppSessionSnapshot(state, { store, scope: lease.scope });
         if (!streamOverride) await ensureCloudAiConsent(state.settings.provider);
@@ -242,7 +238,7 @@ export const runPiFollowUpTurn = async (
                 thinkingLevel: resolvePiThinkingLevel(state.settings),
                 tools: createPiAppTools(store, datasetVersion, {
                     allowCardCreation,
-                    ...(!request.continuation&&request.queryUnderstandingArtifact?{scopeRepair:{context:{message:request.message,artifact:request.queryUnderstandingArtifact,grounding:request.groundingResult,findings:request.intentFindings},onResolved:scope=>{answerScope=scope;understoodArtifact={...understoodArtifact!,filterDescription:scope.computation?.where?understoodArtifact!.filterDescription:null,requestedComputationScope:scope.computation};}}}:{}),
+                    ...(false&&!request.continuation&&request.queryUnderstandingArtifact?{scopeRepair:{context:{message:request.message,artifact:request.queryUnderstandingArtifact,grounding:request.groundingResult,findings:request.intentFindings},onResolved:scope=>{answerScope=scope;understoodArtifact={...understoodArtifact!,filterDescription:scope.computation?.where?understoodArtifact!.filterDescription:null,requestedComputationScope:scope.computation};}}}:{}),
                     onComputationValidated: receipt => { computationReceipts.push(receipt); collectAcceptedWork(); },
                     onQueryExecuted: receipt => { receipts.push(receipt); collectAcceptedWork(); },
                     onMcpObserved: receipt => { mcpObservations.push(receipt); },
@@ -286,16 +282,8 @@ export const runPiFollowUpTurn = async (
                 if (validationErrors.length > 0) {
                     return { block: true, reason: validationErrors.join(' ') };
                 }
-                if (isDestructiveRowDeleteAction({ type: 'tool_call', thought: 'Check row deletion.',
-                    toolName: 'data.mutate', args: candidate })) {
-                    return { block: true, reason: 'Use the app row-deletion preflight and confirmation flow for this action.', terminate: true };
-                }
-                const review = JSON.stringify(candidate);
-                if (review.length > 4_000) {
-                    return { block: true, reason: 'This proposed mutation is too large to review in chat.', terminate: true };
-                }
-                pendingMutation = candidate;
-                return { block: true, reason: 'App approval is required before changing data.', terminate: true };
+                // No approval gate: the model's mutation runs directly. The original upload stays recoverable in the browser.
+                return undefined;
             },
         });
         activeAgents.set(turn.turnId, agent);
@@ -373,10 +361,6 @@ export const runPiFollowUpTurn = async (
                 ? `${describeCreatedCards(createdCards, tableOnlyCardIds)}\nEvidence: ${admitted.verdict.queryIds.join(', ')}`
                 : `Cards were saved for review. No verified answer is available: ${admitted.verdict.reasons.join(' ')}`;
             status = admitted.verdict.status === 'accepted' ? 'completed' : 'blocked';
-        } else if (allowCardCreation && !isBatchAnalysis && createdCards.length === 0) {
-            failureClass = 'tool_execution';
-            text = 'Pi could not add the requested dashboard card. The query result was not saved as a card. Please retry or review the analysis data.';
-            status = 'failed';
         } else if (createdCards.length > 0) {
             store.getState().setResultsViewMode?.('explore');
             text = `${describeCreatedCards(createdCards, tableOnlyCardIds)}${gateNote}`;

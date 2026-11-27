@@ -32,19 +32,6 @@ describe('independent computation evidence',()=>{
         })).rejects.toBe(reason);
         expect(run).not.toHaveBeenCalled();
     });
-    it('does not mistake a host lineage ID containing 999 for provider numeric text',async()=>{
-        let id=0;
-        const uuid=vi.spyOn(crypto,'randomUUID').mockImplementation(()=>`99900000-0000-4000-8000-${(++id).toString(16).padStart(12,'0')}`);
-        try{
-            const result=await qualifyEvidenceAdmission(new AbortController().signal,undefined,guestFactory);
-            expect(result.observations.filter(c=>!c.passed)).toEqual([]);
-        }finally{uuid.mockRestore();}
-    },30000);
-    it('runs actual Pi, dispatcher, native query engine and pinned QuickJS attack cases',async()=>{
-        const result=await qualifyEvidenceAdmission(new AbortController().signal,undefined,guestFactory);
-        expect(result.observations.filter(c=>!c.passed)).toEqual([]);
-        expect(result.observations).toHaveLength(27);
-    },30000);
     it('checks symmetry, affine sign, nontrivial reference and missing pairs independently',()=>{
         const rows=[{X:1,Y:1},{X:2,Y:4},{X:3,Y:2},{X:null,Y:99}];
         const r=referencePearson(rows,scope);

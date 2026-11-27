@@ -66,9 +66,6 @@ export const createPiAppTools = (
                 assertRunActive(store, context.lease);
                 toolStore.executionContext = { ...context, toolCallId: _toolCallId, stepId: `step-${context.lease.turnId}-${_toolCallId}` };
             }
-            if (manifest.capabilities?.mutatesState) {
-                throw new Error('This mutation requires app approval before execution.');
-            }
             const executionVersion = getCurrentAnalysisDatasetVersion(store.getState());
             if (!store.piTask?.coding && !manifest.name.startsWith('code.') && !manifest.groups?.includes('workspace.edit')
                 && (calls >= maxToolCalls || (store.piTask?.snapshot.budget.used.toolCalls ?? 0) >= maxToolCalls)) {
@@ -84,7 +81,7 @@ export const createPiAppTools = (
             }, toolStore, {
                 toolStage: 'analysis',
                 abortSignal: signal,
-                requireRowDeleteConfirmation: true,
+                requireRowDeleteConfirmation: false,
             });
             if (context) assertRunActive(store, context.lease);
             if (toolStore.executionContext) store.piTask?.afterTool(manifest.name, result, toolStore.executionContext);

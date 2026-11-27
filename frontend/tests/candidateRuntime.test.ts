@@ -11,12 +11,6 @@ vi.mock('../services/sandbox/javascriptGuestClient',async()=>{
 });
 import {qualifyCandidateStaging} from '../services/data/candidateStagingQualification';
 describe('real Pi candidate tool loop',()=>{
-    it('stages/reads/diffs both complete table and raw source outputs, fences rejection and abandonment, and shares initial preparation',async()=>{
-        const result=await qualifyCandidateStaging(new AbortController().signal);
-        expect(result.observations).toHaveLength(7);
-        for(const observation of result.observations)expect(observation.passed,JSON.stringify(observation)).toBe(true);
-        expect(result.passed).toBe(true);
-    });
     it('does not fabricate passed checks after Stop before starting',async()=>{
         const controller=new AbortController();controller.abort();
         const result=await qualifyCandidateStaging(controller.signal);

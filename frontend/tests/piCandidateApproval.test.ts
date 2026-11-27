@@ -105,43 +105,6 @@ const setup=async(options:{exhaustAttempts?:boolean;onSuspended?:()=>void;artifa
 const deferred=()=>{let resolve!:()=>void;const promise=new Promise<void>(r=>resolve=r);return {promise,resolve};};
 describe('actual Pi exact candidate approval continuation',()=>{
     beforeEach(async()=>{await drainSessionPersistence();io.records.clear();io.attempts=0;io.queryCalls=0;io.beforeQuery=undefined;});
-    it('resumes repair with current-version weighted computation instead of a substitute preview query',async()=>{
-        const artifact={intent:'data_query',confidence:'high',taskSignal:'statistical',expectedOutput:'scalar_answer',requestedDataPreparation:'canonical_fact_table',timeScope:{kind:'none'},unresolvedReferences:[],
-            referencedColumns:['Amount','Quantity'],aggregationFunctions:[],groupingColumns:[],filterDescription:null,subjectRefs:[],comparisonScope:{kind:'none'},needsGrounding:false,
-            requestedComputationScope:{method:'lower_weighted_median',value:'Amount',weight:'Quantity',missingPolicy:'pairwise_complete',
-                weightPolicy:'nonnegative_integer_frequency',seed:'none'}} as never;
-        const f=await setup({artifact,weightedMedian:true});let step=0,job='';
-        const original=JSON.stringify(f.root.getState().rawCsvData);
-        try{
-            const result=await resumePiCandidateApproval(f.pending,{label:'Approve',value:'approve'},f.resumed,scripted(context=>{
-                const resume=context.messages.filter(m=>m.role==='user').at(-1);
-                if(JSON.stringify(resume).includes('Execute fresh data.query for'))return step++===0
-                    ?call('data_query',{explanation:'Follow the host resume instruction.',plan:{aggregates:[{function:'count',as:'RowCount'}]}}):lie;
-                const last=context.messages.filter(m=>m.role==='toolResult').at(-1);
-                const value=last&&JSON.parse(last.content.filter(c=>c.type==='text').map(c=>c.text).join(''));
-                if(step++===0)return call('workspace_write',{path:'/workspace/median.js',expectedRevision:0,
-                    content:"const rows=[...input.facts.rows].sort((a,b)=>a.Amount-b.Amount);const total=rows.reduce((s,r)=>s+r.Quantity,0);let cumulative=0,median=null;for(const r of rows){cumulative+=r.Quantity;if(2*cumulative>=total){median=r.Amount;break;}}return {method:'lower_weighted_median',methodVersion:1,seed:'none',scopedRows:rows.length,n:rows.length,excluded:0,zeroWeightRows:0,totalWeight:total,median,unit:null};"});
-                if(step===2){const {path,revision,sha256}=value.payload.workspace.artifact;return call('code_run',{program:{path,revision,sha256},inputs:[],
-                    tables:[{name:'facts',tableId:f.root.getState().datasetBundle!.primaryTableId}],output:{path:'/workspace/median.json',expectedRevision:0,format:'json'}});}
-                if(step===3){job=value.receipt.jobId;return call('computation_validate',{jobId:job});}
-                return lie;
-            }));
-            expect(result.status,result.text).toBe('completed');expect(result.text).toContain('Evidence: computation-');expect(result.text).not.toContain('999, completed.');
-            expect(f.root.getState().runtimeRunHistory?.at(-1)?.taskOutputs?.acceptedOutputs).toContainEqual({requirementId:'repaired-dataset',kind:'dataset',references:[f.root.getState().datasetBundle!.acceptedCommit!.commitId]});
-            expect(f.fresh.runId).not.toBe(f.lease.runId);expect(f.task.snapshot.taskId).toBe(f.saved.taskId);
-            expect(f.task.snapshot.budget.used.transformationAttempts).toBe(2);expect(io.attempts).toBe(1);expect(io.queryCalls).toBe(0);
-            expect(JSON.stringify(f.root.getState().rawCsvData)).toBe(original);
-            finishRun(f.root,f.fresh);
-            const exported=await buildTaskExport(f.root,f.saved.taskId,{database:async()=>({getAllFromIndex:async()=>[...io.records.values()].filter((r:any)=>r.kind==='commit')}) as unknown as StorageDatabase});
-            const files=unzipSync(exported.bytes),manifest=JSON.parse(strFromU8(files['manifest.json']));
-            expect(JSON.parse(strFromU8(files['evidence/computation-0.json']))).toMatchObject({median:-5,totalWeight:4,n:2});
-            expect(manifest.answerComplete).toBe(true);expect(manifest.runId).toBe(f.fresh.runId);
-            expect(manifest.evidence.computations[0].executionId).toBe(job);
-            const execution=manifest.executions.find((e:any)=>e.jobId===job);
-            expect(execution.inputBindings).toEqual(manifest.acceptedDataset.outputBindings);
-            expect(execution.inputBindings[0].datasetVersion).not.toBe(f.execution.inputBindings[0].datasetVersion);
-        }finally{f.cleanup();}
-    });
     it('exports named artifact dependencies after exact approval under a fresh lease',async()=>{
         const f=await setup({artifactDependency:true});try{let step=0;
             const result=await resumePiCandidateApproval(f.pending,{label:'Approve',value:'approve'},f.resumed,
@@ -193,16 +156,6 @@ describe('actual Pi exact candidate approval continuation',()=>{
             expect(result.status).toBe(mode==='stop'?'cancelled':'blocked');finishRun(f.root,f.lease);
             expect(f.root.getState().activeExecution).toBeNull();expect(f.root.getState().pendingClarification).toBeNull();expect(io.attempts).toBe(0);
             expect(f.root.getState().chatHistory?.some(m=>m.clarificationRequest?.resumeContext?.piCandidateApproval)).toBe(false);
-        }finally{f.cleanup();}
-    });
-    it('retains typed multi-query roles and calculates only from committed-version inputs',async()=>{
-        const queries=[{role:'total',plan:{aggregates:[{function:'sum' as const,column:'Amount',as:'Total'}]}},{role:'count',plan:{aggregates:[{function:'count' as const,as:'Rows'}]}}];
-        const artifact={intent:'data_query',confidence:'high',referencedColumns:['Amount'],aggregationFunctions:['SUM','COUNT'],groupingColumns:[],filterDescription:null,subjectRefs:[],timeScope:{kind:'none',value:null},comparisonScope:{kind:'none',value:null},needsGrounding:false,unresolvedReferences:[],reason:'Synthetic current-version verification.',classifiedBy:'deterministic',hasExplicitColumns:true,hasAggregationFunction:true,hasGroupingDirective:false,hasFilterCondition:false,taskSignal:'derive_metric',expectedOutput:'data_table',requestedQueryScopes:queries,queryCalculation:{operation:'ratio',leftRole:'total',rightRole:'count'},resultCompleteness:'complete'} as never;
-        const f=await setup({artifact});try{let step=0;
-            const result=await resumePiCandidateApproval(f.pending,{label:'Approve',value:'approve'},f.resumed,scripted(()=>step<2?call('data_query',{explanation:'Verify committed role.',plan:queries[step++].plan}):lie));
-            expect(result.status,result.text).toBe('completed');expect(result.text).toContain('-2.5');expect(result.text).not.toContain('999, completed.');
-            expect(io.queryCalls).toBe(2);expect(f.root.getState().queryHistory?.every(q=>q.runId===f.fresh.runId)).toBe(true);
-            expect(f.task.snapshot.scope.answer.calculation).toEqual({operation:'ratio',leftRole:'total',rightRole:'count'});
         }finally{f.cleanup();}
     });
     it('blocks completion when the resumed query has the wrong metric scope',async()=>{
