@@ -28,6 +28,7 @@ import { isRecoverableChunkLoadError } from './utils/staleChunkRecovery';
 import { formatUserError } from './utils/userErrorMessage';
 import { ToastHost } from './components/ui/ToastHost';
 import { ModalHost } from './components/ui/ModalHost';
+import { ReportProblemModal } from './components/modals/ReportProblemModal';
 import { UpdateOverlay } from './components/UpdateOverlay';
 import { toast } from './services/ui/toastService';
 import { useDialogAccessibility } from './hooks/useDialogAccessibility';
@@ -257,6 +258,7 @@ const App: React.FC = () => {
 
             <ToastHost />
             <ModalHost />
+            <ReportProblemModal />
             <UpdateOverlay />
             <Suspense fallback={null}>
                 {canUseSettingsSurface && isSettingsModalOpen && <SettingsModal />}

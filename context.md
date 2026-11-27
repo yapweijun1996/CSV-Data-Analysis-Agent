@@ -1993,3 +1993,7 @@ The production build is no longer checked in. `assets/`, `index.html`, `service-
 - Modals: one service `frontend/services/ui/modalService.ts` (`confirmModal`, `alertModal`, promise-based, queued) rendered only by `components/ui/ModalHost.tsx`. Migrated: New-session confirm (AppHeader) and API-key-required. The other ~15 feature modals (Settings, History, Database, …) are not migrated yet; new confirm/alert dialogs must use the service.
 - All new strings are in `utils/localization.ts` (`pwa_flow_*`, `toast_dismiss`) for English, Mandarin, Malay, Japanese.
 - Verified in real Chromium against a built `dist` at 1280x800 and 390x844 (swapping `service-worker.js` bytes to simulate a new release; the page must already be controlled by a worker, so reload once after the first install).
+
+
+## Report problem (2026-11-27)
+- End users can open a "Report problem" dialog (chat header bug icon, error replies, reply action bar). It builds a redacted JSON report (`frontend/services/support/problemReport.ts`) with release, browser, provider/model/reasoning, MCP hosts (no tokens), dataset metadata, recent chat/agent events/tool calls/runtime events, and console errors from an in-memory ring buffer (`consoleRingBuffer.ts`). Raw rows only if the user opts in. Copy or download .json; nothing is uploaded.

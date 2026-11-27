@@ -3,6 +3,8 @@ import { IconHide } from '../../icons/IconHide';
 import { IconSettings } from '../../icons/IconSettings';
 import { IconMemory } from '../../icons/IconMemory';
 import { IconAi } from '../../icons/IconAi';
+import { IconBug } from '../../icons/IconBug';
+import { openProblemReport } from '../../services/support/problemReportService';
 import { chatIconButton } from './chatControlStyles';
 import { getTranslation } from '../../utils/localization';
 
@@ -61,6 +63,16 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
                     <IconAi />
                 </button>
             )}
+            <button
+                type="button"
+                data-testid="report-problem-trigger"
+                onClick={openProblemReport}
+                className={chatIconButton}
+                title={getTranslation('report_problem', language)}
+                aria-label={getTranslation('report_problem', language)}
+            >
+                <IconBug />
+            </button>
             {showSettings && (
                 <button
                     onClick={onOpenSettings}

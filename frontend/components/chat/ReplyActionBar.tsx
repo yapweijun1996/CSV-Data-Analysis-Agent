@@ -4,6 +4,8 @@ import type { ChatMessage } from '../../types';
 import { getReplyVersionIndex, getReplyVersions } from '../../utils/replyVersions';
 import { chatDangerButton, chatTextButton } from './chatControlStyles';
 import { getTranslation } from '../../utils/localization';
+import { IconBug } from '../../icons/IconBug';
+import { openProblemReport } from '../../services/support/problemReportService';
 
 const copyToClipboard = async (text: string) => {
     try {
@@ -60,6 +62,10 @@ export const ReplyActionBar: React.FC<{ msg: ChatMessage; copyText: string }> = 
             </button>
             <button type="button" className={btn} onClick={() => { void copyToClipboard(copyText).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1500); }); }}>
                 <span aria-hidden="true">{copied ? '✓' : '⧉'}</span>{getTranslation(copied ? 'chat_copied' : 'chat_copy', language)}
+            </button>
+            <button type="button" className={btn} onClick={openProblemReport} data-testid="report-problem-reply"
+                title={getTranslation('report_problem', language)} aria-label={getTranslation('report_problem', language)}>
+                <IconBug className="h-4 w-4" />
             </button>
             <button type="button" className={confirmDelete ? btnDanger : btn}
                 disabled={isBusy}

@@ -1,0 +1,63 @@
+import type { TranslationEntry } from './types';
+
+/** "Report problem" dialog: lets end users hand diagnostics to the developer. */
+export const part11: Record<string, TranslationEntry> = {
+    'report_problem': { 'English': 'Report problem', 'Mandarin': '报告问题', 'Japanese': '問題を報告', 'Malay': 'Laporkan masalah' },
+    'report_problem_title': { 'English': 'Report a problem', 'Mandarin': '报告问题', 'Japanese': '問題を報告', 'Malay': 'Laporkan masalah' },
+    'report_problem_intro': {
+        'English': 'Copy or download this report and send it to the developer. It lists what happened recently so the problem is easy to find. Nothing is uploaded automatically.',
+        'Mandarin': '复制或下载此报告并发送给开发者，其中记录了最近发生的情况，便于定位问题。不会自动上传任何内容。',
+        'Japanese': 'このレポートをコピーまたはダウンロードして開発者に送ってください。最近の動作が記録されており、原因の特定に役立ちます。自動でアップロードされることはありません。',
+        'Malay': 'Salin atau muat turun laporan ini dan hantar kepada pembangun. Ia merekodkan apa yang berlaku baru-baru ini supaya masalah mudah dikesan. Tiada apa-apa dimuat naik secara automatik.',
+    },
+    'report_problem_summary_release': { 'English': 'App version', 'Mandarin': '应用版本', 'Japanese': 'アプリのバージョン', 'Malay': 'Versi aplikasi' },
+    'report_problem_summary_ai': { 'English': 'AI model', 'Mandarin': 'AI 模型', 'Japanese': 'AI モデル', 'Malay': 'Model AI' },
+    'report_problem_summary_dataset': { 'English': 'Dataset', 'Mandarin': '数据集', 'Japanese': 'データセット', 'Malay': 'Set data' },
+    'report_problem_summary_errors': { 'English': 'Errors found', 'Mandarin': '发现的错误数', 'Japanese': '検出されたエラー数', 'Malay': 'Ralat ditemui' },
+    'report_problem_summary_last_error': { 'English': 'Latest error', 'Mandarin': '最近的错误', 'Japanese': '直近のエラー', 'Malay': 'Ralat terkini' },
+    'report_problem_note_label': { 'English': 'What went wrong? (optional)', 'Mandarin': '出了什么问题？（可选）', 'Japanese': '何が起きましたか？（任意）', 'Malay': 'Apa yang tidak kena? (pilihan)' },
+    'report_problem_note_placeholder': { 'English': 'For example: I asked for a price comparison and got an error.', 'Mandarin': '例如：我要求比较价格，却出现了错误。', 'Japanese': '例：価格比較を依頼したらエラーになりました。', 'Malay': 'Contoh: Saya minta perbandingan harga tetapi mendapat ralat.' },
+    'report_problem_include_sample': { 'English': 'Include 5 sample data rows', 'Mandarin': '包含 5 行示例数据', 'Japanese': 'サンプルデータ 5 行を含める', 'Malay': 'Sertakan 5 baris data sampel' },
+    'report_problem_sample_warning': {
+        'English': 'Off by default. Turn on only if your data is safe to share; it helps reproduce data-specific problems.',
+        'Mandarin': '默认关闭。仅在数据可以分享时开启，有助于重现与数据相关的问题。',
+        'Japanese': '既定ではオフです。共有しても問題ないデータの場合のみオンにしてください。データ固有の問題の再現に役立ちます。',
+        'Malay': 'Dimatikan secara lalai. Hidupkan hanya jika data selamat dikongsi; ia membantu menghasilkan semula masalah khusus data.',
+    },
+    'report_problem_privacy': {
+        'English': 'API keys, tokens and MCP secrets are never included. Column names and file name are included; raw data rows are not unless you tick the box above.',
+        'Mandarin': '不会包含 API 密钥、令牌和 MCP 机密。报告包含文件名和列名；除非勾选上方选项，否则不含原始数据行。',
+        'Japanese': 'API キー、トークン、MCP のシークレットは含まれません。ファイル名と列名は含まれますが、上のチェックをオンにしない限り元のデータ行は含まれません。',
+        'Malay': 'Kunci API, token dan rahsia MCP tidak pernah disertakan. Nama fail dan nama lajur disertakan; baris data mentah tidak disertakan melainkan anda menandakan kotak di atas.',
+    },
+    'report_problem_preview': { 'English': 'Show full report (JSON)', 'Mandarin': '查看完整报告 (JSON)', 'Japanese': 'レポート全文を表示 (JSON)', 'Malay': 'Papar laporan penuh (JSON)' },
+    'report_problem_copy': { 'English': 'Copy report', 'Mandarin': '复制报告', 'Japanese': 'レポートをコピー', 'Malay': 'Salin laporan' },
+    'report_problem_download': { 'English': 'Download .json', 'Mandarin': '下载 .json', 'Japanese': '.json をダウンロード', 'Malay': 'Muat turun .json' },
+    'report_problem_close': { 'English': 'Close', 'Mandarin': '关闭', 'Japanese': '閉じる', 'Malay': 'Tutup' },
+    'report_problem_copied': { 'English': 'Report copied. Paste it into your message to the developer.', 'Mandarin': '报告已复制，请粘贴到发给开发者的消息中。', 'Japanese': 'レポートをコピーしました。開発者へのメッセージに貼り付けてください。', 'Malay': 'Laporan disalin. Tampalkan dalam mesej anda kepada pembangun.' },
+    'report_problem_copy_failed': { 'English': 'Could not copy. Use Download .json instead.', 'Mandarin': '复制失败，请改用“下载 .json”。', 'Japanese': 'コピーできませんでした。代わりに .json をダウンロードしてください。', 'Malay': 'Tidak dapat menyalin. Sila guna Muat turun .json.' },
+    'report_problem_downloaded': { 'English': 'Report downloaded. Send the file to the developer.', 'Mandarin': '报告已下载，请将文件发送给开发者。', 'Japanese': 'レポートをダウンロードしました。ファイルを開発者に送ってください。', 'Malay': 'Laporan dimuat turun. Hantar fail itu kepada pembangun.' },
+};
+
+export const part11Vietnamese: Record<string, string> = {
+    report_problem: 'Báo cáo sự cố',
+    report_problem_title: 'Báo cáo sự cố',
+    report_problem_intro: 'Sao chép hoặc tải báo cáo này và gửi cho nhà phát triển. Báo cáo ghi lại những gì xảy ra gần đây để dễ tìm lỗi. Không có gì được tải lên tự động.',
+    report_problem_summary_release: 'Phiên bản ứng dụng',
+    report_problem_summary_ai: 'Mô hình AI',
+    report_problem_summary_dataset: 'Tập dữ liệu',
+    report_problem_summary_errors: 'Số lỗi phát hiện',
+    report_problem_summary_last_error: 'Lỗi gần nhất',
+    report_problem_note_label: 'Đã xảy ra sự cố gì? (tùy chọn)',
+    report_problem_note_placeholder: 'Ví dụ: Tôi yêu cầu so sánh giá nhưng nhận được lỗi.',
+    report_problem_include_sample: 'Kèm 5 dòng dữ liệu mẫu',
+    report_problem_sample_warning: 'Mặc định tắt. Chỉ bật nếu dữ liệu có thể chia sẻ; giúp tái hiện các lỗi liên quan đến dữ liệu.',
+    report_problem_privacy: 'Khóa API, token và bí mật MCP không bao giờ được đưa vào. Tên tệp và tên cột được đưa vào; dòng dữ liệu gốc thì không, trừ khi bạn chọn ô ở trên.',
+    report_problem_preview: 'Xem toàn bộ báo cáo (JSON)',
+    report_problem_copy: 'Sao chép báo cáo',
+    report_problem_download: 'Tải .json',
+    report_problem_close: 'Đóng',
+    report_problem_copied: 'Đã sao chép báo cáo. Hãy dán vào tin nhắn gửi nhà phát triển.',
+    report_problem_copy_failed: 'Không thể sao chép. Hãy dùng Tải .json.',
+    report_problem_downloaded: 'Đã tải báo cáo. Hãy gửi tệp cho nhà phát triển.',
+};

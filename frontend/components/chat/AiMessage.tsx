@@ -9,6 +9,8 @@ import { CopyButton } from './CopyButton';
 import { ReplyMetricsBar } from './ReplyMetricsBar';
 import { ReasoningBlock } from './ReasoningBlock';
 import { ReplyActionBar } from './ReplyActionBar';
+import { IconBug } from '../../icons/IconBug';
+import { openProblemReport } from '../../services/support/problemReportService';
 
 interface AiMessageProps {
     msg: ChatMessage;
@@ -90,6 +92,12 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                         {getTranslation(titleKey, language)}
                     </h4>
                     <div className="flex items-center gap-1">
+                        {(isActiveError || msg.type === 'ai_cleaning_failure') && (
+                            <button type="button" onClick={openProblemReport} data-testid="report-problem-inline"
+                                className="inline-flex min-h-[32px] items-center gap-1 rounded px-1.5 text-xs font-medium text-red-700 hover:bg-red-100">
+                                <IconBug className="h-4 w-4" />{getTranslation('report_problem', language)}
+                            </button>
+                        )}
                         {!showReplyActions && <CopyButton text={displayText} className="text-slate-300 hover:text-slate-500" />}
                         {timestamp && (
                             <span className="text-[11px] text-slate-400">{timestamp}</span>

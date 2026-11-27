@@ -7,6 +7,9 @@ import { initExternalCsvBridge } from './utils/externalCsvBridge';
 import { installStaleChunkRecovery } from './utils/staleChunkRecovery';
 import { registerPwa } from './services/pwa/pwaManager';
 import { finishMcpOAuthPopup } from './utils/mcpOAuthPopup';
+import { installConsoleRingBuffer } from './services/support/consoleRingBuffer';
+
+installConsoleRingBuffer();
 
 const oauthPopupHandled = finishMcpOAuthPopup();
 if (!oauthPopupHandled) { initExternalCsvBridge(); installStaleChunkRecovery(); }

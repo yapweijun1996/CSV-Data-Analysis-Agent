@@ -1,3 +1,4 @@
+import { part11Vietnamese } from './localizationDictionary/part11';
 /**
  * Vietnamese overlay for the central translation dictionary.
  *
@@ -101,6 +102,7 @@ const coreTranslations: Readonly<Record<string, string>> = {
 export const vietnameseTranslations: Readonly<Record<string, string>> = {
     ...vietnameseExtraTranslations,
     ...coreTranslations,
+    ...part11Vietnamese,
     history_confirm_delete_title: 'Xóa báo cáo?',
     history_confirm_delete_message: 'Xóa báo cáo của "{filename}"? Thao tác này không thể hoàn tác.',
     history_confirm_purge_title: 'Xóa toàn bộ lịch sử?',
