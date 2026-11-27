@@ -139,3 +139,15 @@ describe('historySlice report artifact actions', () => {
         expect(harness.getState().addProgress).not.toHaveBeenCalled();
     });
 });
+
+describe('restored analysis view selection', () => {
+    it('keeps the localized read-only restore copy in every locale', async () => {
+        const { getTranslation } = await import('../utils/localization');
+        for (const language of ['English', 'Mandarin', 'Japanese', 'Malay', 'Vietnamese']) {
+            for (const key of ['restored_view_title', 'restored_view_detail', 'restored_view_action']) {
+                expect(getTranslation(key, language, { fileName: 'a.csv' })).toBeTruthy();
+            }
+        }
+        expect(getTranslation('restored_view_detail', 'Mandarin', { fileName: 'a.csv' })).toContain('a.csv');
+    });
+});

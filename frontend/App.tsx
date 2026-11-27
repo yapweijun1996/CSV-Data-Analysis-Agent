@@ -84,6 +84,8 @@ const App: React.FC = () => {
         init,
         currentView,
         csvData,
+        hasRestoredAnalysis,
+        restoredFileName,
         isAppInitializing,
         isAsideVisible,
         asideWidth,
@@ -108,6 +110,9 @@ const App: React.FC = () => {
             init: state.init,
             currentView: state.currentView,
             csvData: state.csvData,
+            // History keeps results and lineage but not CSV rows: show the saved analysis read-only.
+            hasRestoredAnalysis: !state.csvData && Boolean(state.datasetBundle) && ((state.analysisCards?.length ?? 0) > 0 || Boolean(state.finalSummary)),
+            restoredFileName: state.datasetBundle?.source.fileName ?? '',
             isAppInitializing: state.isAppInitializing,
             isAsideVisible: state.isAsideVisible,
             asideWidth: state.asideWidth,
@@ -210,6 +215,28 @@ const App: React.FC = () => {
     const { headerRef, headerHeight, isHeaderHidden } = useAutoHideHeader({ scrollContainerRef });
 
     const renderMainContent = () => {
+        if (hasRestoredAnalysis && currentView !== 'file_upload' && !isAppInitializing) {
+            return (
+                <ErrorBoundary language={language}>
+                    <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-amber-300 bg-amber-50 p-4 text-left">
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-amber-950">{getTranslation('restored_view_title', language)}</p>
+                            <p className="mt-1 text-sm leading-6 text-amber-900">{getTranslation('restored_view_detail', language, { fileName: restoredFileName })}</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => useAppStore.setState({ currentView: 'file_upload' })}
+                            className="min-h-[44px] rounded-xl border border-amber-400 bg-white px-4 text-sm font-semibold text-amber-950 hover:bg-amber-100"
+                        >
+                            {getTranslation('restored_view_action', language)}
+                        </button>
+                    </div>
+                    <Suspense fallback={null}>
+                        <AnalysisPanel />
+                    </Suspense>
+                </ErrorBoundary>
+            );
+        }
         if (currentView === 'file_upload' || !csvData) {
             return (
                 <div className="min-h-min" style={{ height: `calc(100% - ${headerHeight}px)` }}>

@@ -387,7 +387,11 @@ export const useAppStore = createWithEqualityFn<AppStore>()((set, get, store) =>
                     isSummaryGenerating: false,
                     aiTaskStatus: null,
                     goalState: normalizeRestoredGoalState(normalizedAppState.goalState),
-                    currentView: normalizedAppState.csvData ? 'analysis_dashboard' : 'file_upload',
+                    currentView: (normalizedAppState.csvData
+                        || (normalizedAppState.datasetBundle
+                            && ((normalizedAppState.analysisCards?.length ?? 0) > 0 || normalizedAppState.finalSummary)))
+                        ? 'analysis_dashboard'
+                        : 'file_upload',
                     sessionCreatedAt: currentSession.createdAt,
                     isApiKeySet: isProviderConfigured(persistedSettings),
                     vectorStoreDocuments: [],

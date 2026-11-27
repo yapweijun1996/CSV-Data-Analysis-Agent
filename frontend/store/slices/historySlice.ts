@@ -193,7 +193,12 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
                 initialAnalysisFailureKind: normalizedAppState.initialAnalysisFailureKind ?? null,
                 initialAnalysisRecovery: null,
                 goalState: normalizeRestoredGoalState(normalizedAppState.goalState),
-                currentView: normalizedAppState.csvData ? 'analysis_dashboard' : 'file_upload',
+                // Saved results are shown read-only even though history does not keep CSV rows.
+                currentView: (normalizedAppState.csvData
+                    || (normalizedAppState.datasetBundle
+                        && ((normalizedAppState.analysisCards?.length ?? 0) > 0 || normalizedAppState.finalSummary)))
+                    ? 'analysis_dashboard'
+                    : 'file_upload',
                 isHistoryPanelOpen: false,
                 isWorkspaceModalOpen: false,
                 isDataPreparationModalOpen: false,
