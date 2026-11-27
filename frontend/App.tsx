@@ -33,6 +33,7 @@ import { toast } from './services/ui/toastService';
 import { useDialogAccessibility } from './hooks/useDialogAccessibility';
 import { getTranslation } from './utils/localization';
 import { PwaStatusBanner } from './components/PwaStatusBanner';
+import { loadMcpServers } from './services/storage/mcpServers';
 
 const SettingsModal = lazy(() => import('./components/modals/SettingsModal').then(module => ({ default: module.SettingsModal })));
 const HistoryPanel = lazy(() => import('./components/modals/HistoryPanel').then(module => ({ default: module.HistoryPanel })));
@@ -142,6 +143,14 @@ const App: React.FC = () => {
     useEffect(() => {
         void init();
     }, [init]);
+
+    // Reconnect the MCP servers the user enabled in Settings. The MCP client stays out of the main bundle unless one exists.
+    useEffect(() => {
+        if (!loadMcpServers().some(server => server.enabled)) return;
+        let stop: (() => void) | undefined, cancelled = false;
+        void import('./services/agent/connectors/mcpAppStore').then(module => { if (!cancelled) stop = module.startMcpAutoConnect(); });
+        return () => { cancelled = true; stop?.(); };
+    }, []);
 
     useEffect(() => {
         if (typeof window.matchMedia !== 'function') return;

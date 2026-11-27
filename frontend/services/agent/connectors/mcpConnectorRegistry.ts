@@ -3,6 +3,7 @@ import type { ToolManifest } from '../../../types';
 import { assertRunActive, canCommitRun, captureSessionScope, ownsSessionScope, registerSessionResource, rootStore } from '../../session/sessionOwnership';
 import { connectHttpMcp, mcpDigest, type HttpMcpAdapter } from './httpMcpAdapter';
 import { freezeMcp, HTTP_MCP_ADAPTER_VERSION, normalizeHttpMcpConfig, type HttpMcpConfig, type McpEffect, type McpObservationReceipt, type McpTaskPort } from './httpMcpContract';
+import { mcpErrorCode } from './mcpErrorCode';
 import { validateMcpArguments } from './mcpSchema';
 
 type Connection = { config: HttpMcpConfig; adapter?: HttpMcpAdapter; controller: AbortController;
@@ -57,7 +58,7 @@ export const configureHttpMcp = async (store: StoreApi, configuration: HttpMcpCo
         connection.adapter = adapter; notify(registry);
     } catch (error) {
         // Transport diagnostics are host codes; remote bodies and URLs may contain credentials.
-        connection.error = error instanceof Error && /^mcp_[a-z_]+(?::\d+)?$/.test(error.message) ? error.message : 'mcp_connection_failed';
+        connection.error = mcpErrorCode(error) ?? 'mcp_connection_failed';
         retire(); throw new Error(connection.error);
     }
 };

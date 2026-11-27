@@ -30,7 +30,7 @@ import { clearCloudAiConsentRuntimeDecisions } from '../../services/privacy/clou
 import { usePwaLifecycle } from '../../hooks/usePwaLifecycle';
 import { refreshPwaStorageEstimate } from '../../services/pwa/pwaManager';
 import { AgentSkillsSection } from './AgentSkillsSection';
-import { McpConnectorsSection } from './McpConnectorsSection';
+import { McpServersEntry, McpServersPage } from './McpServersPage';
 
 const languages: Settings['language'][] = SUPPORTED_APP_LANGUAGES;
 const googleModels = [...GOOGLE_MODELS];
@@ -85,6 +85,7 @@ export const SettingsModal: React.FC = () => {
     const [validationError, setValidationError] = useState<string | null>(null);
     const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'fail'>('idle');
     const [testMessage, setTestMessage] = useState<string>('');
+    const [view, setView] = useState<'main' | 'mcp'>('main');
     const [showClearConfirmation, setShowClearConfirmation] = useState(false);
     const [isClearingLocalData, setIsClearingLocalData] = useState(false);
     const [clearLocalDataError, setClearLocalDataError] = useState(false);
@@ -95,6 +96,7 @@ export const SettingsModal: React.FC = () => {
 
     useEffect(() => {
         setSettings(currentSettings);
+        setView('main');
         setValidationError(null);
         setTestStatus('idle');
         setTestMessage('');
@@ -274,7 +276,7 @@ export const SettingsModal: React.FC = () => {
                 aria-modal="true"
                 aria-labelledby="settings-dialog-title"
                 tabIndex={-1}
-                className="flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col rounded-card border border-slate-200 bg-white shadow-xl sm:max-h-[80vh]"
+                className={`flex max-h-[calc(100dvh-2rem)] w-full ${view === 'mcp' ? 'max-w-xl' : 'max-w-md'} flex-col rounded-card border border-slate-200 bg-white shadow-xl sm:max-h-[80vh]`}
                 onClick={e => e.stopPropagation()}
             >
                 <header className="shrink-0 border-b border-slate-200 px-4 py-3">
@@ -282,6 +284,7 @@ export const SettingsModal: React.FC = () => {
                 </header>
                 
                 <div className="flex-grow overflow-y-auto p-4">
+                    {view === 'mcp' ? <McpServersPage language={language} onBack={() => setView('main')} /> : (
                     <div className="space-y-4">
                         <div>
                             <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -523,7 +526,7 @@ export const SettingsModal: React.FC = () => {
                         </div>
 
                         <AgentSkillsSection language={language} />
-                        <McpConnectorsSection />
+                        <McpServersEntry language={language} onOpen={() => setView('mcp')} />
 
                         <div className="rounded-card border border-red-200 bg-red-50 p-4">
                             <h3 className="text-sm font-semibold text-slate-950">
@@ -587,9 +590,17 @@ export const SettingsModal: React.FC = () => {
                             )}
                         </div>
                     </div>
+                    )}
                 </div>
 
                 <footer className="shrink-0 border-t border-slate-200 px-4 py-3">
+                    {view === 'mcp' ? (
+                        <div className="flex justify-end">
+                            <button onClick={() => setView('main')} className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                                {getTranslation('mcp_done', language)}
+                            </button>
+                        </div>
+                    ) : (
                     <div className="flex justify-end gap-2">
                         <button
                             onClick={onClose}
@@ -604,6 +615,7 @@ export const SettingsModal: React.FC = () => {
                             {getTranslation('settings_save', language)}
                         </button>
                     </div>
+                    )}
                 </footer>
             </div>
         </div>

@@ -5,9 +5,9 @@ const credentials = new Map<string, Credential>();
 const canonical = (endpoint: string) => normalizeHttpMcpConfig({ id: 'credential', endpoint, version: 'auto' }).endpoint;
 const base64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 export const forgetMcpCredential = (endpoint: string) => { credentials.delete(canonical(endpoint)); };
-export const setMcpBearerCredential = (endpoint: string, token: string) => {
+export const setMcpBearerCredential = (endpoint: string, token: string, ttlMs = 3_600_000) => {
     if (!token || token.length > 8192 || /[\r\n\s]/.test(token)) throw new Error('mcp_invalid_credential');
-    credentials.set(canonical(endpoint), { token, expiresAt: Date.now() + 3_600_000 });
+    credentials.set(canonical(endpoint), { token, expiresAt: Date.now() + ttlMs });
 };
 /** A token is held in a closure for one exact resource. No persistence, logging, model custody or redirect. */
 export const mcpAuthorization = (endpoint: string): (() => string | undefined) => {

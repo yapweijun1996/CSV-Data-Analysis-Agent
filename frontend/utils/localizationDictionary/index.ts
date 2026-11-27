@@ -8,6 +8,7 @@ import { part06 } from './part06';
 import { part07 } from './part07';
 import { part08 } from './part08';
 import { part09 } from './part09';
+import { part10 } from './part10';
 import type { TranslationEntry } from './types';
 
 export type { Language, TranslationEntry } from './types';
@@ -24,4 +25,5 @@ export const translations: Record<string, TranslationEntry> = {
     ...part07,
     ...part08,
     ...part09,
+    ...part10,
 };

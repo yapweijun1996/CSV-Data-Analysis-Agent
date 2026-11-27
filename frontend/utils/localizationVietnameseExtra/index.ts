@@ -3,6 +3,7 @@ import { vietnamesePart02 } from './part02';
 import { vietnamesePart03 } from './part03';
 import { vietnamesePart04 } from './part04';
 import { vietnamesePart05 } from './part05';
+import { vietnamesePart06 } from './part06';
 
 /** Vietnamese strings beyond the hand-written core set in localizationVietnamese.ts. */
 export const vietnameseExtraTranslations: Readonly<Record<string, string>> = {
@@ -11,4 +12,5 @@ export const vietnameseExtraTranslations: Readonly<Record<string, string>> = {
     ...vietnamesePart03,
     ...vietnamesePart04,
     ...vietnamesePart05,
+    ...vietnamesePart06,
 };
