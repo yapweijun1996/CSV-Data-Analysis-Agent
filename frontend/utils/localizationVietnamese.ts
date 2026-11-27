@@ -30,7 +30,6 @@ const coreTranslations: Readonly<Record<string, string>> = {
     header_workflow_hint: 'Xem chi tiết chuẩn bị và kiểm tra',
     header_logs: 'Nhật ký',
     header_logs_hint: 'Kiểm tra chẩn đoán khi chạy',
-    header_change_goal: 'Đổi mục tiêu',
     header_show_assistant: 'Hiện bảng Trợ lý',
     assistant: 'Trợ lý',
     upload_status_importing_title: 'Đang nhập dữ liệu',

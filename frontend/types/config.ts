@@ -12,7 +12,6 @@ export interface RuntimeUIConfig {
     showWorkspaceButton?: boolean;
     showWorkflowButton?: boolean;
     showLogsButton?: boolean;
-    showChangeGoalButton?: boolean;
     showAssistantToggleButton?: boolean;
     enableDuckDbQueryEngine?: boolean;
 }

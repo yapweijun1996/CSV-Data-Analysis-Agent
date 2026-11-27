@@ -17,7 +17,6 @@ type NormalizedRuntimeConfig = {
         showWorkspaceButton: boolean;
         showWorkflowButton: boolean;
         showLogsButton: boolean;
-        showChangeGoalButton: boolean;
         showAssistantToggleButton: boolean;
         enableDuckDbQueryEngine: boolean;
     };
@@ -40,7 +39,6 @@ const defaultConfig: NormalizedRuntimeConfig = {
         showWorkspaceButton: true,
         showWorkflowButton: true,
         showLogsButton: true,
-        showChangeGoalButton: true,
         showAssistantToggleButton: true,
         enableDuckDbQueryEngine: true,
     },
@@ -57,7 +55,6 @@ const endUserModeConfig: NormalizedRuntimeConfig['ui'] = {
     showWorkspaceButton: false,
     showWorkflowButton: false,
     showLogsButton: false,
-    showChangeGoalButton: false,
 };
 
 declare global {
@@ -94,7 +91,6 @@ const normalizeConfig = (config?: BootstrapConfig | null): NormalizedRuntimeConf
             showWorkspaceButton: resolveBoolean(config.ui?.showWorkspaceButton, uiDefaults.showWorkspaceButton),
             showWorkflowButton: resolveBoolean(config.ui?.showWorkflowButton, uiDefaults.showWorkflowButton),
             showLogsButton: resolveBoolean(config.ui?.showLogsButton, uiDefaults.showLogsButton),
-            showChangeGoalButton: resolveBoolean(config.ui?.showChangeGoalButton, uiDefaults.showChangeGoalButton),
             showAssistantToggleButton: resolveBoolean(config.ui?.showAssistantToggleButton, uiDefaults.showAssistantToggleButton),
             enableDuckDbQueryEngine: resolveBoolean(config.ui?.enableDuckDbQueryEngine, uiDefaults.enableDuckDbQueryEngine),
         },
@@ -139,6 +135,5 @@ export const shouldShowDatabaseButton = (): boolean => shouldAllowDatabaseSurfac
 export const shouldShowWorkspaceButton = (): boolean => shouldAllowWorkspaceSurface();
 export const shouldShowWorkflowButton = (): boolean => shouldAllowWorkflowSurface();
 export const shouldShowLogsButton = (): boolean => shouldAllowLogsSurface();
-export const shouldShowChangeGoalButton = (): boolean => getRuntimeConfig().ui.showChangeGoalButton;
 export const shouldShowAssistantToggleButton = (): boolean => getRuntimeConfig().ui.showAssistantToggleButton;
 export const shouldEnableDuckDbQueryEngine = (): boolean => getRuntimeConfig().ui.enableDuckDbQueryEngine;

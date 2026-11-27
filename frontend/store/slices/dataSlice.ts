@@ -52,7 +52,6 @@ export interface IDataSlice {
     handleFileUpload: (file: File) => Promise<void>;
     ingestExternalCsvPayload: (event: ExternalCsvPayloadEvent) => Promise<void>;
     regenerateAnalyses: (newData: CsvData) => Promise<void>;
-    reproposeAnalysisGoals: () => void;
     resumeCleaningRun: () => Promise<void>;
     restartCleaningRun: () => Promise<void>;
     revertToOriginal: () => Promise<void>;
@@ -500,13 +499,6 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
             const { getState: get, setState: set } = ownedStore;
             const { regenerateAnalysesWithNewData } = await import('../../services/agent/orchestration/sessionManager');
             await regenerateAnalysesWithNewData(newData, ownedStore);
-        },
-
-        reproposeAnalysisGoals: async () => {
-            const ownedStore = scopeCurrentExecution(storeApi);
-            const { getState: get, setState: set } = ownedStore;
-            const { reproposeAnalysisGoals: reproposeGoalsService } = await import('../../services/agent/orchestration/sessionManager');
-            reproposeGoalsService(ownedStore);
         },
 
         ensureDatasetSemanticSnapshot: async (dataset, options) => {

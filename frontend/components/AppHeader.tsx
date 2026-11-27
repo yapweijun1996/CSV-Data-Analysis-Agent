@@ -4,13 +4,12 @@ import { shallow } from 'zustand/shallow';
 import { IconNew } from '../icons/IconNew';
 import { IconHistory } from '../icons/IconHistory';
 import { IconShowAssistant } from '../icons/IconShowAssistant';
-import { IconChangeGoal } from '../icons/IconChangeGoal';
+import { isDebugModeEnabled } from '../utils/debugMode';
 import { IconCode } from '../icons/IconCode';
 import { IconFileUpload } from '../icons/IconFileUpload';
 import { IconMoreHorizontal } from '../icons/IconMoreHorizontal';
 import {
     shouldShowAssistantToggleButton,
-    shouldShowChangeGoalButton,
     shouldShowDatabaseButton,
     shouldShowHistoryButton,
     shouldShowLogsButton,
@@ -34,8 +33,6 @@ export const AppHeader: React.FC = () => {
         onOpenLogs,
         isAsideVisible,
         onShowAssistant,
-        confirmedAnalysisGoal,
-        reproposeAnalysisGoals,
         showAnalysisTools,
         hasPendingRestore,
         fileName,
@@ -52,8 +49,6 @@ export const AppHeader: React.FC = () => {
             onOpenLogs: () => state.setIsDebugLogsModalOpen(true),
             isAsideVisible: state.isAsideVisible,
             onShowAssistant: () => state.setIsAsideVisible(true),
-            confirmedAnalysisGoal: state.confirmedAnalysisGoal,
-            reproposeAnalysisGoals: state.reproposeAnalysisGoals,
             showAnalysisTools: Boolean(state.csvData),
             hasPendingRestore: Boolean(state.datasetBundle && !state.csvData),
             fileName: state.csvData?.fileName ?? null,
@@ -66,7 +61,6 @@ export const AppHeader: React.FC = () => {
     const showDatabaseButton = shouldShowDatabaseButton();
     const showWorkflowButton = shouldShowWorkflowButton();
     const showLogsButton = shouldShowLogsButton();
-    const showChangeGoalButton = shouldShowChangeGoalButton();
     const showAssistantToggleButton = shouldShowAssistantToggleButton();
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const advancedRootRef = useRef<HTMLDivElement>(null);
@@ -78,10 +72,9 @@ export const AppHeader: React.FC = () => {
         top: 56,
     });
     const showAdvancedMenu = Boolean(
-        showAnalysisTools && (
+        isDebugModeEnabled() && showAnalysisTools && (
             showWorkflowButton
             || showLogsButton
-            || (confirmedAnalysisGoal && showChangeGoalButton)
         ),
     );
 
@@ -265,18 +258,6 @@ export const AppHeader: React.FC = () => {
                                     >
                                         <span className="block font-medium">{getTranslation('header_logs', language)}</span>
                                         <span className="block text-xs text-slate-500">{getTranslation('header_logs_hint', language)}</span>
-                                    </button>
-                                )}
-                                {confirmedAnalysisGoal && showChangeGoalButton && (
-                                    <button
-                                        ref={!(showAnalysisTools && (showWorkflowButton || showLogsButton)) ? firstAdvancedItemRef : undefined}
-                                        type="button"
-                                        role="menuitem"
-                                        onClick={() => runAdvancedAction(reproposeAnalysisGoals)}
-                                        className="flex min-h-[44px] items-center gap-2 rounded-card px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                                    >
-                                        <IconChangeGoal />
-                                        <span>{getTranslation('header_change_goal', language)}</span>
                                     </button>
                                 )}
                             </div>
