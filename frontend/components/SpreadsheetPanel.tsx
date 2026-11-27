@@ -86,7 +86,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
     const preparedStatusClasses = preparedDatasetStatus === 'operations'
         ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
         : preparedDatasetStatus === 'schema_only'
-            ? 'bg-amber-100 text-amber-800 border-amber-200'
+            ? 'bg-warning-100 text-warning-800 border-warning-200'
             : preparedDatasetStatus === 'inconsistent'
                 ? 'bg-rose-100 text-rose-800 border-rose-200'
                 : 'bg-slate-100 text-slate-600 border-slate-200';
@@ -186,7 +186,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                     </div>
 
                     {largeDatasetBacking && (
-                        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" role="status">
+                        <div className="rounded-md border border-warning-300 bg-warning-50 p-3 text-sm text-warning-950" role="status">
                             <p className="font-semibold">{getTranslation('large_dataset_mode_title', language)}</p>
                             <p className="mt-1">
                                 {getTranslation('large_dataset_mode_body', language, {

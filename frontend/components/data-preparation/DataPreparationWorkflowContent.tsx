@@ -10,14 +10,14 @@ type WorkflowBundle = ReturnType<typeof buildDataPreparationWorkflowBundle>;
 
 const stepStatusClasses: Record<'done' | 'warning' | 'blocked' | 'not_started', string> = {
     done: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    warning: 'bg-amber-100 text-amber-800 border-amber-200',
+    warning: 'bg-warning-100 text-warning-800 border-warning-200',
     blocked: 'bg-rose-100 text-rose-800 border-rose-200',
     not_started: 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
 const badgeClasses: Record<NonNullable<WorkflowBundle['preparation']['badgeLabel']>, string> = {
     'AI Cleaned': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    'No Data Edits Applied Yet': 'bg-amber-100 text-amber-800 border-amber-200',
+    'No Data Edits Applied Yet': 'bg-warning-100 text-warning-800 border-warning-200',
     'Cleaning Blocked': 'bg-rose-100 text-rose-800 border-rose-200',
     'Baseline Prepared': 'bg-sky-100 text-sky-800 border-sky-200',
 };
@@ -25,7 +25,7 @@ const badgeClasses: Record<NonNullable<WorkflowBundle['preparation']['badgeLabel
 const mappingResultClasses: Record<WorkflowBundle['issueSummary']['mappings'][number]['result'], string> = {
     'baseline-fixed': 'bg-sky-100 text-sky-800 border-sky-200',
     'ai-executed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    'proposed-only': 'bg-amber-100 text-amber-800 border-amber-200',
+    'proposed-only': 'bg-warning-100 text-warning-800 border-warning-200',
     'blocked': 'bg-rose-100 text-rose-800 border-rose-200',
 };
 
@@ -298,7 +298,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                         </div>
                         <span className={`inline-flex items-center self-start rounded-full border px-3 py-1 text-xs font-semibold ${
                             structureReview.requiresHumanReview
-                                ? 'border-amber-200 bg-amber-100 text-amber-800'
+                                ? 'border-warning-200 bg-warning-100 text-warning-800'
                                 : 'border-emerald-200 bg-emerald-100 text-emerald-800'
                         }`}>
                             {structureReview.source ?? 'unknown source'}
@@ -386,7 +386,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                                         structureReview.proposalVerification.tier === 'pass'
                                             ? 'bg-emerald-100 text-emerald-800'
                                             : structureReview.proposalVerification.tier === 'warn'
-                                                ? 'bg-amber-100 text-amber-800'
+                                                ? 'bg-warning-100 text-warning-800'
                                                 : 'bg-rose-100 text-rose-800'
                                     }`}
                                 >
@@ -423,13 +423,13 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                         </div>
                     )}
                     {(structureReview.verificationSummary?.unresolvedMissingKeyDimensions?.length ?? 0) > 0 && (
-                        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                        <div className="mt-4 rounded-md border border-warning-200 bg-warning-50 p-3 text-sm text-warning-900">
                             <p className="font-semibold">Unresolved dimensions after carry-forward</p>
                             <p className="mt-1">{structureReview.verificationSummary?.unresolvedMissingKeyDimensions.join(', ')}</p>
                         </div>
                     )}
                     {structureReview.blockingReasons.length > 0 && (
-                        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                        <div className="mt-4 rounded-md border border-warning-200 bg-warning-50 p-3 text-sm text-warning-900">
                             <p className="font-semibold">Blocking reasons</p>
                             <ul className="mt-2 space-y-1 list-disc list-inside">
                                 {Array.from(new Set(structureReview.blockingReasons.map(reason => getStructureReviewReasonText(reason, language)))).map(text => (
@@ -622,7 +622,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                     </div>
                 )}
                 {workflow.verification.shapeFailureSignalKey && (
-                    <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    <div className="mt-4 rounded-md border border-warning-200 bg-warning-50 p-3 text-sm text-warning-900">
                         <p className="font-semibold">Shape verification detail</p>
                         <p className="mt-1">
                             Signal: <span className="font-mono">{workflow.verification.shapeFailureSignalKey}</span>
@@ -675,7 +675,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                                 <p className="font-semibold text-slate-900">Type changes</p>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {workflow.diff.changedColumns.map(change => (
-                                        <span key={`changed-${change.name}`} className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
+                                        <span key={`changed-${change.name}`} className="rounded-full border border-warning-200 bg-warning-50 px-2.5 py-1 text-xs font-medium text-warning-800">
                                             {`${change.name}: ${change.before ?? 'unknown'} -> ${change.after ?? 'unknown'}`}
                                         </span>
                                     ))}

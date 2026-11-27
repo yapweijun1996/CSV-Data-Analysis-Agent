@@ -19,7 +19,7 @@ const AnalysisCardCaveatsComponent: React.FC<AnalysisCardCaveatsProps> = ({ samp
     const leaders = sampleSizeCaveat?.leaders ?? [];
     if (leaders.length === 0 && !tiedLeadingWindow) return null;
     return (
-        <div className="flex flex-col gap-1 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900" role="note" data-testid="analysis-card-caveats">
+        <div className="flex flex-col gap-1 rounded-md border border-warning-200 bg-warning-50 p-3 text-xs text-warning-900" role="note" data-testid="analysis-card-caveats">
             {leaders.length > 0 && sampleSizeCaveat && (
                 <p data-testid="analysis-card-caveat-small-group">
                     <b>{getTranslation('analysis_card_caveat_small_group_title', language)}</b>{' '}

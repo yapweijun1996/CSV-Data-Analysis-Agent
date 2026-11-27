@@ -48,7 +48,7 @@ const DataQualityWarningsComponent: React.FC = () => {
     return (
         <details className="group rounded-card border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
             <summary className="flex cursor-pointer list-none items-center gap-2">
-                <IconWarning className="h-4 w-4 shrink-0 text-amber-500" />
+                <IconWarning className="h-4 w-4 shrink-0 text-warning-500" />
                 <span className="min-w-0 flex-1">
                     {getTranslation('data_warnings_compact_summary', language, { count: noteCount })}
                 </span>
@@ -57,7 +57,7 @@ const DataQualityWarningsComponent: React.FC = () => {
                 </span>
             </summary>
             <div className="mt-2 space-y-2 border-t border-slate-200 pt-2 text-xs text-slate-600">
-                {numericParseMessage && <p className="font-semibold text-red-700">{numericParseMessage}</p>}
+                {numericParseMessage && <p className="font-semibold text-danger-700">{numericParseMessage}</p>}
                 {notes.length > 0 ? (
                     <ul className="space-y-1">
                         {notes.map(note => (

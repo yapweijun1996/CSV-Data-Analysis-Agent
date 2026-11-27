@@ -52,7 +52,7 @@ export const ImportProgressCard: React.FC<ImportProgressCardProps> = ({
     return (
         <div className="flex h-full items-center justify-center px-2">
             <div className={`w-full max-w-3xl rounded-card border p-6 shadow-sm sm:p-8 ${
-                isError ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50'
+                isError ? 'border-danger-200 bg-danger-50' : 'border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50'
             }`}>
                 <div className="flex items-center gap-4">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
@@ -93,7 +93,7 @@ export const ImportProgressCard: React.FC<ImportProgressCardProps> = ({
                     </>
                 )}
 
-                <p role="status" aria-live="polite" className={`mt-4 text-sm leading-6 ${isError ? 'text-red-700' : 'font-medium text-slate-800'}`}>
+                <p role="status" aria-live="polite" className={`mt-4 text-sm leading-6 ${isError ? 'text-danger-700' : 'font-medium text-slate-800'}`}>
                     {detail}
                 </p>
 

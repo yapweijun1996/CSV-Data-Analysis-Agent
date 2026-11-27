@@ -18,8 +18,8 @@ const ThinkingIcon: React.FC = () => (
 );
 const ExecutingIcon: React.FC = () => <IconWrapper colorClass="bg-indigo-100 text-indigo-600"><span className="text-xl">⚙️</span></IconWrapper>;
 const ObservingIcon: React.FC = () => <IconWrapper colorClass="bg-purple-100 text-purple-600"><span className="text-xl">🔬</span></IconWrapper>;
-const DoneIcon: React.FC = () => <IconWrapper colorClass="bg-green-100 text-green-600"><span className="text-xl">✅</span></IconWrapper>;
-const ErrorIcon: React.FC = () => <IconWrapper colorClass="bg-red-100 text-red-600"><span className="text-xl">⚠️</span></IconWrapper>;
+const DoneIcon: React.FC = () => <IconWrapper colorClass="bg-success-100 text-success-600"><span className="text-xl">✅</span></IconWrapper>;
+const ErrorIcon: React.FC = () => <IconWrapper colorClass="bg-danger-100 text-danger-600"><span className="text-xl">⚠️</span></IconWrapper>;
 
 interface AiTaskStatusBubbleProps {
     task: AiTaskStatusMessage;
@@ -32,7 +32,7 @@ const MicroTaskStep: React.FC<{ task: MicroTask }> = ({ task }) => {
         switch (status) {
             case 'done':
                 return (
-                    <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white">
+                    <div className="w-4 h-4 rounded-full bg-success-500 flex items-center justify-center text-white">
                         <IconCheck />
                     </div>
                 );
@@ -99,7 +99,7 @@ export const AiTaskStatusBubble: React.FC<AiTaskStatusBubbleProps> = ({ task }) 
             )}
             
             {task.status === 'error' && task.error && (
-                <div className="mt-3 text-xs text-red-700 bg-red-50 p-3 rounded-md border border-red-200">
+                <div className="mt-3 text-xs text-danger-700 bg-danger-50 p-3 rounded-md border border-danger-200">
                     <p className="font-semibold mb-1">Error Details:</p>
                     <p className="whitespace-pre-wrap font-mono break-all">{task.error}</p>
                 </div>

@@ -40,8 +40,8 @@ export const CleaningRunBanner: React.FC<CleaningRunBannerProps> = ({
         ? (sqlPrecheck?.findings ?? []).filter(finding => finding.severity === 'block' || finding.severity === 'warn').slice(0, 3)
         : [];
     const containerClassName = variant === 'spreadsheet'
-        ? 'rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900'
-        : 'mb-4 rounded-card border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900';
+        ? 'rounded-md border border-warning-200 bg-warning-50 p-3 text-sm text-warning-900'
+        : 'mb-4 rounded-card border border-warning-200 bg-warning-50 p-4 text-sm text-warning-900';
 
     return (
         <div className={containerClassName}>
@@ -49,22 +49,22 @@ export const CleaningRunBanner: React.FC<CleaningRunBannerProps> = ({
                 <div className="space-y-2">
                     <p>{hasSqlPrecheckAttention ? sqlPrecheck?.summary : (cleaningRun.userFacingMessage ?? messageByStatus[cleaningRun.status])}</p>
                     {!hasSqlPrecheckAttention && cleaningRun.actionTakenMessage && (
-                        <p className="text-xs text-amber-950/90">{cleaningRun.actionTakenMessage}</p>
+                        <p className="text-xs text-warning-950/90">{cleaningRun.actionTakenMessage}</p>
                     )}
                     {!hasSqlPrecheckAttention && cleaningRun.dataSafetyMessage && (
-                        <p className="text-xs text-amber-950/90">{cleaningRun.dataSafetyMessage}</p>
+                        <p className="text-xs text-warning-950/90">{cleaningRun.dataSafetyMessage}</p>
                     )}
                     {!hasSqlPrecheckAttention && cleaningRun.nextStateMessage && (
-                        <p className="text-xs text-amber-950/90">{cleaningRun.nextStateMessage}</p>
+                        <p className="text-xs text-warning-950/90">{cleaningRun.nextStateMessage}</p>
                     )}
                     {!hasSqlPrecheckAttention && cleaningRun.technicalDetail && (
-                        <details className="rounded-md border border-amber-200 bg-white/70 p-2 text-xs text-amber-950/90">
-                            <summary className="cursor-pointer font-medium text-amber-900">Technical detail</summary>
+                        <details className="rounded-md border border-warning-200 bg-white/70 p-2 text-xs text-warning-950/90">
+                            <summary className="cursor-pointer font-medium text-warning-900">Technical detail</summary>
                             <p className="mt-2 whitespace-pre-wrap break-words font-mono">{cleaningRun.technicalDetail}</p>
                         </details>
                     )}
                     {visibleFindings.length > 0 && (
-                        <ul className="space-y-2 text-xs text-amber-950/90">
+                        <ul className="space-y-2 text-xs text-warning-950/90">
                             {visibleFindings.map((finding, index) => (
                                 <li key={`${finding.kind}-${finding.metric ?? finding.column ?? finding.dimension ?? index}`} className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                                     <span>{finding.message}</span>
@@ -72,7 +72,7 @@ export const CleaningRunBanner: React.FC<CleaningRunBannerProps> = ({
                                         <button
                                             type="button"
                                             onClick={() => onInspectFinding(finding)}
-                                            className="self-start rounded-md border border-amber-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+                                            className="self-start rounded-md border border-warning-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-warning-900 transition-colors hover:bg-warning-100"
                                         >
                                             Inspect
                                         </button>
@@ -88,7 +88,7 @@ export const CleaningRunBanner: React.FC<CleaningRunBannerProps> = ({
                             <button
                                 type="button"
                                 onClick={onContinue}
-                                className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700"
+                                className="rounded-md bg-warning-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-warning-700"
                             >
                                 Continue cleaning
                             </button>
@@ -96,7 +96,7 @@ export const CleaningRunBanner: React.FC<CleaningRunBannerProps> = ({
                         <button
                             type="button"
                             onClick={onRestart}
-                            className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+                            className="rounded-md border border-warning-300 bg-white px-3 py-1.5 text-xs font-semibold text-warning-900 transition-colors hover:bg-warning-100"
                         >
                             {hasSqlPrecheckAttention ? 'Restart cleaning from prepared dataset' : 'Restart cleaning'}
                         </button>

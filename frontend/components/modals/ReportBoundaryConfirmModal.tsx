@@ -116,7 +116,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                 <h2 id="repair-review-title" className="text-base font-semibold">{reportStructureResolution ? t('guided_repair_title') : 'Review structural interpretations'}</h2>
                 <CsvSourceScanPanel />
                 {semanticReviewRequired && <StructureRepairReviewPanel />}
-                <p className="text-sm text-amber-950">Boundary confirmation cannot approve structural repair. Full validation and separate exact Dataset Commit approval remain required.</p>
+                <p className="text-sm text-warning-950">Boundary confirmation cannot approve structural repair. Full validation and separate exact Dataset Commit approval remain required.</p>
                 <div className="flex justify-end gap-3">
                     <button onClick={handleClose} className="rounded border px-4 py-2 text-sm">Cancel</button>
                     <button disabled className="rounded bg-blue-600 px-4 py-2 text-sm text-white opacity-50">{t('boundary_confirm_button')}</button>
@@ -277,8 +277,8 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                 <div className="relative flex min-h-0 flex-1 flex-col">
                     <div ref={scrollRef} onScroll={updateScrollCue} className="px-6 py-4 overflow-y-auto flex-1 space-y-4">
                         <StructureRepairReviewPanel />
-                        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4" aria-label={t('guided_repair_safety_summary')}>
-                            <h3 className="text-sm font-semibold text-amber-950">{t('guided_repair_safety_summary')}</h3>
+                        <section className="rounded-lg border border-warning-200 bg-warning-50 p-4" aria-label={t('guided_repair_safety_summary')}>
+                            <h3 className="text-sm font-semibold text-warning-950">{t('guided_repair_safety_summary')}</h3>
                             <p className="mt-2 text-sm text-slate-700">{summaryReason}</p>
                             <p className="mt-1 text-sm font-medium text-slate-800">{t('review_summary_do')}</p>
                             <details className="mt-3 text-sm text-slate-600">
@@ -347,19 +347,19 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                     {t('boundary_confirm_header_rows_label', { rows: headerLayerIdxs.map(i => i + 1).join(', ') })}
                                 </div>
                             </div>
-                            <div className="bg-green-50 rounded-lg p-3">
-                                <div className="text-xs text-green-600 font-medium mb-0.5">{t('boundary_confirm_data_rows')}</div>
-                                <div className="text-xl font-semibold text-green-800">{dataRowCount}</div>
-                                <div className="text-xs text-green-500">
+                            <div className="bg-success-50 rounded-lg p-3">
+                                <div className="text-xs text-success-600 font-medium mb-0.5">{t('boundary_confirm_data_rows')}</div>
+                                <div className="text-xl font-semibold text-success-800">{dataRowCount}</div>
+                                <div className="text-xs text-success-500">
                                     {t('boundary_confirm_data_rows_from', { row: bStart + 1 })}
                                 </div>
                             </div>
-                            <div className="bg-amber-50 rounded-lg p-3">
-                                <div className="text-xs text-amber-600 font-medium mb-0.5">{t('boundary_confirm_summary_rows')}</div>
-                                <div className="text-xl font-semibold text-amber-800">
+                            <div className="bg-warning-50 rounded-lg p-3">
+                                <div className="text-xs text-warning-600 font-medium mb-0.5">{t('boundary_confirm_summary_rows')}</div>
+                                <div className="text-xl font-semibold text-warning-800">
                                     {summaryRowCount}
                                 </div>
-                                <div className="text-xs text-amber-500">
+                                <div className="text-xs text-warning-500">
                                     {effectiveSummaryStart !== null && summaryRowCount > 0
                                         ? t('boundary_confirm_summary_rows_from', { row: effectiveSummaryStart + 1 })
                                         : t('boundary_confirm_no_summary')}
@@ -440,7 +440,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                                     key={rowIndex}
                                                     className={
                                                         role === 'header' ? 'bg-blue-50' :
-                                                        role === 'summary' ? 'bg-amber-50' :
+                                                        role === 'summary' ? 'bg-warning-50' :
                                                         'bg-white even:bg-slate-50'
                                                     }
                                                 >
@@ -450,8 +450,8 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                                     <td className="px-2 py-1 border-r border-slate-200 w-12 text-center">
                                                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                                                             role === 'header' ? 'bg-blue-100 text-blue-700' :
-                                                            role === 'summary' ? 'bg-amber-100 text-amber-700' :
-                                                            'bg-green-100 text-green-700'
+                                                            role === 'summary' ? 'bg-warning-100 text-warning-700' :
+                                                            'bg-success-100 text-success-700'
                                                         }`}>
                                                             {role === 'header'
                                                                 ? t('boundary_confirm_role_header')
@@ -493,7 +493,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                     <label
                                         key={profile.name}
                                         className={`grid grid-cols-1 items-center gap-2 rounded-md border bg-white px-3 py-2 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(14rem,auto)] sm:gap-3 ${
-                                            value === '' ? 'border-amber-300' : 'border-slate-200'
+                                            value === '' ? 'border-warning-300' : 'border-slate-200'
                                         }`}
                                     >
                                         <span className="flex min-w-0 items-center gap-2">
@@ -505,7 +505,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                                 </span>
                                             )}
                                             {value === '' && (
-                                                <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                                <span className="shrink-0 rounded-full bg-warning-50 px-2 py-0.5 text-[11px] font-medium text-warning-800">
                                                     {t('review_role_needs_choice')}
                                                 </span>
                                             )}

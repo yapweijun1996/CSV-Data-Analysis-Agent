@@ -35,7 +35,7 @@ const filterPillClasses: Record<DebugFilter, string> = {
     all: 'border-slate-300 bg-white text-slate-700',
     tool: 'border-sky-200 bg-sky-50 text-sky-800',
     telemetry: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    event: 'border-amber-200 bg-amber-50 text-amber-800',
+    event: 'border-warning-200 bg-warning-50 text-warning-800',
 };
 
 export const DebugLogsSidebar: React.FC<DebugLogsSidebarProps> = ({
@@ -128,7 +128,7 @@ export const DebugLogsSidebar: React.FC<DebugLogsSidebarProps> = ({
                             : 'No runtime outcome recorded'}
                     </p>
                 </div>
-                <div className={`rounded-card border p-3 ${isBlockingFailure ? 'border-red-200 bg-red-50' : latestOutcome?.degraded ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-slate-50'}`}>
+                <div className={`rounded-card border p-3 ${isBlockingFailure ? 'border-danger-200 bg-danger-50' : latestOutcome?.degraded ? 'border-warning-200 bg-warning-50' : 'border-slate-200 bg-slate-50'}`}>
                     <p className="text-slate-500">{latestIssueLabel}</p>
                     <p className="mt-1 break-words font-semibold text-slate-900">{operatorSummary.latestFailureReason ?? 'None'}</p>
                 </div>

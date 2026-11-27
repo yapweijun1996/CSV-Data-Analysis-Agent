@@ -12,14 +12,14 @@ import { getTranslation } from '../../utils/localization';
 const TONE: Record<ToastType, string> = {
     info: 'border-blue-300 bg-blue-50 text-blue-950',
     success: 'border-emerald-300 bg-emerald-50 text-emerald-950',
-    warning: 'border-amber-300 bg-amber-50 text-amber-950',
-    error: 'border-red-300 bg-red-50 text-red-950',
+    warning: 'border-warning-300 bg-warning-50 text-warning-950',
+    error: 'border-danger-300 bg-danger-50 text-danger-950',
 };
 const ACTION_TONE: Record<ToastType, string> = {
     info: 'bg-blue-600 hover:bg-blue-700',
     success: 'bg-emerald-600 hover:bg-emerald-700',
-    warning: 'bg-amber-600 hover:bg-amber-700',
-    error: 'bg-red-600 hover:bg-red-700',
+    warning: 'bg-warning-600 hover:bg-warning-700',
+    error: 'bg-danger-600 hover:bg-danger-700',
 };
 
 const ToastCard: React.FC<{ item: ToastItem; language: string }> = ({ item, language }) => {

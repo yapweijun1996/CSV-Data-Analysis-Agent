@@ -44,7 +44,7 @@ export const AnalysisStatusSection: React.FC = memo(() => {
                         type="button"
                         onClick={() => { setStopping(true); requestInitialAnalysisCancellation(); }}
                         disabled={stopping}
-                        className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-wait disabled:opacity-60"
+                        className="rounded-md border border-danger-200 bg-danger-50 px-3 py-1.5 text-xs font-medium text-danger-700 hover:bg-danger-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-300 disabled:cursor-wait disabled:opacity-60"
                     >
                         {getTranslation(stopping ? 'analysis_stopping' : 'analysis_stop', language)}
                     </button>
@@ -56,7 +56,7 @@ export const AnalysisStatusSection: React.FC = memo(() => {
                         type="button"
                         onClick={() => requestActiveResearchCancellation()}
                         disabled={Boolean(activeResearchRun.cancellationRequestedAt)}
-                        className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-wait disabled:opacity-60"
+                        className="rounded-md border border-danger-200 bg-danger-50 px-3 py-1.5 text-xs font-medium text-danger-700 hover:bg-danger-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-300 disabled:cursor-wait disabled:opacity-60"
                     >
                         {activeResearchRun.cancellationRequestedAt ? 'Stopping research…' : 'Stop research'}
                     </button>

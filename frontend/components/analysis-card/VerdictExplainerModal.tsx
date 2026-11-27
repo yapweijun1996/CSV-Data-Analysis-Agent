@@ -98,10 +98,10 @@ interface VerdictExplainerModalProps {
 
 const VERDICT_LABELS: Record<Verdict, { icon: string; colorClass: string }> = {
     verified: { icon: '✓', colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    caveated: { icon: '⚠', colorClass: 'bg-amber-100 text-amber-700 border-amber-200' },
+    caveated: { icon: '⚠', colorClass: 'bg-warning-100 text-warning-700 border-warning-200' },
     unverified: { icon: '?', colorClass: 'bg-slate-100 text-slate-700 border-slate-200' },
-    stale: { icon: '!', colorClass: 'bg-red-100 text-red-700 border-red-200' },
-    weak: { icon: '✗', colorClass: 'bg-red-100 text-red-700 border-red-200' },
+    stale: { icon: '!', colorClass: 'bg-danger-100 text-danger-700 border-danger-200' },
+    weak: { icon: '✗', colorClass: 'bg-danger-100 text-danger-700 border-danger-200' },
 };
 
 const AI_EXPLAIN_TIMEOUT_MS = 20_000;
@@ -305,7 +305,7 @@ export const VerdictExplainerModal: React.FC<VerdictExplainerModalProps> = ({
                         )}
                         {error && !isLoading && (
                             <div className="space-y-2">
-                                <p className="text-sm text-red-600">{error}</p>
+                                <p className="text-sm text-danger-600">{error}</p>
                                 <button
                                     type="button"
                                     onClick={fetchAiExplanation}

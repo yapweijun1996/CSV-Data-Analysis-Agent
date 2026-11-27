@@ -69,7 +69,7 @@ export const CloudAiConsentModal: React.FC = () => {
 
                 <div className="space-y-3 overflow-y-auto px-5 py-4">
                     {sensitiveWarning && (
-                        <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+                        <div role="alert" className="rounded-lg border border-warning-300 bg-warning-50 p-3 text-sm text-warning-950">
                             <strong className="font-semibold">
                                 {getTranslation('cloud_ai_sensitive_detected_title', language)}
                             </strong>
@@ -108,7 +108,7 @@ export const CloudAiConsentModal: React.FC = () => {
                         )}
                     </p>
                     {consentError && (
-                        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                        <p role="alert" className="rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-800">
                             {getTranslation('cloud_ai_consent_save_error', language)}
                         </p>
                     )}

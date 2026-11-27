@@ -1,3 +1,10 @@
+const STEPS = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
+/* SSOT: every colour comes from a CSS custom property defined in index.css (RGB channels). */
+const tokenScale = (name) => Object.fromEntries(
+    STEPS.map((step) => [step, `rgb(var(--${name}-${step}) / <alpha-value>)`]),
+);
+const accent = tokenScale('accent');
+
 module.exports = {
     content: [
         './index.html',
@@ -27,8 +34,18 @@ module.exports = {
                 card: '10px',
             },
             colors: {
-                'brand-primary': '#2563eb',
-                'brand-secondary': '#3b82f6',
+                accent,
+                /* Legacy utility names resolve to the themed accent so existing classes follow the palette. */
+                blue: accent,
+                slate: tokenScale('neutral'),
+                danger: tokenScale('danger'),
+                red: tokenScale('danger'),
+                success: tokenScale('success'),
+                green: tokenScale('success'),
+                warning: tokenScale('warning'),
+                amber: tokenScale('warning'),
+                'brand-primary': 'rgb(var(--accent-600) / <alpha-value>)',
+                'brand-secondary': 'rgb(var(--accent-500) / <alpha-value>)',
             },
             animation: {
                 'loading-shimmer': 'loading-shimmer 2s infinite linear',

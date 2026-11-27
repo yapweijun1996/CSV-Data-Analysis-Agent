@@ -19,7 +19,7 @@ export const PwaStatusBanner: React.FC = () => {
 
     if (pwa.status === 'offline') {
         return (
-            <div role="status" aria-live="polite" className="fixed inset-x-3 top-3 z-[80] mx-auto max-w-2xl rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg">
+            <div role="status" aria-live="polite" className="fixed inset-x-3 top-3 z-[80] mx-auto max-w-2xl rounded-lg border border-warning-300 bg-warning-50 px-4 py-3 text-sm text-warning-950 shadow-lg">
                 <strong className="font-semibold">{getTranslation('pwa_offline_title', language)}</strong>{' '}
                 {getTranslation('pwa_offline_detail', language)}
             </div>
@@ -44,7 +44,7 @@ export const PwaStatusBanner: React.FC = () => {
                     language,
                 )}
                 {applyFailed && (
-                    <p role="alert" className="mt-1 text-red-800">
+                    <p role="alert" className="mt-1 text-danger-800">
                         {getTranslation('pwa_update_error', language)}
                     </p>
                 )}

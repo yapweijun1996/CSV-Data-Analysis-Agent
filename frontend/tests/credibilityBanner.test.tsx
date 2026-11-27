@@ -168,7 +168,7 @@ describe('CredibilityBanner', () => {
 
         const button = screen.getByRole('button', { name: 'Review the 4 cards' });
         expect(button.className).toContain('text-white');
-        expect(button.className).toMatch(/\bbg-amber-700\b/);
+        expect(button.className).toMatch(/\bbg-warning-700\b/);
         expect(button.className).not.toContain('bg-white');
     });
 });

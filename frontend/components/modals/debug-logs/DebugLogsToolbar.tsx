@@ -56,7 +56,7 @@ export const DebugLogsToolbar: React.FC<DebugLogsToolbarProps> = ({
             <div className="flex flex-wrap items-center gap-2">
                 <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
                     copyStatus === 'error'
-                        ? 'bg-red-100 text-red-700'
+                        ? 'bg-danger-100 text-danger-700'
                         : copyStatus !== 'idle'
                             ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-slate-200 text-slate-700'

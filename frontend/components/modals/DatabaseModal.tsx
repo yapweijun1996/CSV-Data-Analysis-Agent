@@ -88,7 +88,7 @@ const getStatusBadgeClassName = (status: AppStore['duckDbSessionStatus']['status
         case 'binding':
             return 'border-blue-200 bg-blue-50 text-blue-700';
         case 'degraded':
-            return 'border-amber-200 bg-amber-50 text-amber-700';
+            return 'border-warning-200 bg-warning-50 text-warning-700';
         case 'error':
             return 'border-rose-200 bg-rose-50 text-rose-700';
         default:

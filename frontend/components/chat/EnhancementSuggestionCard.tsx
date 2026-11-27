@@ -50,7 +50,7 @@ export const EnhancementSuggestionCard: React.FC<EnhancementSuggestionCardProps>
                     <span
                         className={`rounded-full px-2 py-0.5 text-xs ${
                             suggestion.priority === 'high'
-                                ? 'bg-red-100 text-red-700'
+                                ? 'bg-danger-100 text-danger-700'
                                 : suggestion.priority === 'medium'
                                     ? 'bg-yellow-100 text-yellow-700'
                                     : 'bg-slate-100 text-slate-600'
@@ -81,7 +81,7 @@ export const EnhancementSuggestionCard: React.FC<EnhancementSuggestionCardProps>
                             !isExecutable
                                 ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
                                 : suggestion.status === 'applied'
-                                ? 'bg-green-100 text-green-700 cursor-default'
+                                ? 'bg-success-100 text-success-700 cursor-default'
                                 : suggestion.status === 'applying'
                                     ? 'bg-slate-200 text-slate-500 cursor-progress'
                                     : 'bg-blue-600 text-white hover:bg-blue-700'

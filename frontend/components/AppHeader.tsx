@@ -21,6 +21,7 @@ import { getTranslation } from '../utils/localization';
 import { confirmModal } from '../services/ui/modalService';
 import { PwaUpdateButton } from './PwaUpdateButton';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { PaletteSwitcher } from './PaletteSwitcher';
 
 export const AppHeader: React.FC = () => {
     const primaryButtonClass = 'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium leading-none transition-colors md:min-h-0 md:min-w-0 md:py-1.5';
@@ -275,6 +276,7 @@ export const AppHeader: React.FC = () => {
                         <span className="hidden lg:inline">{getTranslation('assistant', language)}</span>
                     </button>
                 )}
+                <PaletteSwitcher buttonClassName={secondaryButtonClass} />
                 <LanguageSwitcher buttonClassName={secondaryButtonClass} />
             </nav>
         </header>

@@ -145,7 +145,7 @@ const MemoryCard: React.FC<{
             <button
                 type="button"
                 onClick={() => onDelete(doc.id)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-red-100 hover:text-red-600 sm:opacity-50 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-danger-100 hover:text-danger-600 sm:opacity-50 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
                 title={t('memory_delete_item')}
                 aria-label={t('memory_delete_item')}
             >
@@ -413,10 +413,10 @@ export const MemoryPanel: React.FC = () => {
                                 {t('memory_search_title')}
                             </h3>
                             <p
-                                className={`mt-2 flex items-start gap-2 text-sm ${modelStatus === 'error' ? 'text-red-600' : 'text-slate-600'}`}
+                                className={`mt-2 flex items-start gap-2 text-sm ${modelStatus === 'error' ? 'text-danger-600' : 'text-slate-600'}`}
                                 role="status"
                             >
-                                <span className={`mt-0.5 shrink-0 ${modelStatus === 'ready' ? 'text-green-500' : modelStatus === 'error' ? 'text-red-500' : 'text-slate-400'}`}>
+                                <span className={`mt-0.5 shrink-0 ${modelStatus === 'ready' ? 'text-success-500' : modelStatus === 'error' ? 'text-danger-500' : 'text-slate-400'}`}>
                                     {modelStatus === 'ready' ? <IconCheckCircle />
                                         : modelStatus === 'error' ? <IconAlertCircle />
                                         : modelStatus === 'loading' ? <IconSpinner /> : <IconLayers />}
@@ -487,7 +487,7 @@ export const MemoryPanel: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={handleClearAll}
-                                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-danger-600 hover:bg-danger-50"
                                 >
                                     <IconDelete />
                                     {t('memory_clear_report')}

@@ -231,23 +231,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
             {!isWorkspaceRestoring && latestProgress?.type === 'error' && (
                 <div
                     role="alert"
-                    className="mb-6 w-full max-w-xl rounded-card border border-red-200 bg-red-50 p-4 text-left"
+                    className="mb-6 w-full max-w-xl rounded-card border border-danger-200 bg-danger-50 p-4 text-left"
                 >
-                    <p className="font-semibold text-red-800">
+                    <p className="font-semibold text-danger-800">
                         {getTranslation('file_upload_processing_error_title', language)}
                     </p>
-                    <p className="mt-1 break-words text-sm leading-6 text-red-700">
+                    <p className="mt-1 break-words text-sm leading-6 text-danger-700">
                         {latestProgress.text}
                     </p>
                 </div>
             )}
             {!isWorkspaceRestoring && datasetBundle && !fileName && (
-                <div role="status" className="mb-6 w-full max-w-xl rounded-card border border-amber-300 bg-amber-50 p-4 text-left">
-                    <p className="font-semibold text-amber-950">{getTranslation(initialAnalysisRecovery ? 'file_upload_reselect_resume_title' : 'file_upload_reselect_restore_title', language)}</p>
-                    <p className="mt-1 text-sm leading-6 text-amber-900">
+                <div role="status" className="mb-6 w-full max-w-xl rounded-card border border-warning-300 bg-warning-50 p-4 text-left">
+                    <p className="font-semibold text-warning-950">{getTranslation(initialAnalysisRecovery ? 'file_upload_reselect_resume_title' : 'file_upload_reselect_restore_title', language)}</p>
+                    <p className="mt-1 text-sm leading-6 text-warning-900">
                         {getTranslation('file_upload_reselect_detail', language, { fileName: datasetBundle.source.fileName })}
                     </p>
-                    {initialAnalysisRecovery && <p className="mt-2 text-sm leading-6 text-amber-900">
+                    {initialAnalysisRecovery && <p className="mt-2 text-sm leading-6 text-warning-900">
                         Recovery: {initialAnalysisRecovery.status}. {initialAnalysisRecovery.reason
                             ? `Cannot resume: ${initialAnalysisRecovery.reason}. Saved results are preserved.`
                             : `After verification, continue from stage ${initialAnalysisRecovery.nextStageIndex + 1}; completed stages will not run again.`}

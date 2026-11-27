@@ -162,14 +162,14 @@ const ReportHeaderComponent: React.FC<ReportHeaderProps> = ({
                     </p>
                     {/* The rows above are only the first table; say so wherever the row count is shown. */}
                     {setAsideRowCounts.length > 0 && (
-                        <p className="mt-0.5 text-xs font-medium text-amber-800">
+                        <p className="mt-0.5 text-xs font-medium text-warning-800">
                             {describeSetAsideTables(setAsideRowCounts, language)}
                         </p>
                     )}
                     {/* Badges only for states that matter (the page is already "AI Analysis") */}
                     <div className="mt-2 flex flex-wrap items-center gap-2 empty:hidden">
                         {showAiGuessBanner && (
-                            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
+                            <span className="inline-flex items-center rounded-full border border-warning-200 bg-warning-50 px-3 py-1 text-xs font-semibold text-warning-900">
                                 {getTranslation('report_header_low_confidence', language)}
                             </span>
                         )}

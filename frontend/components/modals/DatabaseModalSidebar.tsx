@@ -160,7 +160,7 @@ export const DatabaseModalSidebar: React.FC<DatabaseModalSidebarProps> = ({
                 </dl>
             </details>
             {selectedQueryActivity?.fallbackReason ? (
-                <p className="mt-4 rounded-card border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-700">
+                <p className="mt-4 rounded-card border border-warning-200 bg-warning-50 px-3 py-2.5 text-sm text-warning-700">
                     {getTranslation('explorer_needs_review', language)}
                 </p>
             ) : null}
@@ -230,7 +230,7 @@ export const DatabaseModalSidebar: React.FC<DatabaseModalSidebarProps> = ({
                                         </span>
                                     ) : null}
                                     {activity.fallbackReason ? (
-                                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">
+                                        <span className="rounded-full border border-warning-200 bg-warning-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-warning-700">
                                             {getTranslation('explorer_needs_review', language)}
                                         </span>
                                     ) : null}

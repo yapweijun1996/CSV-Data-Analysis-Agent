@@ -83,7 +83,7 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
                                         {getTranslation(source === 'user' ? 'settings_skills_yours' : 'settings_skills_builtin', language)}
                                     </span>
                                     {!enabled && (
-                                        <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                                        <span className="shrink-0 rounded-full bg-warning-50 px-2 py-0.5 text-[11px] font-semibold text-warning-800">
                                             {getTranslation('settings_skills_off', language)}
                                         </span>
                                     )}
@@ -92,8 +92,8 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
                                 {skill.manifest&&<p className="mt-1 text-xs text-slate-500">
                                     Version {skill.manifest.version} · Profiles: {skill.manifest.profiles.join(', ')||'guidance only'} · Required: {skill.manifest.requires.join(', ')||'none'} · Supporting files: {skill.manifest.supportingFiles.length}
                                 </p>}
-                                {skill.manifest?.supportingFiles.some(file=>typeof supportingSources[file.path]!=='string')&&<p role="status" className="text-xs text-amber-800">Supporting files missing; this skill is unavailable to the agent. Import its complete folder.</p>}
-                                {skill.disableModelInvocation&&<p className="text-xs text-amber-800">Model invocation restricted.</p>}
+                                {skill.manifest?.supportingFiles.some(file=>typeof supportingSources[file.path]!=='string')&&<p role="status" className="text-xs text-warning-800">Supporting files missing; this skill is unavailable to the agent. Import its complete folder.</p>}
+                                {skill.disableModelInvocation&&<p className="text-xs text-warning-800">Model invocation restricted.</p>}
                             </div>
                             <div className="flex shrink-0 items-center gap-1">
                                 <button
@@ -121,7 +121,7 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
                                             language,
                                             { name: skill.name },
                                         )}
-                                        className="min-h-[44px] rounded-md px-2 text-xs font-semibold text-red-700 hover:bg-red-50 md:min-h-0 md:py-1"
+                                        className="min-h-[44px] rounded-md px-2 text-xs font-semibold text-danger-700 hover:bg-danger-50 md:min-h-0 md:py-1"
                                     >
                                         {builtinNames.has(skill.name) ? getTranslation('settings_skills_restore', language) : '✕'}
                                     </button>
@@ -141,7 +141,7 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
                                 {source === 'builtin' && (
                                     <p className="text-xs text-slate-500">{getTranslation('settings_skills_edit_hint', language)}</p>
                                 )}
-                                {editing.error && <p role="alert" className="text-xs text-red-800">{editing.error}</p>}
+                                {editing.error && <p role="alert" className="text-xs text-danger-800">{editing.error}</p>}
                                 <div className="flex gap-2">
                                     <button
                                         type="button"
@@ -195,7 +195,7 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
                         </p>
                     )}
                     {lastImport.rejected.map(item => (
-                        <p key={`${item.fileName}-${item.reason}`} className="text-red-800">
+                        <p key={`${item.fileName}-${item.reason}`} className="text-danger-800">
                             {getTranslation('settings_skills_rejected', language, { fileName: item.fileName, reason: item.reason })}
                         </p>
                     ))}

@@ -132,7 +132,7 @@ export const DatabaseWorkspaceQueryComposer: React.FC<DatabaseWorkspaceQueryComp
             </div>
 
             {!isDuckDbReady ? (
-                <div className="mt-4 rounded-card border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <div className="mt-4 rounded-card border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-800">
                     {getTranslation('explorer_session_status', language, { status: duckDbSessionStatus.status })}
                     {duckDbSessionStatus.fallbackReason
                         ? ` ${duckDbSessionStatus.fallbackReason}`
@@ -147,7 +147,7 @@ export const DatabaseWorkspaceQueryComposer: React.FC<DatabaseWorkspaceQueryComp
             ) : null}
 
             {validationMessage ? (
-                <div role="alert" className="mt-4 rounded-card border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <div role="alert" className="mt-4 rounded-card border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-900">
                     {draft.templateId === 'null_blank_scan'
                         ? getTranslation('explorer_select_target_column_error', language)
                         : validationMessage}

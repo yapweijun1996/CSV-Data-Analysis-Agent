@@ -36,7 +36,7 @@ const DoneIcon: React.FC = () => (
     </IconWrapper>
 );
 const ErrorIcon: React.FC = () => (
-    <IconWrapper colorClass="bg-red-100 text-red-600">
+    <IconWrapper colorClass="bg-danger-100 text-danger-600">
         <IconWarning className="h-5 w-5" aria-hidden="true" />
     </IconWrapper>
 );
@@ -64,7 +64,7 @@ const MicroTaskStep: React.FC<{ task: MicroTask }> = ({ task }) => {
         switch (status) {
             case 'done':
                 return (
-                    <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white">
+                    <div className="w-4 h-4 rounded-full bg-success-500 flex items-center justify-center text-white">
                         <IconCheck />
                     </div>
                 );
@@ -201,7 +201,7 @@ export const AiTaskStatusBubble: React.FC<AiTaskStatusBubbleProps> = ({ task, va
             )}
 
             {task.status === 'error' && task.error && (
-                <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                <div className="mt-3 rounded-md border border-danger-200 bg-danger-50 p-3 text-xs text-danger-700">
                     <details>
                         <summary className="cursor-pointer font-semibold">
                             {getTranslation('task_error_details', language)}

@@ -7,9 +7,9 @@ import { tallyResearchQuestions } from '../../services/agent/runtime/dataResearc
 
 const statusStyle: Record<string, string> = {
     running: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-    degraded: 'bg-amber-100 text-amber-800',
-    failed: 'bg-red-100 text-red-700',
+    completed: 'bg-success-100 text-success-700',
+    degraded: 'bg-warning-100 text-warning-800',
+    failed: 'bg-danger-100 text-danger-700',
     cancelled: 'bg-slate-200 text-slate-700',
     queued: 'bg-slate-100 text-slate-600',
 };
@@ -54,10 +54,10 @@ export const ResearchRunSummary: React.FC<{
             </div>
 
             {brief.clarification && (
-                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                <div className="mt-3 rounded-md border border-warning-200 bg-warning-50 p-3 text-xs text-warning-900">
                     <p className="font-semibold">{getTranslation('research_clarification_needed', language)}</p>
                     <p className="mt-1">{brief.clarification.question}</p>
-                    <p className="mt-1 text-amber-700">{brief.clarification.reason}</p>
+                    <p className="mt-1 text-warning-700">{brief.clarification.reason}</p>
                 </div>
             )}
 
@@ -85,12 +85,12 @@ export const ResearchRunSummary: React.FC<{
             {showPills && (
                 <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3 text-xs empty:hidden">
                     {tally.supported > 0 && (
-                        <span className="rounded-full bg-green-50 px-2 py-1 text-green-700">
+                        <span className="rounded-full bg-success-50 px-2 py-1 text-success-700">
                             {getTranslation('research_supported_count', language, { count: tally.supported })}
                         </span>
                     )}
                     {tally.unanswered > 0 && (
-                        <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-800">
+                        <span className="rounded-full bg-warning-50 px-2 py-1 text-warning-800">
                             {getTranslation('research_unanswered_count', language, { count: tally.unanswered })}
                         </span>
                     )}

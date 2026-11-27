@@ -284,7 +284,7 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
                         <div className="flex flex-wrap items-center justify-end gap-2">
                             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
                                 copyStatus === 'error'
-                                    ? 'bg-red-100 text-red-700'
+                                    ? 'bg-danger-100 text-danger-700'
                                     : copyStatus === 'workflow'
                                         ? 'bg-sky-100 text-sky-800'
                                         : copyStatus === 'failure'

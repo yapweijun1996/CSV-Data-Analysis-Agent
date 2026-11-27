@@ -355,7 +355,7 @@ export const HistoryPanel: React.FC = () => {
                         <button
                             onClick={() => void handlePurge()}
                             disabled={isPurging}
-                            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-wait disabled:opacity-50"
+                            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-danger-600 transition-colors hover:bg-danger-50 hover:text-danger-700 disabled:cursor-wait disabled:opacity-50"
                             title={getTranslation('history_clear_all_title', language)}
                         >
                             <HistoryTrashIcon className="h-4 w-4" />
@@ -369,7 +369,7 @@ export const HistoryPanel: React.FC = () => {
                 {/* Storage usage */}
                 <div className="flex items-center justify-between px-6 py-1.5">
                     {storageError ? (
-                        <div role="alert" className="flex items-center gap-2 text-xs text-amber-800">
+                        <div role="alert" className="flex items-center gap-2 text-xs text-warning-800">
                             <span>{getTranslation('history_storage_unavailable', language)}</span>
                             <button
                                 type="button"

@@ -354,7 +354,7 @@ export const SettingsModal: React.FC = () => {
                                 <p className={`mt-1.5 rounded-md border px-3 py-2 text-sm ${
                                     testStatus === 'success'
                                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                        : 'border-red-200 bg-red-50 text-red-700'
+                                        : 'border-danger-200 bg-danger-50 text-danger-700'
                                 }`}>
                                     {testMessage}
                                 </p>
@@ -362,7 +362,7 @@ export const SettingsModal: React.FC = () => {
                         </div>
 
                         {validationError && (
-                            <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                            <p role="alert" className="rounded-md border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
                                 {validationError}
                             </p>
                         )}
@@ -528,7 +528,7 @@ export const SettingsModal: React.FC = () => {
                         <AgentSkillsSection language={language} />
                         <McpServersEntry language={language} onOpen={() => setView('mcp')} />
 
-                        <div className="rounded-card border border-red-200 bg-red-50 p-4">
+                        <div className="rounded-card border border-danger-200 bg-danger-50 p-4">
                             <h3 className="text-sm font-semibold text-slate-950">
                                 {getTranslation('settings_local_data_title', language)}
                             </h3>
@@ -545,17 +545,17 @@ export const SettingsModal: React.FC = () => {
                                         setShowClearConfirmation(true);
                                         setClearLocalDataError(false);
                                     }}
-                                    className="mt-3 min-h-[44px] rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
+                                    className="mt-3 min-h-[44px] rounded-lg border border-danger-300 bg-white px-3 py-2 text-sm font-semibold text-danger-700 hover:bg-danger-100"
                                 >
                                     {getTranslation('settings_clear_local_data', language)}
                                 </button>
                             ) : (
-                                <div className="mt-3 rounded-lg border border-red-300 bg-white p-3">
-                                    <p className="text-sm leading-6 text-red-900">
+                                <div className="mt-3 rounded-lg border border-danger-300 bg-white p-3">
+                                    <p className="text-sm leading-6 text-danger-900">
                                         {getTranslation('settings_clear_local_data_confirm', language)}
                                     </p>
                                     {clearLocalDataError && (
-                                        <p role="alert" className="mt-2 text-sm font-medium text-red-800">
+                                        <p role="alert" className="mt-2 text-sm font-medium text-danger-800">
                                             {getTranslation('settings_clear_local_data_error', language)}
                                             {incompleteStores.length > 0 && (
                                                 <> {getTranslation('settings_clear_local_data_incomplete_stores', language, {
@@ -579,7 +579,7 @@ export const SettingsModal: React.FC = () => {
                                             type="button"
                                             onClick={() => void handleClearAllLocalData()}
                                             disabled={isClearingLocalData}
-                                            className="min-h-[44px] rounded-lg bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-60"
+                                            className="min-h-[44px] rounded-lg bg-danger-700 px-3 py-2 text-sm font-semibold text-white hover:bg-danger-800 disabled:opacity-60"
                                         >
                                             {isClearingLocalData
                                                 ? getTranslation('settings_clear_local_data_clearing', language)

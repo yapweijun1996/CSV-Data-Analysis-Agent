@@ -43,10 +43,10 @@ const NUMBER_LOCALES: Record<string, string> = {
 const THEME_BADGE_CLASSES: Record<DemoDatasetTheme, string> = {
     housing: 'text-blue-600',
     jobs: 'text-violet-600',
-    business: 'text-amber-600',
+    business: 'text-warning-600',
     transport: 'text-emerald-600',
     tourism: 'text-pink-600',
-    environment: 'text-green-700',
+    environment: 'text-success-700',
     population: 'text-sky-600',
 };
 
@@ -109,7 +109,7 @@ const DemoDatasetCard: React.FC<DemoDatasetCardProps> = ({ dataset, language, di
                     data-demo-speed={dataset.speed}
                     className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-2xs font-semibold ring-1 ring-inset ${
                         isSlow
-                            ? 'bg-amber-50 text-amber-800 ring-amber-200'
+                            ? 'bg-warning-50 text-warning-800 ring-warning-200'
                             : 'bg-emerald-50 text-emerald-700 ring-emerald-200'
                     }`}
                 >
@@ -154,7 +154,7 @@ const DemoDatasetCard: React.FC<DemoDatasetCardProps> = ({ dataset, language, di
                 </a>
             </div>
             {status === 'error' && (
-                <p role="alert" className="mt-1 text-xs text-red-600">
+                <p role="alert" className="mt-1 text-xs text-danger-600">
                     {getTranslation('demo_gallery_error', language)}
                 </p>
             )}

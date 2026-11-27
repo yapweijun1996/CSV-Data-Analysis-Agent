@@ -28,15 +28,15 @@ interface AnalysisCardHeaderProps {
 
 const trustBorderClass = (status: CardTrustStatus) => {
     if (status === 'verified') return 'border-l-emerald-400';
-    if (status === 'caveated') return 'border-l-amber-400';
-    if (status === 'weak' || status === 'stale') return 'border-l-red-400';
+    if (status === 'caveated') return 'border-l-warning-400';
+    if (status === 'weak' || status === 'stale') return 'border-l-danger-400';
     return 'border-l-slate-400';
 };
 
 const trustIconClass = (status: CardTrustStatus) => {
     if (status === 'verified') return 'bg-emerald-50 text-emerald-600';
-    if (status === 'caveated') return 'bg-amber-50 text-amber-600';
-    if (status === 'weak' || status === 'stale') return 'bg-red-50 text-red-600';
+    if (status === 'caveated') return 'bg-warning-50 text-warning-600';
+    if (status === 'weak' || status === 'stale') return 'bg-danger-50 text-danger-600';
     return 'bg-slate-100 text-slate-600';
 };
 
@@ -439,7 +439,7 @@ const AnalysisCardHeaderComponent: React.FC<AnalysisCardHeaderProps> = ({
                                 role="menuitem"
                                 onClick={handleDelete}
                                 tabIndex={0}
-                                className="block min-h-[44px] w-full rounded-card px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                className="block min-h-[44px] w-full rounded-card px-3 py-2 text-left text-sm text-danger-600 hover:bg-danger-50"
                             >
                                 {getTranslation('card_delete', language)}
                             </button>

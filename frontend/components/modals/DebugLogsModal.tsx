@@ -316,11 +316,11 @@ const OpenDebugLogsModal: React.FC = () => {
                             <div className="h-full overflow-y-auto p-4">
                                 {activeView === 'local' ? (
                                     <div className="space-y-3 pb-10">
-                                        <p className="rounded-card border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                                        <p className="rounded-card border border-warning-200 bg-warning-50 p-3 text-sm text-warning-900">
                                             These local-only diagnostics may contain prompts, selected samples, and model responses. Credentials are always redacted. Do not attach this view to a public issue; use the sanitized support bundle instead.
                                         </p>
                                         {localDiagnosticsError ? (
-                                            <p role="alert" className="rounded-card border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                                            <p role="alert" className="rounded-card border border-danger-200 bg-danger-50 p-3 text-sm text-danger-800">
                                                 Local diagnostics could not be read. Close and reopen Logs to retry.
                                             </p>
                                         ) : localDiagnostics.length === 0 ? (
@@ -328,7 +328,7 @@ const OpenDebugLogsModal: React.FC = () => {
                                                 No persisted local diagnostics yet.
                                             </div>
                                         ) : localDiagnostics.map(record => (
-                                            <details key={record.id} className={`rounded-card border p-3 ${record.outcome === 'failed' || record.outcome === 'blocked' ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-slate-50'}`}>
+                                            <details key={record.id} className={`rounded-card border p-3 ${record.outcome === 'failed' || record.outcome === 'blocked' ? 'border-danger-200 bg-danger-50/40' : 'border-slate-200 bg-slate-50'}`}>
                                                 <summary className="cursor-pointer text-sm font-semibold text-slate-900">
                                                     {record.phase} · {record.tool} · {record.outcome}
                                                 </summary>
@@ -371,7 +371,7 @@ const OpenDebugLogsModal: React.FC = () => {
                                                 </div>
                                             ) : (
                                                 requestFlows.map(flow => (
-                                                    <section key={flow.groupId} className={`rounded-card border p-4 ${flow.failure ? 'border-red-200 bg-red-50/50' : 'border-slate-200 bg-slate-50/80'}`}>
+                                                    <section key={flow.groupId} className={`rounded-card border p-4 ${flow.failure ? 'border-danger-200 bg-danger-50/50' : 'border-slate-200 bg-slate-50/80'}`}>
                                                         <div className="flex flex-wrap items-start justify-between gap-3">
                                                             <div>
                                                                 <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{flow.groupType.replace('_', ' ')} · {flow.groupId}</p>

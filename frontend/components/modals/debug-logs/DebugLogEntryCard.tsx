@@ -4,14 +4,14 @@ import { type DebugEntryType, type DebugLogEntryViewModel } from '../../../servi
 const entryToneClasses: Record<DebugEntryType, string> = {
     tool: 'border-sky-200 bg-sky-50/40',
     telemetry: 'border-emerald-200 bg-emerald-50/40',
-    event: 'border-amber-200 bg-amber-50/40',
+    event: 'border-warning-200 bg-warning-50/40',
 };
 
 const formatTime = (value: Date) => new Date(value).toLocaleString();
 const formatJson = (value: unknown) => JSON.stringify(value, null, 2);
 const traceSeverityClasses = {
     neutral: 'border-slate-200 bg-slate-50 text-slate-700',
-    warning: 'border-amber-200 bg-amber-50 text-amber-800',
+    warning: 'border-warning-200 bg-warning-50 text-warning-800',
     error: 'border-rose-200 bg-rose-50 text-rose-800',
 } as const;
 
@@ -63,7 +63,7 @@ export const DebugLogEntryCard: React.FC<DebugLogEntryCardProps> = ({
                         </span>
                     )}
                     {entry.traceSummary.retryClass && (
-                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800">
+                        <span className="rounded-full border border-warning-200 bg-warning-50 px-2.5 py-1 text-[11px] font-medium text-warning-800">
                             retryClass: {entry.traceSummary.retryClass}
                         </span>
                     )}

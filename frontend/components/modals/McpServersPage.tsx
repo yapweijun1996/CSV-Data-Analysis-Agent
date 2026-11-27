@@ -150,7 +150,7 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
                 const status = !record.enabled ? 'disabled' : connecting ? 'connecting' : connected ? 'connected' : connection?.error ? 'failed' : 'idle';
                 const tools = toolSummary(record, connection?.pin?.tools.map(tool => ({ name: tool.remoteName, description: tool.description })) ?? [], typeof test === 'object' ? test : undefined);
                 const needsSignIn = record.auth === 'oauth' && record.enabled && !connected && !connecting;
-                const dot = { connected: 'bg-emerald-500', connecting: 'bg-amber-400', failed: 'bg-red-500', disabled: 'bg-slate-300', idle: 'bg-slate-400' }[status];
+                const dot = { connected: 'bg-emerald-500', connecting: 'bg-warning-400', failed: 'bg-danger-500', disabled: 'bg-slate-300', idle: 'bg-slate-400' }[status];
                 return (
                     <section key={record.id} aria-label={record.name} className="space-y-3 rounded-card border border-slate-200 bg-white p-4">
                         <div className="flex items-start justify-between gap-3">
@@ -169,17 +169,17 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
                                 <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${record.enabled ? 'translate-x-5' : ''}`} />
                             </button>
                         </div>
-                        {status === 'failed' && typeof test !== 'object' && <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-2 text-xs leading-5 text-red-800">{errorText(connection?.error)}<span className="mt-1 block font-mono text-[11px] text-red-600">{connection?.error}</span></p>}
+                        {status === 'failed' && typeof test !== 'object' && <p role="alert" className="rounded-md border border-danger-200 bg-danger-50 p-2 text-xs leading-5 text-danger-800">{errorText(connection?.error)}<span className="mt-1 block font-mono text-[11px] text-danger-600">{connection?.error}</span></p>}
                         {typeof test === 'object' && (test.ok
                             ? <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs leading-5 text-emerald-800">{t('mcp_test_ok', language, { server: `${test.server?.name} ${test.server?.version}`, count: test.tools.length, ms: test.ms })}</p>
-                            : <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-2 text-xs leading-5 text-red-800">{errorText(test.errorCode)}<span className="mt-1 block font-mono text-[11px] text-red-600">{test.errorCode}</span></p>)}
+                            : <p role="alert" className="rounded-md border border-danger-200 bg-danger-50 p-2 text-xs leading-5 text-danger-800">{errorText(test.errorCode)}<span className="mt-1 block font-mono text-[11px] text-danger-600">{test.errorCode}</span></p>)}
                         <div className="flex flex-wrap gap-2">
                             <button type="button" className={BUTTON} disabled={test === 'testing'} onClick={() => void runTest(record)}>
                                 {test === 'testing' ? <span className="inline-flex items-center gap-2"><IconLoadingSpinner className="h-4 w-4" />{t('mcp_testing', language)}</span> : t('mcp_test', language)}
                             </button>
                             {needsSignIn && <button type="button" className={BUTTON} disabled={signingIn === record.id} onClick={() => void signIn(record)}>{t('mcp_sign_in', language)}</button>}
                             {record.enabled && !needsSignIn && !connected && !connecting && <button type="button" className={BUTTON} onClick={() => void connect(record)}>{t('mcp_reconnect', language)}</button>}
-                            <button type="button" className={`${BUTTON} ml-auto inline-flex items-center gap-2 border-red-200 text-red-700 hover:bg-red-50`} aria-label={`${t('mcp_delete', language)} ${record.name}`} onClick={() => void remove(record)}><IconDelete />{t('mcp_delete', language)}</button>
+                            <button type="button" className={`${BUTTON} ml-auto inline-flex items-center gap-2 border-danger-200 text-danger-700 hover:bg-danger-50`} aria-label={`${t('mcp_delete', language)} ${record.name}`} onClick={() => void remove(record)}><IconDelete />{t('mcp_delete', language)}</button>
                         </div>
                         <div className="border-t border-slate-200 pt-3">
                             <h5 className="text-xs font-semibold text-slate-800">{t('mcp_tools_title', language, { count: tools.length })}</h5>
@@ -219,7 +219,7 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
                         <label className="block text-sm font-medium text-slate-700">{t('mcp_form_issuer', language)}<input className={FIELD} value={issuer} onChange={e => setIssuer(e.target.value)} placeholder="https://auth.example/" autoComplete="off" /></label>
                         <label className="block text-sm font-medium text-slate-700">{t('mcp_form_client', language)}<input className={FIELD} value={clientId} onChange={e => setClientId(e.target.value)} autoComplete="off" /></label></>}
                     <p className="text-xs leading-5 text-slate-600">{t('mcp_cors_hint', language)}</p>
-                    {formError && <p role="alert" className="text-xs font-medium text-red-700">{formError}</p>}
+                    {formError && <p role="alert" className="text-xs font-medium text-danger-700">{formError}</p>}
                     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         {records.length > 0 && <button type="button" className={BUTTON} onClick={() => { setAdding(false); setFormError(''); }}>{t('mcp_cancel', language)}</button>}
                         <button type="submit" className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{t('mcp_add_submit', language)}</button>

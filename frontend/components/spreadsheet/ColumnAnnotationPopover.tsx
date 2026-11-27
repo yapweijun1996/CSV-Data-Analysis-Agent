@@ -151,7 +151,7 @@ export const ColumnAnnotationPopover: React.FC<ColumnAnnotationPopoverProps> = (
                 {existingAnnotation ? (
                     <button
                         onClick={handleRemove}
-                        className="text-xs text-red-500 hover:text-red-700"
+                        className="text-xs text-danger-500 hover:text-danger-700"
                     >
                         {getTranslation('column_annotation_remove', language)}
                     </button>

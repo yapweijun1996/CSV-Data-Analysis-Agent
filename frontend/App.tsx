@@ -297,11 +297,18 @@ const App: React.FC = () => {
                     <div
                         onMouseDown={handleAsideMouseDown}
                         onDoubleClick={() => setIsAsideVisible(false)}
-                        className="hidden md:flex group items-center justify-center w-2.5 cursor-col-resize"
+                        data-aside-resizer="true"
+                        className="group relative hidden w-2.5 cursor-col-resize items-center justify-center md:flex"
                         title="Drag to resize, double-click to hide"
                     >
+                        {/* Full-height accent line appears on hover/drag so users can tell the panel is resizable. */}
                         <div
-                            className={`w-0.5 h-8 bg-slate-300 rounded-full transition-colors duration-200 group-hover:bg-brand-secondary ${isResizing ? '!bg-blue-600' : ''}`}
+                            aria-hidden="true"
+                            className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors duration-150 ${isResizing ? 'bg-accent-600' : 'bg-transparent group-hover:bg-accent-500'}`}
+                        />
+                        <div
+                            aria-hidden="true"
+                            className={`relative h-8 w-1 rounded-full transition-colors duration-150 ${isResizing ? 'bg-accent-600' : 'bg-slate-300 group-hover:bg-accent-500'}`}
                         />
                     </div>
                     <aside

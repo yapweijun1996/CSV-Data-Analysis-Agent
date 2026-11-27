@@ -190,7 +190,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
         <div className="flex h-full flex-col gap-3">
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h3 className="text-lg font-bold text-amber-800">{t('provenance_step2_title')}</h3>
+                    <h3 className="text-lg font-bold text-warning-800">{t('provenance_step2_title')}</h3>
                     {operations.length > 0 ? (
                         <div className="mt-1 space-y-1">
                             <p className="text-sm text-slate-600">
@@ -214,7 +214,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
                     <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                         <span>{t('provenance_step2_summary', { rows: cleanedRows.length, cols: cleanedColCount })}</span>
                         {rowDelta !== 0 && (
-                            <span className={`font-semibold ${rowDelta > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            <span className={`font-semibold ${rowDelta > 0 ? 'text-warning-600' : 'text-emerald-600'}`}>
                                 {rowDelta > 0
                                     ? t('provenance_step2_delta', { delta: rowDelta })
                                     : t('provenance_step2_delta_added', { delta: Math.abs(rowDelta) })}
@@ -230,7 +230,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
                             value={cleanedFilter}
                             onChange={e => setCleanedFilter(e.target.value)}
                             placeholder={getTranslation('spreadsheet_search_placeholder', language)}
-                            className="w-52 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                            className="w-52 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder-slate-400 focus:border-warning-400 focus:outline-none focus:ring-1 focus:ring-warning-400"
                         />
                     )}
                 </div>
@@ -282,8 +282,8 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
                         displayedStatus === 'verified'
                             ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
                             : displayedStatus === 'stale' || displayedStatus === 'hypothesis'
-                                ? 'border-red-200 bg-red-50 text-red-800'
-                                : 'border-amber-200 bg-amber-50 text-amber-800'
+                                ? 'border-danger-200 bg-danger-50 text-danger-800'
+                                : 'border-warning-200 bg-warning-50 text-warning-800'
                     }`}
                     data-testid="artifact-provenance-contract"
                 >

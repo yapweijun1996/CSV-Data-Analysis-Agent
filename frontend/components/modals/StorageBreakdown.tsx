@@ -20,7 +20,7 @@ const formatBytes = (bytes: number): string => {
 const STORE_COLORS: Record<string, string> = {
     reports: 'bg-blue-400',
     report_artifacts: 'bg-indigo-400',
-    original_data: 'bg-amber-400',
+    original_data: 'bg-warning-400',
     agent_memory_runs: 'bg-emerald-400',
     vector_memory: 'bg-purple-400',
     ai_consents: 'bg-cyan-400',
@@ -31,7 +31,7 @@ const STORE_COLORS: Record<string, string> = {
 const STORE_DOT_COLORS: Record<string, string> = {
     reports: 'bg-blue-400',
     report_artifacts: 'bg-indigo-400',
-    original_data: 'bg-amber-400',
+    original_data: 'bg-warning-400',
     agent_memory_runs: 'bg-emerald-400',
     vector_memory: 'bg-purple-400',
     ai_consents: 'bg-cyan-400',
@@ -226,7 +226,7 @@ export const StorageBreakdown: React.FC<StorageBreakdownProps> = ({ activeSessio
                                 <button
                                     onClick={() => void (seg.isCache ? handleClearCache() : handleClearStore(seg.key))}
                                     disabled={clearing !== null}
-                                    className="flex items-center justify-center h-5 w-5 rounded text-slate-300 opacity-0 group-hover/row:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500 disabled:opacity-50 disabled:cursor-wait"
+                                    className="flex items-center justify-center h-5 w-5 rounded text-slate-300 opacity-0 group-hover/row:opacity-100 transition-opacity hover:bg-danger-50 hover:text-danger-500 disabled:opacity-50 disabled:cursor-wait"
                                     title={`Clear ${seg.label}`}
                                 >
                                     {clearing === seg.key ? (

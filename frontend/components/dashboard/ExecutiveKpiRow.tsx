@@ -15,21 +15,21 @@ const toneCardClasses: Record<ExecutiveKpi['tone'], string> = {
     primary: 'border-blue-100 bg-gradient-to-br from-blue-50/60 via-white to-white',
     neutral: 'border-slate-200 bg-white',
     accent: 'border-teal-100 bg-gradient-to-br from-teal-50/50 via-white to-white',
-    warning: 'border-amber-100 bg-gradient-to-br from-amber-50/50 via-white to-white',
+    warning: 'border-warning-100 bg-gradient-to-br from-warning-50/50 via-white to-white',
 };
 
 const toneAccentClasses: Record<ExecutiveKpi['tone'], string> = {
     primary: 'bg-blue-500',
     neutral: 'bg-slate-400',
     accent: 'bg-teal-500',
-    warning: 'bg-amber-500',
+    warning: 'bg-warning-500',
 };
 
 const toneIconBg: Record<ExecutiveKpi['tone'], string> = {
     primary: 'bg-blue-100 text-blue-600',
     neutral: 'bg-slate-100 text-slate-500',
     accent: 'bg-teal-100 text-teal-600',
-    warning: 'bg-amber-100 text-amber-600',
+    warning: 'bg-warning-100 text-warning-600',
 };
 
 /* ── hierarchy → sizing ──────────────────────────────────────── */

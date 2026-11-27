@@ -130,7 +130,7 @@ export const AgentMemoryView: React.FC = () => {
                     <ul className="space-y-2 text-sm text-slate-700">
                         {warnings.map(warning => (
                             <li key={warning.id} className="flex items-start">
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 mr-2 mt-2"></span>
+                                <span className="h-1.5 w-1.5 rounded-full bg-warning-500 mr-2 mt-2"></span>
                                 <span>{warning.message}</span>
                             </li>
                         ))}

@@ -37,14 +37,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="bg-red-50 border border-red-200 rounded-card p-4 shadow-sm text-red-800">
+        <div className="bg-danger-50 border border-danger-200 rounded-card p-4 shadow-sm text-danger-800">
             <div className="flex items-center mb-2">
                 <IconWarning className="w-5 h-5 mr-2" />
                 <h3 className="font-semibold text-sm uppercase tracking-wide">Analysis Card Failed to Render</h3>
             </div>
             <p className="text-sm">This specific chart could not be displayed due to an unexpected error.</p>
             {this.state.error && (
-                <pre className="mt-2 text-xs bg-red-100 p-2 rounded overflow-auto">
+                <pre className="mt-2 text-xs bg-danger-100 p-2 rounded overflow-auto">
                     {this.state.error.name}: {this.state.error.message}
                 </pre>
             )}

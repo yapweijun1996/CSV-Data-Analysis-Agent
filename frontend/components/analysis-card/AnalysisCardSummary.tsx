@@ -316,7 +316,7 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
                     ))}
                 </div>
                 {qualityLines.length > 0 && (
-                    <div className="mt-3 rounded-card border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    <div className="mt-3 rounded-card border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-900">
                         <p className="font-semibold">{getTranslation('analysis_card_quality_title', language)}</p>
                         <div className="mt-1 space-y-1">
                             {qualityLines.map((line, index) => (

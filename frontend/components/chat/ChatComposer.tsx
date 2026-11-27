@@ -70,9 +70,9 @@ export const getComposerBusyState = ({
             shortLabel: getTranslation('chat_processing_cleaning_short', language),
             title: getTranslation('chat_processing_cleaning_title', language),
             detail: latestProgressText ?? getTranslation('chat_processing_cleaning_detail', language),
-            accentClassName: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200',
-            indicatorClassName: 'bg-amber-500',
-            buttonClassName: 'bg-amber-600 hover:bg-amber-600 focus:ring-amber-300 disabled:cursor-wait disabled:bg-amber-600 disabled:text-white disabled:opacity-100',
+            accentClassName: 'bg-warning-50 text-warning-800 ring-1 ring-warning-200',
+            indicatorClassName: 'bg-warning-500',
+            buttonClassName: 'bg-warning-600 hover:bg-warning-600 focus:ring-warning-300 disabled:cursor-wait disabled:bg-warning-600 disabled:text-white disabled:opacity-100',
         };
     }
 

@@ -52,7 +52,7 @@ export const HistoryOverflowMenu: React.FC<HistoryOverflowMenuProps> = ({
                         <div className="my-1 border-t border-slate-100" />
                         <button
                             onClick={() => onDelete(reportId, reportFilename)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-danger-600 hover:bg-danger-50"
                         >
                             {getTranslation('history_delete', language)}
                         </button>

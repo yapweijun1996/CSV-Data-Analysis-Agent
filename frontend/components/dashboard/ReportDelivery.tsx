@@ -211,7 +211,7 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
             aria-label={sectionLabel}
         >
             {/* accent bar — amber when blocked, violet otherwise */}
-            <span className={`absolute inset-x-0 top-0 h-[3px] ${isBlocked ? 'bg-amber-500' : 'bg-violet-500'}`} aria-hidden="true" />
+            <span className={`absolute inset-x-0 top-0 h-[3px] ${isBlocked ? 'bg-warning-500' : 'bg-violet-500'}`} aria-hidden="true" />
 
             <div className="p-5">
                 {/* header row */}
@@ -219,7 +219,7 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
                     {/* left: label + description */}
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center justify-center rounded-lg p-1.5 ${isBlocked ? 'bg-amber-100 text-amber-600' : 'bg-violet-100 text-violet-600'}`}>
+                            <span className={`inline-flex items-center justify-center rounded-lg p-1.5 ${isBlocked ? 'bg-warning-100 text-warning-600' : 'bg-violet-100 text-violet-600'}`}>
                                 <DocumentIcon />
                             </span>
                             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
@@ -246,7 +246,7 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
                                 isGenerating
                                     ? 'cursor-not-allowed border border-violet-200 bg-violet-50 text-violet-500'
                                     : isBlocked
-                                        ? 'cursor-not-allowed border border-amber-200 bg-amber-50 text-amber-500'
+                                        ? 'cursor-not-allowed border border-warning-200 bg-warning-50 text-warning-500'
                                         : 'border border-violet-600 bg-violet-600 text-white shadow-sm hover:bg-violet-700 hover:shadow-md active:bg-violet-800',
                             ].join(' ')}
                         >
@@ -347,16 +347,16 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
 
                 {/* blocked state card */}
                 {isBlocked && blockedInfo && (
-                    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4" role="alert">
+                    <div className="mt-5 rounded-xl border border-warning-200 bg-warning-50 p-4" role="alert">
                         <div className="flex items-start gap-3">
-                            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-warning-100 text-warning-600">
                                 <ShieldBlockIcon />
                             </span>
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-amber-900">
+                                <p className="text-sm font-semibold text-warning-900">
                                     {getTranslation('report_blocked_title', language)}
                                 </p>
-                                <p className="mt-1 text-xs leading-relaxed text-amber-700">
+                                <p className="mt-1 text-xs leading-relaxed text-warning-700">
                                     {getTranslation('report_blocked_detail', language, {
                                         trusted: String(blockedInfo.trustedCardsCount),
                                         excluded: String(blockedInfo.excludedEvidenceCount),
@@ -365,18 +365,18 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
                                 {blockedInfo.reasons.length > 0 && (
                                     <ul className="mt-2.5 space-y-1.5">
                                         {blockedInfo.reasons.map((reason) => (
-                                            <li key={reason} className="flex items-start gap-2 text-xs text-amber-800">
-                                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
+                                            <li key={reason} className="flex items-start gap-2 text-xs text-warning-800">
+                                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warning-400" aria-hidden="true" />
                                                 {reason}
                                             </li>
                                         ))}
                                     </ul>
                                 )}
-                                <div className="mt-3 border-t border-amber-200 pt-3">
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-amber-600">
+                                <div className="mt-3 border-t border-warning-200 pt-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-warning-600">
                                         {getTranslation('report_blocked_what_to_do_label', language)}
                                     </p>
-                                    <p className="mt-1 text-xs leading-relaxed text-amber-700">
+                                    <p className="mt-1 text-xs leading-relaxed text-warning-700">
                                         {getTranslation('report_blocked_what_to_do', language)}
                                     </p>
                                 </div>
@@ -387,15 +387,15 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
 
                 {/* report actions — visible when a report is available */}
                 {hasReport && !isGenerating && (
-                    <div className={`mt-4 rounded-lg border p-3 ${isPartial ? 'border-amber-200 bg-amber-50/50' : 'border-emerald-200 bg-emerald-50/60'}`}>
+                    <div className={`mt-4 rounded-lg border p-3 ${isPartial ? 'border-warning-200 bg-warning-50/50' : 'border-emerald-200 bg-emerald-50/60'}`}>
                         <div className="flex flex-wrap items-center gap-3">
                             <div className="flex flex-col gap-1">
-                                <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${isPartial ? 'text-amber-700' : 'text-emerald-700'}`}>
+                                <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${isPartial ? 'text-warning-700' : 'text-emerald-700'}`}>
                                     <CheckIcon />
                                     {actionsLabel}
                                 </span>
                                 {isPartial && (
-                                    <span className="text-[11px] text-amber-600">
+                                    <span className="text-[11px] text-warning-600">
                                         {getTranslation('report_partial_hint', language)}
                                     </span>
                                 )}

@@ -97,8 +97,8 @@ const FinalSummaryComponent: React.FC<FinalSummaryProps> = ({ title, summary, la
                                     : evidenceState === 'verified'
                                     ? 'bg-emerald-100 text-emerald-700'
                                     : evidenceState === 'degraded'
-                                        ? 'bg-amber-100 text-amber-700'
-                                        : 'bg-red-100 text-red-700'
+                                        ? 'bg-warning-100 text-warning-700'
+                                        : 'bg-danger-100 text-danger-700'
                             }`}
                             title={`Narrative dataset version: ${provenance?.datasetVersion ?? 'unverified'}`}
                         >

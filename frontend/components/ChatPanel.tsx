@@ -126,8 +126,8 @@ const ThinkingIndicator: React.FC<{ isVisible: boolean }> = React.memo(({ isVisi
                                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                             </span>
                             <span className={
-                                msg.type === 'error' ? 'text-red-500'
-                                    : msg.type === 'warning' ? 'text-amber-500'
+                                msg.type === 'error' ? 'text-danger-500'
+                                    : msg.type === 'warning' ? 'text-warning-500'
                                         : 'text-slate-500'
                             }>
                                 {resolveProgressText(msg, language)}

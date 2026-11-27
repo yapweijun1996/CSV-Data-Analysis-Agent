@@ -61,11 +61,11 @@ export const AiMessage: React.FC<AiMessageProps> = ({
     const isActiveError = Boolean(msg.isError && !msg.resolved);
 
     // Left border accent by message type for visual scanning
-    const borderAccent = isActiveError ? 'border-l-4 border-l-red-400'
-        : msg.type === 'ai_cleaning_step' ? 'border-l-4 border-l-amber-300'
+    const borderAccent = isActiveError ? 'border-l-4 border-l-danger-400'
+        : msg.type === 'ai_cleaning_step' ? 'border-l-4 border-l-warning-300'
         : msg.type === 'ai_query_trace' ? 'border-l-4 border-l-indigo-300'
         : msg.type === 'ai_mutation_confirmation' ? 'border-l-4 border-l-rose-300'
-        : msg.type === 'ai_cleaning_failure' ? 'border-l-4 border-l-red-300'
+        : msg.type === 'ai_cleaning_failure' ? 'border-l-4 border-l-danger-300'
         : '';
 
     const timestamp = msg.timestamp instanceof Date
@@ -86,9 +86,9 @@ export const AiMessage: React.FC<AiMessageProps> = ({
 
     return (
         <div className="flex min-w-0 w-full" data-testid="chat-ai-message">
-            <div className={`group/bubble animate-fade-in min-w-0 w-full max-w-full rounded-card text-sm xl:max-w-3xl ${isOperationalMessage ? 'px-3 py-2.5' : 'p-4'} ${borderAccent} ${isActiveError ? 'bg-red-50 border border-red-200 text-red-800' : msg.resolved || isOperationalMessage ? 'bg-slate-50 border border-slate-200 text-slate-600' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
+            <div className={`group/bubble animate-fade-in min-w-0 w-full max-w-full rounded-card text-sm xl:max-w-3xl ${isOperationalMessage ? 'px-3 py-2.5' : 'p-4'} ${borderAccent} ${isActiveError ? 'bg-danger-50 border border-danger-200 text-danger-800' : msg.resolved || isOperationalMessage ? 'bg-slate-50 border border-slate-200 text-slate-600' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
                 <div className={`${isOperationalMessage ? 'mb-1' : 'mb-2'} flex items-center justify-between`}>
-                    <h4 className={`font-semibold ${isActiveError ? 'text-red-800' : 'text-slate-900'}`}>
+                    <h4 className={`font-semibold ${isActiveError ? 'text-danger-800' : 'text-slate-900'}`}>
                         {getTranslation(titleKey, language)}
                     </h4>
                     <div className="flex items-center gap-1">
@@ -116,12 +116,12 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                                 </span>
                             )}
                             {msg.cleaningStep.status === 'warning' && (
-                                <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">
+                                <span className="rounded-full bg-warning-50 px-2 py-1 text-warning-700">
                                     {translateCleaningStatus('warning', language)}
                                 </span>
                             )}
                             {msg.cleaningStep.status === 'error' && (
-                                <span className="rounded-full bg-red-50 px-2 py-1 text-red-700">
+                                <span className="rounded-full bg-danger-50 px-2 py-1 text-danger-700">
                                     {translateCleaningStatus('error', language)}
                                 </span>
                             )}
@@ -131,7 +131,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                                 </span>
                             )}
                             {msg.cleaningStep.status === 'blocked' && (
-                                <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">
+                                <span className="rounded-full bg-warning-50 px-2 py-1 text-warning-700">
                                     {translateCleaningStatus('blocked', language)}
                                 </span>
                             )}
