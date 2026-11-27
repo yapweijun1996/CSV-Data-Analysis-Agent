@@ -132,6 +132,8 @@ export interface ReplyTelemetry {
     costUsd?: number;
     /** Output tokens per second, measured from first token to last token. */
     tps?: number;
+    /** 'coordinator' = only the Pi coordinator model calls; stage tools run their own model calls that are not counted. */
+    scope?: 'reply' | 'coordinator';
 }
 
 /** One generated answer for the same prompt; the active version is mirrored onto the message itself. */
@@ -168,6 +170,8 @@ export interface ChatMessage {
     /** Regenerated answers for the same prompt. Absent until the first retry. */
     versions?: ReplyVersion[];
     versionIndex?: number;
+    /** Run summary (for example the initial analysis): shows metrics but no Retry/Delete reply actions. */
+    isRunSummary?: boolean;
 }
 
 export interface StreamingMessage {

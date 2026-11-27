@@ -76,6 +76,8 @@ export interface InitialAnalysisRunOutcome {
     headerAlignmentDiagnostic?: import('./piHeaderAlignmentGate').InitialHeaderAlignmentDiagnostic;
     structureRepair?: import('./piStructureRepair').StructureRepairProgress;
     error?: InitialAnalysisRunError;
+    /** Measured wall time and coordinator-model usage for the whole run. */
+    telemetry?: import('../../../../types/chat').ReplyTelemetry;
 }
 
 export interface InitialAnalysisBudgetState {

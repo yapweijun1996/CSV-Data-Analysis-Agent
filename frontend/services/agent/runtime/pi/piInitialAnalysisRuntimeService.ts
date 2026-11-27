@@ -27,6 +27,7 @@ import {createPiAppTools} from './piAppTools';
 import {pendingPiCandidateApproval,sealPiCandidateApproval,discardPiCandidateApproval} from './piCandidateApproval';
 import {formatPinnedSkills} from '../../skills/skillSnapshot';
 import type {ClarificationRequest} from '../../../../types';
+import {createReplyTelemetryTracker} from '../../../../utils/replyTelemetry';
 import {createChatMessage} from '../../../../utils/messageState';
 import {getStorageDatabase} from '../../../storageService';
 import {readCurrentCommit} from '../../../data/datasetRecoveryActions';
@@ -505,6 +506,8 @@ const run = async (
                 ? { action: 'end' } : { action: 'continue' };
         },
     });
+    const telemetry = createReplyTelemetryTracker();
+    agent.subscribe(event => telemetry.observe(event));
     const activeEntry = { agent, controller, runtimeRunId, cancelledByUser: false };
     activeRuns.set(request.appSessionId, activeEntry);
     const abortAgent = () => {
@@ -838,6 +841,7 @@ const run = async (
         warnings,
         runtimeRunId,
         traceId,
+        telemetry: { ...telemetry.snapshot(store.getState().settings.reasoningEffort), scope: 'coordinator' as const },
         ...(headerAlignmentDiagnostic ? { headerAlignmentDiagnostic } : {}),
         ...(structureRepair || repairPreparationFailure ? { structureRepair: structureRepair?.progress ?? repairPreparationFailure } : {}),
         ...(status === 'failed'||status==='blocked'&&!pendingApproval&&!pendingMeaning ? { error: {

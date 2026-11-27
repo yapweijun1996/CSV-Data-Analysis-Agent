@@ -40,3 +40,18 @@ export const selectReplyVersion = (msg: ChatMessage, index: number): ChatMessage
     if (!Number.isInteger(index) || index < 0 || index >= versions.length) return msg;
     return withVersion(msg, versions, index);
 };
+
+/**
+ * While a retry is running, the retried question and its previous answer must not reach the model
+ * as history: the retry sends the same question again, so keeping both would duplicate the turn.
+ */
+export const excludeRetriedTurn = (history: ChatMessage[], retryMessageId: string | null | undefined): ChatMessage[] => {
+    if (!retryMessageId) return history;
+    const index = history.findIndex(m => m.id === retryMessageId);
+    if (index < 0) return history;
+    let start = index;
+    for (let i = index - 1; i >= 0; i -= 1) {
+        if (history[i].sender === 'user' && history[i].type === 'user_message') { start = i; break; }
+    }
+    return [...history.slice(0, start), ...history.slice(index + 1)];
+};

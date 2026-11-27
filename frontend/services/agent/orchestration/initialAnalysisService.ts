@@ -7,6 +7,7 @@ import type {
 import { resolveProviderModelId } from '../../ai/providerConfig';
 import { buildDatasetVersionId } from '../../../utils/datasetId';
 import { getCurrentAnalysisDatasetVersion } from '../artifactProvenance';
+import { createChatMessage } from '../../../utils/messageState';
 import { finalizeAndSaveRun } from '../memory/memoryManager';
 import {
     runPiInitialAnalysis,
@@ -83,6 +84,19 @@ export const handleInitialAnalysis = async (
                 modelId: resolveProviderModelId(state.settings),
             },
         }, store,undefined,{codingPreparation:{enabled:true,qualified:true}});
+        if (outcome.telemetry && (outcome.status === 'completed' || outcome.status === 'degraded') && ownsRun(originalStore, lease) && !lease.signal.aborted) {
+            const cards = outcome.trustedCardIds.length;
+            originalStore.setState(prev => ({
+                chatHistory: [...prev.chatHistory, createChatMessage({
+                    sender: 'ai',
+                    type: 'ai_message',
+                    isRunSummary: true,
+                    timestamp: new Date(),
+                    text: `Initial analysis ${outcome.status === 'completed' ? 'finished' : 'finished with limitations'}: ${cards} verified ${cards === 1 ? 'card' : 'cards'} added to the dashboard.`,
+                    telemetry: outcome.telemetry,
+                })],
+            }));
+        }
         return toLegacyOutcome(outcome);
     } finally {
         try { if (ownsRun(originalStore, lease) && !lease.signal.aborted) await finalizeAndSaveRun(store); }
