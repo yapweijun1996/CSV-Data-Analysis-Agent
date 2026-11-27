@@ -1,5 +1,5 @@
 import { ChartConfigProps } from './types';
-import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getPivotTooltipCallbacks } from './common';
+import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getPivotTooltipCallbacks, gridColor } from './common';
 import { parseNullableNumericValue } from '../dataHelpers';
 
 export const createPolarAreaChartConfig = ({ data, plan, selectedIndices, onElementClick, disableAnimation, showDataLabels }: ChartConfigProps): any => {
@@ -36,7 +36,7 @@ export const createPolarAreaChartConfig = ({ data, plan, selectedIndices, onElem
             scales: {
                 r: {
                     ticks: { display: false },
-                    grid: { color: '#e2e8f0' },
+                    grid: { color: gridColor() },
                 },
             },
         },

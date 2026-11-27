@@ -16,7 +16,7 @@ describe('UserMessage markdown rendering', () => {
             />,
         );
 
-        const bubble = container.querySelector('.bg-blue-600');
+        const bubble = container.querySelector('.bg-accent-600');
         const codeNode = container.querySelector('pre code');
 
         expect(screen.getByText('Need this')).toBeInTheDocument();

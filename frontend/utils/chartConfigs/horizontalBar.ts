@@ -1,5 +1,5 @@
 import { ChartConfigProps } from './types';
-import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getPivotTooltipCallbacks } from './common';
+import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getPivotTooltipCallbacks, tickColor, gridColor } from './common';
 import { formatAnalysisValue, formatAxisValue, normalizeCategoryLabel } from '../analysisCardPresentation';
 import { parseNullableNumericValue } from '../dataHelpers';
 
@@ -41,14 +41,14 @@ export const createHorizontalBarChartConfig = ({ data, plan, selectedIndices, on
             scales: {
                 x: {
                     ticks: {
-                        color: '#64748b',
+                        color: tickColor(),
                         callback: (value: number | string) => formatAxisValue(Number(value)),
                     },
-                    grid: { color: '#e2e8f0' },
+                    grid: { color: gridColor() },
                 },
                 y: {
                     ticks: {
-                        color: '#64748b',
+                        color: tickColor(),
                         callback: function(this: any, value: number | string) {
                             const label = this.getLabelForValue(Number(value));
                             if (typeof label === 'string' && label.length > 20) {

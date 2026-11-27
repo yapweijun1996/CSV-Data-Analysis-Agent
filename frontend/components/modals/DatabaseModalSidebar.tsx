@@ -214,7 +214,7 @@ export const DatabaseModalSidebar: React.FC<DatabaseModalSidebarProps> = ({
                                 onClick={() => onSelectQueryActivity(activity.id)}
                                 className={`min-h-[44px] w-full rounded-card border px-3 py-2.5 text-left transition ${
                                     isSelected
-                                        ? 'border-blue-300 bg-blue-50 shadow-sm'
+                                        ? 'border-accent-300 bg-accent-50 shadow-sm'
                                         : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
                                 }`}
                             >

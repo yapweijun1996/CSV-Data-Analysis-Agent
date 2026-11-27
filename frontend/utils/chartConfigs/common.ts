@@ -12,7 +12,26 @@ const humanizeColumnName = (name: string): string =>
         .replace(/\b\w/g, c => c.toUpperCase())
         .trim();
 
-export const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'];
+const FALLBACK_COLORS = ['#4e79a7', '#c96a0a', '#d64045', '#2b8a85', '#3f8f3a', '#a67c00', '#9a5fa0', '#d6456f', '#8c5a3c', '#767b84'];
+
+/** Reads a colour token (`--name` holding "r g b" channels or a hex value) from the live theme. */
+const readToken = (name: string, fallback: string): string => {
+    if (typeof document === 'undefined') return fallback;
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    if (!raw) return fallback;
+    return /^\d+\s+\d+\s+\d+$/.test(raw) ? `rgb(${raw.split(/\s+/).join(',')})` : raw;
+};
+const tokenHex = (name: string, fallback: string): string => {
+    const value = readToken(name, fallback);
+    const channels = value.match(/^rgb\((\d+),(\d+),(\d+)\)$/);
+    return channels
+        ? `#${channels.slice(1, 4).map(part => Number(part).toString(16).padStart(2, '0')).join('')}`
+        : value;
+};
+
+// Series colours come from the --chart-N tokens (index.css) so they follow the active palette
+// and colour mode. The arrays are refreshed in place so existing imports stay valid.
+export const COLORS: string[] = [...FALLBACK_COLORS];
 
 // BUG-504: Use rgba() instead of 8-digit hex (#RRGGBBAA) for wider compatibility
 // with CSS parsers and older browser versions.
@@ -22,11 +41,25 @@ const hexToRgba = (hex: string, alpha: number): string => {
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r},${g},${b},${alpha})`;
 };
-export const BORDER_COLORS = COLORS.map(c => hexToRgba(c, 0.7));
-export const BG_COLORS = COLORS.map(c => hexToRgba(c, 0.5));
+export const BORDER_COLORS: string[] = COLORS.map(c => hexToRgba(c, 0.7));
+export const BG_COLORS: string[] = COLORS.map(c => hexToRgba(c, 0.5));
 
-export const HIGHLIGHT_COLOR = '#3b82f6';
-export const HIGHLIGHT_BORDER_COLOR = '#2563eb';
+export let HIGHLIGHT_COLOR = '#3b82f6';
+export let HIGHLIGHT_BORDER_COLOR = '#2563eb';
+
+export const tickColor = (): string => readToken('--neutral-500', '#64748b');
+export const gridColor = (): string => readToken('--neutral-200', '#e2e8f0');
+
+/** Re-reads every chart colour token. Call before building a chart config. */
+export const refreshChartTheme = (): void => {
+    COLORS.forEach((_, index) => { COLORS[index] = tokenHex(`--chart-${index + 1}`, FALLBACK_COLORS[index]); });
+    COLORS.forEach((color, index) => {
+        BORDER_COLORS[index] = hexToRgba(color, 0.7);
+        BG_COLORS[index] = hexToRgba(color, 0.5);
+    });
+    HIGHLIGHT_COLOR = tokenHex('--accent-500', '#3b82f6');
+    HIGHLIGHT_BORDER_COLOR = tokenHex('--accent-600', '#2563eb');
+};
 export const DESELECTED_COLOR = 'rgba(107, 114, 128, 0.2)';
 export const DESELECTED_BORDER_COLOR = 'rgba(107, 114, 128, 0.5)';
 
@@ -138,7 +171,7 @@ export const formatChartDataLabel = (value: unknown, chartWidth = Number.POSITIV
 
 export const getDataLabelsConfig = (showDataLabels?: boolean) => ({
     display: Boolean(showDataLabels),
-    color: '#374151',
+    color: readToken('--neutral-700', '#374151'),
     font: { size: 11, weight: 'bold' as const },
     anchor: 'end' as const,
     align: 'end' as const,
@@ -166,10 +199,10 @@ export const getCommonOptions = (onElementClick: (index: number, event: MouseEve
         legend: { display: false },
         datalabels: getDataLabelsConfig(showDataLabels),
         tooltip: {
-            backgroundColor: '#ffffff',
-            titleColor: '#1e293b',
-            bodyColor: '#475569',
-            borderColor: '#e2e8f0',
+            backgroundColor: readToken('--surface', '#ffffff'),
+            titleColor: readToken('--neutral-800', '#1e293b'),
+            bodyColor: readToken('--neutral-600', '#475569'),
+            borderColor: readToken('--neutral-200', '#e2e8f0'),
             borderWidth: 1,
             titleFont: { weight: 'bold' },
             bodyFont: { size: 13 },
@@ -191,7 +224,7 @@ export const getCommonOptions = (onElementClick: (index: number, event: MouseEve
     scales: {
         x: {
             ticks: {
-                color: '#64748b',
+                color: tickColor(),
                 callback: function(value: number | string) {
                     const label = this.getLabelForValue(Number(value));
                     if (typeof label === 'string' && label.length > 30) {
@@ -200,14 +233,14 @@ export const getCommonOptions = (onElementClick: (index: number, event: MouseEve
                     return label;
                 }
             },
-            grid: { color: '#e2e8f0' }
+            grid: { color: gridColor() }
         },
         y: {
             ticks: {
-                color: '#64748b',
+                color: tickColor(),
                 callback: (value: number | string) => formatAxisValue(Number(value)),
             },
-            grid: { color: '#e2e8f0' }
+            grid: { color: gridColor() }
         }
     }
 });

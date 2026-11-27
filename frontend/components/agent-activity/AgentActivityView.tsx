@@ -8,12 +8,12 @@ import { selectReportScopedActivity } from '../../services/agent/activity/agentA
 
 const lifecycleClasses: Record<AgentActivityLifecycle, string> = {
     queued: 'border-slate-200 bg-slate-100 text-slate-700',
-    running: 'border-blue-200 bg-blue-100 text-blue-800',
-    waiting: 'border-violet-200 bg-violet-100 text-violet-800',
+    running: 'border-accent-200 bg-accent-100 text-accent-800',
+    waiting: 'border-accent-200 bg-accent-100 text-accent-800',
     degraded: 'border-warning-200 bg-warning-100 text-warning-800',
-    failed: 'border-rose-200 bg-rose-100 text-rose-800',
+    failed: 'border-danger-200 bg-danger-100 text-danger-800',
     cancelled: 'border-slate-300 bg-slate-200 text-slate-700',
-    completed: 'border-emerald-200 bg-emerald-100 text-emerald-800',
+    completed: 'border-success-200 bg-success-100 text-success-800',
 };
 
 const kindLabels: Record<AgentActivityKind, string> = {

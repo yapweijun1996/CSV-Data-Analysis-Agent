@@ -45,7 +45,7 @@ export const AnalysisCardChart: React.FC<AnalysisCardChartProps> = React.memo(({
 }) => (
     <div className="relative rounded-card border border-slate-200 bg-white p-3">
         {selectedIndices.length > 0 && (
-            <div className="mb-3 flex items-center justify-between gap-3 rounded-card border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900" data-export-exclude>
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-card border border-accent-200 bg-accent-50 px-3 py-2 text-sm text-accent-900" data-export-exclude>
                 <p className="font-medium">
                     {getTranslation('card_selection_count', language, {
                         count: selectedIndices.length,
@@ -58,7 +58,7 @@ export const AnalysisCardChart: React.FC<AnalysisCardChartProps> = React.memo(({
                 <button
                     type="button"
                     onClick={onClearSelection}
-                    className="inline-flex min-h-[44px] items-center rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 shadow-sm ring-1 ring-blue-200 transition-colors hover:bg-blue-100 md:min-h-0"
+                    className="inline-flex min-h-[44px] items-center rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-accent-700 shadow-sm ring-1 ring-accent-200 transition-colors hover:bg-accent-100 md:min-h-0"
                 >
                     {getTranslation('card_clear_selection', language)}
                 </button>

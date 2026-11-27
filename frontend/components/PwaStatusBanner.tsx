@@ -36,7 +36,7 @@ export const PwaStatusBanner: React.FC = () => {
     };
 
     return (
-        <div role="status" aria-live="polite" className="fixed inset-x-3 top-3 z-[80] mx-auto flex max-w-2xl flex-col gap-3 rounded-lg border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-950 shadow-lg sm:flex-row sm:items-center sm:justify-between">
+        <div role="status" aria-live="polite" className="fixed inset-x-3 top-3 z-[80] mx-auto flex max-w-2xl flex-col gap-3 rounded-lg border border-accent-300 bg-accent-50 px-4 py-3 text-sm text-accent-950 shadow-lg sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <strong className="font-semibold">{getTranslation('pwa_update_title', language)}</strong>{' '}
                 {getTranslation(
@@ -53,7 +53,7 @@ export const PwaStatusBanner: React.FC = () => {
                 type="button"
                 onClick={() => void handleApply()}
                 disabled={isRunActive}
-                className="min-h-[44px] shrink-0 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="min-h-[44px] shrink-0 rounded-lg bg-accent-600 px-4 py-2 font-semibold text-white hover:bg-accent-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
                 {getTranslation('pwa_update_action', language)}
             </button>

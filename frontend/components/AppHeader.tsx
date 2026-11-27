@@ -169,7 +169,7 @@ export const AppHeader: React.FC = () => {
                     <button
                         onClick={() => void requestNewSession()}
                         data-new-session-trigger="true"
-                        className={`${primaryButtonClass} bg-blue-600 text-white hover:bg-blue-700`}
+                        className={`${primaryButtonClass} bg-accent-600 text-white hover:bg-accent-700`}
                         title={getTranslation('header_new_title', language)}
                         aria-label={getTranslation('header_new', language)}
                     >
@@ -242,7 +242,7 @@ export const AppHeader: React.FC = () => {
                                         type="button"
                                         role="menuitem"
                                         onClick={() => runAdvancedAction(onOpenWorkflow)}
-                                        className="min-h-[44px] rounded-card px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                                        className="min-h-[44px] rounded-card px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
                                     >
                                         <span className="block font-medium">{getTranslation('header_workflow', language)}</span>
                                         <span className="block text-xs text-slate-500">{getTranslation('header_workflow_hint', language)}</span>
@@ -254,7 +254,7 @@ export const AppHeader: React.FC = () => {
                                         type="button"
                                         role="menuitem"
                                         onClick={() => runAdvancedAction(onOpenLogs)}
-                                        className="min-h-[44px] rounded-card px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                                        className="min-h-[44px] rounded-card px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
                                     >
                                         <span className="block font-medium">{getTranslation('header_logs', language)}</span>
                                         <span className="block text-xs text-slate-500">{getTranslation('header_logs_hint', language)}</span>
@@ -268,7 +268,7 @@ export const AppHeader: React.FC = () => {
                     <button
                         onClick={onShowAssistant}
                         data-mobile-assistant-trigger="true"
-                        className={`${primaryButtonClass} bg-blue-600 text-white hover:bg-blue-700`}
+                        className={`${primaryButtonClass} bg-accent-600 text-white hover:bg-accent-700`}
                         aria-label={getTranslation('header_show_assistant', language)}
                         title={getTranslation('header_show_assistant', language)}
                     >

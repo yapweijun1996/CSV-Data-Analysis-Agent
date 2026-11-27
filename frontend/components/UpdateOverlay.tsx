@@ -67,7 +67,7 @@ export const UpdateOverlay: React.FC = () => {
                 tabIndex={-1}
                 className="w-full max-w-sm rounded-card border border-slate-200 bg-white p-6 text-center shadow-2xl outline-none"
             >
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-50 text-accent-600">
                     <IconRefresh className="h-7 w-7 motion-safe:animate-spin" />
                 </div>
                 <h2 id="update-overlay-title" role="status" aria-live="polite" className="mt-4 text-lg font-bold text-slate-950">{title}</h2>
@@ -79,7 +79,7 @@ export const UpdateOverlay: React.FC = () => {
                             <li
                                 key={step.flow}
                                 data-step-state={state}
-                                className={`rounded-full px-3 py-1 ${state === 'active' ? 'bg-blue-600 text-white' : state === 'done' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}
+                                className={`rounded-full px-3 py-1 ${state === 'active' ? 'bg-accent-600 text-white' : state === 'done' ? 'bg-success-100 text-success-800' : 'bg-slate-100 text-slate-500'}`}
                             >
                                 {state === 'done' ? '✓ ' : ''}{getTranslation(step.key, language)}
                             </li>

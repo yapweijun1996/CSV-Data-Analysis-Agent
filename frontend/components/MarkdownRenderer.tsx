@@ -84,7 +84,7 @@ const TONE_CLASSES: Record<Tone, {
         root: 'text-white/90',
         heading: 'text-white',
         paragraph: 'leading-relaxed',
-        inlineCode: 'break-all rounded bg-white/15 px-1 py-0.5 text-sm text-blue-50',
+        inlineCode: 'break-all rounded bg-white/15 px-1 py-0.5 text-sm text-accent-50',
         tableShell: 'border border-white/20',
         tableHead: 'bg-white/10 text-white/80',
         tableRow: 'border-t border-white/15',

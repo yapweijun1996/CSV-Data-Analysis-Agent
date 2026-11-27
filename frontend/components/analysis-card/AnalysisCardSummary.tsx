@@ -263,7 +263,7 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
                     <div className="flex items-center gap-2">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{summaryTitle}</p>
                         {visuallyGrounded && (
-                            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">
+                            <span className="rounded-full bg-accent-50 px-2 py-0.5 text-[10px] font-semibold text-accent-600">
                                 {getTranslation('analysis_card_visual_badge', language)}
                             </span>
                         )}
@@ -343,7 +343,7 @@ const AnalysisCardSummaryComponent: React.FC<AnalysisCardSummaryProps> = ({
                 {hasExpandableContent && (
                     <button
                         type="button"
-                        className="mt-3 min-h-[44px] text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 md:min-h-0"
+                        className="mt-3 min-h-[44px] text-xs font-semibold text-accent-600 transition-colors hover:text-accent-700 md:min-h-0"
                         onClick={() => setIsExpanded(previous => !previous)}
                         aria-expanded={isExpanded}
                         data-export-exclude

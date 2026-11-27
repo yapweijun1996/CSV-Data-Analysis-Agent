@@ -12,21 +12,21 @@ interface ExecutiveKpiRowProps {
 /* ── tone → visual accent ────────────────────────────────────── */
 
 const toneCardClasses: Record<ExecutiveKpi['tone'], string> = {
-    primary: 'border-blue-100 bg-gradient-to-br from-blue-50/60 via-white to-white',
+    primary: 'border-accent-100 bg-gradient-to-br from-accent-50/60 via-white to-white',
     neutral: 'border-slate-200 bg-white',
     accent: 'border-teal-100 bg-gradient-to-br from-teal-50/50 via-white to-white',
     warning: 'border-warning-100 bg-gradient-to-br from-warning-50/50 via-white to-white',
 };
 
 const toneAccentClasses: Record<ExecutiveKpi['tone'], string> = {
-    primary: 'bg-blue-500',
+    primary: 'bg-accent-500',
     neutral: 'bg-slate-400',
     accent: 'bg-teal-500',
     warning: 'bg-warning-500',
 };
 
 const toneIconBg: Record<ExecutiveKpi['tone'], string> = {
-    primary: 'bg-blue-100 text-blue-600',
+    primary: 'bg-accent-100 text-accent-600',
     neutral: 'bg-slate-100 text-slate-500',
     accent: 'bg-teal-100 text-teal-600',
     warning: 'bg-warning-100 text-warning-600',
@@ -49,8 +49,8 @@ const valueClasses: Record<ExecutiveKpi['hierarchy'], string> = {
 /* ── delta pill ──────────────────────────────────────────────── */
 
 const deltaClasses: Record<NonNullable<ExecutiveKpi['delta']>['direction'], string> = {
-    up: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    down: 'border-rose-200 bg-rose-50 text-rose-700',
+    up: 'border-success-200 bg-success-50 text-success-700',
+    down: 'border-danger-200 bg-danger-50 text-danger-700',
     flat: 'border-slate-200 bg-slate-100 text-slate-700',
 };
 
@@ -118,7 +118,7 @@ const ExecutiveKpiRowComponent: React.FC<ExecutiveKpiRowProps> = ({ title, subti
                         toneCardClasses[kpi.tone],
                         hierarchyClasses[kpi.hierarchy],
                         isActionable
-                            ? 'cursor-pointer hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'
+                            ? 'cursor-pointer hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2'
                             : 'shadow-sm',
                     ].join(' ');
 
@@ -152,7 +152,7 @@ const ExecutiveKpiRowComponent: React.FC<ExecutiveKpiRowProps> = ({ title, subti
 
                             {/* action link — always bottom-right for consistency */}
                             {isActionable && (
-                                <span className="mt-auto flex items-center gap-1 pt-3 text-xs font-semibold text-blue-600 transition-colors group-hover:text-blue-800">
+                                <span className="mt-auto flex items-center gap-1 pt-3 text-xs font-semibold text-accent-600 transition-colors group-hover:text-accent-800">
                                     {actionLabel}
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
                                         className="h-3 w-3 transition-transform group-hover:translate-x-0.5" aria-hidden="true">

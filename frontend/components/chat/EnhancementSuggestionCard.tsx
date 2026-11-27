@@ -52,7 +52,7 @@ export const EnhancementSuggestionCard: React.FC<EnhancementSuggestionCardProps>
                             suggestion.priority === 'high'
                                 ? 'bg-danger-100 text-danger-700'
                                 : suggestion.priority === 'medium'
-                                    ? 'bg-yellow-100 text-yellow-700'
+                                    ? 'bg-warning-100 text-warning-700'
                                     : 'bg-slate-100 text-slate-600'
                         }`}
                     >
@@ -84,7 +84,7 @@ export const EnhancementSuggestionCard: React.FC<EnhancementSuggestionCardProps>
                                 ? 'bg-success-100 text-success-700 cursor-default'
                                 : suggestion.status === 'applying'
                                     ? 'bg-slate-200 text-slate-500 cursor-progress'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                    : 'bg-accent-600 text-white hover:bg-accent-700'
                         }`}
                     >
                         {!isExecutable

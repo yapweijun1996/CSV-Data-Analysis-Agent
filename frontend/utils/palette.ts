@@ -2,6 +2,8 @@
  * Accent palette selection. Colour values live in index.css as CSS custom properties
  * scoped by `[data-palette="<id>"]` (SSOT); this module only stores and applies the choice.
  */
+import { notifyThemeChanged } from './colorMode';
+
 export const PALETTE_IDS = ['blue', 'violet', 'green', 'orange', 'rose', 'slate'] as const;
 export type PaletteId = (typeof PALETTE_IDS)[number];
 export const DEFAULT_PALETTE: PaletteId = 'blue';
@@ -20,7 +22,10 @@ export const readStoredPalette = (): PaletteId => {
 };
 
 export const applyPalette = (palette: PaletteId): void => {
-    if (typeof document !== 'undefined') document.documentElement.setAttribute('data-palette', palette);
+    if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-palette', palette);
+        notifyThemeChanged();
+    }
 };
 
 export const savePalette = (palette: PaletteId): void => {

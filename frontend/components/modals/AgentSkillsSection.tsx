@@ -78,7 +78,7 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
                                 <p className="flex items-center gap-2 text-sm font-medium text-slate-900">
                                     <span className="truncate">{skill.name}</span>
                                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                                        source === 'user' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
+                                        source === 'user' ? 'bg-accent-50 text-accent-700' : 'bg-slate-100 text-slate-600'
                                     }`}>
                                         {getTranslation(source === 'user' ? 'settings_skills_yours' : 'settings_skills_builtin', language)}
                                     </span>
@@ -149,7 +149,7 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
                                             const outcome = saveEditedUserSkill(skill.name, editing.text,supportingSources);
                                             setEditing(outcome.ok ? null : { ...editing, error: outcome.reason ?? null });
                                         }}
-                                        className="min-h-[44px] rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:min-h-0"
+                                        className="min-h-[44px] rounded-lg bg-accent-600 px-3 py-2 text-sm font-semibold text-white hover:bg-accent-700 md:min-h-0"
                                     >
                                         {getTranslation('settings_skills_save', language)}
                                     </button>
@@ -190,7 +190,7 @@ export const AgentSkillsSection: React.FC<{ language: Settings['language'] }> = 
             {lastImport && (lastImport.added.length > 0 || lastImport.rejected.length > 0) && (
                 <div role="status" className="mt-2 space-y-1 text-xs">
                     {lastImport.added.length > 0 && (
-                        <p className="text-emerald-800">
+                        <p className="text-success-800">
                             {getTranslation('settings_skills_added', language, { names: lastImport.added.join(', ') })}
                         </p>
                     )}

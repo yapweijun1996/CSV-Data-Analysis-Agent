@@ -77,7 +77,7 @@ const OpenReportProblemModal: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [json, report, language]);
 
-    const primary = 'min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50';
+    const primary = 'min-h-[44px] rounded-md bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-50';
     const secondary = 'min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50';
 
     return (
@@ -118,7 +118,7 @@ const OpenReportProblemModal: React.FC = () => {
                         <span className="font-semibold text-slate-900">{t('report_problem_note_label')}</span>
                         <textarea value={note} onChange={event => setNote(event.target.value)} rows={3} maxLength={1000}
                             placeholder={t('report_problem_note_placeholder')}
-                            className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300" />
+                            className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-300" />
                     </label>
                     <label className="flex min-h-[44px] items-start gap-2">
                         <input type="checkbox" checked={includeSample} onChange={event => setIncludeSample(event.target.checked)} className="mt-1 h-4 w-4" />

@@ -84,11 +84,11 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                 ? getTranslation('cleaning_blocked', language)
                 : null;
     const preparedStatusClasses = preparedDatasetStatus === 'operations'
-        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+        ? 'bg-success-100 text-success-800 border-success-200'
         : preparedDatasetStatus === 'schema_only'
             ? 'bg-warning-100 text-warning-800 border-warning-200'
             : preparedDatasetStatus === 'inconsistent'
-                ? 'bg-rose-100 text-rose-800 border-rose-200'
+                ? 'bg-danger-100 text-danger-800 border-danger-200'
                 : 'bg-slate-100 text-slate-600 border-slate-200';
     const helperText = viewMode !== 'raw'
         ? activeDataQuery
@@ -173,7 +173,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                                 </span>
                             )}
                             {viewMode === 'semantic_default' && semanticDefaultReady && semanticHiddenRowCount > 0 && !activeDataQuery && (
-                                <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-800">
+                                <span className="inline-flex items-center rounded-full border border-accent-200 bg-accent-50 px-2 py-0.5 text-[11px] font-semibold text-accent-800">
                                     {getTranslation('semantic_hidden_rows', language, { count: semanticHiddenRowCount })}
                                 </span>
                             )}
@@ -215,7 +215,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                     />
 
                     {viewMode !== 'raw' && activeDataQuery && (
-                        <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                        <div className="flex items-center justify-between gap-3 rounded-md border border-success-200 bg-success-50 p-3 text-sm text-success-800">
                             <div>
                                 <span className="font-semibold">
                                     {isPreviewQuery
@@ -231,7 +231,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                                 {activeDataQuery.result.truncated ? ` ${getTranslation('data_explorer_truncated', language, { returned: activeDataQuery.result.returnedRows, total: activeDataQuery.result.totalMatchedRows })}` : ''}
                                 {activeDataQuery.result.unitInferred && <div className="mt-1">{getTranslation('data_query_inferred_unit_label', language)}</div>}
                                 {(activeDataQuery.engine || activeDataQuery.fallbackReason) && (
-                                    <details className="mt-1 text-xs text-emerald-900">
+                                    <details className="mt-1 text-xs text-success-900">
                                         <summary>{getTranslation('technical_details', language)}</summary>
                                         <p>{activeDataQuery.engine}</p>
                                         {activeDataQuery.fallbackReason && <p>{activeDataQuery.fallbackReason}</p>}
@@ -240,7 +240,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                             </div>
                             <button
                                 onClick={clearActiveDataQuery}
-                                className="p-1 rounded-full hover:bg-emerald-200"
+                                className="p-1 rounded-full hover:bg-success-200"
                                 title={getTranslation('spreadsheet_clear_result', language)}
                                 aria-label={getTranslation('spreadsheet_clear_result', language)}
                             >
@@ -250,13 +250,13 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                     )}
 
                     {viewMode !== 'raw' && (activeSpreadsheetFilter?.finalReply || aiFilterExplanation) && (
-                        <div className="flex items-center justify-between gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                        <div className="flex items-center justify-between gap-3 rounded-md border border-accent-200 bg-accent-50 p-3 text-sm text-accent-800">
                             <p>
                                 <span className="font-semibold">{getTranslation('ai_filter', language)}</span> {activeSpreadsheetFilter?.finalReply ?? aiFilterExplanation}
                             </p>
                             <button
                                 onClick={clearAiFilter}
-                                className="p-1 rounded-full hover:bg-blue-200"
+                                className="p-1 rounded-full hover:bg-accent-200"
                                 title={getTranslation('spreadsheet_clear_filter', language)}
                                 aria-label={getTranslation('spreadsheet_clear_filter', language)}
                             >

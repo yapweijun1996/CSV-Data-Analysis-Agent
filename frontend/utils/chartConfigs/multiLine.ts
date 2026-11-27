@@ -7,7 +7,7 @@
  */
 
 import { ChartConfigProps } from './types';
-import { COLORS, BORDER_COLORS, getCommonOptions, getZoomOptions } from './common';
+import { COLORS, BORDER_COLORS, getCommonOptions, getZoomOptions, tickColor, gridColor } from './common';
 import { formatAnalysisValue, formatAxisValue, normalizeCategoryLabel } from '../analysisCardPresentation';
 import { parseNullableNumericValue, parseNumericValue } from '../dataHelpers';
 
@@ -129,15 +129,15 @@ export const createMultiLineChartConfig = ({
             },
             scales: {
                 x: {
-                    ticks: { color: '#64748b' },
+                    ticks: { color: tickColor() },
                     grid: { display: false },
                 },
                 y: {
                     ticks: {
-                        color: '#64748b',
+                        color: tickColor(),
                         callback: (value: number | string) => formatAxisValue(Number(value)),
                     },
-                    grid: { color: '#e2e8f0' },
+                    grid: { color: gridColor() },
                 },
             },
         },

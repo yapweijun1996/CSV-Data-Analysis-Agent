@@ -21,7 +21,7 @@ const renderHighlightedInput = (text: string, mentionMap: Map<string, string>): 
         <>
             {parts.map((part, i) =>
                 pattern.test(part)
-                    ? <span key={i} className="rounded bg-blue-100 text-blue-700 font-medium">{part}</span>
+                    ? <span key={i} className="rounded bg-accent-100 text-accent-700 font-medium">{part}</span>
                     : <span key={i} className="text-slate-900">{part}</span>,
             )}
         </>
@@ -59,9 +59,9 @@ export const getComposerBusyState = ({
             shortLabel: getTranslation('chat_processing_import_short', language),
             title: getTranslation('chat_processing_import_title', language),
             detail: latestProgressText ?? getTranslation('chat_processing_import_detail', language),
-            accentClassName: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200',
-            indicatorClassName: 'bg-sky-500',
-            buttonClassName: 'bg-sky-600 hover:bg-sky-600 focus:ring-sky-300 disabled:cursor-wait disabled:bg-sky-600 disabled:text-white disabled:opacity-100',
+            accentClassName: 'bg-info-50 text-info-700 ring-1 ring-info-200',
+            indicatorClassName: 'bg-info-500',
+            buttonClassName: 'bg-info-600 hover:bg-info-600 focus:ring-info-300 disabled:cursor-wait disabled:bg-info-600 disabled:text-white disabled:opacity-100',
         };
     }
 
@@ -81,9 +81,9 @@ export const getComposerBusyState = ({
             shortLabel: getTranslation('chat_processing_analysis_short', language),
             title: getTranslation('chat_processing_analysis_title', language),
             detail: latestProgressText ?? getTranslation('chat_processing_analysis_detail', language),
-            accentClassName: 'bg-violet-50 text-violet-800 ring-1 ring-violet-200',
-            indicatorClassName: 'bg-violet-500',
-            buttonClassName: 'bg-violet-600 hover:bg-violet-600 focus:ring-violet-300 disabled:cursor-wait disabled:bg-violet-600 disabled:text-white disabled:opacity-100',
+            accentClassName: 'bg-accent-50 text-accent-800 ring-1 ring-accent-200',
+            indicatorClassName: 'bg-accent-500',
+            buttonClassName: 'bg-accent-600 hover:bg-accent-600 focus:ring-accent-300 disabled:cursor-wait disabled:bg-accent-600 disabled:text-white disabled:opacity-100',
         };
     }
 
@@ -368,14 +368,14 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
             <div className="mx-auto w-full max-w-3xl">
                 {primarySuggestedAction && (
                     <section
-                        className="mb-2.5 rounded-card border border-blue-200 bg-blue-50/80 p-3 shadow-sm"
+                        className="mb-2.5 rounded-card border border-accent-200 bg-accent-50/80 p-3 shadow-sm"
                         aria-label={getTranslation('chat_recommended_next_step', language)}
                     >
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700">
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700">
                                 {getTranslation('chat_recommended_next_step', language)}
                             </span>
-                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-blue-100">
+                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-accent-100">
                                 {analysisStatusTitle ?? getTranslation('chat_current_analysis', language)}
                             </span>
                         </div>
@@ -392,7 +392,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
                             onClick={() => onSuggestedAction(resolveSuggestedActionPrompt(primarySuggestedAction))}
                             disabled={isAssistantBusy}
                             title={primarySuggestedAction.action || primarySuggestedAction.label}
-                            className="mt-3 min-h-[44px] w-full rounded-card bg-blue-600 px-3 py-2 text-left text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300 md:min-h-0"
+                            className="mt-3 min-h-[44px] w-full rounded-card bg-accent-600 px-3 py-2 text-left text-sm font-semibold text-white shadow-sm transition hover:bg-accent-700 disabled:cursor-not-allowed disabled:bg-accent-300 md:min-h-0"
                         >
                             {primarySuggestedAction.label}
                         </button>
@@ -405,28 +405,28 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
                 )}
                 {/* Status banners float above the composer card — separate system state from input affordance */}
                 {hasRunningTurn && (
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl bg-emerald-50 px-3 py-1.5" role="status" aria-live="polite">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl bg-success-50 px-3 py-1.5" role="status" aria-live="polite">
                         <div className="flex min-w-0 items-start gap-2">
-                            <span className="relative mt-1 inline-flex h-2 w-2 flex-shrink-0 rounded-full bg-emerald-500">
-                                <span className="absolute inset-0 rounded-full bg-emerald-500 opacity-75 animate-ping"></span>
+                            <span className="relative mt-1 inline-flex h-2 w-2 flex-shrink-0 rounded-full bg-success-500">
+                                <span className="absolute inset-0 rounded-full bg-success-500 opacity-75 animate-ping"></span>
                             </span>
                             <div className="flex min-w-0 flex-col gap-0.5">
-                                <span className="text-xs font-medium text-emerald-700">
+                                <span className="text-xs font-medium text-success-700">
                                     {queueStatusTitle}
                                 </span>
-                                <span className="text-xs text-emerald-600">
+                                <span className="text-xs text-success-600">
                                     {queueStatusDetail}
                                 </span>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
                             {queuedCount > 0 && (
-                                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                                <span className="rounded-full bg-success-100 px-2 py-0.5 text-[11px] font-semibold text-success-700">
                                     {getTranslation('chat_queue_count', language, { count: queuedCount })}
                                 </span>
                             )}
                             {reportProgressLabel && (
-                                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                                <span className="rounded-full bg-success-100 px-2 py-0.5 text-[11px] font-semibold text-success-700">
                                     {reportProgressLabel}
                                 </span>
                             )}

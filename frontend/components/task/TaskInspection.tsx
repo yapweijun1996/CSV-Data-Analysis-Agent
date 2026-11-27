@@ -10,8 +10,8 @@ import { useCandidateReview } from './useCandidateReview';
 import { TaskExport } from './TaskExport';
 import { CandidateDraft } from './CandidateDraft';
 
-const control = 'min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50';
-const pre = 'max-w-full whitespace-pre-wrap break-all rounded-md bg-slate-100 p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500';
+const control = 'min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 disabled:opacity-50';
+const pre = 'max-w-full whitespace-pre-wrap break-all rounded-md bg-slate-100 p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-accent-500';
 const useInspection = () => useAppStore(s => ({ task: s.activeAgentTask, view: s.taskInspection, sessionId: s.sessionId,
     active: s.activeExecution, busy: s.isBusy, pending: s.pendingClarification, bundle: s.datasetBundle,
     bindingStatus: s.datasetCommitBindingStatus, checkpoint: s.candidateRecovery,
@@ -41,7 +41,7 @@ export const TaskInspectionView: React.FC<{ onReturnToChat?: () => void; onOpenR
     return <div className="flex h-full min-h-0 min-w-0 flex-col" data-task-inspection="true">
         <nav aria-label="Task inspection sections" className="flex shrink-0 flex-wrap gap-1 border-b border-slate-200 bg-white p-2">
             {['Overview', 'Code', 'Observations', 'Review'].map(name => <button key={name} type="button" aria-pressed={section === name}
-                className={`${control} ${section === name ? 'border-blue-600 bg-blue-50 font-semibold' : ''}`} onClick={() => setSection(name)}>{name}</button>)}
+                className={`${control} ${section === name ? 'border-accent-600 bg-accent-50 font-semibold' : ''}`} onClick={() => setSection(name)}>{name}</button>)}
         </nav>
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4" data-task-scroll="true">
             {section === 'Overview' && <section className="space-y-3 text-sm text-slate-700">

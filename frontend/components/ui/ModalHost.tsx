@@ -13,7 +13,7 @@ export const ModalHost: React.FC = () => {
     const dialogRef = useDialogAccessibility<HTMLDivElement>(Boolean(active), cancel);
     if (!active) return null;
 
-    const confirmClass = active.tone === 'danger' ? 'bg-danger-600 hover:bg-danger-700' : 'bg-blue-600 hover:bg-blue-700';
+    const confirmClass = active.tone === 'danger' ? 'bg-danger-600 hover:bg-danger-700' : 'bg-accent-600 hover:bg-accent-700';
     return (
         <div
             className="fixed inset-0 z-[9500] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"

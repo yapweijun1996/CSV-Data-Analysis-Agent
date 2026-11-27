@@ -16,12 +16,12 @@ const IconWrapper: React.FC<{ children: React.ReactNode; colorClass: string }> =
 );
 
 const ThinkingIcon: React.FC = () => (
-    <IconWrapper colorClass="bg-blue-100 text-blue-600">
+    <IconWrapper colorClass="bg-accent-100 text-accent-600">
         <IconThinking className="h-5 w-5" />
     </IconWrapper>
 );
 const ExecutingIcon: React.FC = () => (
-    <IconWrapper colorClass="bg-indigo-100 text-indigo-600">
+    <IconWrapper colorClass="bg-accent-100 text-accent-600">
         <IconSettings className="h-5 w-5" aria-hidden="true" />
     </IconWrapper>
 );
@@ -31,7 +31,7 @@ const ObservingIcon: React.FC = () => (
     </IconWrapper>
 );
 const DoneIcon: React.FC = () => (
-    <IconWrapper colorClass="bg-emerald-100 text-emerald-700">
+    <IconWrapper colorClass="bg-success-100 text-success-700">
         <IconCheck className="h-5 w-5" aria-hidden="true" />
     </IconWrapper>
 );
@@ -70,7 +70,7 @@ const MicroTaskStep: React.FC<{ task: MicroTask }> = ({ task }) => {
                 );
             case 'in_progress':
                 return (
-                    <div className="w-4 h-4 rounded-full bg-blue-500 ring-4 ring-blue-100 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-accent-500 ring-4 ring-accent-100 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                     </div>
                 );
@@ -157,8 +157,8 @@ export const AiTaskStatusBubble: React.FC<AiTaskStatusBubbleProps> = ({ task, va
                             <span
                                 key={index}
                                 className={`h-full flex-1 ${
-                                    index < task.currentStep - 1 ? 'bg-blue-600'
-                                        : index === task.currentStep - 1 ? 'animate-pulse bg-blue-400' : 'bg-transparent'
+                                    index < task.currentStep - 1 ? 'bg-accent-600'
+                                        : index === task.currentStep - 1 ? 'animate-pulse bg-accent-400' : 'bg-transparent'
                                 }`}
                             />
                         ))}
@@ -170,7 +170,7 @@ export const AiTaskStatusBubble: React.FC<AiTaskStatusBubbleProps> = ({ task, va
                                     key={index}
                                     className={`min-w-0 flex-1 truncate ${
                                         index < task.currentStep - 1 ? 'text-slate-500'
-                                            : index === task.currentStep - 1 ? 'font-semibold text-blue-700' : 'text-slate-400'
+                                            : index === task.currentStep - 1 ? 'font-semibold text-accent-700' : 'text-slate-400'
                                     }`}
                                 >
                                     {index < task.currentStep - 1 ? '✓ ' : ''}{getTranslation(`analysis_initial_stage_${index + 1}_short`, language)}

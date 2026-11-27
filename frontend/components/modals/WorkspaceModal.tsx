@@ -206,7 +206,7 @@ export const WorkspaceModal: React.FC = () => {
                                 onClick={() => setShowDebugFiles(current => !current)}
                                 className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
                                     showDebugFiles
-                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                        ? 'border-accent-500 bg-accent-50 text-accent-700'
                                         : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
                                 }`}
                             >
@@ -224,7 +224,7 @@ export const WorkspaceModal: React.FC = () => {
                     </div>
                 </header>
 
-                <p className="border-b border-slate-200 bg-blue-50 px-4 py-2 text-xs text-slate-700">
+                <p className="border-b border-slate-200 bg-accent-50 px-4 py-2 text-xs text-slate-700">
                     Task edits are staged. Accepted data changes only after validation and commit. Original CSV bytes are inspected through bounded source ranges; raw.csv is a reconstructed table view.
                 </p>
 
@@ -279,7 +279,7 @@ export const WorkspaceModal: React.FC = () => {
                                                         onClick={() => setSelectedPath(file.path)}
                                                         className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors ${
                                                             selectedFile?.path === file.path
-                                                                ? 'bg-blue-50 text-blue-900 ring-1 ring-inset ring-blue-400/40'
+                                                                ? 'bg-accent-50 text-accent-900 ring-1 ring-inset ring-accent-400/40'
                                                                 : 'text-slate-700 hover:bg-slate-100'
                                                         }`}
                                                     >
@@ -291,8 +291,8 @@ export const WorkspaceModal: React.FC = () => {
                                                         {file.badges?.includes('editable') ? (
                                                             <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
                                                                 selectedFile?.path === file.path
-                                                                    ? 'bg-blue-100 text-blue-700'
-                                                                    : 'bg-emerald-100 text-emerald-700'
+                                                                    ? 'bg-accent-100 text-accent-700'
+                                                                    : 'bg-success-100 text-success-700'
                                                             }`}>
                                                                 edit
                                                             </span>
@@ -318,7 +318,7 @@ export const WorkspaceModal: React.FC = () => {
                                     </div>
                                     <div className="flex flex-wrap gap-2 text-xs">
                                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-medium ${
-                                            selectedFileWritable ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                                            selectedFileWritable ? 'bg-success-100 text-success-700' : 'bg-slate-200 text-slate-600'
                                         }`}>
                                             {selectedFileWritable ? 'Writable' : 'Read only'}
                                         </span>

@@ -43,7 +43,7 @@ const StepBar: React.FC<{ current: number; total: number; language: string }> = 
             {Array.from({ length: total }, (_, i) => (
                 <div
                     key={i}
-                    className={`h-2 w-10 rounded-full transition-colors ${i + 1 === current ? 'bg-blue-500' : i + 1 < current ? 'bg-blue-300' : 'bg-slate-200'}`}
+                    className={`h-2 w-10 rounded-full transition-colors ${i + 1 === current ? 'bg-accent-500' : i + 1 < current ? 'bg-accent-300' : 'bg-slate-200'}`}
                 />
             ))}
         </div>
@@ -144,7 +144,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
         <div className="flex h-full flex-col gap-3">
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h3 className="text-lg font-bold text-blue-800">{t('provenance_step1_title')}</h3>
+                    <h3 className="text-lg font-bold text-accent-800">{t('provenance_step1_title')}</h3>
                     <p className="mt-0.5 text-sm text-slate-500">
                         {t('provenance_step1_summary', { rows: rawRows.length, cols: rawColCount, header: headerRow })}
                     </p>
@@ -157,7 +157,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
                             value={rawFilter}
                             onChange={e => setRawFilter(e.target.value)}
                             placeholder={getTranslation('spreadsheet_search_placeholder', language)}
-                            className="w-52 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                            className="w-52 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder-slate-400 focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400"
                         />
                     )}
                 </div>
@@ -214,7 +214,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
                     <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                         <span>{t('provenance_step2_summary', { rows: cleanedRows.length, cols: cleanedColCount })}</span>
                         {rowDelta !== 0 && (
-                            <span className={`font-semibold ${rowDelta > 0 ? 'text-warning-600' : 'text-emerald-600'}`}>
+                            <span className={`font-semibold ${rowDelta > 0 ? 'text-warning-600' : 'text-success-600'}`}>
                                 {rowDelta > 0
                                     ? t('provenance_step2_delta', { delta: rowDelta })
                                     : t('provenance_step2_delta_added', { delta: Math.abs(rowDelta) })}
@@ -275,12 +275,12 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
         return (
             <div className="flex h-full flex-col gap-4">
                 <div>
-                    <h3 className="text-lg font-bold text-violet-800">{t('provenance_step3_title')}</h3>
+                    <h3 className="text-lg font-bold text-accent-800">{t('provenance_step3_title')}</h3>
                 </div>
                 <div
                     className={`rounded-lg border p-3 text-xs ${
                         displayedStatus === 'verified'
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                            ? 'border-success-200 bg-success-50 text-success-800'
                             : displayedStatus === 'stale' || displayedStatus === 'hypothesis'
                                 ? 'border-danger-200 bg-danger-50 text-danger-800'
                                 : 'border-warning-200 bg-warning-50 text-warning-800'
@@ -314,14 +314,14 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
                     <button
                         type="button"
                         onClick={() => setIsCustomMode(false)}
-                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${!isCustomMode ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${!isCustomMode ? 'bg-accent-100 text-accent-800 border border-accent-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
                         {t('provenance_step3_card_query')}
                     </button>
                     <button
                         type="button"
                         onClick={() => setIsCustomMode(true)}
-                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isCustomMode ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isCustomMode ? 'bg-accent-100 text-accent-800 border border-accent-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
                         {t('provenance_step3_custom_query')}
                     </button>
@@ -381,19 +381,19 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
 
         return (
             <div className="flex h-full flex-col items-center justify-center gap-6 px-8">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-                    <svg className="h-8 w-8 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success-100">
+                    <svg className="h-8 w-8 text-success-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
-                <h3 className="text-xl font-bold text-emerald-800">{t('provenance_step4_title')}</h3>
+                <h3 className="text-xl font-bold text-success-800">{t('provenance_step4_title')}</h3>
 
-                <div className="w-full max-w-md space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+                <div className="w-full max-w-md space-y-3 rounded-xl border border-success-200 bg-success-50 p-5">
                     <div className="text-center text-sm text-slate-600">
                         {t('provenance_step4_row_count', { count: aggregatedData.length })}
                     </div>
                     {cardTotal != null && valueCol && (
-                        <div className="text-center text-2xl font-bold text-emerald-800">
+                        <div className="text-center text-2xl font-bold text-success-800">
                             {aggregation === 'count'
                                 ? t('provenance_step4_count', { value: totalStr })
                                 : aggregation === 'avg'
@@ -404,7 +404,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
                 </div>
 
                 {excelHint && (
-                    <div className="w-full max-w-md flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                    <div className="w-full max-w-md flex items-start gap-2 rounded-lg border border-accent-200 bg-accent-50 p-4 text-sm text-accent-800">
                         <IconInsights className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                         <div>{excelHint}</div>
                     </div>
@@ -462,8 +462,8 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({
                     onClick={currentStep === TOTAL_STEPS ? onClose : goNext}
                     className={`rounded-lg px-5 py-2 text-sm font-medium text-white transition-colors ${
                         currentStep === TOTAL_STEPS
-                            ? 'bg-emerald-600 hover:bg-emerald-700'
-                            : 'bg-blue-600 hover:bg-blue-700'
+                            ? 'bg-success-600 hover:bg-success-700'
+                            : 'bg-accent-600 hover:bg-accent-700'
                     }`}
                 >
                     {currentStep === TOTAL_STEPS ? t('provenance_close') : t('provenance_next')}

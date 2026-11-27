@@ -256,12 +256,12 @@ export const PiBrowserLab: React.FC<PiBrowserLabProps> = ({ onClose }) => {
                     <button type="button" onClick={() => void run('mock')} disabled={running || guestRunning || !dataset || !question.trim()}
                         className="rounded bg-slate-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">Run mock tool cycle</button>
                     <button type="button" onClick={() => void run('live')} disabled={running || guestRunning || !dataset || !question.trim()}
-                        className="rounded bg-blue-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">Run live OpenAI</button>
+                        className="rounded bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">Run live OpenAI</button>
                     {running && <button type="button" onClick={() => agentRef.current?.abort()} className="rounded border border-slate-300 px-3 py-2 text-sm">Cancel</button>}
                 </div>
                 <p className="mt-3 text-xs text-slate-500">Live mode sends your question, column names, and bounded aggregate results to OpenAI using the key in Settings. CSV rows remain in this browser. Mock mode makes no provider request.</p>
-                {running && <p role="status" className="mt-4 text-sm text-blue-700">Pi is running…</p>}
-                {error && <p role="alert" className="mt-4 rounded bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+                {running && <p role="status" className="mt-4 text-sm text-accent-700">Pi is running…</p>}
+                {error && <p role="alert" className="mt-4 rounded bg-danger-50 p-3 text-sm text-danger-700">{error}</p>}
                 {answer && <section className="mt-4 rounded bg-slate-50 p-3" aria-label="Pi answer"><p className="whitespace-pre-wrap text-sm text-slate-800">{answer}</p></section>}
                 {events.length > 0 && <details className="mt-4 text-xs text-slate-500"><summary>Pi event trace ({events.length})</summary><p className="mt-2 break-words">{events.join(' → ')}</p></details>}
                 <section className="mt-5 border-t border-slate-200 pt-4" aria-label="Local executor checks">

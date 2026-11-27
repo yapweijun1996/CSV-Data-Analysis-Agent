@@ -62,18 +62,18 @@ const StreamingBubble: React.FC = React.memo(() => {
     if (!streamingMessage || !streamingMessage.isStreaming || (!streamingMessage.text && !streamingMessage.reasoning)) return null;
     return (
         <div className="flex min-w-0 w-full animate-fade-in">
-            <div className="min-w-0 w-full max-w-full rounded-card p-4 text-sm xl:max-w-3xl bg-white border border-blue-200 text-slate-800 shadow-sm">
+            <div className="min-w-0 w-full max-w-full rounded-card p-4 text-sm xl:max-w-3xl bg-white border border-accent-200 text-slate-800 shadow-sm">
                 <div className="flex items-center gap-2 mb-2 text-xs text-slate-400">
-                    <span className="font-medium text-blue-500">{getTranslation('assistant', language)}</span>
+                    <span className="font-medium text-accent-500">{getTranslation('assistant', language)}</span>
                     <span>{streamingMessage.startedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    <span className="ml-auto text-blue-400 text-[10px] uppercase tracking-wider font-medium">
+                    <span className="ml-auto text-accent-400 text-[10px] uppercase tracking-wider font-medium">
                         {getTranslation('chat_streaming', language)}
                     </span>
                 </div>
                 {streamingMessage.reasoning && <ReasoningBlock text={streamingMessage.reasoning} language={language} live />}
                 <div className="text-slate-700 leading-relaxed">
                     {streamingMessage.text && <MarkdownRenderer content={streamingMessage.text} />}
-                    <span className="inline-block w-1.5 h-4 bg-blue-400 animate-pulse ml-0.5 align-text-bottom rounded-sm" />
+                    <span className="inline-block w-1.5 h-4 bg-accent-400 animate-pulse ml-0.5 align-text-bottom rounded-sm" />
                 </div>
             </div>
         </div>
@@ -481,7 +481,7 @@ export const ChatPanel: React.FC = React.memo(() => {
                                 aria-labelledby="assistant-upload-title"
                                 className="flex h-full flex-col items-center justify-center px-3 text-center"
                             >
-                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-100 text-accent-700">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-6 w-6" aria-hidden="true">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v3A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-3" />
                                     </svg>
@@ -499,7 +499,7 @@ export const ChatPanel: React.FC = React.memo(() => {
                                         'assistant_empty_capability_questions',
                                     ].map(key => (
                                         <li key={key} className="flex items-start gap-2">
-                                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true">
+                                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 h-4 w-4 shrink-0 text-success-600" aria-hidden="true">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="m4 10 3.5 3.5L16 5" />
                                             </svg>
                                             <span>{getTranslation(key, language)}</span>
@@ -509,7 +509,7 @@ export const ChatPanel: React.FC = React.memo(() => {
                                 <button
                                     type="button"
                                     onClick={handleSelectCsv}
-                                    className="mt-5 min-h-[44px] rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                                    className="mt-5 min-h-[44px] rounded-lg bg-accent-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2"
                                 >
                                     {getTranslation('assistant_empty_select_csv', language)}
                                 </button>

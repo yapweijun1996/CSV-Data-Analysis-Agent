@@ -2,8 +2,8 @@ import React from 'react';
 import { type DebugEntryType, type DebugLogEntryViewModel } from '../../../services/agent/debugLogEntries';
 
 const entryToneClasses: Record<DebugEntryType, string> = {
-    tool: 'border-sky-200 bg-sky-50/40',
-    telemetry: 'border-emerald-200 bg-emerald-50/40',
+    tool: 'border-info-200 bg-info-50/40',
+    telemetry: 'border-success-200 bg-success-50/40',
     event: 'border-warning-200 bg-warning-50/40',
 };
 
@@ -12,7 +12,7 @@ const formatJson = (value: unknown) => JSON.stringify(value, null, 2);
 const traceSeverityClasses = {
     neutral: 'border-slate-200 bg-slate-50 text-slate-700',
     warning: 'border-warning-200 bg-warning-50 text-warning-800',
-    error: 'border-rose-200 bg-rose-50 text-rose-800',
+    error: 'border-danger-200 bg-danger-50 text-danger-800',
 } as const;
 
 interface DebugLogEntryCardProps {
@@ -68,7 +68,7 @@ export const DebugLogEntryCard: React.FC<DebugLogEntryCardProps> = ({
                         </span>
                     )}
                     {entry.traceSummary.failureClass && (
-                        <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-medium text-rose-800">
+                        <span className="rounded-full border border-danger-200 bg-danger-50 px-2.5 py-1 text-[11px] font-medium text-danger-800">
                             failureClass: {entry.traceSummary.failureClass}
                         </span>
                     )}

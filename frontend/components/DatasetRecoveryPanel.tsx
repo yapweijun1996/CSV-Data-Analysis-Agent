@@ -53,7 +53,7 @@ export const DatasetRecoveryPanel: React.FC = () => {
         if (!target) return;
         void perform(async store => { const exact = await reviewDatasetRollback(store, target, { file }); setReview(exact); }, 'Review the exact rollback below.');
     };
-    return <section aria-label="Accepted dataset recovery" className="max-h-80 overflow-y-auto rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-slate-800">
+    return <section aria-label="Accepted dataset recovery" className="max-h-80 overflow-y-auto rounded-lg border border-accent-200 bg-accent-50 p-4 text-sm text-slate-800">
         <h3 className="font-semibold">Accepted dataset · version {reference?.revision ?? 'unresolved'}</h3>
         {recovering&&<button onClick={()=>cancelOwnedRun(useAppStore)} className="my-2 rounded border bg-white px-3 py-2">Stop local recovery</button>}
         <p className="mt-1">{status === 'ready' ? 'Current rows are verified and bound.' : 'Saved history contains metadata. Restore verified local rows or reattach the exact original CSV.'}</p>
@@ -71,7 +71,7 @@ export const DatasetRecoveryPanel: React.FC = () => {
                     <p className="break-all text-xs">Program: {candidateReview.exact.programDigest} · Validation: {candidateReview.exact.validationDigest} · Source: {candidateReview.exact.spill?.source.sha256}</p>
                     <CandidateDraft taskId={candidateReview.exact.spill!.taskId} candidateId={candidateReview.exact.candidateId} table={candidateReview.exact.primaryTable} digest={candidateReview.exact.validationDigest} />
                 </div>}
-                <button disabled={busy} onClick={()=>void perform(async s=>{await commitRecoveredCandidate(s,candidateReview);setCandidateReview(null);},'Revalidated candidate committed once. Run a fresh query for facts.',true)} className="mt-2 rounded bg-blue-700 px-3 py-2 text-white">Approve recovered candidate</button>
+                <button disabled={busy} onClick={()=>void perform(async s=>{await commitRecoveredCandidate(s,candidateReview);setCandidateReview(null);},'Revalidated candidate committed once. Run a fresh query for facts.',true)} className="mt-2 rounded bg-accent-700 px-3 py-2 text-white">Approve recovered candidate</button>
                 <button disabled={busy} onClick={()=>void perform(async s=>{s.setState({candidateRecovery:null});setCandidateReview(null);},'Recovered candidate denied; accepted data unchanged.')} className="ml-2 rounded border px-3 py-2">Deny recovered candidate</button>
             </div>}
         </div>}
@@ -98,7 +98,7 @@ export const DatasetRecoveryPanel: React.FC = () => {
             <p>Append rollback: version {review.current.revision} → rows/schema/relationships from version {review.target.revision}.</p>
             <p className="break-all text-xs">Review {review.digest}</p>
             <ul className="my-2">{review.tables.map(t => <li key={t.name}>{t.name}: {t.rowCount} rows · {t.columns.join(', ')}</li>)}</ul>
-            <button disabled={busy} onClick={() => void perform(async s => { await commitDatasetRollback(s, review); setReview(null); }, 'Rollback appended once; previous evidence invalidated.')} className="rounded bg-blue-700 px-3 py-2 text-white disabled:opacity-50">Approve exact rollback</button>
+            <button disabled={busy} onClick={() => void perform(async s => { await commitDatasetRollback(s, review); setReview(null); }, 'Rollback appended once; previous evidence invalidated.')} className="rounded bg-accent-700 px-3 py-2 text-white disabled:opacity-50">Approve exact rollback</button>
             <button disabled={busy} onClick={() => setReview(null)} className="ml-2 rounded border px-3 py-2">Deny</button>
         </div>}
         {message && <p role="status" className="mt-3 break-words">{message}</p>}

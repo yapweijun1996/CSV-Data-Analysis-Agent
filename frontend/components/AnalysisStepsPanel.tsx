@@ -37,11 +37,11 @@ function translateNextDecision(decision: DataAnalysisNextStepDecision | null, la
 const statusClassName = (status: VisibleAnalysisTraceEntry['status']) => {
     switch (status) {
         case 'succeeded':
-            return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            return 'bg-success-50 text-success-700 border-success-200';
         case 'rejected':
             return 'bg-warning-50 text-warning-700 border-warning-200';
         case 'failed':
-            return 'bg-rose-50 text-rose-700 border-rose-200';
+            return 'bg-danger-50 text-danger-700 border-danger-200';
         default:
             return 'bg-slate-50 text-slate-700 border-slate-200';
     }

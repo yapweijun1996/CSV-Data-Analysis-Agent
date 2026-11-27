@@ -1,5 +1,5 @@
 import { ChartConfigProps } from './types';
-import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getPivotTooltipCallbacks } from './common';
+import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getPivotTooltipCallbacks, tickColor, gridColor } from './common';
 import { formatAnalysisValue, formatAxisValue, getBarChartReadabilityHints, normalizeCategoryLabel } from '../analysisCardPresentation';
 import { parseNullableNumericValue } from '../dataHelpers';
 
@@ -80,14 +80,14 @@ export const createBarChartConfig = ({ data, plan, selectedIndices, onElementCli
                 ? {
                     x: {
                         ticks: {
-                            color: '#64748b',
+                            color: tickColor(),
                             callback: (value: number | string) => formatAxisValue(Number(value)),
                         },
-                        grid: { color: '#e2e8f0' },
+                        grid: { color: gridColor() },
                     },
                     y: {
                         ticks: {
-                            color: '#64748b',
+                            color: tickColor(),
                             callback: categoryTickCallback,
                         },
                         grid: { display: false },
@@ -97,7 +97,7 @@ export const createBarChartConfig = ({ data, plan, selectedIndices, onElementCli
                     x: {
                         ...commonOptions.scales?.x,
                         ticks: {
-                            color: '#64748b',
+                            color: tickColor(),
                             callback: categoryTickCallback,
                         },
                         grid: { display: false },
@@ -105,10 +105,10 @@ export const createBarChartConfig = ({ data, plan, selectedIndices, onElementCli
                     y: {
                         ...commonOptions.scales?.y,
                         ticks: {
-                            color: '#64748b',
+                            color: tickColor(),
                             callback: (value: number | string) => formatAxisValue(Number(value)),
                         },
-                        grid: { color: '#e2e8f0' },
+                        grid: { color: gridColor() },
                     },
                 },
         }

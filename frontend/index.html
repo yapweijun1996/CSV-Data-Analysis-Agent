@@ -14,7 +14,7 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./app-icon.svg" />
-    <script>try{var p=localStorage.getItem('csv-agent-palette');if(p)document.documentElement.setAttribute('data-palette',p)}catch(e){}</script>
+    <script>try{var p=localStorage.getItem('csv-agent-palette');if(p)document.documentElement.setAttribute('data-palette',p)}catch(e){}try{var m=localStorage.getItem('csv-agent-color-mode')||'system';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light')}catch(e){}</script>
     <!-- Cache version — change this value to bust browser cache (no rebuild needed) -->
     <script>window.__CACHE_VERSION__ = new Date().toISOString().replace(/\D/g, '').slice(0, 14);</script>
     <!-- Configure default AI settings + UI prefs here -->

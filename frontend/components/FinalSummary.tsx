@@ -73,17 +73,17 @@ const FinalSummaryComponent: React.FC<FinalSummaryProps> = ({ title, summary, la
             aria-label={title}
         >
             {/* colored top accent */}
-            <span className="absolute inset-x-0 top-0 h-[3px] bg-indigo-500" aria-hidden="true" />
+            <span className="absolute inset-x-0 top-0 h-[3px] bg-accent-500" aria-hidden="true" />
 
             {/* header */}
             <button
                 type="button"
-                className="flex w-full items-center gap-3 px-5 pt-5 pb-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                className="flex w-full items-center gap-3 px-5 pt-5 pb-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2"
                 onClick={toggle}
                 aria-expanded={isExpanded}
             >
                 {/* icon */}
-                <span className="inline-flex shrink-0 items-center justify-center rounded-lg bg-indigo-100 p-2 text-indigo-600">
+                <span className="inline-flex shrink-0 items-center justify-center rounded-lg bg-accent-100 p-2 text-accent-600">
                     <IconInsights className="h-5 w-5" />
                 </span>
 
@@ -95,7 +95,7 @@ const FinalSummaryComponent: React.FC<FinalSummaryProps> = ({ title, summary, la
                                 isBuiltFromCards
                                     ? 'bg-slate-100 text-slate-700'
                                     : evidenceState === 'verified'
-                                    ? 'bg-emerald-100 text-emerald-700'
+                                    ? 'bg-success-100 text-success-700'
                                     : evidenceState === 'degraded'
                                         ? 'bg-warning-100 text-warning-700'
                                         : 'bg-danger-100 text-danger-700'

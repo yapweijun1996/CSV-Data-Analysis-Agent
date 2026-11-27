@@ -1,4 +1,6 @@
 
+import { COLORS, refreshChartTheme } from '../../utils/chartConfigs/common';
+import { useThemeVersion } from '../../utils/colorMode';
 import React from 'react';
 import { AnalysisPlan, CsvRow } from '../../types';
 import { formatAnalysisMeasureValue, formatAnalysisValue, normalizeCategoryLabel } from '../../utils/analysisCardPresentation';
@@ -17,10 +19,11 @@ interface InteractiveLegendProps {
     aggregation?: AnalysisPlan['aggregation'];
 }
 
-const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'];
 
 const InteractiveLegendComponent: React.FC<InteractiveLegendProps> = ({ data, total, groupByKey, valueKey, hiddenLabels, onLabelClick, showPercentage = true, aggregation }) => {
     const language = useAppStore(state => state.settings.language);
+    useThemeVersion(); // re-read chart colours when the palette or mode changes
+    refreshChartTheme();
 
     return (
         <div className="text-sm space-y-1 max-h-48 overflow-y-auto pr-2" data-export-exclude>

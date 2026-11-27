@@ -24,7 +24,7 @@ export const TaskExport: React.FC<{ taskId: string }> = ({ taskId }) => {
         <h3 className="font-semibold text-slate-900">Inspectable outputs</h3>
         <p>ZIP includes actual output bytes, executed program/environment, input coverage, evidence references and SHA-256 manifest. Unvalidated artifacts remain unvalidated.</p>
         <p className="text-xs">No automatic persistence. Live custody ends on task/session replacement, reload or seven-day expiry. Downloads are user-managed; local row retention remains a separate explicit action.</p>
-        <button className="min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+        <button className="min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
             disabled={busy || !admission.available} onClick={() => void download()}>Export task bundle</button>
         <p role="status" className="break-words">{message || admission.reason.replaceAll('_', ' ')}</p>
     </section>;

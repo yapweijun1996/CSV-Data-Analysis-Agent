@@ -128,7 +128,7 @@ export const CloudAiConsentModal: React.FC = () => {
                         type="button"
                         onClick={() => void handleAccept()}
                         disabled={isSaving}
-                        className="min-h-[44px] rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                        className="min-h-[44px] rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-60"
                     >
                         {getTranslation('cloud_ai_consent_accept', language)}
                     </button>

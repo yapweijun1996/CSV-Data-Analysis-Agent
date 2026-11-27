@@ -1,7 +1,7 @@
 const APP_MAIN_SCROLL_CONTAINER_ID = 'app-main-scroll-container';
 const CARD_NAVIGATION_HEADER_GAP_PX = 16;
 const CARD_HIGHLIGHT_DURATION_MS = 2500;
-const CARD_HIGHLIGHT_CLASSES = ['ring-4', 'ring-blue-500', 'transition-all', 'duration-500'] as const;
+const CARD_HIGHLIGHT_CLASSES = ['ring-4', 'ring-accent-500', 'transition-all', 'duration-500'] as const;
 
 export const APP_HEADER_HIDE_FOR_CARD_NAVIGATION_EVENT = 'app:hide-header-for-card-navigation';
 
@@ -78,7 +78,7 @@ export const navigateToCard = (
     return true;
 };
 
-const NARRATIVE_HIGHLIGHT_CLASSES = ['ring-2', 'ring-blue-400', 'rounded-lg', 'bg-blue-50/50', 'transition-all', 'duration-500'] as const;
+const NARRATIVE_HIGHLIGHT_CLASSES = ['ring-2', 'ring-accent-400', 'rounded-lg', 'bg-accent-50/50', 'transition-all', 'duration-500'] as const;
 
 /**
  * Navigate to a card's AI Narrative section — auto-expand, scroll into view, highlight.

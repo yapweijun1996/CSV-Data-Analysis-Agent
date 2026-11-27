@@ -61,12 +61,12 @@ describe('card navigation', () => {
             behavior: 'smooth',
         });
         expect(card.classList.contains('ring-4')).toBe(true);
-        expect(card.classList.contains('ring-blue-500')).toBe(true);
+        expect(card.classList.contains('ring-accent-500')).toBe(true);
 
         vi.advanceTimersByTime(2500);
 
         expect(card.classList.contains('ring-4')).toBe(false);
-        expect(card.classList.contains('ring-blue-500')).toBe(false);
+        expect(card.classList.contains('ring-accent-500')).toBe(false);
     });
 
     it('falls back to scrollIntoView when the main scroll container is unavailable', () => {

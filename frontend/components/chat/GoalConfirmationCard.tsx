@@ -63,9 +63,9 @@ export const GoalConfirmationCard: React.FC<{ msg: ChatMessage }> = ({ msg }) =>
     };
     
     return (
-        <div className="animate-fade-in rounded-card border border-blue-200 bg-white p-4 shadow-md">
-            <div className="mb-3 flex items-start text-blue-700">
-                <span className="mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700" aria-hidden="true">
+        <div className="animate-fade-in rounded-card border border-accent-200 bg-white p-4 shadow-md">
+            <div className="mb-3 flex items-start text-accent-700">
+                <span className="mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-100 text-accent-700" aria-hidden="true">
                     <IconChangeGoal />
                 </span>
                 <div>
@@ -75,14 +75,14 @@ export const GoalConfirmationCard: React.FC<{ msg: ChatMessage }> = ({ msg }) =>
             </div>
 
             {recommendedGoal && (
-                <div className="rounded-card border border-blue-200 bg-blue-50 p-3">
-                    <p className="mb-1 text-sm font-bold text-blue-800">{getTranslation('goal_confirm_recommended', settings.language)}</p>
+                <div className="rounded-card border border-accent-200 bg-accent-50 p-3">
+                    <p className="mb-1 text-sm font-bold text-accent-800">{getTranslation('goal_confirm_recommended', settings.language)}</p>
                     <p className="font-semibold text-slate-800">{recommendedGoal.title}</p>
                     <p className="text-xs text-slate-600 mt-1">{recommendedGoal.description}</p>
                     <button
                         onClick={() => handleConfirm(recommendedGoal.title)}
                         disabled={isBusy}
-                        className="mt-3 w-full rounded-md bg-blue-600 px-3 py-1.5 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-3 w-full rounded-md bg-accent-600 px-3 py-1.5 text-center text-sm font-semibold text-white transition-colors hover:bg-accent-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {getTranslation('goal_confirm_use_recommended', settings.language)}
                     </button>
@@ -91,8 +91,8 @@ export const GoalConfirmationCard: React.FC<{ msg: ChatMessage }> = ({ msg }) =>
                             <p className="text-xs text-slate-500 text-center">
                                 {getTranslation('goal_confirm_auto_start', settings.language, { count: countdown })}
                             </p>
-                            <div className="w-full bg-blue-200 rounded-full h-1 mt-1 overflow-hidden">
-                                <div className="bg-blue-500 h-1 rounded-full" style={{ width: `${countdown * 10}%`, transition: 'width 1s linear' }}></div>
+                            <div className="w-full bg-accent-200 rounded-full h-1 mt-1 overflow-hidden">
+                                <div className="bg-accent-500 h-1 rounded-full" style={{ width: `${countdown * 10}%`, transition: 'width 1s linear' }}></div>
                             </div>
                         </div>
                     )}
@@ -107,7 +107,7 @@ export const GoalConfirmationCard: React.FC<{ msg: ChatMessage }> = ({ msg }) =>
                             key={goal.title}
                             onClick={() => handleConfirm(goal.title)}
                             disabled={isBusy}
-                            className="w-full rounded-md border border-slate-200 bg-slate-100 p-3 text-left text-sm transition-colors hover:border-blue-500 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full rounded-md border border-slate-200 bg-slate-100 p-3 text-left text-sm transition-colors hover:border-accent-500 hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <p className="font-semibold text-slate-800">{goal.title}</p>
                             <p className="text-xs text-slate-600 mt-0.5">{goal.description}</p>
@@ -126,7 +126,7 @@ export const GoalConfirmationCard: React.FC<{ msg: ChatMessage }> = ({ msg }) =>
                         onChange={handleCustomGoalChange}
                         placeholder={getTranslation('goal_confirm_custom_placeholder', settings.language)}
                         disabled={isBusy}
-                        className="flex-grow bg-white border border-slate-300 rounded-md py-1.5 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                        className="flex-grow bg-white border border-slate-300 rounded-md py-1.5 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-accent-500 disabled:opacity-50"
                     />
                     <button
                         onClick={() => handleConfirm(customGoal)}

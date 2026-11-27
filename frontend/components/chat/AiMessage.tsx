@@ -63,8 +63,8 @@ export const AiMessage: React.FC<AiMessageProps> = ({
     // Left border accent by message type for visual scanning
     const borderAccent = isActiveError ? 'border-l-4 border-l-danger-400'
         : msg.type === 'ai_cleaning_step' ? 'border-l-4 border-l-warning-300'
-        : msg.type === 'ai_query_trace' ? 'border-l-4 border-l-indigo-300'
-        : msg.type === 'ai_mutation_confirmation' ? 'border-l-4 border-l-rose-300'
+        : msg.type === 'ai_query_trace' ? 'border-l-4 border-l-accent-300'
+        : msg.type === 'ai_mutation_confirmation' ? 'border-l-4 border-l-danger-300'
         : msg.type === 'ai_cleaning_failure' ? 'border-l-4 border-l-danger-300'
         : '';
 
@@ -111,7 +111,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                                 {translateCleaningKind(msg.cleaningStep.kind, language)}
                             </span>
                             {msg.cleaningStep.status === 'done' && (
-                                <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">
+                                <span className="rounded-full bg-success-50 px-2 py-1 text-success-700">
                                     {translateCleaningStatus('done', language)}
                                 </span>
                             )}
@@ -155,7 +155,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                     {msg.mutationConfirmation && (
                         <>
                             <div className="mb-3 flex flex-wrap gap-2 text-[11px] font-medium">
-                                <span className="rounded-full bg-rose-50 px-2 py-1 text-rose-700">
+                                <span className="rounded-full bg-danger-50 px-2 py-1 text-danger-700">
                                     {getTranslation('mutation_confirmation_pending_delete', language)}
                                 </span>
                                 <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-600">{msg.mutationConfirmation.matchedRowCount} rows</span>
@@ -198,7 +198,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                     {msg.cardId && !isActiveError && (
                         <button
                             onClick={() => onShowCardFromChat(msg.cardId!)}
-                            className="mt-3 min-h-[44px] w-full rounded-md bg-blue-100 px-2 py-1.5 text-left text-xs font-medium text-blue-700 transition-colors hover:bg-blue-200 md:min-h-0"
+                            className="mt-3 min-h-[44px] w-full rounded-md bg-accent-100 px-2 py-1.5 text-left text-xs font-medium text-accent-700 transition-colors hover:bg-accent-200 md:min-h-0"
                         >
                             → {getTranslation('chat_show_related_card', language)}
                         </button>

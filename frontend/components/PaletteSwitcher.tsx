@@ -5,6 +5,7 @@ import { IconPalette } from '../icons/IconPalette';
 import { IconCheck } from '../icons/IconCheck';
 import { useAppStore, AppStore } from '../store/useAppStore';
 import { getTranslation } from '../utils/localization';
+import { COLOR_MODES, readStoredColorMode, saveColorMode, type ColorMode } from '../utils/colorMode';
 import { PALETTE_IDS, readStoredPalette, savePalette, type PaletteId } from '../utils/palette';
 
 interface PaletteSwitcherProps {
@@ -14,6 +15,7 @@ interface PaletteSwitcherProps {
 export const PaletteSwitcher: React.FC<PaletteSwitcherProps> = ({ buttonClassName }) => {
     const language = useAppStore((state: AppStore) => state.settings?.language ?? 'English', shallow);
     const [palette, setPalette] = useState<PaletteId>(readStoredPalette);
+    const [mode, setMode] = useState<ColorMode>(readStoredColorMode);
     const [isOpen, setIsOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -59,6 +61,11 @@ export const PaletteSwitcher: React.FC<PaletteSwitcherProps> = ({ buttonClassNam
         close(true);
     };
 
+    const selectMode = (next: ColorMode) => {
+        setMode(next);
+        saveColorMode(next);
+    };
+
     return (
         <div ref={rootRef} className="relative shrink-0" data-palette-switcher="true">
             <button
@@ -82,6 +89,21 @@ export const PaletteSwitcher: React.FC<PaletteSwitcherProps> = ({ buttonClassNam
                     aria-label={getTranslation('header_palette_menu', language)}
                     className="fixed z-50 w-52 max-w-[calc(100vw-1.5rem)] rounded-card border border-slate-200 bg-white p-1.5 shadow-xl"
                 >
+                    <div role="group" aria-label={getTranslation('header_color_mode', language)} className="mb-1.5 grid grid-cols-3 gap-1 rounded-card bg-slate-100 p-1">
+                        {COLOR_MODES.map(option => (
+                            <button
+                                key={option}
+                                type="button"
+                                role="menuitemradio"
+                                aria-checked={option === mode}
+                                data-color-mode-option={option}
+                                onClick={() => selectMode(option)}
+                                className={`min-h-[36px] rounded-md px-1 py-1 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${option === mode ? 'bg-white text-accent-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                            >
+                                {getTranslation(`color_mode_${option}`, language)}
+                            </button>
+                        ))}
+                    </div>
                     {PALETTE_IDS.map(option => (
                         <button
                             key={option}

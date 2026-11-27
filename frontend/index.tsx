@@ -6,11 +6,13 @@ import './index.css';
 import { initExternalCsvBridge } from './utils/externalCsvBridge';
 import { installStaleChunkRecovery } from './utils/staleChunkRecovery';
 import { registerPwa } from './services/pwa/pwaManager';
+import { watchSystemColorMode } from './utils/colorMode';
 import { finishMcpOAuthPopup } from './utils/mcpOAuthPopup';
 import { installConsoleRingBuffer } from './services/support/consoleRingBuffer';
 
 installConsoleRingBuffer();
 
+watchSystemColorMode();
 const oauthPopupHandled = finishMcpOAuthPopup();
 if (!oauthPopupHandled) { initExternalCsvBridge(); installStaleChunkRecovery(); }
 

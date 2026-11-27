@@ -18,10 +18,10 @@ const formatBytes = (bytes: number): string => {
 };
 
 const STORE_COLORS: Record<string, string> = {
-    reports: 'bg-blue-400',
-    report_artifacts: 'bg-indigo-400',
+    reports: 'bg-accent-400',
+    report_artifacts: 'bg-accent-400',
     original_data: 'bg-warning-400',
-    agent_memory_runs: 'bg-emerald-400',
+    agent_memory_runs: 'bg-success-400',
     vector_memory: 'bg-purple-400',
     ai_consents: 'bg-cyan-400',
     settings: 'bg-slate-300',
@@ -29,10 +29,10 @@ const STORE_COLORS: Record<string, string> = {
 };
 
 const STORE_DOT_COLORS: Record<string, string> = {
-    reports: 'bg-blue-400',
-    report_artifacts: 'bg-indigo-400',
+    reports: 'bg-accent-400',
+    report_artifacts: 'bg-accent-400',
     original_data: 'bg-warning-400',
-    agent_memory_runs: 'bg-emerald-400',
+    agent_memory_runs: 'bg-success-400',
     vector_memory: 'bg-purple-400',
     ai_consents: 'bg-cyan-400',
     settings: 'bg-slate-300',

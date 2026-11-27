@@ -32,8 +32,8 @@ export const ClarificationCard: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
     const isPending = !msg.resolved && effectivePendingClarification?.question === renderedClarification.question
         && (!candidateReview || candidateReview.available);
     return (
-        <div className="rounded-card border border-blue-200 bg-white p-3">
-            <div className="mb-2 flex items-center text-blue-700">
+        <div className="rounded-card border border-accent-200 bg-white p-3">
+            <div className="mb-2 flex items-center text-accent-700">
                 <span className="mr-2 text-lg">🤔</span>
                 <h4 className="font-semibold">
                     {getTranslation(
@@ -55,7 +55,7 @@ export const ClarificationCard: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
                                 if (!candidateReview || inspectPiCandidateReview(useAppStore, renderedClarification).available) void handleClarificationResponse(option);
                             }}
                             disabled={!isPending || isBusy}
-                            className="min-h-11 w-full rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-left text-sm transition-colors hover:border-blue-500 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-slate-100"
+                            className="min-h-11 w-full rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-left text-sm transition-colors hover:border-accent-500 hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-slate-100"
                         >
                             {option.label}
                         </button>

@@ -16,7 +16,7 @@ export const AgentMemoryView: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <section className="rounded-card border border-blue-200 bg-blue-50 p-4 text-sm text-slate-700">
+            <section className="rounded-card border border-accent-200 bg-accent-50 p-4 text-sm text-slate-700">
                 <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-700">
                     Memory Origin
                 </h3>
@@ -113,7 +113,7 @@ export const AgentMemoryView: React.FC = () => {
                                     <p className="text-sm text-slate-600 mt-1">{exploration.commentary}</p>
                                 )}
                                 {exploration.cardCreated && (
-                                    <span className="inline-block mt-2 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                    <span className="inline-block mt-2 text-xs font-semibold text-success-700 bg-success-100 px-2 py-0.5 rounded-full">
                                         Card created
                                     </span>
                                 )}

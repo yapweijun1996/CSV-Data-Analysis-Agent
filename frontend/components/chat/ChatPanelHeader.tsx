@@ -40,7 +40,7 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
         <div className="flex items-center gap-2">
             {showPiBrowserLab && (
                 <button type="button" data-pi-browser-lab-trigger="true" onClick={onOpenPiBrowserLab}
-                    className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                    className="rounded border border-accent-200 bg-accent-50 px-2 py-1 text-xs font-semibold text-accent-700 hover:bg-accent-100"
                     aria-label="Open Pi Browser Lab" title="Open Pi Browser Lab">Pi Lab</button>
             )}
             {showMemoryPanel && (

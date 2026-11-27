@@ -104,7 +104,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ buttonClassN
                             aria-checked={option === language}
                             data-language-option={option}
                             onClick={() => select(option)}
-                            className={`flex min-h-[44px] w-full items-center justify-between gap-2 rounded-card px-3 py-2 text-left text-sm hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:min-h-0 ${option === language ? 'font-semibold text-blue-700' : 'text-slate-700'}`}
+                            className={`flex min-h-[44px] w-full items-center justify-between gap-2 rounded-card px-3 py-2 text-left text-sm hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 md:min-h-0 ${option === language ? 'font-semibold text-accent-700' : 'text-slate-700'}`}
                         >
                             <span>{LANGUAGE_NATIVE_NAMES[option]}</span>
                             {option === language && <IconCheck className="h-4 w-4" />}

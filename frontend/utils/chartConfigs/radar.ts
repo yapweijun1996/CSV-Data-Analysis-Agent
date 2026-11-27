@@ -1,5 +1,5 @@
 import { ChartConfigProps } from './types';
-import { COLORS, BORDER_COLORS, BG_COLORS, getCommonOptions, getPivotTooltipCallbacks } from './common';
+import { COLORS, BORDER_COLORS, BG_COLORS, getCommonOptions, getPivotTooltipCallbacks, tickColor, gridColor } from './common';
 import { parseNullableNumericValue } from '../dataHelpers';
 
 export const createRadarChartConfig = ({ data, plan, selectedIndices, onElementClick, disableAnimation, showDataLabels }: ChartConfigProps): any => {
@@ -47,10 +47,10 @@ export const createRadarChartConfig = ({ data, plan, selectedIndices, onElementC
                     suggestedMin: 0,
                     ticks: {
                         backdropColor: 'transparent',
-                        color: '#64748b'
+                        color: tickColor()
                     },
                     grid: {
-                        color: '#e2e8f0'
+                        color: gridColor()
                     },
                     pointLabels: {
                         color: '#334155',

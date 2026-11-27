@@ -61,7 +61,7 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                 disabled={loadingId !== null}
                 className={`inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap rounded-xl border bg-white text-xs font-semibold transition-colors ${
                     compact ? 'px-2.5 py-1' : 'px-3.5 py-1.5'
-                } ${busy ? 'cursor-wait border-slate-200 text-slate-400' : 'border-indigo-200 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50'} ${
+                } ${busy ? 'cursor-wait border-slate-200 text-slate-400' : 'border-accent-200 text-accent-700 hover:border-accent-300 hover:bg-accent-50'} ${
                     loadingId !== null && !busy ? 'cursor-not-allowed opacity-50' : ''
                 }`}
             >
@@ -76,7 +76,7 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
     };
 
     return (
-        <li className={`group/row overflow-hidden rounded-2xl border shadow-sm transition-shadow hover:shadow-md ${isCurrent ? 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-violet-50/60' : 'border-slate-200/80 bg-white'}`}>
+        <li className={`group/row overflow-hidden rounded-2xl border shadow-sm transition-shadow hover:shadow-md ${isCurrent ? 'border-accent-200 bg-gradient-to-r from-accent-50 to-accent-50/60' : 'border-slate-200/80 bg-white'}`}>
             {/* Primary entry */}
             <div className="flex flex-wrap items-start gap-x-3 gap-y-2 px-4 py-3 sm:flex-nowrap">
                 <CsvFileIcon tone={csvToneFor(group.filename)} className="mt-0.5 h-11 w-9 flex-shrink-0" />
@@ -115,7 +115,7 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                             </span>
                         )}
                         {isCurrent && (
-                            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                            <span className="rounded-full bg-accent-100 px-2 py-0.5 text-[10px] font-semibold text-accent-700">
                                 {getTranslation('history_current_badge', language)}
                             </span>
                         )}

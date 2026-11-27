@@ -171,7 +171,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
                                     onMouseDown={event => event.preventDefault()}
                                     onClick={() => handleSelect(option)}
                                     className={`flex w-full items-center px-3 py-2 text-left text-sm ${
-                                        isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                                        isActive ? 'bg-accent-50 text-accent-700' : 'text-slate-700'
                                     } ${isSelected ? 'font-semibold' : ''}`}
                                 >
                                     {option}

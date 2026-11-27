@@ -97,7 +97,7 @@ interface VerdictExplainerModalProps {
 }
 
 const VERDICT_LABELS: Record<Verdict, { icon: string; colorClass: string }> = {
-    verified: { icon: '✓', colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    verified: { icon: '✓', colorClass: 'bg-success-100 text-success-700 border-success-200' },
     caveated: { icon: '⚠', colorClass: 'bg-warning-100 text-warning-700 border-warning-200' },
     unverified: { icon: '?', colorClass: 'bg-slate-100 text-slate-700 border-slate-200' },
     stale: { icon: '!', colorClass: 'bg-danger-100 text-danger-700 border-danger-200' },
@@ -287,16 +287,16 @@ export const VerdictExplainerModal: React.FC<VerdictExplainerModalProps> = ({
                     )}
 
                     {/* AI explanation */}
-                    <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                    <div className="rounded-xl border border-accent-100 bg-accent-50/50 p-4">
                         <div className="mb-2 flex items-center gap-2">
                             <span className="text-sm">🤖</span>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-accent-600">
                                 {getTranslation('verdict_explainer_ai_label', language)}
                             </p>
                         </div>
                         {isLoading && (
                             <div className="flex items-center gap-2 text-sm text-slate-500">
-                                <svg className="h-4 w-4 animate-spin text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="h-4 w-4 animate-spin text-accent-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
@@ -309,7 +309,7 @@ export const VerdictExplainerModal: React.FC<VerdictExplainerModalProps> = ({
                                 <button
                                     type="button"
                                     onClick={fetchAiExplanation}
-                                    className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                                    className="text-xs font-medium text-accent-600 hover:text-accent-700 hover:underline"
                                 >
                                     {getTranslation('verdict_explainer_retry', language)}
                                 </button>

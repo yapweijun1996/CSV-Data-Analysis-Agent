@@ -113,7 +113,7 @@ const REPORT_STEPS = [
 ] as const;
 
 const StepDotComplete: React.FC = () => (
-    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500 text-white">
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-500 text-white">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
             <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
         </svg>
@@ -121,8 +121,8 @@ const StepDotComplete: React.FC = () => (
 );
 
 const StepDotActive: React.FC = () => (
-    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-violet-500 bg-white">
-        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-violet-500" />
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-accent-500 bg-white">
+        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-accent-500" />
     </span>
 );
 
@@ -152,12 +152,12 @@ const GenerationStepIndicator: React.FC<StepIndicatorProps> = ({ progressLabel, 
                         <React.Fragment key={key}>
                             <div className={`flex flex-col items-center gap-1.5 ${idx === 0 ? 'flex-none' : 'flex-1 items-center'}`} style={{ minWidth: 0 }}>
                                 {done ? <StepDotComplete /> : active ? <StepDotActive /> : <StepDotPending />}
-                                <span className={`whitespace-nowrap text-[11px] font-semibold ${done ? 'text-violet-500' : active ? 'text-violet-700' : 'text-slate-400'}`}>
+                                <span className={`whitespace-nowrap text-[11px] font-semibold ${done ? 'text-accent-500' : active ? 'text-accent-700' : 'text-slate-400'}`}>
                                     {getTranslation(key, language)}
                                 </span>
                             </div>
                             {idx < REPORT_STEPS.length - 1 && (
-                                <div className={`mb-5 flex-1 border-t-2 ${idx < activeStep ? 'border-violet-400' : 'border-slate-200'}`} aria-hidden="true" />
+                                <div className={`mb-5 flex-1 border-t-2 ${idx < activeStep ? 'border-accent-400' : 'border-slate-200'}`} aria-hidden="true" />
                             )}
                         </React.Fragment>
                     );
@@ -211,7 +211,7 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
             aria-label={sectionLabel}
         >
             {/* accent bar — amber when blocked, violet otherwise */}
-            <span className={`absolute inset-x-0 top-0 h-[3px] ${isBlocked ? 'bg-warning-500' : 'bg-violet-500'}`} aria-hidden="true" />
+            <span className={`absolute inset-x-0 top-0 h-[3px] ${isBlocked ? 'bg-warning-500' : 'bg-accent-500'}`} aria-hidden="true" />
 
             <div className="p-5">
                 {/* header row */}
@@ -219,7 +219,7 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
                     {/* left: label + description */}
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center justify-center rounded-lg p-1.5 ${isBlocked ? 'bg-warning-100 text-warning-600' : 'bg-violet-100 text-violet-600'}`}>
+                            <span className={`inline-flex items-center justify-center rounded-lg p-1.5 ${isBlocked ? 'bg-warning-100 text-warning-600' : 'bg-accent-100 text-accent-600'}`}>
                                 <DocumentIcon />
                             </span>
                             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
@@ -244,10 +244,10 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
                             className={[
                                 'inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition-all sm:w-auto sm:min-w-[180px] sm:whitespace-nowrap',
                                 isGenerating
-                                    ? 'cursor-not-allowed border border-violet-200 bg-violet-50 text-violet-500'
+                                    ? 'cursor-not-allowed border border-accent-200 bg-accent-50 text-accent-500'
                                     : isBlocked
                                         ? 'cursor-not-allowed border border-warning-200 bg-warning-50 text-warning-500'
-                                        : 'border border-violet-600 bg-violet-600 text-white shadow-sm hover:bg-violet-700 hover:shadow-md active:bg-violet-800',
+                                        : 'border border-accent-600 bg-accent-600 text-white shadow-sm hover:bg-accent-700 hover:shadow-md active:bg-accent-800',
                             ].join(' ')}
                         >
                             {isGenerating ? (
@@ -281,25 +281,25 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
                                     aria-checked={isActive}
                                     onClick={() => onTemplateChange(opt.value)}
                                     className={[
-                                        'relative flex items-start gap-3 rounded-lg border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400',
+                                        'relative flex items-start gap-3 rounded-lg border p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400',
                                         isActive
-                                            ? 'border-violet-500 bg-violet-50 ring-1 ring-violet-500'
-                                            : 'border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/40',
+                                            ? 'border-accent-500 bg-accent-50 ring-1 ring-accent-500'
+                                            : 'border-slate-200 bg-white hover:border-accent-300 hover:bg-accent-50/40',
                                     ].join(' ')}
                                 >
                                     {isActive && (
-                                        <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-violet-500 text-white" aria-hidden="true">
+                                        <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent-500 text-white" aria-hidden="true">
                                             <CheckIcon />
                                         </span>
                                     )}
-                                    <span className={`mt-0.5 shrink-0 rounded-md p-1.5 ${isActive ? 'bg-violet-100 text-violet-600' : 'bg-slate-100 text-slate-500'}`} aria-hidden="true">
+                                    <span className={`mt-0.5 shrink-0 rounded-md p-1.5 ${isActive ? 'bg-accent-100 text-accent-600' : 'bg-slate-100 text-slate-500'}`} aria-hidden="true">
                                         {opt.icon}
                                     </span>
                                     <div className="min-w-0 flex-1 pr-5">
-                                        <p className={`text-sm font-semibold ${isActive ? 'text-violet-900' : 'text-slate-800'}`}>
+                                        <p className={`text-sm font-semibold ${isActive ? 'text-accent-900' : 'text-slate-800'}`}>
                                             {getTranslation(opt.key, language)}
                                         </p>
-                                        <p className={`mt-0.5 text-xs leading-relaxed ${isActive ? 'text-violet-700' : 'text-slate-500'}`}>
+                                        <p className={`mt-0.5 text-xs leading-relaxed ${isActive ? 'text-accent-700' : 'text-slate-500'}`}>
                                             {getTranslation(opt.descKey, language)}
                                         </p>
                                     </div>
@@ -328,8 +328,8 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
                 )}
                 {isGenerating && !progressLabel && (
                     <div className="mt-4">
-                        <div className="h-1.5 overflow-hidden rounded-full bg-violet-100">
-                            <div className="h-full w-[30%] animate-pulse rounded-full bg-violet-400" />
+                        <div className="h-1.5 overflow-hidden rounded-full bg-accent-100">
+                            <div className="h-full w-[30%] animate-pulse rounded-full bg-accent-400" />
                         </div>
                         {onCancel && (
                             <div className="mt-2 flex justify-end">
@@ -387,10 +387,10 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
 
                 {/* report actions — visible when a report is available */}
                 {hasReport && !isGenerating && (
-                    <div className={`mt-4 rounded-lg border p-3 ${isPartial ? 'border-warning-200 bg-warning-50/50' : 'border-emerald-200 bg-emerald-50/60'}`}>
+                    <div className={`mt-4 rounded-lg border p-3 ${isPartial ? 'border-warning-200 bg-warning-50/50' : 'border-success-200 bg-success-50/60'}`}>
                         <div className="flex flex-wrap items-center gap-3">
                             <div className="flex flex-col gap-1">
-                                <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${isPartial ? 'text-warning-700' : 'text-emerald-700'}`}>
+                                <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${isPartial ? 'text-warning-700' : 'text-success-700'}`}>
                                     <CheckIcon />
                                     {actionsLabel}
                                 </span>
@@ -405,7 +405,7 @@ const ReportDeliveryComponent: React.FC<ReportDeliveryProps> = ({
                                     type="button"
                                     onClick={onOpen}
                                     title={openLabel}
-                                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-violet-600 bg-violet-600 px-3 text-xs font-semibold text-white shadow-sm transition-all hover:bg-violet-700 hover:shadow-md active:bg-violet-800 md:h-8 md:min-h-0"
+                                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-accent-600 bg-accent-600 px-3 text-xs font-semibold text-white shadow-sm transition-all hover:bg-accent-700 hover:shadow-md active:bg-accent-800 md:h-8 md:min-h-0"
                                 >
                                     <ExternalLinkIcon />
                                     {openLabel}

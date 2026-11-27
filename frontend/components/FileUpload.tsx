@@ -166,7 +166,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
     if (!allowManualUpload) {
         return (
             <div className="flex h-full items-center justify-center">
-                <div className="w-full max-w-3xl rounded-card border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50 p-8 shadow-sm">
+                <div className="w-full max-w-3xl rounded-card border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-accent-50 p-8 shadow-sm">
                     <h2 className="text-3xl font-bold tracking-tight text-slate-900">
                         {getTranslation('managed_reports_welcome_title', language)}
                     </h2>
@@ -207,17 +207,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
                 isWorkspaceRestoring
                     ? 'border-slate-300 bg-slate-50'
                     : dragActive
-                        ? 'border-blue-500 bg-slate-100'
-                        : 'border-slate-300 hover:border-blue-500'
+                        ? 'border-accent-500 bg-slate-100'
+                        : 'border-slate-300 hover:border-accent-500'
             }`}
         >
             {isWorkspaceRestoring && (
                 <div
                     role="status"
                     aria-live="polite"
-                    className="mb-6 flex w-full max-w-xl items-start gap-3 rounded-card border border-blue-200 bg-blue-50 p-4 text-left"
+                    className="mb-6 flex w-full max-w-xl items-start gap-3 rounded-card border border-accent-200 bg-accent-50 p-4 text-left"
                 >
-                    <IconLoadingSpinner className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                    <IconLoadingSpinner className="mt-0.5 h-5 w-5 shrink-0 text-accent-600" />
                     <div>
                         <p className="font-semibold text-slate-900">
                             {getTranslation('file_upload_restoring_title', language)}
@@ -271,7 +271,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
                 className={`mt-2 inline-flex min-h-[44px] items-center justify-center rounded-card px-4 py-2 text-sm font-bold text-white transition-colors ${
                     isUploadUnavailable
                         ? 'cursor-wait bg-slate-400'
-                        : 'cursor-pointer bg-blue-600 hover:bg-blue-700'
+                        : 'cursor-pointer bg-accent-600 hover:bg-accent-700'
                 }`}
             >
                 {isWorkspaceRestoring

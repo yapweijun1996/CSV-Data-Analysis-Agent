@@ -286,9 +286,9 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
                                 copyStatus === 'error'
                                     ? 'bg-danger-100 text-danger-700'
                                     : copyStatus === 'workflow'
-                                        ? 'bg-sky-100 text-sky-800'
+                                        ? 'bg-info-100 text-info-800'
                                         : copyStatus === 'failure'
-                                            ? 'bg-emerald-100 text-emerald-700'
+                                            ? 'bg-success-100 text-success-700'
                                             : 'bg-slate-200 text-slate-700'
                             }`}>
                                 {copyStatus === 'workflow'

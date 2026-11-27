@@ -21,7 +21,7 @@ const renderWithMentionChips = (text: string, cardTitles: string[]): React.React
         const before = text.slice(lastIndex, match.index);
         if (before) parts.push(before);
         parts.push(
-            <span key={match.index} className="inline-flex items-center rounded bg-white/20 px-1 py-0.5 text-[13px] font-medium text-blue-100">
+            <span key={match.index} className="inline-flex items-center rounded bg-white/20 px-1 py-0.5 text-[13px] font-medium text-accent-100">
                 @{match[1]}
             </span>,
         );
@@ -53,7 +53,7 @@ export const UserMessage: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
                         <p className="text-[11px] text-slate-400">{timestamp}</p>
                     </div>
                 )}
-                <div className="rounded-card bg-blue-600 px-3 py-1.5">
+                <div className="rounded-card bg-accent-600 px-3 py-1.5">
                     {chipContent
                         ? <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">{chipContent}</p>
                         : <MarkdownRenderer content={msg.text} compact={true} tone="inverse" />}

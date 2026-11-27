@@ -58,7 +58,7 @@ export const DebugLogsToolbar: React.FC<DebugLogsToolbarProps> = ({
                     copyStatus === 'error'
                         ? 'bg-danger-100 text-danger-700'
                         : copyStatus !== 'idle'
-                            ? 'bg-emerald-100 text-emerald-700'
+                            ? 'bg-success-100 text-success-700'
                             : 'bg-slate-200 text-slate-700'
                 }`}>
                     {copyStatusLabel[copyStatus]}
@@ -69,7 +69,7 @@ export const DebugLogsToolbar: React.FC<DebugLogsToolbarProps> = ({
                     </summary>
                     <div className="absolute right-0 z-30 mt-2 grid max-h-[70vh] w-[min(22rem,calc(100vw-2rem))] gap-2 overflow-y-auto rounded-card border border-slate-200 bg-white p-3 shadow-xl">
                         <p className="text-xs text-slate-600">Each action copies the named diagnostic scope only.</p>
-                        <button onClick={onCopyAiDebugBundle} className="min-h-[44px] rounded-card border border-indigo-300 bg-indigo-50 px-3 py-2 text-left text-sm font-semibold text-indigo-800">Copy AI debug bundle</button>
+                        <button onClick={onCopyAiDebugBundle} className="min-h-[44px] rounded-card border border-accent-300 bg-accent-50 px-3 py-2 text-left text-sm font-semibold text-accent-800">Copy AI debug bundle</button>
                         <button onClick={onCopyRecentPayloads} className="min-h-[44px] rounded-card border border-slate-300 px-3 py-2 text-left text-sm text-slate-700">Copy recent payloads</button>
                         <button onClick={onCopyRuntimeLogs} className="min-h-[44px] rounded-card border border-slate-300 px-3 py-2 text-left text-sm text-slate-700">Copy runtime logs</button>
                         <button onClick={onCopyPlannerFailureBundle} disabled={!hasPlannerFailure} className="min-h-[44px] rounded-card border border-slate-300 px-3 py-2 text-left text-sm text-slate-700 disabled:opacity-50">Copy planner failure bundle</button>

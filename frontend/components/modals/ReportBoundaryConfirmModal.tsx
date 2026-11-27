@@ -119,7 +119,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                 <p className="text-sm text-warning-950">Boundary confirmation cannot approve structural repair. Full validation and separate exact Dataset Commit approval remain required.</p>
                 <div className="flex justify-end gap-3">
                     <button onClick={handleClose} className="rounded border px-4 py-2 text-sm">Cancel</button>
-                    <button disabled className="rounded bg-blue-600 px-4 py-2 text-sm text-white opacity-50">{t('boundary_confirm_button')}</button>
+                    <button disabled className="rounded bg-accent-600 px-4 py-2 text-sm text-white opacity-50">{t('boundary_confirm_button')}</button>
                 </div>
             </div>
         </div>
@@ -331,19 +331,19 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                         </section>
 
                         {setAsideSections.length > 0 && (
-                            <p className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                            <p className="rounded-lg border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-accent-900">
                                 {t('review_set_aside_stacked', { count: setAsideSections.length + 1 })}
                             </p>
                         )}
 
                         {/* Summary cards */}
                         <div className={`grid grid-cols-1 gap-3 ${setAsideSections.length > 0 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'}`}>
-                            <div className="bg-blue-50 rounded-lg p-3">
-                                <div className="text-xs text-blue-600 font-medium mb-0.5">{t('boundary_confirm_header_depth')}</div>
-                                <div className="text-xl font-semibold text-blue-800">
+                            <div className="bg-accent-50 rounded-lg p-3">
+                                <div className="text-xs text-accent-600 font-medium mb-0.5">{t('boundary_confirm_header_depth')}</div>
+                                <div className="text-xl font-semibold text-accent-800">
                                     {t(headerDepth === 1 ? 'review_header_layers_one' : 'review_header_layers_many', { count: headerDepth })}
                                 </div>
-                                <div className="text-xs text-blue-500">
+                                <div className="text-xs text-accent-500">
                                     {t('boundary_confirm_header_rows_label', { rows: headerLayerIdxs.map(i => i + 1).join(', ') })}
                                 </div>
                             </div>
@@ -399,7 +399,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                                 setSummaryStart(v + 1 < totalRows ? v + 1 : null);
                                             }
                                         }}
-                                        className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:outline-none"
                                     />
                                 </div>
                                 <div>
@@ -420,7 +420,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                             if (Number.isNaN(parsed)) return;
                                             setSummaryStart(Math.max(bStart + 1, parsed - 1));
                                         }}
-                                        className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:outline-none"
                                     />
                                 </div>
                             </div>
@@ -439,7 +439,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                                 <tr
                                                     key={rowIndex}
                                                     className={
-                                                        role === 'header' ? 'bg-blue-50' :
+                                                        role === 'header' ? 'bg-accent-50' :
                                                         role === 'summary' ? 'bg-warning-50' :
                                                         'bg-white even:bg-slate-50'
                                                     }
@@ -449,7 +449,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                                     </td>
                                                     <td className="px-2 py-1 border-r border-slate-200 w-12 text-center">
                                                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                                            role === 'header' ? 'bg-blue-100 text-blue-700' :
+                                                            role === 'header' ? 'bg-accent-100 text-accent-700' :
                                                             role === 'summary' ? 'bg-warning-100 text-warning-700' :
                                                             'bg-success-100 text-success-700'
                                                         }`}>
@@ -464,7 +464,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                                         <td
                                                             key={ci}
                                                             className={`px-2 py-1 border-r border-slate-100 max-w-[110px] truncate ${
-                                                                role === 'header' ? 'font-medium text-blue-800' : 'text-slate-600'
+                                                                role === 'header' ? 'font-medium text-accent-800' : 'text-slate-600'
                                                             }`}
                                                             title={cell}
                                                         >
@@ -500,7 +500,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                                             <span className="min-w-0 truncate font-medium text-slate-800" title={profile.name}>{profile.name}</span>
                                             <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">{profile.type}</span>
                                             {isSuggestion && (
-                                                <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                                                <span className="shrink-0 rounded-full bg-success-50 px-2 py-0.5 text-[11px] font-medium text-success-700">
                                                     {t('review_role_suggested')}
                                                 </span>
                                             )}
@@ -549,7 +549,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
                         <button
                             onClick={() => void triggerConfirm()}
                             disabled={confirming || isBusy || repairRequired}
-                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            className="px-4 py-2 text-sm bg-accent-600 text-white rounded-lg hover:bg-accent-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
                             {confirming ? (
                                 <>

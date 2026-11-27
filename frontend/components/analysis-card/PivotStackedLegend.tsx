@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import type { AnalysisPlan, CsvRow } from '../../types';
 import { formatAnalysisValue } from '../../utils/analysisCardPresentation';
-import { COLORS } from '../../utils/chartConfigs/common';
+import { COLORS, refreshChartTheme } from '../../utils/chartConfigs/common';
 import { PIVOT_FOLDED_OTHERS_KEY } from '../../utils/pivotMatrixCharting';
 import { useAppStore } from '../../store/useAppStore';
 import { getTranslation } from '../../utils/localization';
+import { useThemeVersion } from '../../utils/colorMode';
 
 interface PivotStackedLegendProps {
     data: CsvRow[];
@@ -18,6 +19,7 @@ const COLLAPSED_LEGEND_ITEMS = 6;
 
 const PivotStackedLegendComponent: React.FC<PivotStackedLegendProps> = ({ data, plan, hiddenSeriesLabels, onSeriesToggle, onResetHiddenSeries }) => {
     const language = useAppStore(state => state.settings.language);
+    const themeVersion = useThemeVersion();
     const t = (key: string, params?: Record<string, string | number>) =>
         getTranslation(key, language, params);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -26,6 +28,7 @@ const PivotStackedLegendComponent: React.FC<PivotStackedLegendProps> = ({ data, 
     const matrixValueColumns = plan.artifactMetadata?.matrixValueColumns ?? [];
 
     const legendItems = useMemo(() => {
+        refreshChartTheme();
         const denominator = matrixValueColumns.reduce((sum, column) => {
             const contribution = data.reduce((columnSum, row) => columnSum + Math.abs(Number(row[column]) || 0), 0);
             return sum + contribution;
@@ -51,7 +54,7 @@ const PivotStackedLegendComponent: React.FC<PivotStackedLegendProps> = ({ data, 
             if (right.column === PIVOT_FOLDED_OTHERS_KEY) return -1;
             return right.absoluteContribution - left.absoluteContribution;
         });
-    }, [data, language, matrixValueColumns]);
+    }, [data, language, matrixValueColumns, themeVersion]);
 
     const filteredLegendItems = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
@@ -88,7 +91,7 @@ const PivotStackedLegendComponent: React.FC<PivotStackedLegendProps> = ({ data, 
                     {filteredLegendItems.length > COLLAPSED_LEGEND_ITEMS && (
                         <button
                             type="button"
-                            className="min-h-[44px] text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 md:min-h-0"
+                            className="min-h-[44px] text-xs font-semibold text-accent-600 transition-colors hover:text-accent-700 md:min-h-0"
                             onClick={() => setIsExpanded(previous => !previous)}
                             aria-expanded={isExpanded}
                         >
@@ -107,7 +110,7 @@ const PivotStackedLegendComponent: React.FC<PivotStackedLegendProps> = ({ data, 
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder={t('card_search_legend')}
                     aria-label={t('card_search_legend')}
-                    className="min-h-[44px] w-full rounded-card border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 md:min-h-0"
+                    className="min-h-[44px] w-full rounded-card border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500 md:min-h-0"
                 />
             </div>
             <div className="space-y-1">

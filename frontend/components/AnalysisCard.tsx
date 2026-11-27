@@ -92,7 +92,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({ cardId }) => {
     };
 
     return (
-        <div ref={cardRef} id={id} className="bg-white rounded-card shadow-lg p-4 flex flex-col transition-all duration-300 hover:shadow-blue-500/20 border border-slate-200">
+        <div ref={cardRef} id={id} className="bg-white rounded-card shadow-lg p-4 flex flex-col transition-all duration-300 hover:shadow-accent-500/20 border border-slate-200">
             <AnalysisCardHeader 
                 plan={plan}
                 displayChartType={displayChartType}
@@ -137,7 +137,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({ cardId }) => {
             </div>
             
             {filter && (
-                 <div className="text-xs text-yellow-800 bg-yellow-100 p-2 rounded-md my-3 border border-yellow-200">
+                 <div className="text-xs text-warning-800 bg-warning-100 p-2 rounded-md my-3 border border-warning-200">
                     <b>AI Filter Active:</b> Showing where '{filter.column}' is '{filter.values.join(', ')}'. Ask AI to "clear filter" to remove.
                 </div>
             )}

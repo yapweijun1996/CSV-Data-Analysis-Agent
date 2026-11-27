@@ -391,7 +391,7 @@ export const DataTable: React.FC<{
                 <thead>
                     <tr className="bg-slate-50">
                         {cols.map(c => (
-                            <th key={c} className={`whitespace-nowrap border-b border-slate-200 px-3 py-2 text-left font-semibold ${highlightSet.has(c) ? 'text-violet-700 bg-violet-50' : 'text-slate-600'}`}>
+                            <th key={c} className={`whitespace-nowrap border-b border-slate-200 px-3 py-2 text-left font-semibold ${highlightSet.has(c) ? 'text-accent-700 bg-accent-50' : 'text-slate-600'}`}>
                                 {c.length > 24 ? `${c.slice(0, 22)}…` : c}
                             </th>
                         ))}
@@ -400,9 +400,9 @@ export const DataTable: React.FC<{
                 </thead>
                 <tbody>
                     {displayRows.map((row, i) => (
-                        <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-blue-50/40`}>
+                        <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-accent-50/40`}>
                             {cols.map(c => (
-                                <td key={c} className={`whitespace-nowrap border-b border-slate-100 px-3 py-1.5 ${highlightSet.has(c) ? 'font-medium text-violet-800' : 'text-slate-700'}`}>
+                                <td key={c} className={`whitespace-nowrap border-b border-slate-100 px-3 py-1.5 ${highlightSet.has(c) ? 'font-medium text-accent-800' : 'text-slate-700'}`}>
                                     {aggregateLanguage && highlightSet.has(c) ? displayAggregate(row[c], aggregateLanguage) : formatCell(row[c])}
                                 </td>
                             ))}
@@ -410,9 +410,9 @@ export const DataTable: React.FC<{
                         </tr>
                     ))}
                     {totalRow && (
-                        <tr className="bg-emerald-50 font-semibold">
-                            <td colSpan={totalRow.colSpan} className="border-t-2 border-emerald-200 px-3 py-2 text-right text-emerald-800">{totalRow.label}</td>
-                            <td colSpan={cols.length - totalRow.colSpan + (truncatedCols ? 1 : 0)} className="border-t-2 border-emerald-200 px-3 py-2 text-emerald-800">{totalRow.value}</td>
+                        <tr className="bg-success-50 font-semibold">
+                            <td colSpan={totalRow.colSpan} className="border-t-2 border-success-200 px-3 py-2 text-right text-success-800">{totalRow.label}</td>
+                            <td colSpan={cols.length - totalRow.colSpan + (truncatedCols ? 1 : 0)} className="border-t-2 border-success-200 px-3 py-2 text-success-800">{totalRow.value}</td>
                         </tr>
                     )}
                 </tbody>
@@ -436,33 +436,33 @@ const PivotTableView: React.FC<{ pivot: PivotResult; language: string }> = ({ pi
             <table className="w-full text-xs">
                 <thead>
                     <tr className="bg-slate-50">
-                        <th className="whitespace-nowrap border-b border-slate-200 px-3 py-2 text-left font-semibold text-violet-700 bg-violet-50">{pivot.rowCol}</th>
+                        <th className="whitespace-nowrap border-b border-slate-200 px-3 py-2 text-left font-semibold text-accent-700 bg-accent-50">{pivot.rowCol}</th>
                         {pivot.pivotColumns.map(pc => (
                             <th key={pc} className="whitespace-nowrap border-b border-slate-200 px-3 py-2 text-right font-semibold text-slate-600">
                                 {pc.length > 16 ? `${pc.slice(0, 14)}…` : pc}
                             </th>
                         ))}
-                        <th className="whitespace-nowrap border-b border-slate-200 px-3 py-2 text-right font-bold text-emerald-700 bg-emerald-50">{totalLabel}</th>
+                        <th className="whitespace-nowrap border-b border-slate-200 px-3 py-2 text-right font-bold text-success-700 bg-success-50">{totalLabel}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {pivot.rows.map((row, i) => (
-                        <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-blue-50/40`}>
-                            <td className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 font-medium text-violet-800">{formatCell(row[pivot.rowCol])}</td>
+                        <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-accent-50/40`}>
+                            <td className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 font-medium text-accent-800">{formatCell(row[pivot.rowCol])}</td>
                             {pivot.pivotColumns.map(pc => (
                                 <td key={pc} className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 text-right text-slate-700">{displayAggregate(row[pc], language)}</td>
                             ))}
-                            <td className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 text-right font-semibold text-emerald-800 bg-emerald-50/50">{displayAggregate(row['Total'], language)}</td>
+                            <td className="whitespace-nowrap border-b border-slate-100 px-3 py-1.5 text-right font-semibold text-success-800 bg-success-50/50">{displayAggregate(row['Total'], language)}</td>
                         </tr>
                     ))}
                 </tbody>
                 <tfoot>
-                    <tr className="bg-emerald-50 font-semibold">
-                        <td className="border-t-2 border-emerald-200 px-3 py-2 text-right text-emerald-800">{totalLabel}</td>
+                    <tr className="bg-success-50 font-semibold">
+                        <td className="border-t-2 border-success-200 px-3 py-2 text-right text-success-800">{totalLabel}</td>
                         {pivot.pivotColumns.map(pc => (
-                            <td key={pc} className="border-t-2 border-emerald-200 px-3 py-2 text-right text-emerald-800">{displayAggregate(pivot.columnTotals[pc], language)}</td>
+                            <td key={pc} className="border-t-2 border-success-200 px-3 py-2 text-right text-success-800">{displayAggregate(pivot.columnTotals[pc], language)}</td>
                         ))}
-                        <td className="border-t-2 border-emerald-300 px-3 py-2 text-right font-bold text-emerald-900 bg-emerald-100">{displayAggregate(pivot.grandTotal, language)}</td>
+                        <td className="border-t-2 border-success-300 px-3 py-2 text-right font-bold text-success-900 bg-success-100">{displayAggregate(pivot.grandTotal, language)}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -558,7 +558,7 @@ export const GroupByTest: React.FC<GroupByTestProps> = ({ rows, language, accent
             </div>
             {(flatResult || pivotResult) && inferredUnit && <div className="text-xs text-slate-500">{t('data_query_inferred_unit_label')}</div>}
             {(flatResult || pivotResult) && groupBy && valueCol && (
-                <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
+                <div className="flex items-start gap-2 rounded-md border border-accent-200 bg-accent-50 p-3 text-xs text-accent-800">
                     <IconInsights className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                     <div className="flex flex-1 items-center justify-between gap-3">
                         <span>
@@ -581,7 +581,7 @@ export const GroupByTest: React.FC<GroupByTestProps> = ({ rows, language, accent
                                         : `Create a new analysis card: ${agg.toUpperCase()}(${valueCol}) grouped by ${groupBy}. ${filterNote}`;
                                     onRequestCard(cardDesc, dataRows);
                                 }}
-                                className="shrink-0 rounded-md border border-blue-300 bg-white px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                                className="shrink-0 rounded-md border border-accent-300 bg-white px-2.5 py-1 text-xs font-medium text-accent-700 hover:bg-accent-100 transition-colors"
                             >
                                 {t('groupby_create_card')}
                             </button>

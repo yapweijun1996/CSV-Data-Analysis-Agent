@@ -52,10 +52,10 @@ export const ImportProgressCard: React.FC<ImportProgressCardProps> = ({
     return (
         <div className="flex h-full items-center justify-center px-2">
             <div className={`w-full max-w-3xl rounded-card border p-6 shadow-sm sm:p-8 ${
-                isError ? 'border-danger-200 bg-danger-50' : 'border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50'
+                isError ? 'border-danger-200 bg-danger-50' : 'border-slate-200 bg-gradient-to-br from-white via-slate-50 to-accent-50'
             }`}>
                 <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent-100 text-accent-600">
                         <IconFileUpload className="h-7 w-7" />
                     </div>
                     <div className="min-w-0">
@@ -74,11 +74,11 @@ export const ImportProgressCard: React.FC<ImportProgressCardProps> = ({
                                 return (
                                     <li key={step.id} className="flex flex-col items-center text-center" aria-current={state === 'active' ? 'step' : undefined}>
                                         <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                                            state === 'done' ? 'border-blue-600 bg-blue-600 text-white'
-                                                : state === 'active' ? 'border-blue-600 bg-white' : 'border-slate-300 bg-white'
+                                            state === 'done' ? 'border-accent-600 bg-accent-600 text-white'
+                                                : state === 'active' ? 'border-accent-600 bg-white' : 'border-slate-300 bg-white'
                                         }`}>
                                             {state === 'done' && <IconCheck className="h-3 w-3" />}
-                                            {state === 'active' && <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />}
+                                            {state === 'active' && <span className="h-2.5 w-2.5 rounded-full bg-accent-600" />}
                                         </span>
                                         <span className={`mt-2 text-sm font-semibold ${state === 'waiting' ? 'text-slate-400' : 'text-slate-900'}`}>{t(step.labelKey)}</span>
                                         <span className="text-xs text-slate-500">{t(step.captionKey)}</span>
@@ -88,7 +88,7 @@ export const ImportProgressCard: React.FC<ImportProgressCardProps> = ({
                         </ol>
                         {/* No real percentage exists, so the bar is indeterminate instead of inventing one. */}
                         <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-label={title} aria-busy="true">
-                            <div className="h-full w-1/3 animate-pulse rounded-full bg-blue-500" />
+                            <div className="h-full w-1/3 animate-pulse rounded-full bg-accent-500" />
                         </div>
                     </>
                 )}
@@ -100,18 +100,18 @@ export const ImportProgressCard: React.FC<ImportProgressCardProps> = ({
                 <CsvSourceScanPanel />
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                        <IconShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
+                    <div className="flex items-start gap-3 rounded-lg border border-success-200 bg-success-50 p-4">
+                        <IconShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-success-600" />
                         <div>
-                            <p className="text-sm font-semibold text-emerald-950">{t('import_privacy_local_title')}</p>
-                            <p className="mt-0.5 text-xs leading-5 text-emerald-900/80">{t('import_privacy_local_detail')}</p>
+                            <p className="text-sm font-semibold text-success-950">{t('import_privacy_local_title')}</p>
+                            <p className="mt-0.5 text-xs leading-5 text-success-900/80">{t('import_privacy_local_detail')}</p>
                         </div>
                     </div>
-                    <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                        <IconLock className="mt-0.5 h-6 w-6 shrink-0 text-blue-600" />
+                    <div className="flex items-start gap-3 rounded-lg border border-accent-200 bg-accent-50 p-4">
+                        <IconLock className="mt-0.5 h-6 w-6 shrink-0 text-accent-600" />
                         <div>
-                            <p className="text-sm font-semibold text-blue-950">{t('import_privacy_ai_title')}</p>
-                            <p className="mt-0.5 text-xs leading-5 text-blue-900/80">{t('import_privacy_ai_detail')}</p>
+                            <p className="text-sm font-semibold text-accent-950">{t('import_privacy_ai_title')}</p>
+                            <p className="mt-0.5 text-xs leading-5 text-accent-900/80">{t('import_privacy_ai_detail')}</p>
                         </div>
                     </div>
                 </div>
@@ -134,7 +134,7 @@ export const ImportProgressCard: React.FC<ImportProgressCardProps> = ({
                             {onOpenLogs && (
                                 <div className="flex justify-between gap-3">
                                     <dt className="text-slate-500">{t('import_tech_logs')}</dt>
-                                    <dd><button type="button" onClick={onOpenLogs} className="font-medium text-blue-700 underline-offset-2 hover:underline">{t('view_technical_details')}</button></dd>
+                                    <dd><button type="button" onClick={onOpenLogs} className="font-medium text-accent-700 underline-offset-2 hover:underline">{t('view_technical_details')}</button></dd>
                                 </div>
                             )}
                         </dl>

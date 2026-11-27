@@ -266,9 +266,9 @@ export const HistoryPanel: React.FC = () => {
             >
                 {/* Header */}
                 <div className="relative flex items-center justify-between gap-3 px-6 pb-3 pt-5">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-indigo-100/80 via-violet-50/50 to-transparent" aria-hidden="true" />
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-accent-100/80 via-accent-50/50 to-transparent" aria-hidden="true" />
                     <div className="relative flex items-center gap-3">
-                        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-200">
+                        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 text-white shadow-md shadow-accent-200">
                             <HistoryStackIcon className="h-6 w-6" />
                         </span>
                         <div>
@@ -293,7 +293,7 @@ export const HistoryPanel: React.FC = () => {
 
                 {/* Search */}
                 <div className="px-6 pb-3">
-                    <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
+                    <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 shadow-sm transition focus-within:border-accent-300 focus-within:ring-2 focus-within:ring-accent-100">
                         <HistorySearchIcon className="h-4 w-4 flex-shrink-0 text-slate-400" />
                         <input
                             type="text"
@@ -318,7 +318,7 @@ export const HistoryPanel: React.FC = () => {
                                 onClick={() => setTab(id)}
                                 className={`min-h-[36px] rounded-full px-3.5 text-xs font-semibold transition-colors ${
                                     tab === id
-                                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm'
+                                        ? 'bg-gradient-to-r from-accent-600 to-accent-600 text-white shadow-sm'
                                         : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
                                 }`}
                             >
@@ -334,7 +334,7 @@ export const HistoryPanel: React.FC = () => {
                                     value={sortField}
                                     onChange={e => { setSortField(e.target.value as SortField); setSortDirection(e.target.value === 'filename' ? 'asc' : 'desc'); }}
                                     aria-label={getTranslation('history_sort_aria', language)}
-                                    className="min-h-[36px] cursor-pointer appearance-none rounded-lg bg-transparent py-1 pl-1.5 pr-6 text-xs font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                    className="min-h-[36px] cursor-pointer appearance-none rounded-lg bg-transparent py-1 pl-1.5 pr-6 text-xs font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-accent-200"
                                 >
                                     <option value="updatedAt">{getTranslation('history_sort_modified', language)}</option>
                                     <option value="createdAt">{getTranslation('history_sort_created', language)}</option>
@@ -374,7 +374,7 @@ export const HistoryPanel: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => void refreshStorageInfo()}
-                                className="min-h-[44px] rounded px-2 font-semibold text-indigo-700 hover:bg-indigo-50"
+                                className="min-h-[44px] rounded px-2 font-semibold text-accent-700 hover:bg-accent-50"
                             >
                                 {getTranslation('history_storage_retry', language)}
                             </button>
@@ -465,7 +465,7 @@ export const HistoryPanel: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => void doLoad(confirmLoadId)}
-                                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700"
+                                    className="rounded-lg bg-accent-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-700"
                                 >
                                     {getTranslation('history_switch_confirm', language)}
                                 </button>

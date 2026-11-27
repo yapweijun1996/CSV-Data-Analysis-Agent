@@ -33,8 +33,8 @@ interface DebugLogsSidebarProps {
 
 const filterPillClasses: Record<DebugFilter, string> = {
     all: 'border-slate-300 bg-white text-slate-700',
-    tool: 'border-sky-200 bg-sky-50 text-sky-800',
-    telemetry: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    tool: 'border-info-200 bg-info-50 text-info-800',
+    telemetry: 'border-success-200 bg-success-50 text-success-800',
     event: 'border-warning-200 bg-warning-50 text-warning-800',
 };
 

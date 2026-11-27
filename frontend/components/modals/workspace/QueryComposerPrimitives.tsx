@@ -128,7 +128,7 @@ export const SelectField: React.FC<{
             value={value}
             onChange={event => onChange(event.target.value)}
             disabled={disabled}
-            className="mt-2 min-h-[44px] w-full rounded-card border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+            className="mt-2 min-h-[44px] w-full rounded-card border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-accent-300 focus:ring-2 focus:ring-accent-100 disabled:cursor-not-allowed disabled:bg-slate-100"
         >
             {options.map(option => (
                 <option key={option.value} value={option.value}>
@@ -152,7 +152,7 @@ export const TextField: React.FC<{
             value={value}
             onChange={event => onChange(event.target.value)}
             placeholder={placeholder}
-            className="mt-2 min-h-[44px] w-full rounded-card border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="mt-2 min-h-[44px] w-full rounded-card border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-accent-300 focus:ring-2 focus:ring-accent-100"
         />
     </label>
 );

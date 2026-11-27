@@ -88,7 +88,7 @@ export const CardMentionPopup: React.FC<CardMentionPopupProps> = ({
                     onMouseEnter={() => setActiveIndex(i)}
                     onMouseDown={(e) => { e.preventDefault(); onSelect(card); }}
                     className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm transition-colors ${
-                        i === activeIndex ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'
+                        i === activeIndex ? 'bg-accent-50 text-accent-700' : 'text-slate-700 hover:bg-slate-50'
                     }`}
                 >
                     <span className="flex-shrink-0 rounded bg-slate-100 px-1 py-0.5 text-[10px] font-medium text-slate-500">{chartTypeLabel(card.chartType)}</span>

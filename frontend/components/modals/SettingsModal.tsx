@@ -296,7 +296,7 @@ export const SettingsModal: React.FC = () => {
                                         key={id}
                                         type="button"
                                         onClick={() => handleProviderChange(id)}
-                                        className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === id ? 'bg-blue-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}
+                                        className={`min-h-[44px] w-full rounded-md px-1 py-2 text-sm font-medium transition-colors ${settings.provider === id ? 'bg-accent-600 text-white shadow' : 'text-slate-700 hover:bg-slate-300'}`}
                                     >
                                         {label ?? getTranslation('settings_ai_provider_default_label', language)}
                                     </button>
@@ -324,12 +324,12 @@ export const SettingsModal: React.FC = () => {
                                         value={settings[field.keyName] ?? ''}
                                         onChange={handleInputChange}
                                         aria-invalid={validationError ? 'true' : 'false'}
-                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500"
                                         placeholder={getTranslation(field.placeholderKey, language)}
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
                                         {getTranslation('settings_get_key_from', language, { provider: field.linkLabel })}{' '}
-                                        <a href={field.linkUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{field.linkLabel}</a>.
+                                        <a href={field.linkUrl} target="_blank" rel="noopener noreferrer" className="text-accent-600 hover:underline">{field.linkLabel}</a>.
                                     </p>
                                 </div>
                             );
@@ -343,7 +343,7 @@ export const SettingsModal: React.FC = () => {
                                 className={`min-h-[44px] w-full rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                                     testStatus === 'testing'
                                         ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                        : 'bg-success-600 text-white hover:bg-success-700'
                                 }`}
                             >
                                 {testStatus === 'testing'
@@ -353,7 +353,7 @@ export const SettingsModal: React.FC = () => {
                             {testMessage && (
                                 <p className={`mt-1.5 rounded-md border px-3 py-2 text-sm ${
                                     testStatus === 'success'
-                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                        ? 'border-success-200 bg-success-50 text-success-700'
                                         : 'border-danger-200 bg-danger-50 text-danger-700'
                                 }`}>
                                     {testMessage}
@@ -379,7 +379,7 @@ export const SettingsModal: React.FC = () => {
                                         value={settings.simpleModel}
                                         onChange={handleInputChange}
                                         options={modelOptionsFor(settings.provider)}
-                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-500"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
                                         {getTranslation('settings_simple_model_hint', language)}
@@ -396,7 +396,7 @@ export const SettingsModal: React.FC = () => {
                                         value={settings.complexModel}
                                         onChange={handleInputChange}
                                         options={modelOptionsFor(settings.provider)}
-                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-500"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
                                         {getTranslation('settings_complex_model_hint', language)}
@@ -413,7 +413,7 @@ export const SettingsModal: React.FC = () => {
                                         value={settings.fallbackModel || DEFAULT_FALLBACK_MODEL[settings.provider] || ''}
                                         onChange={handleInputChange}
                                         options={modelOptionsFor(settings.provider)}
-                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="mt-1 block w-full bg-white border border-slate-300 rounded-md py-2 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-500"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
                                         {getTranslation('settings_fallback_model_hint', language)}
@@ -431,7 +431,7 @@ export const SettingsModal: React.FC = () => {
                                 name="reasoningEffort"
                                 value={settings.reasoningEffort ?? 'medium'}
                                 onChange={handleInputChange}
-                                className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
+                                className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-500 sm:text-sm"
                             >
                                 {reasoningEffortLevels.map(level => (
                                     <option key={level} value={level}>
@@ -454,7 +454,7 @@ export const SettingsModal: React.FC = () => {
                                 value={settings.language}
                                 onChange={handleInputChange}
                                 options={languages}
-                                className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
+                                className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-500 sm:text-sm"
                             />
                             <p className="text-xs text-slate-500 mt-1">
                                 {getTranslation('settings_agent_language_hint', language)}
@@ -469,7 +469,7 @@ export const SettingsModal: React.FC = () => {
                                     type="checkbox"
                                     checked={settings.autoConfirmGoal}
                                     onChange={handleCheckboxChange}
-                                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                                    className="h-4 w-4 rounded border-slate-300 text-accent-600 focus:ring-accent-600"
                                 />
                             </div>
                             <div className="ml-2 space-y-1 text-sm leading-6">
@@ -497,7 +497,7 @@ export const SettingsModal: React.FC = () => {
                                         max={MAX_MAX_AGENT_TURNS}
                                         value={settings.maxAgentTurns ?? DEFAULT_MAX_AGENT_TURNS}
                                         onChange={handleInputChange}
-                                        className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
+                                        className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500 sm:text-sm"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
                                         {getTranslation('settings_max_agent_turns_hint', language, { min: MIN_MAX_AGENT_TURNS, max: MAX_MAX_AGENT_TURNS })}
@@ -516,7 +516,7 @@ export const SettingsModal: React.FC = () => {
                                         max={MAX_TOOL_OUTPUT_CUTOFF}
                                         value={settings.toolOutputCutoff ?? DEFAULT_TOOL_OUTPUT_CUTOFF}
                                         onChange={handleInputChange}
-                                        className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
+                                        className="mt-1 block min-h-[44px] w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500 sm:text-sm"
                                     />
                                     <p className="text-xs text-slate-500 mt-1">
                                         {getTranslation('settings_tool_output_cutoff_hint', language, { min: MIN_TOOL_OUTPUT_CUTOFF, max: MAX_TOOL_OUTPUT_CUTOFF })}
@@ -596,7 +596,7 @@ export const SettingsModal: React.FC = () => {
                 <footer className="shrink-0 border-t border-slate-200 px-4 py-3">
                     {view === 'mcp' ? (
                         <div className="flex justify-end">
-                            <button onClick={() => setView('main')} className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                            <button onClick={() => setView('main')} className="min-h-[44px] rounded-md bg-accent-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-700">
                                 {getTranslation('mcp_done', language)}
                             </button>
                         </div>
@@ -610,7 +610,7 @@ export const SettingsModal: React.FC = () => {
                         </button>
                         <button
                             onClick={handleSave}
-                            className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                            className="min-h-[44px] rounded-md bg-accent-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-700"
                         >
                             {getTranslation('settings_save', language)}
                         </button>

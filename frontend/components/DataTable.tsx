@@ -23,7 +23,7 @@ const SortIndicator: React.FC<{ column: string; sort: TableSortState | null }> =
     if (!sort || sort.column !== column) {
         return <span className="ml-1 text-slate-300 opacity-0 group-hover/th:opacity-100 transition-opacity">⇅</span>;
     }
-    return <span className="ml-1 text-blue-500">{sort.direction === 'asc' ? '▲' : '▼'}</span>;
+    return <span className="ml-1 text-accent-500">{sort.direction === 'asc' ? '▲' : '▼'}</span>;
 };
 
 const DataTableComponent: React.FC<DataTableProps> = ({ data, plan, displayColumnLabels, sort, onSortChange }) => {

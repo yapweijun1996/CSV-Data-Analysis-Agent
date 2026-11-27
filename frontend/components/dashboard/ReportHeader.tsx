@@ -191,7 +191,7 @@ const ReportHeaderComponent: React.FC<ReportHeaderProps> = ({
                     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                         <StatCard
                             icon={<FileIcon />}
-                            iconBg="bg-blue-50 text-blue-500"
+                            iconBg="bg-accent-50 text-accent-500"
                             label={getTranslation('file_label', language).replace(':', '')}
                             value={fileName || displayTitle}
                         />
@@ -203,7 +203,7 @@ const ReportHeaderComponent: React.FC<ReportHeaderProps> = ({
                         />
                         <StatCard
                             icon={<ClockIcon />}
-                            iconBg="bg-violet-50 text-violet-500"
+                            iconBg="bg-accent-50 text-accent-500"
                             label={getTranslation('report_header_generated_at', language)}
                             value={generatedAtRef.current}
                         />
@@ -224,7 +224,7 @@ const ReportHeaderComponent: React.FC<ReportHeaderProps> = ({
                                     <span
                                         key={line}
                                         title={line}
-                                        className="inline-flex max-w-sm items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-900"
+                                        className="inline-flex max-w-sm items-center rounded-full border border-accent-200 bg-accent-50 px-3 py-1.5 text-xs font-medium text-accent-900"
                                     >
                                         <span className="truncate">{line}</span>
                                     </span>

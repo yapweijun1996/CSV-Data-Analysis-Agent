@@ -12,11 +12,11 @@ const IconWrapper: React.FC<{ children: React.ReactNode; colorClass: string }> =
 );
 
 const ThinkingIcon: React.FC = () => (
-    <IconWrapper colorClass="bg-blue-100 text-blue-600">
+    <IconWrapper colorClass="bg-accent-100 text-accent-600">
         <IconThinking className="h-5 w-5" />
     </IconWrapper>
 );
-const ExecutingIcon: React.FC = () => <IconWrapper colorClass="bg-indigo-100 text-indigo-600"><span className="text-xl">⚙️</span></IconWrapper>;
+const ExecutingIcon: React.FC = () => <IconWrapper colorClass="bg-accent-100 text-accent-600"><span className="text-xl">⚙️</span></IconWrapper>;
 const ObservingIcon: React.FC = () => <IconWrapper colorClass="bg-purple-100 text-purple-600"><span className="text-xl">🔬</span></IconWrapper>;
 const DoneIcon: React.FC = () => <IconWrapper colorClass="bg-success-100 text-success-600"><span className="text-xl">✅</span></IconWrapper>;
 const ErrorIcon: React.FC = () => <IconWrapper colorClass="bg-danger-100 text-danger-600"><span className="text-xl">⚠️</span></IconWrapper>;
@@ -38,7 +38,7 @@ const MicroTaskStep: React.FC<{ task: MicroTask }> = ({ task }) => {
                 );
             case 'in_progress':
                 return (
-                    <div className="w-4 h-4 rounded-full bg-blue-500 ring-4 ring-blue-100 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-accent-500 ring-4 ring-accent-100 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                     </div>
                 );

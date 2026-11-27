@@ -27,14 +27,14 @@ interface AnalysisCardHeaderProps {
 }
 
 const trustBorderClass = (status: CardTrustStatus) => {
-    if (status === 'verified') return 'border-l-emerald-400';
+    if (status === 'verified') return 'border-l-success-400';
     if (status === 'caveated') return 'border-l-warning-400';
     if (status === 'weak' || status === 'stale') return 'border-l-danger-400';
     return 'border-l-slate-400';
 };
 
 const trustIconClass = (status: CardTrustStatus) => {
-    if (status === 'verified') return 'bg-emerald-50 text-emerald-600';
+    if (status === 'verified') return 'bg-success-50 text-success-600';
     if (status === 'caveated') return 'bg-warning-50 text-warning-600';
     if (status === 'weak' || status === 'stale') return 'bg-danger-50 text-danger-600';
     return 'bg-slate-100 text-slate-600';
@@ -221,7 +221,7 @@ const AnalysisCardHeaderComponent: React.FC<AnalysisCardHeaderProps> = ({
     return (
         <>
             {plan.isFallback && (
-                <div className="rounded-r-lg border-l-4 border-yellow-400 bg-yellow-50 p-3 text-xs text-yellow-800" role="alert">
+                <div className="rounded-r-lg border-l-4 border-warning-400 bg-warning-50 p-3 text-xs text-warning-800" role="alert">
                     <p className="font-bold">{getTranslation('card_fallback_view', language)}</p>
                     <p className="mt-1">{getTranslation('card_fallback_view_hint', language)}</p>
                 </div>

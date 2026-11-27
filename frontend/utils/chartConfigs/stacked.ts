@@ -1,5 +1,5 @@
 import { ChartConfigProps } from './types';
-import { BORDER_COLORS, COLORS, getCommonOptions, getPivotTooltipCallbacks } from './common';
+import { BORDER_COLORS, COLORS, getCommonOptions, getPivotTooltipCallbacks, tickColor, gridColor } from './common';
 import { formatAnalysisValue, formatAxisValue, getBarChartReadabilityHints, normalizeCategoryLabel } from '../analysisCardPresentation';
 import { PIVOT_FOLDED_OTHERS_KEY } from '../pivotMatrixCharting';
 
@@ -76,15 +76,15 @@ export const createStackedChartConfig = ({ chartType, data, plan, selectedIndice
                     x: {
                         stacked: true,
                         ticks: {
-                            color: '#64748b',
+                            color: tickColor(),
                             callback: (value: number | string) => formatAxisValue(Number(value)),
                         },
-                        grid: { color: '#e2e8f0' },
+                        grid: { color: gridColor() },
                     },
                     y: {
                         stacked: true,
                         ticks: {
-                            color: '#64748b',
+                            color: tickColor(),
                             callback: categoryTickCallback,
                         },
                         grid: { display: false },
@@ -94,7 +94,7 @@ export const createStackedChartConfig = ({ chartType, data, plan, selectedIndice
                     x: {
                         stacked: true,
                         ticks: {
-                            color: '#64748b',
+                            color: tickColor(),
                             callback: categoryTickCallback,
                         },
                         grid: { display: false },
@@ -102,10 +102,10 @@ export const createStackedChartConfig = ({ chartType, data, plan, selectedIndice
                     y: {
                         stacked: true,
                         ticks: {
-                            color: '#64748b',
+                            color: tickColor(),
                             callback: (value: number | string) => formatAxisValue(Number(value)),
                         },
-                        grid: { color: '#e2e8f0' },
+                        grid: { color: gridColor() },
                     },
                 },
         },

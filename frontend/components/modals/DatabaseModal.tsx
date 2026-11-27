@@ -84,13 +84,13 @@ const getGroupableColumns = (
 const getStatusBadgeClassName = (status: AppStore['duckDbSessionStatus']['status']) => {
     switch (status) {
         case 'ready':
-            return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+            return 'border-success-200 bg-success-50 text-success-700';
         case 'binding':
-            return 'border-blue-200 bg-blue-50 text-blue-700';
+            return 'border-accent-200 bg-accent-50 text-accent-700';
         case 'degraded':
             return 'border-warning-200 bg-warning-50 text-warning-700';
         case 'error':
-            return 'border-rose-200 bg-rose-50 text-rose-700';
+            return 'border-danger-200 bg-danger-50 text-danger-700';
         default:
             return 'border-slate-200 bg-slate-100 text-slate-600';
     }
@@ -526,7 +526,7 @@ const DatabaseModalContent: React.FC = () => {
                     <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto xl:grid-cols-[minmax(0,1fr)_360px] xl:grid-rows-1 xl:overflow-hidden">
                         <div className="min-w-0 space-y-4 pr-1 xl:min-h-0 xl:overflow-y-auto">
                             <details open={!localDataPreviewRequest} className="rounded-card border border-slate-200 bg-white p-3">
-                                <summary className="min-h-[44px] cursor-pointer py-2 text-sm font-semibold text-blue-700">
+                                <summary className="min-h-[44px] cursor-pointer py-2 text-sm font-semibold text-accent-700">
                                     {getTranslation('local_preview_adjust', language)}
                                 </summary>
                             <DatabaseWorkspaceQueryComposer
@@ -548,7 +548,7 @@ const DatabaseModalContent: React.FC = () => {
 
                             <section className="min-w-0 rounded-card border border-slate-200 bg-white shadow-sm">
                                 {queryRunState.status === 'succeeded' ? (
-                                    <div role="status" className="border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                                    <div role="status" className="border-b border-success-200 bg-success-50 px-4 py-3 text-sm text-success-900">
                                         {getTranslation('explorer_query_completed', language, {
                                             rows: queryRunState.outcome.query.result.returnedRows,
                                             duration: queryRunState.outcome.query.result.durationMs,
@@ -557,12 +557,12 @@ const DatabaseModalContent: React.FC = () => {
                                     </div>
                                 ) : null}
                                 {queryRunState.status === 'failed' ? (
-                                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rose-200 bg-rose-50 px-4 py-3">
-                                        <p role="alert" className="text-sm text-rose-800">{queryRunState.message}</p>
+                                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-danger-200 bg-danger-50 px-4 py-3">
+                                        <p role="alert" className="text-sm text-danger-800">{queryRunState.message}</p>
                                         <button
                                             type="button"
                                             onClick={() => { void runDraft(queryRunState.draft, queryRunState.draft.templateId); }}
-                                            className="min-h-[44px] rounded-card border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-800"
+                                            className="min-h-[44px] rounded-card border border-danger-300 bg-white px-4 py-2 text-sm font-semibold text-danger-800"
                                         >
                                             {getTranslation('explorer_retry', language)}
                                         </button>
@@ -592,7 +592,7 @@ const DatabaseModalContent: React.FC = () => {
                                                 value={searchTerm}
                                                 onChange={event => setSearchTerm(event.target.value)}
                                                 placeholder={getTranslation('explorer_search_placeholder', language)}
-                                                className="mt-2 min-h-[44px] w-full rounded-card border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100 md:min-h-0"
+                                                className="mt-2 min-h-[44px] w-full rounded-card border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-700 outline-none transition focus:border-accent-300 focus:bg-white focus:ring-2 focus:ring-accent-100 md:min-h-0"
                                             />
                                         </label>
                                     </div>

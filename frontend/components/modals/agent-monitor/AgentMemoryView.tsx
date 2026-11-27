@@ -102,7 +102,7 @@ export const AgentMemoryView: React.FC = () => {
                                     <p className="text-sm text-slate-600 mt-1">{exploration.commentary}</p>
                                 )}
                                 {exploration.cardCreated && (
-                                    <span className="inline-block mt-2 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                    <span className="inline-block mt-2 text-xs font-semibold text-success-700 bg-success-100 px-2 py-0.5 rounded-full">
                                         Card created
                                     </span>
                                 )}

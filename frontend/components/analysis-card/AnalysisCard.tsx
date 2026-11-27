@@ -529,7 +529,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
             </div>
 
             {filter && (
-                <div className="rounded-md border border-yellow-200 bg-yellow-100 p-3 text-xs text-yellow-800" data-export-exclude>
+                <div className="rounded-md border border-warning-200 bg-warning-100 p-3 text-xs text-warning-800" data-export-exclude>
                     <b>{getTranslation('card_filter_active', language)}</b>{' '}
                     {getTranslation('card_filter_description', language, {
                         column: filter.column,

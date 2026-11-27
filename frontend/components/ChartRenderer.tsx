@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import Chart from 'chart.js/auto';
+import { useThemeVersion } from '../utils/colorMode';
 import { ChartType, CsvRow, AnalysisPlan } from '../types';
 import { useChartJs } from '../hooks/useChartJs';
 import { createChartConfig } from '../utils/chartConfigFactory';
@@ -31,6 +32,8 @@ interface ChartRendererProps {
 export const ChartRenderer = forwardRef<ChartRendererHandle, ChartRendererProps>((props, ref) => {
     useChartJs();
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const themeVersion = useThemeVersion();
+    const activeThemeRef = useRef(themeVersion);
     const chartRef = useRef<Chart | null>(null);
     const activeChartTypeRef = useRef<ChartType | null>(null);
     const callbackRef = useRef({
@@ -81,9 +84,10 @@ export const ChartRenderer = forwardRef<ChartRendererHandle, ChartRendererProps>
         if (!canvasRef.current || !plan) return;
 
         // Skip recreation if chart already exists and type hasn't changed
-        if (chartRef.current && activeChartTypeRef.current === chartType) {
+        if (chartRef.current && activeChartTypeRef.current === chartType && activeThemeRef.current === themeVersion) {
             return;
         }
+        activeThemeRef.current = themeVersion;
 
         // Destroy previous chart before creating a new one
         chartRef.current?.destroy();
@@ -113,7 +117,7 @@ export const ChartRenderer = forwardRef<ChartRendererHandle, ChartRendererProps>
         performance.mark('chart-create-end');
         performance.measure('chart-create', 'chart-create-start', 'chart-create-end');
         // No cleanup — lifecycle managed by refs and the unmount effect below.
-    }, [chartType, data, plan, selectedIndices, disableAnimation, showDataLabels]);
+    }, [chartType, data, plan, selectedIndices, disableAnimation, showDataLabels, themeVersion]);
 
     // Incremental update: when data/options change but chart type stays the same,
     // update datasets and options in-place instead of destroying the chart.

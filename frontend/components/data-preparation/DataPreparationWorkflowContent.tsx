@@ -9,24 +9,24 @@ import { getStructureReviewReasonText, getTranslation } from '../../utils/locali
 type WorkflowBundle = ReturnType<typeof buildDataPreparationWorkflowBundle>;
 
 const stepStatusClasses: Record<'done' | 'warning' | 'blocked' | 'not_started', string> = {
-    done: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    done: 'bg-success-100 text-success-800 border-success-200',
     warning: 'bg-warning-100 text-warning-800 border-warning-200',
-    blocked: 'bg-rose-100 text-rose-800 border-rose-200',
+    blocked: 'bg-danger-100 text-danger-800 border-danger-200',
     not_started: 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
 const badgeClasses: Record<NonNullable<WorkflowBundle['preparation']['badgeLabel']>, string> = {
-    'AI Cleaned': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'AI Cleaned': 'bg-success-100 text-success-800 border-success-200',
     'No Data Edits Applied Yet': 'bg-warning-100 text-warning-800 border-warning-200',
-    'Cleaning Blocked': 'bg-rose-100 text-rose-800 border-rose-200',
-    'Baseline Prepared': 'bg-sky-100 text-sky-800 border-sky-200',
+    'Cleaning Blocked': 'bg-danger-100 text-danger-800 border-danger-200',
+    'Baseline Prepared': 'bg-info-100 text-info-800 border-info-200',
 };
 
 const mappingResultClasses: Record<WorkflowBundle['issueSummary']['mappings'][number]['result'], string> = {
-    'baseline-fixed': 'bg-sky-100 text-sky-800 border-sky-200',
-    'ai-executed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'baseline-fixed': 'bg-info-100 text-info-800 border-info-200',
+    'ai-executed': 'bg-success-100 text-success-800 border-success-200',
     'proposed-only': 'bg-warning-100 text-warning-800 border-warning-200',
-    'blocked': 'bg-rose-100 text-rose-800 border-rose-200',
+    'blocked': 'bg-danger-100 text-danger-800 border-danger-200',
 };
 
 const countLabel = (count: number, singular: string, plural: string) => `${count} ${count === 1 ? singular : plural}`;
@@ -130,7 +130,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                 )}
                 <button
                     onClick={onPrimaryAction}
-                    className="min-h-[44px] px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors md:min-h-0"
+                    className="min-h-[44px] px-3 py-2 bg-accent-600 text-white text-sm font-medium rounded-md hover:bg-accent-700 transition-colors md:min-h-0"
                 >
                     {workflow.cta.primaryLabel}
                 </button>
@@ -299,7 +299,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                         <span className={`inline-flex items-center self-start rounded-full border px-3 py-1 text-xs font-semibold ${
                             structureReview.requiresHumanReview
                                 ? 'border-warning-200 bg-warning-100 text-warning-800'
-                                : 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                                : 'border-success-200 bg-success-100 text-success-800'
                         }`}>
                             {structureReview.source ?? 'unknown source'}
                         </span>
@@ -384,10 +384,10 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                                 <span
                                     className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                                         structureReview.proposalVerification.tier === 'pass'
-                                            ? 'bg-emerald-100 text-emerald-800'
+                                            ? 'bg-success-100 text-success-800'
                                             : structureReview.proposalVerification.tier === 'warn'
                                                 ? 'bg-warning-100 text-warning-800'
-                                                : 'bg-rose-100 text-rose-800'
+                                                : 'bg-danger-100 text-danger-800'
                                     }`}
                                 >
                                     {structureReview.proposalVerification.tier.toUpperCase()}
@@ -610,7 +610,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                     </div>
                 )}
                 {workflow.verification.sqlPrecheckBlockingFindings.length > 0 && (
-                    <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+                    <div className="mt-4 rounded-md border border-danger-200 bg-danger-50 p-3 text-sm text-danger-900">
                         <p className="font-semibold">Blocking SQL precheck findings</p>
                         <ul className="mt-2 space-y-1 list-disc list-inside">
                             {workflow.verification.sqlPrecheckBlockingFindings.map((finding, index) => (
@@ -651,7 +651,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                                 <p className="font-semibold text-slate-900">Removed columns</p>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {workflow.diff.removedColumns.map(column => (
-                                        <span key={`removed-${column}`} className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700">
+                                        <span key={`removed-${column}`} className="rounded-full border border-danger-200 bg-danger-50 px-2.5 py-1 text-xs font-medium text-danger-700">
                                             {column}
                                         </span>
                                     ))}
@@ -663,7 +663,7 @@ export const DataPreparationWorkflowContent: React.FC<DataPreparationWorkflowCon
                                 <p className="font-semibold text-slate-900">Added columns</p>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {workflow.diff.addedColumns.map(column => (
-                                        <span key={`added-${column}`} className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                                        <span key={`added-${column}`} className="rounded-full border border-success-200 bg-success-50 px-2.5 py-1 text-xs font-medium text-success-700">
                                             {column}
                                         </span>
                                     ))}

@@ -1,3 +1,4 @@
+import { refreshChartTheme } from './chartConfigs/common';
 import { ChartConfigProps } from './chartConfigs/types';
 import { createBarChartConfig } from './chartConfigs/bar';
 import { createHorizontalBarChartConfig } from './chartConfigs/horizontalBar';
@@ -13,6 +14,7 @@ import { createStackedChartConfig } from './chartConfigs/stacked';
 import { createMultiLineChartConfig } from './chartConfigs/multiLine';
 
 export const createChartConfig = (props: ChartConfigProps): any => {
+    refreshChartTheme();
     switch (props.chartType) {
         case 'bar':
             return createBarChartConfig(props);

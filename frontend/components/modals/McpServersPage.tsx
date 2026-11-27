@@ -22,7 +22,7 @@ import {
 
 type Language = Settings['language'];
 const t = (key: string, language: Language, params?: Record<string, string | number>) => getTranslation(key, language, params);
-const FIELD = 'mt-1 block min-h-[44px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm';
+const FIELD = 'mt-1 block min-h-[44px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500 sm:text-sm';
 const BUTTON = 'min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50';
 
 const subscribeConnections = (listener: () => void) => subscribeMcpConnections(mcpAppStore, listener);
@@ -150,7 +150,7 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
                 const status = !record.enabled ? 'disabled' : connecting ? 'connecting' : connected ? 'connected' : connection?.error ? 'failed' : 'idle';
                 const tools = toolSummary(record, connection?.pin?.tools.map(tool => ({ name: tool.remoteName, description: tool.description })) ?? [], typeof test === 'object' ? test : undefined);
                 const needsSignIn = record.auth === 'oauth' && record.enabled && !connected && !connecting;
-                const dot = { connected: 'bg-emerald-500', connecting: 'bg-warning-400', failed: 'bg-danger-500', disabled: 'bg-slate-300', idle: 'bg-slate-400' }[status];
+                const dot = { connected: 'bg-success-500', connecting: 'bg-warning-400', failed: 'bg-danger-500', disabled: 'bg-slate-300', idle: 'bg-slate-400' }[status];
                 return (
                     <section key={record.id} aria-label={record.name} className="space-y-3 rounded-card border border-slate-200 bg-white p-4">
                         <div className="flex items-start justify-between gap-3">
@@ -165,13 +165,13 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
                             </div>
                             <button type="button" role="switch" aria-checked={record.enabled} aria-label={t('mcp_enable_label', language, { name: record.name })}
                                 onClick={() => void toggleEnabled(record, !record.enabled)}
-                                className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${record.enabled ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                                className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 ${record.enabled ? 'bg-accent-600' : 'bg-slate-300'}`}>
                                 <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${record.enabled ? 'translate-x-5' : ''}`} />
                             </button>
                         </div>
                         {status === 'failed' && typeof test !== 'object' && <p role="alert" className="rounded-md border border-danger-200 bg-danger-50 p-2 text-xs leading-5 text-danger-800">{errorText(connection?.error)}<span className="mt-1 block font-mono text-[11px] text-danger-600">{connection?.error}</span></p>}
                         {typeof test === 'object' && (test.ok
-                            ? <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs leading-5 text-emerald-800">{t('mcp_test_ok', language, { server: `${test.server?.name} ${test.server?.version}`, count: test.tools.length, ms: test.ms })}</p>
+                            ? <p role="status" className="rounded-md border border-success-200 bg-success-50 p-2 text-xs leading-5 text-success-800">{t('mcp_test_ok', language, { server: `${test.server?.name} ${test.server?.version}`, count: test.tools.length, ms: test.ms })}</p>
                             : <p role="alert" className="rounded-md border border-danger-200 bg-danger-50 p-2 text-xs leading-5 text-danger-800">{errorText(test.errorCode)}<span className="mt-1 block font-mono text-[11px] text-danger-600">{test.errorCode}</span></p>)}
                         <div className="flex flex-wrap gap-2">
                             <button type="button" className={BUTTON} disabled={test === 'testing'} onClick={() => void runTest(record)}>
@@ -189,7 +189,7 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
                                     <li key={tool.name} className="flex items-start gap-3">
                                         <input type="checkbox" id={`${record.id}-${tool.name}`} checked={tool.on} disabled={!connected}
                                             onChange={e => toggleTool(record, tool.name, e.target.checked)} aria-label={t('mcp_tool_toggle', language, { tool: tool.name })}
-                                            className="mt-1 h-5 w-5 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                                            className="mt-1 h-5 w-5 shrink-0 rounded border-slate-300 text-accent-600 focus:ring-accent-500" />
                                         <label htmlFor={`${record.id}-${tool.name}`} className="min-w-0 text-xs">
                                             <span className="block break-all font-mono font-medium text-slate-900">{tool.name}</span>
                                             {tool.description && <span className="block break-words text-slate-500">{tool.description.slice(0, 200)}</span>}
@@ -203,7 +203,7 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
             })}
 
             {adding ? (
-                <form onSubmit={e => void submit(e)} className="space-y-3 rounded-card border border-blue-200 bg-blue-50/40 p-4" aria-label={t('mcp_add', language)}>
+                <form onSubmit={e => void submit(e)} className="space-y-3 rounded-card border border-accent-200 bg-accent-50/40 p-4" aria-label={t('mcp_add', language)}>
                     <h4 className="text-sm font-semibold text-slate-900">{t('mcp_add', language)}</h4>
                     <label className="block text-sm font-medium text-slate-700">{t('mcp_form_name', language)}
                         <input className={FIELD} value={name} onChange={e => setName(e.target.value)} placeholder="Data service" maxLength={60} autoComplete="off" /></label>
@@ -222,7 +222,7 @@ export const McpServersPage: React.FC<{ language: Language; onBack: () => void }
                     {formError && <p role="alert" className="text-xs font-medium text-danger-700">{formError}</p>}
                     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         {records.length > 0 && <button type="button" className={BUTTON} onClick={() => { setAdding(false); setFormError(''); }}>{t('mcp_cancel', language)}</button>}
-                        <button type="submit" className="min-h-[44px] rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{t('mcp_add_submit', language)}</button>
+                        <button type="submit" className="min-h-[44px] rounded-md bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{t('mcp_add_submit', language)}</button>
                     </div>
                 </form>
             ) : (

@@ -41,13 +41,13 @@ const NUMBER_LOCALES: Record<string, string> = {
 
 // Full class strings so Tailwind's content scanner keeps them.
 const THEME_BADGE_CLASSES: Record<DemoDatasetTheme, string> = {
-    housing: 'text-blue-600',
-    jobs: 'text-violet-600',
+    housing: 'text-accent-600',
+    jobs: 'text-accent-600',
     business: 'text-warning-600',
-    transport: 'text-emerald-600',
+    transport: 'text-success-600',
     tourism: 'text-pink-600',
     environment: 'text-success-700',
-    population: 'text-sky-600',
+    population: 'text-info-600',
 };
 
 const formatCount = (value: number, language: string): string =>
@@ -71,7 +71,7 @@ export const getDemoCardVisibilityClass = (index: number, expanded: boolean): st
     return 'hidden [@media(min-width:1024px)_and_(min-height:900px)]:flex';
 };
 
-const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
+const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2';
 
 interface DemoDatasetCardProps {
     dataset: DemoDataset;
@@ -110,7 +110,7 @@ const DemoDatasetCard: React.FC<DemoDatasetCardProps> = ({ dataset, language, di
                     className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-2xs font-semibold ring-1 ring-inset ${
                         isSlow
                             ? 'bg-warning-50 text-warning-800 ring-warning-200'
-                            : 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                            : 'bg-success-50 text-success-700 ring-success-200'
                     }`}
                 >
                     {isSlow ? <IconClock className="h-3 w-3" /> : <IconBolt className="h-3 w-3" />}
@@ -133,7 +133,7 @@ const DemoDatasetCard: React.FC<DemoDatasetCardProps> = ({ dataset, language, di
                     onClick={() => onAnalyse(dataset)}
                     disabled={disabled}
                     aria-label={getTranslation(loading ? 'demo_gallery_loading_dataset_named' : 'demo_gallery_analyse_named', language, { title })}
-                    className={`inline-flex min-h-[44px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-card border-2 border-blue-600 bg-white px-3 py-1 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white disabled:hover:text-blue-600 [@media(pointer:fine)]:min-h-[36px] ${focusRing}`}
+                    className={`inline-flex min-h-[44px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-card border-2 border-accent-600 bg-white px-3 py-1 text-xs font-bold text-accent-600 transition-colors hover:bg-accent-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white disabled:hover:text-accent-600 [@media(pointer:fine)]:min-h-[36px] ${focusRing}`}
                 >
                     {loading ? <IconLoadingSpinner className="h-4 w-4" /> : <IconSparkChart className="h-4 w-4 shrink-0" />}
                     <span className="min-w-0 whitespace-normal text-center leading-tight">{getTranslation(loading ? 'demo_gallery_loading_dataset' : 'demo_gallery_analyse', language)}</span>
@@ -143,7 +143,7 @@ const DemoDatasetCard: React.FC<DemoDatasetCardProps> = ({ dataset, language, di
                     target="_blank"
                     rel="noopener noreferrer"
                     title={[dataset.source.publisher, dataset.source.licence].filter(Boolean).join(' · ')}
-                    className={`inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-card px-1.5 text-2xs font-medium text-blue-700 hover:bg-blue-50 [@media(pointer:fine)]:min-h-[36px] [@media(pointer:fine)]:min-w-[36px] ${focusRing}`}
+                    className={`inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-card px-1.5 text-2xs font-medium text-accent-700 hover:bg-accent-50 [@media(pointer:fine)]:min-h-[36px] [@media(pointer:fine)]:min-w-[36px] ${focusRing}`}
                 >
                     <span className="sr-only">
                         {getTranslation('demo_gallery_source_label', language)}: <span>{dataset.source.publisher}</span>
@@ -228,7 +228,7 @@ export const DemoDatasetGallery: React.FC<DemoDatasetGalleryProps> = ({ language
                         aria-expanded={expanded}
                         aria-controls={listId}
                         onClick={() => setExpanded(value => !value)}
-                        className={`inline-flex min-h-[44px] items-center rounded-card px-4 text-xs font-semibold [@media(pointer:fine)]:min-h-[32px] text-blue-700 transition-colors hover:bg-blue-50 ${focusRing}`}
+                        className={`inline-flex min-h-[44px] items-center rounded-card px-4 text-xs font-semibold [@media(pointer:fine)]:min-h-[32px] text-accent-700 transition-colors hover:bg-accent-50 ${focusRing}`}
                     >
                         {expanded
                             ? getTranslation('demo_gallery_show_fewer', language)

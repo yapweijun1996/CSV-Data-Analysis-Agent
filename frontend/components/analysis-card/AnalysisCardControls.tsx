@@ -65,7 +65,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
     return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-slate-200 bg-slate-50/80 px-3 py-2" data-export-exclude>
         <div>
-            {(!shouldHideCardChart(plan) || !isDataVisible) && <button onClick={onToggleDataVisibility} className="min-h-[44px] text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline md:min-h-0">
+            {(!shouldHideCardChart(plan) || !isDataVisible) && <button onClick={onToggleDataVisibility} className="min-h-[44px] text-sm font-semibold text-accent-600 hover:text-accent-700 hover:underline md:min-h-0">
                 {isDataVisible ? t('card_controls_hide_table') : t('card_controls_show_table')}
             </button>}
         </div>
@@ -81,7 +81,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
                             aria-pressed={displayChartType === type}
                             className={`min-h-[44px] min-w-[44px] rounded-full px-2.5 py-1 text-xs font-medium transition-colors md:min-h-0 md:min-w-0 ${
                                 displayChartType === type
-                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    ? 'bg-accent-600 text-white shadow-sm'
                                     : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100'
                             }`}
                         >
@@ -97,7 +97,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
                         id={`top-n-${cardId}`}
                         value={topN || 'all'}
                         onChange={onTopNChange}
-                        className="min-h-[44px] bg-white border border-slate-300 text-slate-800 text-xs rounded-card py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 md:min-h-0"
+                        className="min-h-[44px] bg-white border border-slate-300 text-slate-800 text-xs rounded-card py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-accent-500 md:min-h-0"
                         aria-label={t('card_controls_visible_categories')}
                     >
                         <option value="all">{t('card_controls_all')}</option>
@@ -115,7 +115,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
                                     id={`hide-others-${cardId}`}
                                     checked={hideOthers}
                                     onChange={onHideOthersChange}
-                                    className="bg-slate-100 border-slate-300 rounded focus:ring-blue-500 text-blue-600 h-4 w-4"
+                                    className="bg-slate-100 border-slate-300 rounded focus:ring-accent-500 text-accent-600 h-4 w-4"
                                 />
                                 <span>{t('card_controls_hide_others')}</span>
                             </label>
@@ -130,7 +130,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
                         id={`pivot-column-top-n-${cardId}`}
                         value={pivotColumnTopN || 'all'}
                         onChange={onPivotColumnTopNChange}
-                        className="min-h-[44px] bg-white border border-slate-300 text-slate-800 text-xs rounded-card py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 md:min-h-0"
+                        className="min-h-[44px] bg-white border border-slate-300 text-slate-800 text-xs rounded-card py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-accent-500 md:min-h-0"
                         aria-label={t('card_controls_visible_pivot_columns')}
                     >
                         <option value="all">{t('card_controls_all')}</option>
@@ -146,7 +146,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
                                     id={`hide-pivot-column-others-${cardId}`}
                                     checked={pivotHideOtherColumns}
                                     onChange={onPivotHideOtherColumnsChange}
-                                    className="bg-slate-100 border-slate-300 rounded focus:ring-blue-500 text-blue-600 h-4 w-4"
+                                    className="bg-slate-100 border-slate-300 rounded focus:ring-accent-500 text-accent-600 h-4 w-4"
                                 />
                                 <span>{t('card_controls_hide_column_others')}</span>
                             </label>
@@ -162,7 +162,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
                             id={`hide-zero-rows-${cardId}`}
                             checked={hideZeroValueRows}
                             onChange={onHideZeroValueRowsChange}
-                            className="bg-slate-100 border-slate-300 rounded focus:ring-blue-500 text-blue-600 h-4 w-4"
+                            className="bg-slate-100 border-slate-300 rounded focus:ring-accent-500 text-accent-600 h-4 w-4"
                         />
                         <span>{t('card_controls_hide_zero_rows')}</span>
                     </label>
@@ -176,7 +176,7 @@ const AnalysisCardControlsComponent: React.FC<AnalysisCardControlsProps> = ({
                             id={`data-labels-${cardId}`}
                             checked={Boolean(showDataLabels)}
                             onChange={onToggleDataLabels}
-                            className="bg-slate-100 border-slate-300 rounded focus:ring-blue-500 text-blue-600 h-4 w-4"
+                            className="bg-slate-100 border-slate-300 rounded focus:ring-accent-500 text-accent-600 h-4 w-4"
                         />
                         <span>{t('card_controls_labels')}</span>
                     </label>

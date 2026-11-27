@@ -10,14 +10,14 @@ import { useAppStore } from '../../store/useAppStore';
 import { getTranslation } from '../../utils/localization';
 
 const TONE: Record<ToastType, string> = {
-    info: 'border-blue-300 bg-blue-50 text-blue-950',
-    success: 'border-emerald-300 bg-emerald-50 text-emerald-950',
+    info: 'border-accent-300 bg-accent-50 text-accent-950',
+    success: 'border-success-300 bg-success-50 text-success-950',
     warning: 'border-warning-300 bg-warning-50 text-warning-950',
     error: 'border-danger-300 bg-danger-50 text-danger-950',
 };
 const ACTION_TONE: Record<ToastType, string> = {
-    info: 'bg-blue-600 hover:bg-blue-700',
-    success: 'bg-emerald-600 hover:bg-emerald-700',
+    info: 'bg-accent-600 hover:bg-accent-700',
+    success: 'bg-success-600 hover:bg-success-700',
     warning: 'bg-warning-600 hover:bg-warning-700',
     error: 'bg-danger-600 hover:bg-danger-700',
 };

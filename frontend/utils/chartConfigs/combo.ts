@@ -1,5 +1,5 @@
 import { ChartConfigProps } from './types';
-import { COLORS, BORDER_COLORS, BG_COLORS, DESELECTED_BORDER_COLOR, DESELECTED_COLOR, getColors, getBorderColors, getCommonOptions } from './common';
+import { COLORS, BORDER_COLORS, BG_COLORS, DESELECTED_BORDER_COLOR, DESELECTED_COLOR, getColors, getBorderColors, getCommonOptions, tickColor, gridColor } from './common';
 import { parseNullableNumericValue } from '../dataHelpers';
 
 export const createComboChartConfig = (props: ChartConfigProps): any => {
@@ -46,8 +46,8 @@ export const createComboChartConfig = (props: ChartConfigProps): any => {
             ...commonOptions,
             scales: {
                 ...commonOptions.scales,
-                y: { type: 'linear', display: true, position: 'left', ticks: { color: '#64748b' }, grid: { color: '#e2e8f0' }, title: { display: true, text: valueKey, color: '#64748b' } },
-                y1: { type: 'linear', display: true, position: 'right', ticks: { color: '#64748b' }, grid: { drawOnChartArea: false }, title: { display: true, text: secondaryValueColumn, color: '#64748b' } }
+                y: { type: 'linear', display: true, position: 'left', ticks: { color: tickColor() }, grid: { color: gridColor() }, title: { display: true, text: valueKey, color: tickColor() } },
+                y1: { type: 'linear', display: true, position: 'right', ticks: { color: tickColor() }, grid: { drawOnChartArea: false }, title: { display: true, text: secondaryValueColumn, color: tickColor() } }
             }
         }
     };

@@ -40,13 +40,13 @@ export const SpreadsheetControls: React.FC<SpreadsheetControlsProps> = ({
                     value={filterText}
                     onChange={(e) => onFilterTextChange(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="bg-white border border-slate-300 rounded-md py-1.5 pl-10 pr-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 w-full"
+                    className="bg-white border border-slate-300 rounded-md py-1.5 pl-10 pr-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-accent-500 w-full"
                 />
             </div>
             <button
                 onClick={onQuerySubmit}
                 disabled={!aiEnabled || isAiFiltering || !filterText.trim()}
-                className="flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1.5 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                className="flex items-center gap-2 rounded-md bg-accent-600 px-3 py-1.5 text-white transition-colors hover:bg-accent-700 disabled:cursor-not-allowed disabled:bg-accent-300"
                 title={getTranslation('spreadsheet_ask_ai', language)}
             >
                 {isAiFiltering ? <IconLoadingSpinner /> : <IconAi />}

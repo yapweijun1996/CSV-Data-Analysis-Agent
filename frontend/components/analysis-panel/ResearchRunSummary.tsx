@@ -6,7 +6,7 @@ import { normalizeDisplayLabel } from '../../services/dashboard/executiveKpiUtil
 import { tallyResearchQuestions } from '../../services/agent/runtime/dataResearchContract';
 
 const statusStyle: Record<string, string> = {
-    running: 'bg-blue-100 text-blue-700',
+    running: 'bg-accent-100 text-accent-700',
     completed: 'bg-success-100 text-success-700',
     degraded: 'bg-warning-100 text-warning-800',
     failed: 'bg-danger-100 text-danger-700',

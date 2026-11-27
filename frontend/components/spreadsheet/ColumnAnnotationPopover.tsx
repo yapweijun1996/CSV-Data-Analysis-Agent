@@ -116,7 +116,7 @@ export const ColumnAnnotationPopover: React.FC<ColumnAnnotationPopoverProps> = (
                         value={businessLabel}
                         onChange={e => setBusinessLabel(e.target.value)}
                         placeholder={columnName}
-                        className="w-full text-sm border border-slate-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full text-sm border border-slate-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent-400"
                     />
                 </div>
 
@@ -127,7 +127,7 @@ export const ColumnAnnotationPopover: React.FC<ColumnAnnotationPopoverProps> = (
                         value={description}
                         onChange={e => setDescription(e.target.value)}
                         placeholder={getTranslation('column_annotation_description_placeholder', language)}
-                        className="w-full text-sm border border-slate-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-full text-sm border border-slate-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent-400"
                     />
                 </div>
 
@@ -136,7 +136,7 @@ export const ColumnAnnotationPopover: React.FC<ColumnAnnotationPopoverProps> = (
                     <select
                         value={businessRole ?? ''}
                         onChange={e => setBusinessRole((e.target.value || undefined) as UserColumnAnnotation['businessRole'])}
-                        className="w-full text-sm border border-slate-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                        className="w-full text-sm border border-slate-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent-400 bg-white"
                     >
                         {ROLE_OPTIONS.map(opt => (
                             <option key={opt.value ?? '__none__'} value={opt.value ?? ''}>
@@ -167,7 +167,7 @@ export const ColumnAnnotationPopover: React.FC<ColumnAnnotationPopoverProps> = (
                     </button>
                     <button
                         onClick={handleSave}
-                        className="text-xs bg-blue-500 text-white rounded px-3 py-1 hover:bg-blue-600"
+                        className="text-xs bg-accent-500 text-white rounded px-3 py-1 hover:bg-accent-600"
                     >
                         {getTranslation('column_annotation_save', language)}
                     </button>

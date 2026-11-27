@@ -79,6 +79,30 @@ export const part01: Record<string, TranslationEntry> = {
         'Japanese': 'スレート',
         'Malay': 'Kelabu batu',
     },
+    'header_color_mode': {
+        'English': 'Appearance',
+        'Mandarin': '外观',
+        'Japanese': '外観',
+        'Malay': 'Rupa',
+    },
+    'color_mode_light': {
+        'English': 'Light',
+        'Mandarin': '浅色',
+        'Japanese': 'ライト',
+        'Malay': 'Cerah',
+    },
+    'color_mode_dark': {
+        'English': 'Dark',
+        'Mandarin': '深色',
+        'Japanese': 'ダーク',
+        'Malay': 'Gelap',
+    },
+    'color_mode_system': {
+        'English': 'System',
+        'Mandarin': '跟随系统',
+        'Japanese': 'システム',
+        'Malay': 'Sistem',
+    },
     'header_new': {
         'English': 'New',
         'Mandarin': '新建',

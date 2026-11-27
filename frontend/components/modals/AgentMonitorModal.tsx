@@ -166,7 +166,7 @@ export const AgentMonitorModal: React.FC = () => {
                                     onClick={() => runCardEnhancementReview()}
                                     disabled={isCardReviewInProgress}
                                     className={`px-4 py-2 rounded-md text-sm font-medium shadow transition ${
-                                        isCardReviewInProgress ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'
+                                        isCardReviewInProgress ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-accent-600 text-white hover:bg-accent-700'
                                     }`}
                                 >
                                     {isCardReviewInProgress ? 'Reviewing...' : 'Review Cards'}
@@ -189,7 +189,7 @@ export const AgentMonitorModal: React.FC = () => {
                                                         suggestion.priority === 'high'
                                                             ? 'bg-danger-100 text-danger-700'
                                                             : suggestion.priority === 'medium'
-                                                                ? 'bg-yellow-100 text-yellow-700'
+                                                                ? 'bg-warning-100 text-warning-700'
                                                                 : 'bg-slate-100 text-slate-600'
                                                     }`}
                                                 >
@@ -220,7 +220,7 @@ export const AgentMonitorModal: React.FC = () => {
                                                             ? 'bg-success-100 text-success-700 cursor-default'
                                                             : suggestion.status === 'applying'
                                                                 ? 'bg-slate-200 text-slate-500 cursor-progress'
-                                                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                                                                : 'bg-accent-600 text-white hover:bg-accent-700'
                                                     }`}
                                                 >
                                                     {suggestion.status === 'applied'
@@ -256,7 +256,7 @@ export const AgentMonitorModal: React.FC = () => {
                                         {toolLogs.map(log => (
                                             <li key={log.id} className="p-4">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-xs font-semibold uppercase tracking-wide text-blue-600">{log.tool}</span>
+                                                    <span className="text-xs font-semibold uppercase tracking-wide text-accent-600">{log.tool}</span>
                                                     <span className="text-xs text-slate-400">{log.timestamp.toLocaleString()}</span>
                                                 </div>
                                                 <p className="text-sm text-slate-800 mt-1">{log.description}</p>

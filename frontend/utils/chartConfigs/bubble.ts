@@ -1,5 +1,5 @@
 import { ChartConfigProps } from './types';
-import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getZoomOptions } from './common';
+import { BG_COLORS, BORDER_COLORS, getColors, getBorderColors, getCommonOptions, getZoomOptions, tickColor } from './common';
 
 export const createBubbleChartConfig = (props: ChartConfigProps): any => {
     const { data, plan, selectedIndices, onElementClick, onZoomChange, disableAnimation, showDataLabels } = props;
@@ -25,8 +25,8 @@ export const createBubbleChartConfig = (props: ChartConfigProps): any => {
         options: {
             ...commonOptions,
             scales: {
-                x: { ...commonOptions.scales.x, title: { display: true, text: xValueColumn, color: '#64748b' } },
-                y: { ...commonOptions.scales.y, title: { display: true, text: yValueColumn, color: '#64748b' } }
+                x: { ...commonOptions.scales.x, title: { display: true, text: xValueColumn, color: tickColor() } },
+                y: { ...commonOptions.scales.y, title: { display: true, text: yValueColumn, color: tickColor() } }
             },
             plugins: { ...commonOptions.plugins, zoom: getZoomOptions(onZoomChange) }
         }

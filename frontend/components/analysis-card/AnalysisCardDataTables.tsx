@@ -31,7 +31,7 @@ const AnalysisCardDataTablesComponent: React.FC<AnalysisCardDataTablesProps> = (
                 <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
                     <button
                         onClick={() => setShowSelectionDetails(!showSelectionDetails)}
-                        className="mb-1 w-full text-left font-semibold text-blue-600"
+                        className="mb-1 w-full text-left font-semibold text-accent-600"
                         aria-expanded={showSelectionDetails}
                     >
                         {showSelectionDetails ? '▾' : '▸'} Selection Details ({selectedIndices.length} items)

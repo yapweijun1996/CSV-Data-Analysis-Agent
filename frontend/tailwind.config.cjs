@@ -30,6 +30,8 @@ module.exports = {
             '3xl': ['24px', { lineHeight: '32px' }],    /* hero (rarely used) */
         },
         extend: {
+            backgroundColor: { white: 'rgb(var(--surface) / <alpha-value>)' },
+            borderColor: { white: 'rgb(var(--surface) / <alpha-value>)' },
             borderRadius: {
                 card: '10px',
             },
@@ -37,6 +39,14 @@ module.exports = {
                 accent,
                 /* Legacy utility names resolve to the themed accent so existing classes follow the palette. */
                 blue: accent,
+                indigo: accent,
+                violet: accent,
+                gray: tokenScale('neutral'),
+                info: tokenScale('info'),
+                sky: tokenScale('info'),
+                emerald: tokenScale('success'),
+                rose: tokenScale('danger'),
+                yellow: tokenScale('warning'),
                 slate: tokenScale('neutral'),
                 danger: tokenScale('danger'),
                 red: tokenScale('danger'),
