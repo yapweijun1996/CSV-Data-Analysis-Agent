@@ -4,16 +4,10 @@ import { getTranslation } from '../../utils/localization';
 import { GOOGLE_MODELS, OPENAI_MODELS, ANTHROPIC_MODELS, OPENROUTER_MODELS } from '../../config/modelDefaults';
 import { DEFAULT_GATEWAY_MODEL } from '../../config/defaultGatewayConfig';
 import type { Settings } from '../../types';
-import { IconBrain } from '../../icons/IconDemoGallery';
-import { IconCode } from '../../icons/IconCode';
 
-const EFFORT_LEVELS: NonNullable<Settings['reasoningEffort']>[] = ['off', 'low', 'medium', 'high', 'xhigh'];
-/** Level restored when Reasoning is switched back on after being off. */
-const REASONING_ON_DEFAULT: NonNullable<Settings['reasoningEffort']> = 'medium';
+// Reasoning is always on here; 'off' stays available only in Settings.
+const EFFORT_LEVELS: NonNullable<Settings['reasoningEffort']>[] = ['low', 'medium', 'high', 'xhigh'];
 
-const chipBase = 'inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors md:min-h-8';
-const chipOn = 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100';
-const chipOff = 'bg-slate-100 text-slate-500 hover:bg-slate-200';
 const selectClass = 'min-h-[44px] max-w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 md:min-h-8';
 
 interface ComposerToolbarProps {
@@ -22,13 +16,11 @@ interface ComposerToolbarProps {
     onAddMention: () => void;
 }
 
-/** Controls row under the composer textarea: + / Tools / Reasoning on the left, model + effort on the right. */
+/** Controls row under the composer textarea: + on the left, model + reasoning level below. */
 export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({ language, disabled, onAddMention }) => {
     const settings = useAppStore(state => state.settings);
     const save = useAppStore(state => state.handleSaveSettings);
     const effort = settings.reasoningEffort ?? 'medium';
-    const reasoningOn = effort !== 'off';
-    const toolsOn = settings.externalToolsEnabled !== false;
     const isDefaultGateway = settings.provider === 'default';
     const models: string[] = isDefaultGateway
         ? [DEFAULT_GATEWAY_MODEL]
@@ -39,7 +31,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({ language, disa
     const update = (patch: Partial<Settings>) => { void save({ ...settings, ...patch }); };
 
     return (
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5" data-testid="composer-toolbar">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5" data-testid="composer-toolbar">
             <button
                 type="button"
                 onClick={onAddMention}
@@ -48,25 +40,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({ language, disa
                 aria-label="Reference an analysis card"
                 className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-lg text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-40 md:min-h-8 md:min-w-8"
             >+</button>
-            <button
-                type="button"
-                aria-pressed={toolsOn}
-                onClick={() => update({ externalToolsEnabled: !toolsOn })}
-                title="Allow the agent to use external (MCP) tools"
-                className={`${chipBase} ${toolsOn ? chipOn : chipOff}`}
-            >
-                <IconCode className="h-3.5 w-3.5" />Tools
-            </button>
-            <button
-                type="button"
-                aria-pressed={reasoningOn}
-                onClick={() => update({ reasoningEffort: reasoningOn ? 'off' : REASONING_ON_DEFAULT })}
-                title={getTranslation('settings_reasoning_effort_hint', language)}
-                className={`${chipBase} ${reasoningOn ? chipOn : chipOff}`}
-            >
-                <IconBrain className="h-3.5 w-3.5" />Reasoning
-            </button>
-            <span className="flex w-full min-w-0 items-center gap-1.5">
+            <span className="flex min-w-0 flex-1 items-center gap-1.5">
                 <select
                     aria-label="Model"
                     value={currentModel}
@@ -83,7 +57,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({ language, disa
                     onChange={e => update({ reasoningEffort: e.target.value as Settings['reasoningEffort'] })}
                     className={`${selectClass} w-28 flex-shrink-0`}
                 >
-                    {EFFORT_LEVELS.map(level => (
+                    {(effort === 'off' ? ['off' as const, ...EFFORT_LEVELS] : EFFORT_LEVELS).map(level => (
                         <option key={level} value={level}>{getTranslation(`settings_reasoning_effort_${level}`, language)}</option>
                     ))}
                 </select>

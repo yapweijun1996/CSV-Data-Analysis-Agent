@@ -36,9 +36,8 @@ export const createPiAppTools = (
         ? getQueryableColumnProfiles(dataset, state.columnProfiles ?? [], state.rawCsvData)
             .map(profile => profile.name)
         : [];
-    const externalManifests = state.settings?.externalToolsEnabled === false ? undefined : store.mcpTools?.manifests;
-    const registry = buildBuiltinToolRegistry(columnNames, externalManifests);
-    const allowed = store.piTask ? resolveAllowedTools(registry, buildToolAvailabilityContext(state, { hasCodeExecution: Boolean(store.codeExecution), externalToolManifests: externalManifests, toolStage: 'analysis' })).decisions : {};
+    const registry = buildBuiltinToolRegistry(columnNames, store.mcpTools?.manifests);
+    const allowed = store.piTask ? resolveAllowedTools(registry, buildToolAvailabilityContext(state, { hasCodeExecution: Boolean(store.codeExecution), externalToolManifests: store.mcpTools?.manifests, toolStage: 'analysis' })).decisions : {};
     const manifests = registry.manifests.filter(manifest =>
         (manifest.risk === 'low'
             && manifest.capabilities?.readOnly === true
