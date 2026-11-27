@@ -13,7 +13,8 @@ concurrency:
 jobs:
   stage:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    # Pinned: Playwright 1.58 does not support the ubuntu-latest (26.04) image yet.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
