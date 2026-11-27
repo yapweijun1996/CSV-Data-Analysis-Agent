@@ -135,12 +135,6 @@ export const part01: Record<string, TranslationEntry> = {
         'Japanese': '実行時の診断情報を確認',
         'Malay': 'Periksa diagnostik masa jalan',
     },
-    'header_change_goal': {
-        'English': 'Change goal',
-        'Mandarin': '更改目标',
-        'Japanese': '目標を変更',
-        'Malay': 'Tukar matlamat',
-    },
     'header_show_assistant': {
         'English': 'Show Assistant panel',
         'Mandarin': '显示助手面板',

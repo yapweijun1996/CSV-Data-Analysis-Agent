@@ -74,7 +74,6 @@ describe('getTranslation', () => {
             'header_advanced',
             'header_workflow',
             'header_logs',
-            'header_change_goal',
             'header_show_assistant',
             'explorer_query_templates',
             'explorer_query_builder',
