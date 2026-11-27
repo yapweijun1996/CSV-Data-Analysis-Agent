@@ -5,3 +5,6 @@ pages-artifact/
 .env
 .env.*
 !.env.sample
+
+# Local model weights are optional (the app loads its vector model from a CDN); fetch with scripts/download-model.sh
+public/models/**/*.onnx

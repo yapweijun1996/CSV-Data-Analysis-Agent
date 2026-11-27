@@ -85,7 +85,7 @@ A Responses stream that ends without a terminal event remains a failed run. Its 
 | `frontend/services/ai/`, `frontend/services/data/`, `frontend/services/duckdb/`, `frontend/services/workers/` | Model providers, CSV processing, local query engine, and browser workers. |
 | `index.html`, `assets/`, `service-worker.js`, `SHA256SUMS.txt` | Checked-in production build. Treat these as generated deployment files. |
 | `duckdb/`, `pyodide/`, `sandbox/`, `demo-data/` | Browser runtime resources and sample data used by the static deployment. |
-| `public/models/` | Optional local model files retained in the repository; the current app loads its vector model from a CDN. |
+| `public/models/` | Tokenizer/config only; ONNX weights are git-ignored and optional (the app loads its vector model from a CDN). Run `npm run download:model` to fetch them locally. |
 | `scripts/` | Build-resource preparation, guarded publication to the root, and verified GitHub Pages artifact staging. |
 | [TASK.md](TASK.md), [BUG.md](BUG.md) | Review follow-up tasks and bug register. |
 | [Persona review archive](docs/reviews/2026-10-30-25-persona-review.md) | Review provenance, reported evidence, coverage gaps and recommendations. |
