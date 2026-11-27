@@ -237,6 +237,7 @@ export const useSpreadsheetLogic = (isVisible: boolean) => {
         semanticHiddenRowCount,
         semanticDefaultReady,
         largeDatasetBacking,
+        preferredDataset,
         workflowBundle,
         pageSize: PAGE_SIZE,
         cleaningRun,

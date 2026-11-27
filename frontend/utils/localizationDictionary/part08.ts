@@ -253,6 +253,36 @@ export const part08: Record<string, TranslationEntry> = {
         'Japanese': '現在表示中の行（検索・フィルター適用後）を CSV としてダウンロード',
         'Malay': 'Muat turun baris yang dipaparkan (selepas carian dan penapis) sebagai fail CSV',
     },
+    'export_csv_full': {
+        'English': 'Export all {count} rows',
+        'Mandarin': '导出全部 {count} 行',
+        'Japanese': '全 {count} 行をエクスポート',
+        'Malay': 'Eksport semua {count} baris',
+    },
+    'export_csv_full_desc': {
+        'English': 'Stream the complete dataset from the local database to a CSV file (search text is not applied)',
+        'Mandarin': '从本地数据库流式导出完整数据集为 CSV 文件（不应用搜索文字）',
+        'Japanese': 'ローカルデータベースから全データを CSV にストリーム出力します（検索テキストは適用されません）',
+        'Malay': 'Strim keseluruhan set data dari pangkalan data setempat ke fail CSV (teks carian tidak digunakan)',
+    },
+    'export_csv_progress': {
+        'English': 'Exporting CSV… {done} / {total} rows',
+        'Mandarin': '正在导出 CSV… {done} / {total} 行',
+        'Japanese': 'CSV をエクスポート中… {done} / {total} 行',
+        'Malay': 'Mengeksport CSV… {done} / {total} baris',
+    },
+    'export_csv_cancel': {
+        'English': 'Cancel',
+        'Mandarin': '取消',
+        'Japanese': 'キャンセル',
+        'Malay': 'Batal',
+    },
+    'export_csv_cancelled': {
+        'English': 'CSV export cancelled',
+        'Mandarin': '已取消 CSV 导出',
+        'Japanese': 'CSV のエクスポートをキャンセルしました',
+        'Malay': 'Eksport CSV dibatalkan',
+    },
     'export_csv_success': {
         'English': 'Exported {count} rows to CSV ({file})',
         'Mandarin': '已导出 {count} 行到 CSV（{file}）',

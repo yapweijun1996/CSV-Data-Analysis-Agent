@@ -56,3 +56,31 @@ export const downloadBlob = (blob: Blob, fileName: string): void => {
   link.click();
   URL.revokeObjectURL(objectUrl);
 };
+
+export type CsvSortState = { column: string | null; direction: 'asc' | 'desc' };
+
+/**
+ * Orders rows like the Explorer grid does: numbers compare numerically, everything else
+ * with a natural, locale-aware text compare; blanks sort last. Stable, returns a copy.
+ */
+export const sortRowsForExport = (rows: readonly CsvRow[], sort: CsvSortState | null | undefined): CsvRow[] => {
+  if (!sort?.column) return rows as CsvRow[];
+  const { column, direction } = sort;
+  const factor = direction === 'desc' ? -1 : 1;
+  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+  const isBlank = (value: unknown) => value === null || value === undefined || value === '';
+  return rows.map((row, index) => ({ row, index })).sort((a, b) => {
+    const left = a.row[column];
+    const right = b.row[column];
+    if (isBlank(left) || isBlank(right)) {
+      if (isBlank(left) && isBlank(right)) return a.index - b.index;
+      return isBlank(left) ? 1 : -1;
+    }
+    const numLeft = typeof left === 'number' ? left : Number(left);
+    const numRight = typeof right === 'number' ? right : Number(right);
+    const compared = Number.isFinite(numLeft) && Number.isFinite(numRight)
+      ? numLeft - numRight
+      : collator.compare(String(left), String(right));
+    return compared === 0 ? a.index - b.index : compared * factor;
+  }).map(entry => entry.row);
+};
