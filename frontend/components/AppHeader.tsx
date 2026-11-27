@@ -165,6 +165,10 @@ export const AppHeader: React.FC = () => {
                 aria-label={getTranslation('header_analysis_actions', language)}
                 className="ml-auto flex w-full min-w-0 flex-nowrap items-center justify-between gap-0.5 overflow-visible px-1 md:justify-end md:gap-1.5 lg:w-auto"
             >
+                <PwaUpdateButton
+                    className={`${primaryButtonClass} border border-transparent text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700`}
+                    language={language}
+                />
                 {showNewSessionButton && (showAnalysisTools || hasPendingRestore) && (
                     <button
                         onClick={() => void requestNewSession()}
@@ -177,10 +181,6 @@ export const AppHeader: React.FC = () => {
                        <span className="hidden lg:inline">{getTranslation('header_new', language)}</span>
                     </button>
                 )}
-                <PwaUpdateButton
-                    className={`${primaryButtonClass} border border-transparent text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700`}
-                    language={language}
-                />
                 {showHistoryButton && (
                     <button
                         onClick={onOpenHistory}
