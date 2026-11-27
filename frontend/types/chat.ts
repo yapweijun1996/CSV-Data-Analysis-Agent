@@ -134,6 +134,14 @@ export interface ReplyTelemetry {
     tps?: number;
 }
 
+/** One generated answer for the same prompt; the active version is mirrored onto the message itself. */
+export interface ReplyVersion {
+    text: string;
+    timestamp: Date;
+    cardId?: string;
+    telemetry?: ReplyTelemetry;
+}
+
 export interface ChatMessage {
     id: string;
     sender: 'user' | 'ai';
@@ -157,6 +165,9 @@ export interface ChatMessage {
     contextVisibility?: TranscriptVisibility;
     modelText?: string | null;
     telemetry?: ReplyTelemetry;
+    /** Regenerated answers for the same prompt. Absent until the first retry. */
+    versions?: ReplyVersion[];
+    versionIndex?: number;
 }
 
 export interface StreamingMessage {

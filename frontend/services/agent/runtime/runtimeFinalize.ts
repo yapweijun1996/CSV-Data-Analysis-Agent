@@ -12,6 +12,7 @@ import type {
 } from '../../../types';
 import type { StoreApi } from '../types';
 import { createChatMessage } from '../../../utils/messageState';
+import { appendReplyVersion } from '../../../utils/replyVersions';
 import { recordRuntimeEvent } from './runtimeHelpers';
 import { normalizeRuntimeOutcomeEnvelope } from './runtimeControlPlaneContract';
 import { assessTaskOutputs } from './taskOutputContract';
@@ -274,6 +275,8 @@ export const finalizeRuntimeOutcome = ({
                 RUNTIME_TO_CHAT_LIFECYCLE[normalizedOutcome.lifecycleState] ?? 'idle';
             patch.isBusy = false;
             patch.chatLifecycleState = chatState;
+            // A retry target only lives until its turn reaches a terminal state.
+            patch.pendingReplyRetryId = null;
         }
 
         // (was appendRuntimeAssistantMessage)
@@ -281,7 +284,20 @@ export const finalizeRuntimeOutcome = ({
             // Clear streaming bubble before appending the final message
             // so both don't show simultaneously.
             patch.streamingMessage = null;
-            patch.chatHistory = [
+            const retryTarget = !normalizedOutcome.assistantMessageIsError && prev.pendingReplyRetryId
+                ? prev.chatHistory.find(m => m.id === prev.pendingReplyRetryId)
+                : undefined;
+            if (retryTarget) {
+                // Retry: keep one bubble and store the new answer as another version of it.
+                patch.chatHistory = prev.chatHistory.map(m => m.id === retryTarget.id
+                    ? appendReplyVersion(m, {
+                        text: normalizedOutcome.assistantMessage!,
+                        timestamp: new Date(),
+                        ...(normalizedOutcome.assistantCardId ? { cardId: normalizedOutcome.assistantCardId } : {}),
+                        ...(normalizedOutcome.assistantTelemetry ? { telemetry: normalizedOutcome.assistantTelemetry } : {}),
+                    })
+                    : m);
+            } else patch.chatHistory = [
                 ...prev.chatHistory,
                 createChatMessage({
                     sender: 'ai',
