@@ -161,6 +161,7 @@ export const ChatPanel: React.FC = React.memo(() => {
         aiTaskStatus,
         cleaningRunStatus,
         language,
+        hasDataset,
         activeTurnId,
         activeTurnPendingClarification,
         activeTurnStatus,
@@ -187,6 +188,7 @@ export const ChatPanel: React.FC = React.memo(() => {
         aiTaskStatus: state.aiTaskStatus,
         cleaningRunStatus: state.cleaningRun?.status ?? null,
         language: state.settings.language,
+        hasDataset: Boolean(state.csvData || state.datasetBundle),
         activeTurnId: state.activeTurn?.turnId ?? null,
         activeTurnPendingClarification: state.activeTurn?.pendingClarificationRequest ?? null,
         activeTurnStatus: state.activeTurn?.status ?? null,
@@ -431,6 +433,8 @@ export const ChatPanel: React.FC = React.memo(() => {
                 return getTranslation('chat_placeholder_auto_analysis_ready', language);
             case 'file_upload':
             default:
+                // A dataset can already be loaded while the dashboard is still being prepared.
+                if (hasDataset) return getTranslation('chat_placeholder_auto_analysis', language);
                 return getTranslation('chat_placeholder_upload', language);
         }
     };

@@ -16,7 +16,8 @@ import { createPiSkillTool } from './piSkillTool';
 import { buildToolAvailabilityContext } from '../../tools/toolGovernance';
 import { resolveAllowedTools } from '../../tools/toolRegistry';
 
-export const PI_MAX_TOOL_CALLS_PER_TURN = 3;
+/** Ordinary (non-coding) requests: trend or multi-metric questions legitimately need several queries. */
+export const PI_MAX_TOOL_CALLS_PER_TURN = Number.POSITIVE_INFINITY;
 
 const MAX_TOOL_RESULT_CHARS = 6_000;
 

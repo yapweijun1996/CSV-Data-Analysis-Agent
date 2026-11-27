@@ -22,6 +22,8 @@ import { hash } from 'fast-sha256';
 export interface PiTaskContinuation { taskId: string; revision: number; scopeDigest: string }
 type Adapter = ReturnType<typeof createCodeExecutionAdapter>;
 type Guest = Parameters<typeof createCodeExecutionAdapter>[3];
+/** Execution grants stay short-lived even though the task itself has no active-time cap. */
+const GRANT_TTL_MS = 15 * 60_000;
 type RecordState = { guest?: Guest; spillFactory?: Parameters<typeof createCodeExecutionAdapter>[4]; task: AgentTaskContract; workspace: TaskWorkspace; skills:SkillSnapshot; mcp:import('../../connectors/httpMcpContract').McpTaskPort; skillPrograms:Map<string,{pin:PinnedSkill;reference:import('../../execution/codeExecutionContract').CodeArtifactRef}>; coding: boolean; workStarted: boolean; scopeRepairAttempts:number; failureKey: string; repetitions: number; repairCommit?: TaskRepairCommit; retire?: () => void; inspection?: TaskInspectionProjection };
 const tasks = new WeakMap<StoreApi['getState'], RecordState>();
 const taskOwners = new WeakMap<PiCodingTask, RecordState>();
@@ -253,15 +255,11 @@ export const preparePiTask = async (store: StoreApi, message: string, continuati
             if(answer.unresolved.length||!answer.computation)throw new Error('scope_repair_requires_clarification');
             await task.resolveScope(answer,checkInputs);current();return record.task.scope.answer;
         },
-        providerTurn(ordinaryLimit) {
-            if (!record.coding && ordinaryLimit && record.task.budget.used.providerTurns >= ordinaryLimit) {
-                blockedReason = 'task_budget_exhausted:providerTurns'; throw new Error(blockedReason);
-            }
+        providerTurn() {
             charge({ providerTurns: 1 });
         },
         skillRead(toolCallId) {
             if (toolCallId) chargedCalls.add(toolCallId);
-            if (!record.coding && record.task.budget.used.skillReads >= 2) throw new Error('The limit of 2 skill reads per ordinary request was reached.');
             charge({ skillReads: 1 });
         },
         async beforeTool(name, args, toolCallId) {
@@ -320,7 +318,7 @@ export const preparePiTask = async (store: StoreApi, message: string, continuati
                         : (request.sources ?? []).map(source => ({ sourceId: source.sourceId, sha256: source.sha256 })),
                     ...(request.sourceRecords ? { limits: { inputBytes: 256 * 1024, outputBytes: 256 * 1024, heapBytes: 32 * 1024 * 1024 } } : {}),
                     tableIds: (request.tables ?? []).map(table => table.tableId),
-                    expiresAt: Date.now() + Math.max(1, record.task.budget.limits.activeMs - record.task.budget.used.activeMs) });
+                    expiresAt: Date.now() + Math.min(GRANT_TTL_MS, Math.max(1, record.task.budget.limits.activeMs - record.task.budget.used.activeMs)) });
                 current();
                 for(const reference of [request.program,...request.inputs]){
                     const support=record.skillPrograms.get(reference.path);
@@ -376,7 +374,6 @@ export const preparePiTask = async (store: StoreApi, message: string, continuati
                 // Retain equality/no-progress evidence without persisting guest error text or cells.
                 const failure = Array.from(hash(new TextEncoder().encode(JSON.stringify([actual.program?.sha256, actual.inputDigest, actual.reasonCode, actual.error]))), b => b.toString(16).padStart(2, '0')).join('');
                 record.repetitions = record.failureKey === failure ? record.repetitions + 1 : 1; record.failureKey = failure;
-                if (record.repetitions >= 2) blockedReason = 'coding_no_progress';
                 if (record.task.status === 'validating') move('programming');
             } else if (name === 'code.run') {
                 if (record.task.status === 'executing') move('programming');
@@ -399,7 +396,6 @@ export const preparePiTask = async (store: StoreApi, message: string, continuati
             }
             const failure = await awaitOwned(digest([name, args, error]), store, lease);
             record.repetitions = record.failureKey === failure ? record.repetitions + 1 : 1; record.failureKey = failure;
-            if (record.repetitions >= 2) blockedReason = 'tool_no_progress';
             charge({});
         },
         validationState(){
@@ -469,13 +465,15 @@ export const preparePiTask = async (store: StoreApi, message: string, continuati
             return record.task.status;
         },
     };
-    const deadline = setTimeout(() => {
+    // No active-time cap by default; only arm the timer for a restored finite limit (setTimeout overflows past 2^31-1).
+    const deadlineMs = record.task.budget.limits.activeMs - record.task.budget.used.activeMs;
+    const deadline = deadlineMs > 2_147_483_647 ? undefined : setTimeout(() => {
         if (!canCommitRun(store, lease) || closed) return;
         blockedReason = 'task_budget_exhausted:activeMs';
         record.task = { ...record.task, budget: { ...record.task.budget,
             used: { ...record.task.budget.used, activeMs: record.task.budget.limits.activeMs } } };
         lease.controller.abort(new Error(blockedReason));
-    }, Math.max(1, record.task.budget.limits.activeMs - record.task.budget.used.activeMs));
+    }, Math.max(1, deadlineMs));
     const unregisterDeadline = registerSessionResource(lease.scope, () => clearTimeout(deadline));
     taskOwners.set(task, record);
     store.piTask = task;
@@ -501,7 +499,7 @@ export interface PiCodingTask {
     refreshInputs(): void;
     resolveScope(scope: ResolvedAnswerScope,checkInputs?:()=>void): Promise<void>;
     repairScope(resolve:()=>ResolvedAnswerScope):Promise<ResolvedAnswerScope>;
-    providerTurn(ordinaryLimit?: number): void;
+    providerTurn(): void;
     skillRead(toolCallId?: string): void;
     beforeTool(name: string, args: unknown, toolCallId?: string): Promise<void>;
     afterTool(name: string, result: ToolExecutionResult, context: NonNullable<StoreApi['executionContext']>): void;

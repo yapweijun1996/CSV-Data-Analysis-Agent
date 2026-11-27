@@ -1,5 +1,8 @@
+/** Counters are still recorded for inspection, but no dimension is capped: the user's Stop button is the control. */
+export const UNBOUNDED_TASK_LIMIT = Number.MAX_SAFE_INTEGER;
 export const DEFAULT_TASK_LIMITS = Object.freeze({
-    toolCalls: 40, skillReads: 8, providerTurns: 32, transformationAttempts: 3, activeMs: 15 * 60_000,
+    toolCalls: UNBOUNDED_TASK_LIMIT, skillReads: UNBOUNDED_TASK_LIMIT, providerTurns: UNBOUNDED_TASK_LIMIT,
+    transformationAttempts: UNBOUNDED_TASK_LIMIT, activeMs: UNBOUNDED_TASK_LIMIT,
 });
 export type TaskBudgetDimension = keyof typeof DEFAULT_TASK_LIMITS;
 export interface TaskBudget {

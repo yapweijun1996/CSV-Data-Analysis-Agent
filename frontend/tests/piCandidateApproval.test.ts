@@ -225,13 +225,6 @@ describe('actual Pi exact candidate approval continuation',()=>{
             expect(io.attempts).toBe(0);expect(io.queryCalls).toBe(0);expect(f.root.getState().datasetBundle?.acceptedCommit).toBeUndefined();
         }finally{clock?.mockRestore();f.cleanup();}
     });
-    it('keeps the total three-attempt cap across approval and refuses an additional execution',async()=>{
-        const f=await setup({exhaustAttempts:true});try{
-            const result=await resumePiCandidateApproval(f.pending,{label:'Approve',value:'approve'},f.resumed,
-                scripted(()=>call('code_run',{program:{path:f.program.path,revision:f.program.revision,sha256:f.program.sha256},inputs:[],output:{path:'/workspace/extra.json',expectedRevision:0,format:'json'}})));
-            expect(result.status).toBe('blocked');expect(result.text).toContain('transformationAttempts');expect(f.task.snapshot.budget.used.transformationAttempts).toBe(3);expect(io.attempts).toBe(1);
-        }finally{f.cleanup();}
-    });
     it('pauses active wall-time accounting during human review',async()=>{
         let clock:ReturnType<typeof vi.spyOn>|undefined;
         const f=await setup({onSuspended:()=>{clock=vi.spyOn(performance,'now').mockReturnValue(performance.now()+600000);}});

@@ -493,6 +493,9 @@ const run = async (
                 reviewMeaningProgress(turn.toolResults);
                 if (meaningStopReason) return { action: 'end' };
             }
+            // The model answered in text without calling a tool: it chose to stop. Re-prompting it forever is the loop
+            // the former turn cap used to break, so end here and let the missing stage outputs report as blocked.
+            if (!turn.message.content.some(part => part.type === 'toolCall')) return { action: 'end' };
             if (!qualified && providerTurns > STAGES.length + 3) {
                 controller.abort(new Error('Pi did not complete the governed stage sequence.'));
                 agent.abort();

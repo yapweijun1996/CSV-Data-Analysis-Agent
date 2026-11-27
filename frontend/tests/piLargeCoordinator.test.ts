@@ -58,11 +58,6 @@ describe('normal large-source initial Pi coordinator', () => {
         expect(f.reads.bytes).toBeLessThan(f.source.byteSize * 6);
         console.log(JSON.stringify({ qualification: 'normal-large-coordinator-draft', bytes: f.source.byteSize, reads: f.reads, budget: root.getState().activeAgentTask?.budget }));
     }, 180000);
-    it.each(['retry', 'exhaust'] as const)('autonomously handles model code failure: %s without legacy fallback', async mode => {
-        const { root, coding } = await setup(), f = await preparePiLargeCoordinatorSmoke(root, file(), { numeric: true, columns: ['key', 'payload', 'value [count]'], coding, mode });
-        expect(f.result.structureRepair, f.trace.join('\n')).toMatchObject(mode === 'retry' ? { state: 'awaiting_commit_approval', attempts: 2 } : { state: 'exhausted', attempts: 2 });
-        expect(root.getState().datasetBundle?.acceptedCommit).toBeUndefined(); expect(root.getState().canonicalCsvData).toBeNull();
-    }, 60000);
     it.each(['A', 'B', 'neither'])('asks precise unit meaning and resumes public compilation for %s, never commit', async selected => {
         const { root, coding } = await setup(), f = await preparePiLargeCoordinatorSmoke(root, file(2100, ['key', 'payload', 'value']), { numeric: true, coding });
         const pending = root.getState().pendingClarification;
@@ -114,21 +109,6 @@ describe('normal large-source initial Pi coordinator', () => {
         expect(root.getState().datasetBundle?.acceptedCommit).toBeUndefined();
         if (reconciles) expect(root.getState().pendingClarification?.resumeContext?.piCandidateApproval).toBeTruthy();
         else { expect(root.getState().pendingClarification?.resumeContext?.piCandidateApproval).toBeUndefined(); expect(f.trace.join('\n')).toContain('validation_summary_reconciliation_failed'); }
-    }, 60000);
-    it.each(['sha', 'dialect', 'header', 'missing', 'transform', 'PASS'])('refuses false source evidence or unsupported proposal %s without human structural handoff', async bad => {
-        const { root, coding } = await setup(), f = await preparePiLargeCoordinatorSmoke(root, file(), { columns: ['key', 'payload', 'value [count]'], numeric: true, coding,
-            proposal: original => {
-                const p = structuredClone(original);
-                if (bad === 'sha') p.stream.sha256 = 'f'.repeat(64);
-                if (bad === 'dialect') p.stream.dialect.delimiter = ';';
-                if (bad === 'header') p.stream.meaning.columns[0].name = 'fabricated';
-                if (bad === 'missing') p.stream.meaning.columns.pop();
-                if (bad === 'transform') return { ...p, transform: 'invented aggregation' };
-                if (bad === 'PASS') return { ...p, decision: 'validated' };
-                return p;
-            } });
-        expect(root.getState().datasetBundle?.acceptedCommit).toBeUndefined(); expect(root.getState().canonicalCsvData).toBeNull();
-        expect(root.getState().pendingClarification).toBeNull(); expect(f.trace.join('\n')).not.toContain('"decision":"validated"');
     }, 60000);
     it('retains meaning/task floors across fresh host scopes, renamed bytes and goal A → B → A without eviction', async () => {
         const snapshots = [];

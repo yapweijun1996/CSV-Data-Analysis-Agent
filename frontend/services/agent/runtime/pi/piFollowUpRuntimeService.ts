@@ -1,4 +1,5 @@
 import { admitComputationEvidence, formatComputationEvidence, type ComputationEvidenceReceipt } from '../../execution/computationEvidence';
+import { describeTaskStop } from './taskStopMessage';
 import { publishTaskOutcome } from './piTaskInspection';
 import { discardPiCandidateApproval, pendingPiCandidateApproval, sealPiCandidateApproval } from './piCandidateApproval';
 import { preparePiExecutor } from './piExecutorPreparation';
@@ -84,10 +85,7 @@ const readAssistantText = (event: AgentEvent): string => {
 
 /** Open-ended analysis requests may create several cards; explicit card requests create one. */
 const BATCH_ANALYSIS_CARD_TARGET = 3;
-const BATCH_ANALYSIS_MAX_TOOL_CALLS = 8;
-const BATCH_ANALYSIS_MAX_PROVIDER_TURNS = 10;
 // Room for up to two skill reads and three app tools before the final answer.
-const DEFAULT_MAX_PROVIDER_TURNS = 8;
 
 /**
  * Pi-created cards start without a persisted quality verdict, so the trust
@@ -215,7 +213,6 @@ export const runPiFollowUpTurn = async (
         || !request.queryUnderstandingArtifact && request.intentFindings?.intent === 'precise_card'
         || isBatchAnalysis;
     const cardTarget = isBatchAnalysis ? BATCH_ANALYSIS_CARD_TARGET : 1;
-    const maxProviderTurns = isBatchAnalysis ? BATCH_ANALYSIS_MAX_PROVIDER_TURNS : DEFAULT_MAX_PROVIDER_TURNS;
     try {
         logicalTask = (await preparePiExecutor(store, {entryPoint:'follow_up',goal:request.message,continuation:request.taskContinuation})).task;
         await logicalTask.resolveScope(answerScope);
@@ -246,14 +243,13 @@ export const runPiFollowUpTurn = async (
                 tools: createPiAppTools(store, datasetVersion, {
                     allowCardCreation,
                     ...(!request.continuation&&request.queryUnderstandingArtifact?{scopeRepair:{context:{message:request.message,artifact:request.queryUnderstandingArtifact,grounding:request.groundingResult,findings:request.intentFindings},onResolved:scope=>{answerScope=scope;understoodArtifact={...understoodArtifact!,filterDescription:scope.computation?.where?understoodArtifact!.filterDescription:null,requestedComputationScope:scope.computation};}}}:{}),
-                    ...(isBatchAnalysis ? { maxToolCalls: BATCH_ANALYSIS_MAX_TOOL_CALLS } : {}),
                     onComputationValidated: receipt => { computationReceipts.push(receipt); collectAcceptedWork(); },
                     onQueryExecuted: receipt => { receipts.push(receipt); collectAcceptedWork(); },
                     onMcpObserved: receipt => { mcpObservations.push(receipt); },
                     onCardCreated: cardId => { createdCardIds.push(cardId); },
                 }),
             },
-            streamFn: (...args) => { logicalTask!.providerTurn(maxProviderTurns); return providerStream(...args); },
+            streamFn: (...args) => { logicalTask!.providerTurn(); return providerStream(...args); },
             transformContext: createPiProviderContextTransform(state.settings, createPiCompactionTelemetry(store)),
             toolExecution: 'sequential',
             finishTurn: async ({message, toolResults}) => {
@@ -273,12 +269,8 @@ export const runPiFollowUpTurn = async (
                     }
                 }
                 pendingClarification ??= pendingPiCandidateApproval(store) ?? store.getState().pendingClarification;
-                if (!pendingMutation && !pendingClarification && createdCardIds.length < cardTarget
-                    && providerTurns >= (logicalTask.coding ? logicalTask.snapshot.budget.limits.providerTurns : maxProviderTurns)
-                    && message.content.some(part => part.type === 'toolCall')) terminalReason = 'task_budget_exhausted:providerTurns';
                 return pendingMutation || pendingClarification || logicalTask.blockedReason || createdCardIds.length >= cardTarget
                     || terminalReason
-                    || providerTurns >= (logicalTask.coding ? logicalTask.snapshot.budget.limits.providerTurns : maxProviderTurns)
                     ? { action: 'end' } : undefined;
             },
             beforeToolCall: async ({ toolCall, args, assistantMessage }) => {
@@ -336,7 +328,8 @@ export const runPiFollowUpTurn = async (
         if (lastAssistant?.stopReason === 'length') terminalReason = 'task_budget_exhausted:providerOutput';
         settleCreatedCards();
         if (logicalTask.blockedReason || terminalReason) {
-            status = 'blocked'; text = `The task stopped: ${logicalTask.blockedReason || terminalReason}. Accepted work is retained. Start a new request to continue within a fresh budget.`;
+            status = 'blocked'; text = describeTaskStop(logicalTask.blockedReason || terminalReason, store.getState().settings.language)
+                ?? `The task stopped: ${logicalTask.blockedReason || terminalReason}. Accepted work is retained. Start a new request to continue within a fresh budget.`;
         } else if (pendingClarification) {
             status = 'blocked'; text = pendingClarification.question;
         } else if (pendingMutation) {
@@ -475,7 +468,7 @@ export const runPiFollowUpTurn = async (
         status = !ownsRun(store, lease) || controller.signal.aborted ? 'cancelled' : store.piTask?.blockedReason ? 'blocked' : 'failed';
         if (canCommitRun(store, lease)) settleCreatedCards();
             if (logicalTask?.blockedReason && ownsRun(store, lease)) status = 'blocked';
-            text = logicalTask?.blockedReason && status === 'blocked' ? `The task stopped: ${logicalTask.blockedReason}.`
+            text = logicalTask?.blockedReason && status === 'blocked' ? (describeTaskStop(logicalTask.blockedReason, store.getState().settings.language) ?? `The task stopped: ${logicalTask.blockedReason}.`)
                 : status === 'cancelled'
                 ? 'The request was cancelled.'
                 : `Pi could not complete this request: ${presentGatewayError(sanitizeError(error), state.settings.language)}`;
@@ -524,10 +517,10 @@ export const runPiFollowUpTurn = async (
                 status='blocked';text=`The task cannot complete: ${taskOutputs.reasons.join(' ')}. Review the retained outputs and execute the missing verified step.`;
             }
             const closedStatus = logicalTask?.close(status);
-            if (closedStatus === 'blocked' && status === 'completed') { status='blocked';text=`The task stopped: ${logicalTask!.blockedReason}. Accepted work is retained.`; }
+            if (closedStatus === 'blocked' && status === 'completed') { status='blocked';text=describeTaskStop(logicalTask!.blockedReason,store.getState().settings.language)??`The task stopped: ${logicalTask!.blockedReason}. Accepted work is retained.`; }
             taskOutputs = assessTaskOutputs({...taskOutputs,reasons:status==='completed'?[]:[...taskOutputs.reasons,terminalReason||logicalTask?.blockedReason||text]});
             if (logicalTask?.blockedReason && status === 'completed') {
-                status = 'blocked'; text = `The task stopped: ${logicalTask.blockedReason}.`;
+                status = 'blocked'; text = describeTaskStop(logicalTask.blockedReason, store.getState().settings.language) ?? `The task stopped: ${logicalTask.blockedReason}.`;
             }
             if (status !== 'completed' && (taskOutputs.acceptedOutputs.length || taskOutputs.queryIds.length || taskOutputs.computationIds.length)) {
                 text += `\nAccepted partial work is retained: ${[...taskOutputs.acceptedOutputs.flatMap(output=>output.references),...taskOutputs.queryIds,...taskOutputs.computationIds].join(', ')}. Review these outputs before retrying to avoid duplicates.`;

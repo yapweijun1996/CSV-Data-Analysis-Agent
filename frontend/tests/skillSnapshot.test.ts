@@ -97,30 +97,6 @@ describe('task-owned pinned skills and host policy', () => {
             s.cleanup();
         }
     });
-    it('retains versions and cumulative reads through a fresh clarification lease', async () => {
-        const s = await taskFixture();
-        let nextLease: ReturnType<typeof beginRun> | undefined;
-        try {
-            const read = createPiSkillTool(s.store, { onRead: id => s.task.skillRead(id) });
-            await read.execute('first', { name: 'investigation' }, undefined as never);
-            const pending = s.task.suspend({ question: 'Which question?', options: [] }), continuation = pending.resumeContext!.piTaskContinuation!;
-            const used = s.task.snapshot.budget.used.skillReads, digest = s.task.skills.digest;
-            finishRun(s.root, s.lease);
-            s.root.setState({ workspaceFiles: { 'skills/investigation/SKILL.md': doc({ ...manifest, version: '2.0.0' }, 'Changed.') } });
-            nextLease = beginRun(s.root, 'follow_up', crypto.randomUUID(), crypto.randomUUID());
-            const store = scopeRunStore(s.root, nextLease), task = await preparePiTask(store, 'Inspect report structure.', continuation);
-            expect(task.skills.digest).toBe(digest);
-            expect(task.snapshot.budget.used.skillReads).toBe(used);
-            await expect(createPiSkillTool(store, { onRead: id => task.skillRead(id) }).execute('second', { name: 'investigation' }, undefined as never)).rejects.toThrow('skill_snapshot_changed');
-            expect(task.snapshot.budget.used.skillReads).toBe(used + 1);
-            await expect(createPiSkillTool(store, { onRead: id => task.skillRead(id) }).execute('third', { name: 'investigation' }, undefined as never)).rejects.toThrow('limit of 2');
-        }
-        finally {
-            if (nextLease)
-                finishRun(s.root, nextLease);
-            s.cleanup();
-        }
-    });
     it('uses compatible profiles as alternatives and reports missing capabilities before any grant', async () => {
         const s = await taskFixture({ 'skills/investigation/SKILL.md': doc({ ...manifest, profiles: ['full', 'browser-javascript'], requires: ['code.run'] }) });
         try {

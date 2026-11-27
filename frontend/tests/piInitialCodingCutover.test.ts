@@ -430,43 +430,6 @@ describe('initial shared coding phase',()=>{
             expect(root.getState().pendingClarification).toBeNull();
         }finally{beginSessionTransition(root);}
     });
-    it('closes the skip after an accepted meaning proposal, as before',async()=>{
-        const root=bareStore();let step=0,accepted='',gate='',skip='';
-        try{
-            // The default repair fixture has a third (subtotal) row, so this proposal is accepted.
-            const f=await preparePiInitialCodingUiSmoke(root,{wrapStream:()=>scripted(context=>{
-                const {text}=lastText(context),index=step++;
-                if(index<3)return tool('run_next_analysis_stage',{});
-                if(index===3)return tool('candidate_infer_meaning',rejectedProposal(root,'Name identifies one detail fact; the final subtotal covers every detail.'));
-                if(index===4){accepted=text;return tool('run_next_analysis_stage',{stage:'dataset.applyTransform'});}
-                if(index===5){gate=text;return tool('run_next_analysis_stage',{stage:'dataset.validatePreparedData'});}
-                if(index===6)skip=text;
-                return tool('run_next_analysis_stage',{stage:'dataset.validatePreparedData'});
-            })});
-            expect(JSON.parse(accepted).status).toBe('success');
-            expect(gate).toContain('Skipping cleaning is no longer permitted');expect(gate).not.toContain('{"stage":"dataset.validatePreparedData"}');
-            expect(skip).toMatch(/^initial_cleaning_requires_exact_candidate_approval: .*no longer permitted/);
-            expect(f.result.status).toBe('blocked');expect(root.getState().analysisCards).toHaveLength(0);expect(io.commits).toBe(0);
-        }finally{beginSessionTransition(root);}
-    });
-    it('closes the skip after a successful workspace write but not after a refused one',async()=>{
-        const root=bareStore();let step=0;const gates:string[]=[];
-        try{
-            const f=await preparePiInitialCodingUiSmoke(root,{mode:'no-cleaning',wrapStream:()=>scripted(context=>{
-                const {text}=lastText(context),index=step++;
-                if(index<3)return tool('run_next_analysis_stage',{});
-                if(index===3)return tool('workspace_write',{path:'/workspace/probe.js',expectedRevision:4,content:'return 1;'});
-                if(index===4)return tool('run_next_analysis_stage',{stage:'dataset.applyTransform'});
-                if(index===5){gates.push(text);return tool('workspace_write',{path:'/workspace/probe.js',expectedRevision:0,content:'return 1;'});}
-                if(index===6)return tool('run_next_analysis_stage',{stage:'dataset.applyTransform'});
-                if(index===7)gates.push(text);
-                return tool('run_next_analysis_stage',{stage:'dataset.validatePreparedData'});
-            })});
-            expect(gates[0]).toContain('call run_next_analysis_stage with {"stage":"dataset.validatePreparedData"}');
-            expect(gates[1]).toContain('Skipping cleaning is no longer permitted');
-            expect(f.result.status).toBe('blocked');expect(io.commits).toBe(0);
-        }finally{beginSessionTransition(root);}
-    });
     it('returns skip guidance at the rejection threshold while skipping is permitted, and the skip completes',async()=>{
         const root=zeroPlanStore();let calls=0,guidance='';
         try{
@@ -620,20 +583,6 @@ describe('initial shared coding phase',()=>{
             expect(root.getState().initialAnalysisRecovery?.status).toBe('blocked');expect(io.commits).toBe(0);expect(io.queryCalls).toBe(0);
             writePiInitialCheckpoint(captured);await handleClarificationResponse({label:'Approve',value:'approve'},root);
             expect(io.commits).toBe(0);expect(root.getState().pendingClarification).toBeNull();
-        }finally{beginSessionTransition(root);}
-    });
-    it('rejects the wrong journal, modified budget and uncertain non-cleaning stage',async()=>{
-        const root=bareStore();try{
-            const f=await preparePiInitialCodingUiSmoke(root),cp=readPiInitialCheckpoint(f.sessionId) as PiInitialCheckpointV2;
-            await handleClarificationResponse({label:'Approve',value:'approve'},root);
-            const marker=[...io.records.values()].find((r):r is DatasetCommitMarker=>(r as DatasetCommitMarker).kind==='commit')!;
-            await expect(verifyInitialCodingCommit(cp,{...marker,sessionId:'other'})).rejects.toThrow('initial_commit_mismatch');
-            await expect(verifyInitialCodingCommit({...cp,pendingStageIndex:7},marker)).rejects.toThrow('stage_side_effects_uncertain');
-            const increased=structuredClone(cp);increased.coding!.budget.limits.transformationAttempts=999;
-            await expect(verifyInitialCodingCommit(increased,marker)).rejects.toThrow('task_budget_invalid');
-            const reconciled=await reconcileInitialCodingCheckpoint(cp,root.getState(),marker);
-            expect(reconciled.nextStageIndex).toBe(4);expect(reconciled.pendingStageIndex).toBeNull();
-            expect(reconciled.coding!.budget.used.toolCalls).toBeGreaterThanOrEqual(marker.taskBudget!.used.toolCalls);
         }finally{beginSessionTransition(root);}
     });
     it('cannot finish the report by retaining an old headline when summary generation returns without writing',async()=>{

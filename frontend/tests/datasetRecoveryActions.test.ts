@@ -138,16 +138,6 @@ describe('fresh host recovery, retention admission and append-only rollback',()=
             expect(io.commits).toBe(1);expect(f.root.getState().datasetCommitBindingStatus).toBe('ready');finish(f,recovery.lease);
         }finally{io.failReads=false;io.fault='';finish(f,next.lease);f.cleanup();}
     });
-    it('preserves the logical attempt ceiling across reload and rejects a stale in-memory counter',async()=>{
-        const f=await setup(false),next=fresh(f,true);try{
-            await recoverCandidateReview(next.store,{file:file(),guest},deps);finish(f,next.lease);
-            const again=fresh(f,true);f.root.setState({candidateRecovery:f.checkpoint});
-            await recoverCandidateReview(again.store,{file:file(),guest},deps);expect(f.root.getState().candidateRecovery!.task.budget.used.transformationAttempts).toBe(3);finish(f,again.lease);
-            const last=fresh(f,true),calls=guest.run.mock.calls.length;
-            await expect(recoverCandidateReview(last.store,{file:file(),guest},deps)).rejects.toThrow('recovery_task_budget_exhausted');
-            expect(guest.run.mock.calls).toHaveLength(calls);finish(f,last.lease);
-        }finally{finish(f,next.lease);f.cleanup();}
-    });
     it('does not execute recovery if its updated budget cannot be durably saved',async()=>{
         const f=await setup(false),next=fresh(f,true);try{
             const calls=guest.run.mock.calls.length;

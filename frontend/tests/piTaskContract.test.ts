@@ -3,7 +3,7 @@ import type { StoreApi } from '../services/agent/types';
 import { beginRun, beginSessionTransition, finishRun, cancelOwnedRun } from '../services/session/sessionOwnership';
 import { createAgentTask, createTaskExecutionEnvelope, restoreAgentTask, reviseAgentTaskScope,
     transitionAgentTask, type AgentTaskDefinition } from '../services/agent/runtime/pi/piTaskContract';
-import { chargeTaskBudget, createTaskBudget, pauseTaskBudget, restoreTaskBudget, resumeTaskBudget } from '../services/agent/runtime/pi/piTaskBudget';
+import { chargeTaskBudget, createTaskBudget as createTaskBudgetUnbounded, pauseTaskBudget, restoreTaskBudget, resumeTaskBudget } from '../services/agent/runtime/pi/piTaskBudget';
 
 const digest = 'a'.repeat(64);
 const definition = (): AgentTaskDefinition => ({
@@ -105,6 +105,9 @@ describe('logical Pi task foundations', () => {
 });
 
 describe('persistent task budget accounting', () => {
+    // The app no longer caps tasks by default; the accounting primitive still enforces explicit finite limits.
+    const finite = { toolCalls: 40, skillReads: 8, providerTurns: 32, transformationAttempts: 3, activeMs: 900000 };
+    const createTaskBudget = (limits = finite) => createTaskBudgetUnbounded(limits);
     it('accepts exact limits, rejects the next attempt atomically and keeps all counters', () => {
         const original = createTaskBudget();
         const accepted = chargeTaskBudget(original, { toolCalls: 40, skillReads: 8, providerTurns: 32,
