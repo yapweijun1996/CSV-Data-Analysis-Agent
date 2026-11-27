@@ -11,6 +11,14 @@ The [2026-11-17 review](docs/reviews/2026-11-17-production-readiness.md) records
 
 The owner authorized focused verification, main push and the existing manual Pages workflow without full CI. Full production qualification remains open: exact-model HTTP success did not establish final-answer quality, and complex acceptance, offline/stress and cross-browser gaps remain explicit in TASK.md. Historical evidence below is not a substitute for current release evidence.
 
+### 2026-11-27 — Non-major dependency security updates (branch, not published)
+
+- Branch `chore/non-major-dependency-security-updates`: bumped five overrides (brace-expansion, dompurify, js-yaml, qs, sharp) and ran `npm audit fix`. npm audit: 35 to 4 findings; production 12 to 0. Remaining dev-only findings need Vitest 5 and `@hono/node-server` 2. Runtime moves include `ai` 6.0.338, `@ai-sdk/openai` 3.0.147, `@ai-sdk/google` 3.0.152 and `zod` 4.6.7; `openai` and Pi packages did not change.
+- Verified on Node 22.23.3: clean `npm ci`, typecheck, lint, publisher 4/4, Vitest 543 files / 5,615 tests, build `1.0.0-c82dcc0765a5`, bundle budget, startup smoke (cold/warm) and reattach smoke 8/8 on `frontend/dist`. Default gateway bodies from the Pi and structured-output paths were byte-identical before and after (message ids normalized); a mocked browser run sent no `max_output_tokens`.
+- Cost: eager bundle grew from 2,025,129 to 2,541,093 bytes (gzip 373,934 to 475,517), mostly the AI SDK chunks. Not verified: live provider, BYOK OpenAI/Gemini wire requests. Monaco's vendored DOMPurify 3.4.8 is unchanged. Root deployment not published.
+- Owner accepted the bundle growth on 2026-11-27 and kept the upgrade as is.
+- Reported live issue, not caused by this branch: the deployed app's `POST /demo/v1/responses` returned 502 without CORS headers. In the reported log, earlier intake calls to the same gateway succeeded and the Pi request failed. A simulated HTTP 502 stops initial analysis at stage 1/9 on both old and new builds. The gateway server is outside this repository; cause not established.
+
 ### 2026-11-27 — Baseline and CA-191/CA-192 reattachment check
 
 - Baseline on Node 22.23.3: typecheck, lint, publisher tests 4/4 and full Vitest 543 files / 5,615 tests passed. The local `node@22` Homebrew link points to Node 23, so another Node 22 binary was used.
