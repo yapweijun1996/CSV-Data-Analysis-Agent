@@ -119,3 +119,14 @@ describe('tryChronologicalSort', () => {
         expect(sorted!.map(r => r.price)).toEqual(['1.1', '2.3', '10.5', '100']);
     });
 });
+
+describe('year-first period labels', () => {
+    it('sorts YYYY-MM ascending regardless of input order', () => {
+        const rows = [{ Month: '2026-05' }, { Month: '2013-04' }, { Month: '2025-03' }, { Month: '1991-07' }];
+        expect(tryChronologicalSort(rows, 'Month')?.map(r => r.Month)).toEqual(['1991-07', '2013-04', '2025-03', '2026-05']);
+    });
+    it('sorts YYYY-Qn ascending', () => {
+        const rows = [{ P: '2024-Q3' }, { P: '2023-Q4' }, { P: '2024-Q1' }];
+        expect(tryChronologicalSort(rows, 'P')?.map(r => r.P)).toEqual(['2023-Q4', '2024-Q1', '2024-Q3']);
+    });
+});

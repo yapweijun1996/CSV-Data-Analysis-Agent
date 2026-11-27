@@ -5,7 +5,8 @@ import { CsvRow, AnalysisCardData, AnalysisPlan } from '../types';
 import { isAdditiveAggregation, normalizeCategoryLabel } from '../utils/analysisCardPresentation';
 import { resolveCardGroupTotals } from '../utils/cardGroupTotals';
 import { buildPivotStackedChartState, DEFAULT_STACKED_PIVOT_COLUMN_TOP_N } from '../utils/pivotMatrixCharting';
-import { formatTemporalDisplayValue, getTemporalSortTimestamp, resolvePeriodGrain } from '../utils/temporalDisplay';
+import { formatTemporalDisplayValue, getTemporalSortTimestamp, isTemporalDisplayColumn, resolvePeriodGrain } from '../utils/temporalDisplay';
+import { tryChronologicalSort } from '../utils/chronologicalSort';
 import { detectTiedLeadingWindow, isRankedMeasureView, rankRowsByValue, resolveCardValueKey } from '../utils/rankedPresentation';
 
 export const useAnalysisCardData = (cardId: string) => {
@@ -122,7 +123,18 @@ export const useAnalysisCardData = (cardId: string) => {
     }, [dataForLegend, topN, hideOthers, groupByKey, hiddenLabels, plan]);
 
     const sortedTableData = useMemo(() => {
-        if (!tableSort) return tableDataForDisplay;
+        if (!tableSort) {
+            // Time dimensions default to chronological order whatever order the
+            // AI's query returned (e.g. ORDER BY value DESC). Ranked / top-N
+            // views of non-time groups are left in their ranking order.
+            const isTimeDimension = Boolean(groupByKey) && (
+                isTemporalDisplayColumn(groupByKey) || resolvePeriodGrain(groupByKey, periodSeries) !== null
+            );
+            if (!isTimeDimension || plan?.artifactType === 'pivot_matrix') return tableDataForDisplay;
+            const hasOthers = tableDataForDisplay.some(row => row[groupByKey] === 'Others');
+            if (hasOthers) return tableDataForDisplay;
+            return tryChronologicalSort(tableDataForDisplay, groupByKey) ?? tableDataForDisplay;
+        }
         const { column, direction } = tableSort;
         // Period labels such as "Aug 2026" sort chronologically, not alphabetically.
         const sortsByPeriod = resolvePeriodGrain(column, periodSeries) !== null;
@@ -154,7 +166,7 @@ export const useAnalysisCardData = (cardId: string) => {
             const bStr = String(bVal ?? '');
             return direction === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
         });
-    }, [periodSeries, tableDataForDisplay, tableSort]);
+    }, [groupByKey, periodSeries, plan?.artifactType, tableDataForDisplay, tableSort]);
 
     const chartHiddenZeroValueRowCount = useMemo(() => {
         if (plan?.artifactType !== 'pivot_matrix' || !hideZeroValueRows) {

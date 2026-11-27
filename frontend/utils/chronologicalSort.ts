@@ -65,12 +65,38 @@ const getChronologicalSortValue = (value: string, sorter: 'quarter' | 'month' | 
 };
 
 
+// Year-first period labels that Date() cannot parse reliably: 2026-05, 2026/5,
+// 202605, 2026-Q2, 2026 Q2. Each maps to a monotonic key (year * 12 + month).
+const YEAR_MONTH_REGEX = /^(\d{4})[-/](\d{1,2})$/;
+const COMPACT_YEAR_MONTH_REGEX = /^(\d{4})(0[1-9]|1[0-2])$/;
+const YEAR_QUARTER_REGEX = /^(\d{4})[-/\s]?q([1-4])$/i;
+
+const getYearPeriodSortKey = (value: string): number | null => {
+    const text = value.trim();
+    const ym = YEAR_MONTH_REGEX.exec(text) ?? COMPACT_YEAR_MONTH_REGEX.exec(text);
+    if (ym) {
+        const month = Number(ym[2]);
+        return month >= 1 && month <= 12 ? Number(ym[1]) * 12 + month : null;
+    }
+    const yq = YEAR_QUARTER_REGEX.exec(text);
+    return yq ? Number(yq[1]) * 12 + (Number(yq[2]) - 1) * 3 + 1 : null;
+};
+
 export const tryChronologicalSort = (data: CsvRow[], key: string): CsvRow[] | null => {
     if (data.length < 2) return data;
 
     const sampleValues = data.slice(0, 10).map(r => String(r[key]).toLowerCase().trim());
     
     let sorter: 'quarter' | 'month' | 'day' | null = null;
+
+    const yearPeriodMatches = sampleValues.filter(v => getYearPeriodSortKey(v) !== null).length;
+    if (yearPeriodMatches / sampleValues.length >= 0.5) {
+        return [...data].sort((a, b) => {
+            const keyA = getYearPeriodSortKey(String(a[key])) ?? Infinity;
+            const keyB = getYearPeriodSortKey(String(b[key])) ?? Infinity;
+            return keyA - keyB;
+        });
+    }
 
     const quarterMatches = sampleValues.filter(v => QUARTER_REGEX.test(v)).length;
     const monthMatches = sampleValues.filter(v => MONTHS[v] !== undefined).length;
