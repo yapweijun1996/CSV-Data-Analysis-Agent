@@ -23,7 +23,6 @@ import { isInitialAnalysisProviderFailure } from '../runtime/pi/initialAnalysisF
 import { persistCurrentAppSessionSnapshot } from '../../persistence/currentSessionPersistence';
 import { replayDatasetBundlePrograms } from '../../data/datasetBundleReplay';
 import { canRestoreHistoryAnalysis, getRestoredHistoryAnalysisState, type HistoryAnalysisSnapshot } from './historyAnalysisRestore';
-import { orchestrateAutonomousAiCleaning } from './autonomousCleaningPipeline';
 
 // Define the update types the orchestrator can produce
 export type FileOrchestrationUpdate = 
@@ -537,38 +536,14 @@ export async function* orchestrateFileUpload(
     });
 
     let verifiedAnalysis = restoredAnalysis;
-    let restoredCanonicalDataset: CsvData | null = null;
+    let reusedWithoutPreparedMatch = false;
     if (!verifiedAnalysis && sourceVerified && options.restoreSnapshot) {
-        try {
-            await orchestrateAutonomousAiCleaning(store);
-            // The intake's canonical preview may still point at pre-cleaning
-            // rows. Cleaning commits the verified primary table to csvData.
-            const preparedDataset = getState().csvData;
-            const preparedMatches = (
-                getState().cleaningRun?.status === 'completed'
-                && preparedDataset
-                && canRestoreHistoryAnalysis(
-                    options.restoreSnapshot,
-                    true,
-                    getCsvDatasetVersion(preparedDataset),
-                )
-            );
-            const analysisVersion = options.restoreSnapshot.analysisDatasetVersion;
-            const cleanedIsAnalysis = preparedMatches
-                && analysisVersion === getCsvDatasetVersion(preparedDataset);
-            const importedIsAnalysis = preparedMatches
-                && analysisVersion === getCsvDatasetVersion(materialDataset);
-            if (cleanedIsAnalysis || importedIsAnalysis) {
-                verifiedAnalysis = options.restoreSnapshot;
-                restoredCanonicalDataset = cleanedIsAnalysis ? null : materialDataset;
-                setState({
-                    ...getRestoredHistoryAnalysisState(verifiedAnalysis, getState().workspaceFiles),
-                    canonicalCsvData: restoredCanonicalDataset,
-                });
-            }
-        } catch (error) {
-            console.warn(`${LOG_PREFIX} Could not reproduce the saved prepared dataset; starting a fresh analysis.`, error);
-        }
+        // The source fingerprint matched but the prepared dataset version could not be
+        // reproduced locally. Opening History must never re-run AI cleaning or analysis:
+        // keep the saved results and load the verified original rows for exploration.
+        verifiedAnalysis = options.restoreSnapshot;
+        reusedWithoutPreparedMatch = true;
+        setState(getRestoredHistoryAnalysisState(verifiedAnalysis, getState().workspaceFiles));
     }
 
     if (verifiedAnalysis) {
@@ -580,10 +555,16 @@ export async function* orchestrateFileUpload(
             currentStep: 1,
         });
         if (!ownsSessionScope(store, scope)) return;
-        yield {
-            type: 'progress',
-            message: 'Restored saved cards and report after verifying the source and prepared dataset version.',
-        };
+        yield reusedWithoutPreparedMatch
+            ? {
+                type: 'progress',
+                messageType: 'warning',
+                message: 'Restored saved cards and report. The original CSV matched, but its prepared version could not be rebuilt locally, so the saved results were kept without re-running the analysis.',
+            }
+            : {
+                type: 'progress',
+                message: 'Restored saved cards and report after verifying the source and prepared dataset version.',
+            };
         void getState().refreshDuckDbSession().catch(error => {
             console.warn(`${LOG_PREFIX} Query session refresh after history restore failed.`, error);
         });
@@ -600,15 +581,6 @@ export async function* orchestrateFileUpload(
             console.warn(`${LOG_PREFIX} Could not persist the restored current session.`, error);
         }
         return;
-    }
-
-    if (options.restoreSnapshot && sourceVerified) {
-        if (!ownsSessionScope(store, scope)) return;
-        yield {
-            type: 'progress',
-            messageType: 'warning',
-            message: 'The original source matched, but the prepared dataset version could not be reproduced. Saved cards were not reused; a fresh analysis will run.',
-        };
     }
 
     // FIX: `isApiKeySet` is not a property on the store state. It must be derived from the `settings` object.
