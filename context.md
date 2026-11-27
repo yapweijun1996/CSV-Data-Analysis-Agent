@@ -16,6 +16,7 @@ The owner authorized focused verification, main push and the existing manual Pag
 - Rebased the dependency work onto `c67231d` (no checked-in build; `publish:root` removed). The earlier numbers below were measured on the older base `7dc3b73`. Added `<meta name="mobile-web-app-capable">` to `frontend/index.html`, keeping the `apple-` tag.
 - On the new base: lockfile unchanged by re-resolution; audit 4 dev-only / 0 production; typecheck, lint, stage-pages tests, build `1.0.0-503a226ac751`, `npm run e2e` 4/4 and reattach smoke 8/8 passed. Vitest 554 files / 5,656 tests passed on the second full run; the first had one `candidateRuntime.test.ts` failure that did not recur in 5 isolated runs here or on the base.
 - Default gateway Pi and structured-output bodies are identical to the base (message ids normalized). Eager bundle 2,390,436 to 2,908,699 bytes (gzip 437,355 to 539,413).
+- Rebased again onto `f64187a` before pushing: Vitest 555 files / 5,678 tests, typecheck, lint, stage-pages tests, build `1.0.0-289d16534321`, e2e 4/4 and reattach 8/8 passed; payload and eager-size comparisons were not repeated.
 - Open: `bundle:check` fails. It already failed on the base (`vendor-ai-sdk` 922,946 > 921,600 bytes); with this upgrade the chunk is 1,092,292. The Chrome deprecation warning did not reproduce headless, so its removal is not browser-verified.
 
 ### 2026-11-27 — Non-major dependency security updates (branch, not published)
