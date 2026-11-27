@@ -11,11 +11,18 @@ The [2026-11-17 review](docs/reviews/2026-11-17-production-readiness.md) records
 
 The owner authorized focused verification, main push and the existing manual Pages workflow without full CI. Full production qualification remains open: exact-model HTTP success did not establish final-answer quality, and complex acceptance, offline/stress and cross-browser gaps remain explicit in TASK.md. Historical evidence below is not a substitute for current release evidence.
 
+### 2026-11-27 — Rebase onto latest main, mobile meta tag, push
+
+- Rebased the dependency work onto `c67231d` (no checked-in build; `publish:root` removed). The earlier numbers below were measured on the older base `7dc3b73`. Added `<meta name="mobile-web-app-capable">` to `frontend/index.html`, keeping the `apple-` tag.
+- On the new base: lockfile unchanged by re-resolution; audit 4 dev-only / 0 production; typecheck, lint, stage-pages tests, build `1.0.0-503a226ac751`, `npm run e2e` 4/4 and reattach smoke 8/8 passed. Vitest 554 files / 5,656 tests passed on the second full run; the first had one `candidateRuntime.test.ts` failure that did not recur in 5 isolated runs here or on the base.
+- Default gateway Pi and structured-output bodies are identical to the base (message ids normalized). Eager bundle 2,390,436 to 2,908,699 bytes (gzip 437,355 to 539,413).
+- Open: `bundle:check` fails. It already failed on the base (`vendor-ai-sdk` 922,946 > 921,600 bytes); with this upgrade the chunk is 1,092,292. The Chrome deprecation warning did not reproduce headless, so its removal is not browser-verified.
+
 ### 2026-11-27 — Non-major dependency security updates (branch, not published)
 
 - Branch `chore/non-major-dependency-security-updates`: bumped five overrides (brace-expansion, dompurify, js-yaml, qs, sharp) and ran `npm audit fix`. npm audit: 35 to 4 findings; production 12 to 0. Remaining dev-only findings need Vitest 5 and `@hono/node-server` 2. Runtime moves include `ai` 6.0.338, `@ai-sdk/openai` 3.0.147, `@ai-sdk/google` 3.0.152 and `zod` 4.6.7; `openai` and Pi packages did not change.
 - Verified on Node 22.23.3: clean `npm ci`, typecheck, lint, publisher 4/4, Vitest 543 files / 5,615 tests, build `1.0.0-c82dcc0765a5`, bundle budget, startup smoke (cold/warm) and reattach smoke 8/8 on `frontend/dist`. Default gateway bodies from the Pi and structured-output paths were byte-identical before and after (message ids normalized); a mocked browser run sent no `max_output_tokens`.
-- Cost: eager bundle grew from 2,025,129 to 2,541,093 bytes (gzip 373,934 to 475,517), mostly the AI SDK chunks. Not verified: live provider, BYOK OpenAI/Gemini wire requests. Monaco's vendored DOMPurify 3.4.8 is unchanged. Root deployment not published.
+- Cost: eager bundle grew from 2,025,129 to 2,541,093 bytes (gzip 373,934 to 475,517), mostly the AI SDK chunks. Not verified: live provider, BYOK OpenAI/Gemini wire requests. Monaco's vendored DOMPurify 3.4.8 is unchanged. Pages workflow not dispatched.
 - Owner accepted the bundle growth on 2026-11-27 and kept the upgrade as is.
 - Reported live issue, not caused by this branch: the deployed app's `POST /demo/v1/responses` returned 502 without CORS headers. In the reported log, earlier intake calls to the same gateway succeeded and the Pi request failed. A simulated HTTP 502 stops initial analysis at stage 1/9 on both old and new builds. The gateway server is outside this repository; cause not established.
 

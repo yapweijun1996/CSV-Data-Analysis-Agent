@@ -7,8 +7,8 @@ import { chromium } from '@playwright/test';
 
 // CA-191/CA-192: local-only import -> reload -> cancel / wrong file / original file.
 // Uses only real UI and a loopback server. No provider calls or injected state.
-// SITE_ROOT defaults to the checked-in deployment; CHROMIUM_PATH is optional.
-const root = process.env.SITE_ROOT ?? fileURLToPath(new URL('../../', import.meta.url));
+// SITE_ROOT defaults to the built frontend/dist (run `npm run build` first); CHROMIUM_PATH is optional.
+const root = process.env.SITE_ROOT ?? fileURLToPath(new URL('../dist/', import.meta.url));
 const types = {
     '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
     '.json': 'application/json', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
