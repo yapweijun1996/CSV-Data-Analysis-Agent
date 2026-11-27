@@ -11,6 +11,9 @@ import { CleaningRunBanner } from './cleaning/CleaningRunBanner';
 import { isStructureReviewPending } from './analysis-panel/nextStep';
 import { isPreviewDataQuery } from '../services/agent/execution/dataQueryContract';
 import { GroupByTest, ViewModeToggle } from './spreadsheet/GroupByTest';
+import { IconDownload } from '../icons/IconDownload';
+import { exportRowsToCsvAsync } from '../utils/exportUtils';
+import { toast } from '../services/ui/toastService';
 import type { UserColumnAnnotation } from '../types';
 
 interface SpreadsheetPanelProps {
@@ -29,6 +32,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
     const initialAnalysisFailureKind = useAppStore(state => state.initialAnalysisFailureKind);
     const structureReviewPending = useAppStore(state => isStructureReviewPending(state.pipelineOutcome, state.reportStructureResolution));
     const [isGroupByMode, setIsGroupByMode] = React.useState(false);
+    const [isExportingCsv, setIsExportingCsv] = React.useState(false);
     const [annotatingColumn, setAnnotatingColumn] = React.useState<{ name: string; rect: DOMRect } | null>(null);
 
     const annotatedColumns = useMemo(
@@ -124,6 +128,26 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
         [activeDataQuery],
     );
 
+    const handleExportCsv = async () => {
+        if (isExportingCsv || processedData.length === 0) return;
+        setIsExportingCsv(true);
+        try {
+            const suffix = viewMode === 'raw' ? 'original' : activeDataQuery ? 'query_result' : filterText.trim() ? 'filtered' : 'prepared';
+            const result = await exportRowsToCsvAsync(processedData, activeDataset.fileName, {
+                columns: displayColumns,
+                labels: displayColumnLabels,
+                suffix,
+            });
+            if (result.success) {
+                toast.success(getTranslation('export_csv_success', language, { count: result.rowCount.toLocaleString(), file: result.fileName }), { id: 'export-csv-done' });
+            } else {
+                toast.error(getTranslation('export_format_failed', language, { format: 'CSV' }), { id: 'export-failed', detail: result.error });
+            }
+        } finally {
+            setIsExportingCsv(false);
+        }
+    };
+
     return (
         <div id="raw-data-explorer" className="flex flex-col rounded-card border border-slate-200 bg-white shadow-lg transition-all duration-300">
             <button
@@ -166,6 +190,17 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                             {!largeDatasetBacking && (
                                 <ViewModeToggle isGroupBy={isGroupByMode} onToggle={setIsGroupByMode} language={language} />
                             )}
+                            <button
+                                type="button"
+                                onClick={() => void handleExportCsv()}
+                                disabled={isExportingCsv || processedData.length === 0}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                title={getTranslation('export_csv_view_desc', language)}
+                                aria-label={getTranslation('export_csv_view', language)}
+                            >
+                                <IconDownload />
+                                <span>{getTranslation('export_csv_view', language)}</span>
+                            </button>
                             <span className="text-xs text-slate-500">{helperText}</span>
                             {semanticStatus === 'running' && viewMode === 'semantic_default' && !activeDataQuery && !semanticDefaultReady && (
                                 <span className="text-[11px] font-medium text-slate-500">

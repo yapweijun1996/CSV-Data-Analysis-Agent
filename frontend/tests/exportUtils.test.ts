@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     exportDatasetToCsv,
     exportToCsv,
+    exportRowsToCsvAsync,
     exportToHtml,
     exportToPng,
     type AnalysisExportMetadata,
@@ -21,6 +22,13 @@ const metadata: AnalysisExportMetadata = {
     trustStatus: 'verified',
     datasetVersion: 'version-current',
 };
+
+const readBytes = (blob: Blob): Promise<ArrayBuffer> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(blob);
+});
 
 const readBlob = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -63,7 +71,8 @@ describe('analysis exports', () => {
         expect(csv).toContain('verified');
         expect(csv).toContain('version-current');
         expect(csv).toContain('card-1');
-        expect(clickedDownloads).toEqual(['Town_total.csv']);
+        expect(clickedDownloads).toEqual([expect.stringMatching(/^Town_total_\d{4}-\d{2}-\d{2}\.csv$/)]);
+        expect(Array.from(new Uint8Array(await readBytes(downloadedBlobs[0])).slice(0, 3))).toEqual([0xef, 0xbb, 0xbf]);
         expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
     });
 
@@ -78,7 +87,17 @@ describe('analysis exports', () => {
         expect(csv).toContain('1');
         expect(csv).toContain('3');
         expect(csv).not.toContain('_export_scope');
-        expect(clickedDownloads).toEqual(['cleaned_source.csv']);
+        expect(clickedDownloads).toEqual([expect.stringMatching(/^cleaned_source_\d{4}-\d{2}-\d{2}\.csv$/)]);
+    });
+
+    it('streams large row sets in chunks with BOM, labels and escaping', async () => {
+        const rows = Array.from({ length: 12001 }, (_, i) => ({ name: i === 0 ? '中文,"quote"' : `n${i}`, v: i }));
+        const result = await exportRowsToCsvAsync(rows, 'sales.csv', { columns: ['name', 'v'], labels: { name: 'Name' }, suffix: 'filtered' });
+        expect(result).toMatchObject({ success: true, rowCount: 12001 });
+        const csv = await readBlob(downloadedBlobs[0]);
+        expect(csv.startsWith('Name,v\r\n"中文,""quote""",0')).toBe(true);
+        expect(csv.trim().split('\r\n')).toHaveLength(12002);
+        expect(clickedDownloads[0]).toMatch(/^sales_filtered_\d{4}-\d{2}-\d{2}\.csv$/);
     });
 
     it('embeds provenance in HTML and safely escapes report values', async () => {

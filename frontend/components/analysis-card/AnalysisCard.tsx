@@ -190,6 +190,9 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
                     exportMetadata,
                 ); break;
             }
+            if (result?.success && format === 'csv') {
+                toast.success(getTranslation('export_csv_success', language, { count: tableDataForDisplay.length.toLocaleString(), file: 'CSV' }), { id: 'export-csv-done' });
+            }
             if (result && !result.success) {
                 toast.error(getTranslation('export_format_failed', language, { format: format.toUpperCase() }), {
                     id: 'export-failed',

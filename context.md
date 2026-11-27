@@ -2002,3 +2002,9 @@ The production build is no longer checked in. `assets/`, `index.html`, `service-
 
 ## Report problem (2026-11-27)
 - End users can open a "Report problem" dialog (chat header bug icon, error replies, reply action bar). It builds a redacted JSON report (`frontend/services/support/problemReport.ts`) with release, browser, provider/model/reasoning, MCP hosts (no tokens), dataset metadata, recent chat/agent events/tool calls/runtime events, and console errors from an in-memory ring buffer (`consoleRingBuffer.ts`). Raw rows only if the user opts in. Copy or download .json; nothing is uploaded.
+
+## CSV export (2026-11-27)
+- Shared writer `frontend/utils/csvExport.ts`: UTF-8 BOM (Excel opens Chinese correctly), RFC 4180 escaping via PapaParse, chunked serialisation (5,000 rows, yields to the browser between chunks, Blob built from parts), file names `<original>_<suffix>_YYYY-MM-DD.csv`.
+- Three entry points: analysis card "CSV table data" (existing menu), Data Explorer "Export CSV" button (rows currently shown after search/filter, uses display labels; suffix prepared/filtered/query_result/original), and the prepared-dataset download in the data preparation modal. Card and Explorer show a `toast.success` ("Exported N rows to CSV") or `toast.error`.
+- Limit: the Explorer exports the rows loaded in memory (for DuckDB-backed large datasets that is the preview sample); the full prepared dataset download stays in the data preparation modal. Tabulator column sort order is not applied to the export.
+- Strings: `export_csv_view`, `export_csv_view_desc`, `export_csv_success` in English, Mandarin, Malay, Japanese, Vietnamese. Screenshots: project files `screenshots/csv-export/`.

@@ -241,6 +241,25 @@ export const part08: Record<string, TranslationEntry> = {
     },
 
     // ── Export messages ──
+    'export_csv_view': {
+        'English': 'Export CSV',
+        'Mandarin': '导出 CSV',
+        'Japanese': 'CSV をエクスポート',
+        'Malay': 'Eksport CSV',
+    },
+    'export_csv_view_desc': {
+        'English': 'Download the rows currently shown (after search and filters) as a CSV file',
+        'Mandarin': '将当前显示的行（含搜索与筛选结果）下载为 CSV 文件',
+        'Japanese': '現在表示中の行（検索・フィルター適用後）を CSV としてダウンロード',
+        'Malay': 'Muat turun baris yang dipaparkan (selepas carian dan penapis) sebagai fail CSV',
+    },
+    'export_csv_success': {
+        'English': 'Exported {count} rows to CSV ({file})',
+        'Mandarin': '已导出 {count} 行到 CSV（{file}）',
+        'Japanese': '{count} 行を CSV にエクスポートしました（{file}）',
+        'Malay': 'Berjaya mengeksport {count} baris ke CSV ({file})',
+    },
+
     'export_format_failed': {
         'English': 'Export {format} failed',
         'Mandarin': '导出{format}失败',

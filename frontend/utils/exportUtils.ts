@@ -1,6 +1,7 @@
 import { CsvRow } from '../types';
 import { toPng } from 'html-to-image';
 import * as Papa from 'papaparse';
+import { CSV_BOM, buildCsvBlob, buildCsvFileName, downloadBlob, type CsvBlobOptions } from './csvExport';
 
 // --- Export theme constants ---
 
@@ -240,8 +241,8 @@ export const exportToCsv = (
 ): ExportResult => {
   try {
     const csv = Papa.unparse(withExportMetadataColumns(data, metadata));
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    triggerBlobDownload(blob, `${safeFileStem(title)}.csv`);
+    const blob = new Blob([CSV_BOM, csv], { type: 'text/csv;charset=utf-8;' });
+    triggerBlobDownload(blob, buildCsvFileName(title || 'analysis_export'));
     return { success: true };
   } catch (error) {
     console.error('Error exporting to CSV:', error);
@@ -252,12 +253,28 @@ export const exportToCsv = (
 export const exportDatasetToCsv = (data: CsvRow[], fileName: string): ExportResult => {
   try {
     const csv = Papa.unparse(data);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    triggerBlobDownload(blob, `${safeFileStem(fileName.replace(/\.csv$/i, ''))}.csv`);
+    const blob = new Blob([CSV_BOM, csv], { type: 'text/csv;charset=utf-8;' });
+    triggerBlobDownload(blob, buildCsvFileName(fileName));
     return { success: true };
   } catch (error) {
     console.error('Error exporting dataset to CSV:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown export error' };
+  }
+};
+
+/** Chunked export for large row sets (Data Explorer view). Does not block the UI thread for long. */
+export const exportRowsToCsvAsync = async (
+  rows: readonly CsvRow[],
+  fileName: string,
+  options: CsvBlobOptions & { suffix?: string } = {},
+): Promise<ExportResult & { rowCount: number; fileName: string }> => {
+  const outName = buildCsvFileName(fileName, options.suffix);
+  try {
+    downloadBlob(await buildCsvBlob(rows, options), outName);
+    return { success: true, rowCount: rows.length, fileName: outName };
+  } catch (error) {
+    console.error('Error exporting rows to CSV:', error);
+    return { success: false, rowCount: 0, fileName: outName, error: error instanceof Error ? error.message : 'Unknown export error' };
   }
 };
 
