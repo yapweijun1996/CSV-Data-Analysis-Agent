@@ -25,6 +25,7 @@ export const vietnamesePart02: Record<string, string> = {
     thought_card_label: 'Suy nghĩ của tác tử',
     chat_message_label: 'Nhắn cho Trợ lý',
     chat_loading: 'Đang tải Trợ lý…',
+    chat_reasoning_label: 'Lập luận',
     task_stop_toolCalls: 'Yêu cầu này đã dùng hết số bước công cụ cho phép trước khi hoàn tất. Dữ liệu và kết quả đã hoàn thành vẫn được giữ lại. Hãy thử câu hỏi hẹp hơn (một chỉ số hoặc một khoảng thời gian), hoặc gửi "tiếp tục" để làm tiếp từ đây.',
     task_stop_providerTurns: 'Yêu cầu này cần nhiều bước suy luận hơn mức cho phép nên đã dừng. Kết quả đã hoàn thành vẫn được giữ lại. Hãy thử câu hỏi hẹp hơn, hoặc gửi "tiếp tục" để làm tiếp từ đây.',
     task_stop_activeMs: 'Yêu cầu này chạy quá thời gian cho phép nên đã dừng. Kết quả đã hoàn thành vẫn được giữ lại. Hãy thử câu hỏi hẹp hơn, hoặc gửi "tiếp tục" để làm tiếp từ đây.',

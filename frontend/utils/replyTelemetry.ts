@@ -35,12 +35,21 @@ export const createReplyTelemetryTracker = (now: () => number = Date.now) => {
     let sawUsage = false;
     let sawCost = false;
     let model: string | undefined;
+    const finishedReasoning: string[] = [];
+    let currentReasoning = '';
+    const thinkingOf = (content: unknown): string => Array.isArray(content)
+        ? content.filter((part: { type: string; thinking?: string }) => part.type === 'thinking' && part.thinking)
+            .map((part: { thinking?: string }) => part.thinking).join('\n\n')
+        : '';
 
     return {
+        /** All thinking text streamed so far across provider rounds, for live display. */
+        reasoning(): string { return [...finishedReasoning, currentReasoning].filter(Boolean).join('\n\n'); },
         observe(event: TelemetryEvent): void {
             const message = event.message;
             if (!message || message.role !== 'assistant') return;
             if (event.type === 'message_update') {
+                currentReasoning = thinkingOf(message.content);
                 const hasContent = Array.isArray(message.content) && message.content.some(part =>
                     (part.type === 'text' && part.text) || (part.type === 'thinking' && part.thinking));
                 if (hasContent) {
@@ -49,6 +58,9 @@ export const createReplyTelemetryTracker = (now: () => number = Date.now) => {
                     lastTokenAt = t;
                 }
             } else if (event.type === 'message_end') {
+                currentReasoning = thinkingOf(message.content) || currentReasoning;
+                if (currentReasoning) finishedReasoning.push(currentReasoning);
+                currentReasoning = '';
                 lastTokenAt = now();
                 if (message.model) model = message.model;
                 const usage = message.usage;
@@ -62,10 +74,12 @@ export const createReplyTelemetryTracker = (now: () => number = Date.now) => {
         },
         snapshot(reasoningEffort?: string): ReplyTelemetry {
             const end = now();
+            const reasoningText = [...finishedReasoning, currentReasoning].filter(Boolean).join('\n\n');
             const generationMs = firstTokenAt !== undefined && lastTokenAt !== undefined ? lastTokenAt - firstTokenAt : 0;
             return {
                 model,
                 reasoningEffort,
+                ...(reasoningText ? { reasoningText } : {}),
                 ttftMs: firstTokenAt !== undefined ? firstTokenAt - startedAt : undefined,
                 durationMs: end - startedAt,
                 ...(sawUsage ? { inputTokens: input, outputTokens: output, totalTokens: total || input + output } : {}),

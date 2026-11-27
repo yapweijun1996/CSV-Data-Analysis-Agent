@@ -299,7 +299,8 @@ export const runPiFollowUpTurn = async (
                 if (mcpAttempted && !hadMcpAttempt) store.setState({streamingMessage:null});
                 telemetry.observe(event);
                 const partial = readAssistantText(event);
-                if (partial && !mcpAttempted) store.getState().setStreamingMessage?.(partial);
+                const reasoning = telemetry.reasoning();
+                if ((partial || reasoning) && !mcpAttempted) store.getState().setStreamingMessage?.(partial, reasoning);
             });
             if (controller.signal.aborted) throw controller.signal.reason;
             await awaitOwned(agent.prompt(request.continuation
@@ -564,6 +565,14 @@ export const runPiFollowUpTurn = async (
         logicalTask?.close(status);
     }
     return { status, appTurnId: turn.turnId, text };
+};
+
+/** Steer a running turn: the agent reads the message after its current tool call and adjusts course. */
+export const steerPiFollowUpTurn = (turnId: string, text: string): boolean => {
+    const agent = activeAgents.get(turnId);
+    if (!agent || !text.trim()) return false;
+    agent.steer({ role: 'user', content: [{ type: 'text', text }], timestamp: Date.now() });
+    return true;
 };
 
 export const cancelPiFollowUpTurn = (turnId: string): void => {

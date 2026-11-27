@@ -28,7 +28,7 @@ const chatDebug = (message: string, detail?: unknown) => {
 export interface IChatSlice {
     isAiFiltering: boolean;
     streamingMessage: StreamingMessage | null;
-    setStreamingMessage: (text: string) => void;
+    setStreamingMessage: (text: string, reasoning?: string) => void;
     clearStreamingMessage: () => void;
     /** Assistant message whose next finished reply is stored as a new version instead of a new bubble. */
     pendingReplyRetryId: string | null;
@@ -341,11 +341,11 @@ export const createChatSlice: StateCreator<AppStore, [], [], IChatSlice> = (set,
             if (get().isBusy) return;
             set(prev => ({ chatHistory: prev.chatHistory.filter(m => m.id !== messageId) }));
         },
-        setStreamingMessage: (text: string) => {
+        setStreamingMessage: (text: string, reasoning?: string) => {
             set(prev => ({
                 streamingMessage: prev.streamingMessage
-                    ? { ...prev.streamingMessage, text }
-                    : { text, isStreaming: true, startedAt: new Date() },
+                    ? { ...prev.streamingMessage, text, ...(reasoning !== undefined ? { reasoning } : {}) }
+                    : { text, isStreaming: true, startedAt: new Date(), ...(reasoning ? { reasoning } : {}) },
             }));
         },
         clearStreamingMessage: () => set({ streamingMessage: null }),
@@ -453,6 +453,16 @@ export const createChatSlice: StateCreator<AppStore, [], [], IChatSlice> = (set,
                     activeTurnId: get().activeTurn?.turnId ?? null,
                     queuedCountBeforeEnqueue: getQueuedChatTurns().length,
                 });
+                // Steer the running Pi agent with the new message; fall back to the queue when it cannot take one.
+                const runningTurnId = get().activeTurn?.turnId;
+                if (runningTurnId) {
+                    try {
+                        const { steerPiFollowUpTurn } = await import('../../services/agent/runtime/pi/piFollowUpRuntimeService');
+                        if (steerPiFollowUpTurn(runningTurnId, message)) return;
+                    } catch (error) {
+                        console.warn(`${LOG_PREFIX} Steering failed; queueing the message instead.`, error);
+                    }
+                }
                 // User message already appended at the top of handleChatMessage.
                 enqueueChatTurn(message);
                 return;

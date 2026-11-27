@@ -1,4 +1,5 @@
 
+import { ReasoningBlock } from './chat/ReasoningBlock';
 import { resolveProgressText } from '../utils/progressText';
 import React, { useEffect, useRef, useMemo, useCallback, useState, lazy, Suspense } from 'react';
 import { shallow } from 'zustand/shallow';
@@ -58,7 +59,7 @@ const StreamingBubble: React.FC = React.memo(() => {
     const language = useAppStore(state => state.settings.language);
     // StreamingBubble only renders when streaming text is available.
     // ThinkingIndicator handles the "no text yet" phase.
-    if (!streamingMessage || !streamingMessage.isStreaming || !streamingMessage.text) return null;
+    if (!streamingMessage || !streamingMessage.isStreaming || (!streamingMessage.text && !streamingMessage.reasoning)) return null;
     return (
         <div className="flex min-w-0 w-full animate-fade-in">
             <div className="min-w-0 w-full max-w-full rounded-card p-4 text-sm xl:max-w-3xl bg-white border border-blue-200 text-slate-800 shadow-sm">
@@ -69,8 +70,9 @@ const StreamingBubble: React.FC = React.memo(() => {
                         {getTranslation('chat_streaming', language)}
                     </span>
                 </div>
+                {streamingMessage.reasoning && <ReasoningBlock text={streamingMessage.reasoning} language={language} live />}
                 <div className="text-slate-700 leading-relaxed">
-                    <MarkdownRenderer content={streamingMessage.text} />
+                    {streamingMessage.text && <MarkdownRenderer content={streamingMessage.text} />}
                     <span className="inline-block w-1.5 h-4 bg-blue-400 animate-pulse ml-0.5 align-text-bottom rounded-sm" />
                 </div>
             </div>

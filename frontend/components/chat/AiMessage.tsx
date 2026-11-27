@@ -7,6 +7,7 @@ import { getTranslation } from '../../utils/localization';
 import type { AppLanguage } from '../../types/localization';
 import { CopyButton } from './CopyButton';
 import { ReplyMetricsBar } from './ReplyMetricsBar';
+import { ReasoningBlock } from './ReasoningBlock';
 import { ReplyActionBar } from './ReplyActionBar';
 
 interface AiMessageProps {
@@ -195,6 +196,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                         </button>
                     )}
                     {showReplyActions && <ReplyActionBar msg={msg} copyText={displayText} />}
+                    {msg.telemetry?.reasoningText && !isActiveError && <ReasoningBlock text={msg.telemetry.reasoningText} language={language} />}
                     {msg.telemetry && !isActiveError && <ReplyMetricsBar telemetry={msg.telemetry} />}
                     {/* Suggested actions are rendered only in the ChatComposer NEXT STEPS section to avoid duplication */}
                 </div>

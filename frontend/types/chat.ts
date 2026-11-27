@@ -124,6 +124,8 @@ export type TranscriptVisibility = 'full' | 'summarized' | 'hidden';
 export interface ReplyTelemetry {
     model?: string;
     reasoningEffort?: string;
+    /** The model's streamed reasoning/thinking summary for this reply, when the provider returns one. */
+    reasoningText?: string;
     ttftMs?: number;
     durationMs?: number;
     inputTokens?: number;
@@ -181,6 +183,8 @@ export interface StreamingMessage {
     isStreaming: boolean;
     /** When the stream started */
     startedAt: Date;
+    /** Thinking text streamed so far; shown in a collapsible block above the answer. */
+    reasoning?: string;
 }
 
 export interface ClarificationResponseAssessment {

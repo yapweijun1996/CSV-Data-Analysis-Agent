@@ -249,6 +249,14 @@ export const part03: Record<string, TranslationEntry> = {
         'Japanese': 'AI の回答が長すぎたため途中で切れました。完了済みの結果は保持されています。より短く、または具体的な回答を求めてください。',
         'French': 'La réponse de l\'IA a été coupée car elle était trop longue. Les résultats déjà obtenus sont conservés. Demandez une réponse plus courte ou plus précise.',
     },
+    'chat_reasoning_label': {
+        'English': 'Reasoning',
+        'Mandarin': '推理过程',
+        'Spanish': 'Razonamiento',
+        'Malay': 'Penaakulan',
+        'Japanese': '推論',
+        'French': 'Raisonnement',
+    },
     'assistant_empty_title': {
         'English': 'Upload data to start asking',
         'Mandarin': '上传数据后即可提问',
