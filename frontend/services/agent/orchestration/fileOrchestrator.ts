@@ -27,7 +27,7 @@ import { orchestrateAutonomousAiCleaning } from './autonomousCleaningPipeline';
 
 // Define the update types the orchestrator can produce
 export type FileOrchestrationUpdate = 
-  | { type: 'progress'; message: string; messageType?: 'system' | 'warning' | 'error'; model?: string }
+  | { type: 'progress'; message: string; messageType?: 'system' | 'warning' | 'error'; model?: string; localize?: import('../../../types/app').ProgressLocalization }
   | { type: 'state'; payload: Partial<AppStore>; assertCurrent?: () => void };
 
 const LOG_PREFIX = '[FileOrchestrator]';

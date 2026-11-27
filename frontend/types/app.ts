@@ -120,7 +120,11 @@ export interface ProgressMessage {
     type: 'system' | 'warning' | 'error';
     timestamp: Date;
     model?: string;
+    /** Lets the text be rebuilt in the current UI language instead of the language it was created in. */
+    localize?: ProgressLocalization;
 }
+
+export type ProgressLocalization = { kind: 'data_quality'; issues: string[] };
 
 export interface TelemetryEvent {
     id: string;

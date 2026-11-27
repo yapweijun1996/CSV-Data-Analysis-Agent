@@ -3,6 +3,7 @@ import { IconHide } from '../../icons/IconHide';
 import { IconSettings } from '../../icons/IconSettings';
 import { IconMemory } from '../../icons/IconMemory';
 import { IconAi } from '../../icons/IconAi';
+import { chatIconButton } from './chatControlStyles';
 import { getTranslation } from '../../utils/localization';
 
 interface ChatPanelHeaderProps {
@@ -32,8 +33,8 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
     onOpenPiBrowserLab,
     onHidePanel,
 }) => (
-    <div className="relative flex items-center justify-between border-b border-slate-200 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:py-3">
-        <h2 className="text-xl font-semibold text-slate-900">{getTranslation('assistant', language)}</h2>
+    <div className="relative flex shrink-0 items-center justify-between border-b border-slate-200 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:h-[40px] md:py-0">
+        <h2 className="text-xl font-semibold text-slate-900 md:text-base">{getTranslation('assistant', language)}</h2>
         <div className="flex items-center gap-2">
             {showPiBrowserLab && (
                 <button type="button" data-pi-browser-lab-trigger="true" onClick={onOpenPiBrowserLab}
@@ -43,7 +44,7 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
             {showMemoryPanel && (
                 <button
                     onClick={onOpenMemory}
-                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-1 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 md:min-h-8 md:min-w-8"
+                    className={chatIconButton}
                     title={getTranslation('view_ai_memory', language)}
                     aria-label={getTranslation('view_ai_memory', language)}
                 >
@@ -53,7 +54,7 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
             {showAgentThinking && (
                 <button
                     onClick={onOpenAgent}
-                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-1 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 md:min-h-8 md:min-w-8"
+                    className={chatIconButton}
                     title={getTranslation('view_agent_timeline', language)}
                     aria-label={getTranslation('view_agent_timeline', language)}
                 >
@@ -63,7 +64,7 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
             {showSettings && (
                 <button
                     onClick={onOpenSettings}
-                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-1 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 md:min-h-8 md:min-w-8"
+                    className={chatIconButton}
                     title={getTranslation('settings', language)}
                     aria-label={getTranslation('settings', language)}
                 >
@@ -72,7 +73,7 @@ export const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
             )}
             <button
                 onClick={onHidePanel}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-1 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900"
+                className={chatIconButton}
                 title={getTranslation('hide_panel', language)}
                 aria-label={getTranslation('hide_panel', language)}
             >

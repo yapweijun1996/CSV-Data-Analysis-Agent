@@ -399,7 +399,8 @@ describe('end user mode UI surfaces', () => {
                     model: 'gemini-3.1-flash-lite-preview',
                 },
             ],
-            chatHistory: [],
+            // The indicator is hidden in the empty state, so the chat needs one message.
+            chatHistory: [{ id: 'user-1', sender: 'user' as const, type: 'user_message' as const, text: 'Hi', timestamp: new Date('2026-03-11T09:59:00.000Z') }],
             isBusy: true,
             handleChatMessage: vi.fn(),
             isApiKeySet: true,

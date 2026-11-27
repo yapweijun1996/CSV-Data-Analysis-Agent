@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import type { ChatMessage } from '../../types';
 import { getReplyVersionIndex, getReplyVersions } from '../../utils/replyVersions';
+import { chatDangerButton, chatTextButton } from './chatControlStyles';
 import { getTranslation } from '../../utils/localization';
 
 const copyToClipboard = async (text: string) => {
@@ -20,9 +21,8 @@ const copyToClipboard = async (text: string) => {
     }
 };
 
-const btnBase = 'inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 md:min-h-7';
-const btn = `${btnBase} text-slate-600 hover:bg-slate-100 hover:text-slate-900`;
-const btnDanger = `${btnBase} bg-red-50 text-red-700 hover:bg-red-100`;
+const btn = chatTextButton;
+const btnDanger = chatDangerButton;
 
 /** Retry / Copy / Delete and the response-version pager shown under an assistant answer. */
 export const ReplyActionBar: React.FC<{ msg: ChatMessage; copyText: string }> = ({ msg, copyText }) => {

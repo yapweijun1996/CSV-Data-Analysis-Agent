@@ -46,7 +46,7 @@ import { cancelStructureRepairReview } from '../../services/agent/structureRepai
 import { discardCsvSourceScan } from '../../services/data/csvSourceScan';
 
 export interface IDataSlice {
-    addProgress: (message: string, type?: 'system' | 'warning' | 'error', model?: string) => void;
+    addProgress: (message: string, type?: 'system' | 'warning' | 'error', model?: string, localize?: import('../../types/app').ProgressLocalization) => void;
     handleInitialAnalysis: (dataForAnalysis: CsvData, goal: string, options?: { trigger?: 'automatic' | 'manual' }) => Promise<InitialAnalysisOutcome>;
     proposeAnalysisGoals: (dataForAnalysis: CsvData) => Promise<void>;
     handleFileUpload: (file: File) => Promise<void>;
@@ -409,7 +409,7 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
                 if (generation !== uploadGeneration || !ownsSessionScope(storeApi, scope)) return;
                 switch (update.type) {
                     case 'progress':
-                        get().addProgress(update.message, update.messageType, update.model);
+                        get().addProgress(update.message, update.messageType, update.model, update.localize);
                         break;
                     case 'state':
                         if (update.payload.currentView === 'analysis_dashboard' && update.payload.csvData) {
@@ -444,8 +444,8 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
     };
 
     return {
-        addProgress: (message: string, type: 'system' | 'warning' | 'error' = 'system', model?: string) => {
-            const newMessage: ProgressMessage = createProgressMessage({ text: message, type, timestamp: new Date(), model });
+        addProgress: (message: string, type: 'system' | 'warning' | 'error' = 'system', model?: string, localize?: import('../../types/app').ProgressLocalization) => {
+            const newMessage: ProgressMessage = createProgressMessage({ text: message, type, timestamp: new Date(), model, ...(localize ? { localize } : {}) });
             set(state => ({ progressMessages: trimProgressMessages([...state.progressMessages, newMessage]) }));
         },
 

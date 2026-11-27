@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { chatIconButton, chatSelect } from './chatControlStyles';
 import { getTranslation } from '../../utils/localization';
 import { GOOGLE_MODELS, OPENAI_MODELS, ANTHROPIC_MODELS, OPENROUTER_MODELS } from '../../config/modelDefaults';
 import { DEFAULT_GATEWAY_MODEL } from '../../config/defaultGatewayConfig';
@@ -8,7 +9,7 @@ import type { Settings } from '../../types';
 // Reasoning is always on here; 'off' stays available only in Settings.
 const EFFORT_LEVELS: NonNullable<Settings['reasoningEffort']>[] = ['low', 'medium', 'high', 'xhigh'];
 
-const selectClass = 'min-h-[44px] max-w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 md:min-h-8';
+const selectClass = chatSelect;
 
 interface ComposerToolbarProps {
     language: string;
@@ -38,7 +39,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({ language, disa
                 disabled={disabled}
                 title="Reference an analysis card (@)"
                 aria-label="Reference an analysis card"
-                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-lg text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-40 md:min-h-8 md:min-w-8"
+                className={`${chatIconButton} text-lg`}
             >+</button>
             <span className="flex min-w-0 flex-1 items-center gap-1.5">
                 <select
