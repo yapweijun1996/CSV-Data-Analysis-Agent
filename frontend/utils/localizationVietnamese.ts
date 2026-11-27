@@ -98,4 +98,9 @@ const coreTranslations: Readonly<Record<string, string>> = {
 export const vietnameseTranslations: Readonly<Record<string, string>> = {
     ...vietnameseExtraTranslations,
     ...coreTranslations,
+    history_confirm_delete_title: 'Xóa báo cáo?',
+    history_confirm_delete_message: 'Xóa báo cáo của "{filename}"? Thao tác này không thể hoàn tác.',
+    history_confirm_purge_title: 'Xóa toàn bộ lịch sử?',
+    history_confirm_purge_records: 'Xóa tất cả {count} bản ghi lịch sử và giải phóng dung lượng? Thao tác này không thể hoàn tác.',
+    history_confirm_purge_cache: 'Xóa toàn bộ dữ liệu bộ nhớ đệm (bản sao CSV gốc, lần chạy bộ nhớ, tạo phẩm) để giải phóng dung lượng?',
 };

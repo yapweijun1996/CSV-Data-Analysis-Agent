@@ -6,6 +6,7 @@ import { CURRENT_SESSION_KEY, getStorageBreakdown } from '../../services/storage
 import { IconClose } from '../../icons/IconClose';
 import { HistoryStackIcon, HistorySearchIcon, HistoryTrashIcon, HistoryChevronIcon } from './HistoryIcons';
 import { getTranslation } from '../../utils/localization';
+import { confirmModal } from '../../services/ui/modalService';
 import { HistoryReportRow, ReportGroup } from './HistoryReportRow';
 import { StorageBreakdown } from './StorageBreakdown';
 import type { ReportListItem } from '../../types';
@@ -131,10 +132,17 @@ export const HistoryPanel: React.FC = () => {
 
     const handlePurge = async () => {
         const nonCurrentReports = reports.filter(r => r.id !== currentSessionId && r.id !== CURRENT_SESSION_KEY);
-        const msg = nonCurrentReports.length > 0
-            ? `Delete all ${nonCurrentReports.length} history records and free up storage? This cannot be undone.`
-            : 'Clear all cached data (original CSV backups, memory runs, artifacts) to free up storage?';
-        if (!window.confirm(msg)) return;
+        const message = nonCurrentReports.length > 0
+            ? getTranslation('history_confirm_purge_records', language, { count: nonCurrentReports.length })
+            : getTranslation('history_confirm_purge_cache', language);
+        const confirmed = await confirmModal({
+            title: getTranslation('history_confirm_purge_title', language),
+            message,
+            confirmLabel: getTranslation('history_clear_all', language),
+            cancelLabel: getTranslation('history_switch_cancel', language),
+            tone: 'danger',
+        });
+        if (!confirmed) return;
         setIsPurging(true);
         try {
             await onPurgeStorage();
@@ -216,11 +224,16 @@ export const HistoryPanel: React.FC = () => {
 
     if (!isOpen) return null;
 
-    const handleDelete = (id: string, filename: string) => {
-        if (window.confirm(`Are you sure you want to delete the report for "${filename}"? This cannot be undone.`)) {
-            onDeleteReport(id);
-            setOverflowMenuId(null);
-        }
+    const handleDelete = async (id: string, filename: string) => {
+        setOverflowMenuId(null);
+        const confirmed = await confirmModal({
+            title: getTranslation('history_confirm_delete_title', language),
+            message: getTranslation('history_confirm_delete_message', language, { filename }),
+            confirmLabel: getTranslation('history_delete', language),
+            cancelLabel: getTranslation('history_switch_cancel', language),
+            tone: 'danger',
+        });
+        if (confirmed) onDeleteReport(id);
     };
 
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -421,7 +434,7 @@ export const HistoryPanel: React.FC = () => {
                                     onToggleExpand={fn => setExpandedGroup(prev => prev === fn ? null : fn)}
                                     onLoad={handleLoad}
                                     onOpenReport={id => void onOpenReport(id)}
-                                    onDelete={handleDelete}
+                                    onDelete={(id, filename) => void handleDelete(id, filename)}
                                     onExportPdf={id => void onExportPdf(id)}
                                     onOverflowToggle={setOverflowMenuId}
                                     isProtectedReport={isProtectedReport}
