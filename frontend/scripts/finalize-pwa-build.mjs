@@ -26,7 +26,21 @@ const walk = async (directory, prefix = '') => {
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 const indexHtml = await readFile(path.join(distDirectory, 'index.html'), 'utf8');
-const buildVersion = `${version}-${digest(indexHtml).slice(0, 12)}`;
+// Identify the build by its release commit when CI provides one, otherwise by a digest of
+// every emitted file. Hashing index.html alone left the label unchanged when only a lazy
+// chunk or static asset differed, so the top-bar version never moved after an update.
+const contentDigest = async () => {
+    const hash = createHash('sha256');
+    for (const file of await walk(distDirectory)) {
+        if (file === 'service-worker.js' || file === 'SHA256SUMS.txt') continue;
+        hash.update(file);
+        hash.update(await readFile(path.join(distDirectory, file)));
+    }
+    return hash.digest('hex');
+};
+const commit = (process.env.GITHUB_SHA || process.env.VITE_RELEASE_COMMIT || '').trim();
+const buildId = /^[0-9a-f]{7,40}$/i.test(commit) ? commit.slice(0, 12) : (await contentDigest()).slice(0, 12);
+const buildVersion = `${version}-${buildId}`;
 const referencedAssets = [...indexHtml.matchAll(/(?:src|href)="([^"#]+)"/g)]
     .map(match => match[1])
     .filter(value => !/^(?:https?:|data:|#)/i.test(value))

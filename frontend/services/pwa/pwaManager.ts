@@ -148,6 +148,7 @@ export const checkForPwaUpdate = async (options: { manual?: boolean } = {}): Pro
             return 'update_found';
         }
         emit({ checkStatus: 'up_to_date', flow: manual ? 'up_to_date' : 'idle', flowManual: manual });
+        registration.active?.postMessage({ type: 'GET_VERSION' });
         return 'up_to_date';
     } catch {
         await minimumShown;
@@ -175,8 +176,14 @@ export const registerPwa = async (): Promise<void> => {
         void autoApplyPwaUpdate();
     };
     const handleOffline = () => emit({ isOnline: false, status: 'offline' });
+    const requestVersion = () => {
+        navigator.serviceWorker.controller?.postMessage({ type: 'GET_VERSION' });
+        registration?.active?.postMessage({ type: 'GET_VERSION' });
+    };
     const handleControllerChange = () => {
         if (reloadOnControllerChange) window.location.reload();
+        // Without a reload (deferred apply, first install) the label must still follow the new worker.
+        else requestVersion();
     };
     const handleMessage = (event: MessageEvent) => {
         if (event.data?.type === 'PWA_VERSION') emit({ version: String(event.data.version) });
