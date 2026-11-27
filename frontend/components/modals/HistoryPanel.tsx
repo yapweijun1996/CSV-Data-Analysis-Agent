@@ -4,6 +4,7 @@ import { shallow } from 'zustand/shallow';
 import { useAppStore, AppStore } from '../../store/useAppStore';
 import { CURRENT_SESSION_KEY, getStorageBreakdown } from '../../services/storageService';
 import { IconClose } from '../../icons/IconClose';
+import { HistoryStackIcon, HistorySearchIcon, HistoryTrashIcon, HistoryChevronIcon } from './HistoryIcons';
 import { getTranslation } from '../../utils/localization';
 import { HistoryReportRow, ReportGroup } from './HistoryReportRow';
 import { StorageBreakdown } from './StorageBreakdown';
@@ -22,6 +23,9 @@ const formatBytes = (bytes: number): string => {
 
 type SortField = 'updatedAt' | 'createdAt' | 'filename';
 type SortDirection = 'asc' | 'desc';
+type HistoryTab = 'all' | 'recent' | 'versions';
+
+const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 // ── Grouping logic ─────────────────────────────────────────────────────
 
@@ -88,6 +92,7 @@ export const HistoryPanel: React.FC = () => {
     }), shallow);
 
     const [search, setSearch] = useState('');
+    const [tab, setTab] = useState<HistoryTab>('all');
     const [overflowMenuId, setOverflowMenuId] = useState<string | null>(null);
     const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
     const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -182,7 +187,7 @@ export const HistoryPanel: React.FC = () => {
         [reports, currentSessionId, sortField, sortDirection],
     );
 
-    const filteredGroups = useMemo(
+    const searchedGroups = useMemo(
         () => groups.filter(g => {
             if (!search) return true;
             const q = search.toLowerCase();
@@ -191,6 +196,23 @@ export const HistoryPanel: React.FC = () => {
         }),
         [groups, search],
     );
+
+    // Tabs only expose filters that real stored data can answer (recency and saved versions).
+    const tabCounts = useMemo(() => {
+        const now = Date.now();
+        return {
+            all: searchedGroups.length,
+            recent: searchedGroups.filter(g => now - new Date(g.latest.updatedAt).getTime() <= RECENT_WINDOW_MS).length,
+            versions: searchedGroups.filter(g => g.older.length > 0).length,
+        } satisfies Record<HistoryTab, number>;
+    }, [searchedGroups]);
+
+    const filteredGroups = useMemo(() => {
+        if (tab === 'all') return searchedGroups;
+        if (tab === 'versions') return searchedGroups.filter(g => g.older.length > 0);
+        const now = Date.now();
+        return searchedGroups.filter(g => now - new Date(g.latest.updatedAt).getTime() <= RECENT_WINDOW_MS);
+    }, [searchedGroups, tab]);
 
     if (!isOpen) return null;
 
@@ -212,31 +234,43 @@ export const HistoryPanel: React.FC = () => {
     const isProtectedReport = (reportId: string) =>
         reportId === currentSessionId || reportId === CURRENT_SESSION_KEY;
 
+    const tabs: [HistoryTab, string][] = [
+        ['all', getTranslation('history_tab_all', language)],
+        ['recent', getTranslation('history_tab_recent', language)],
+        ['versions', getTranslation('history_tab_versions', language)],
+    ];
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]" onClick={onClose}>
             <div
                 ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="history-dialog-title"
                 tabIndex={-1}
-                className="relative flex h-full max-h-[80vh] w-full max-w-3xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl"
+                className="relative flex h-full max-h-[80vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                    <div>
-                        <h2 id="history-dialog-title" className="text-lg font-semibold text-slate-900">
-                            {getTranslation('history_title', language)}
-                        </h2>
-                        <p className="mt-0.5 text-xs text-slate-500">
-                            {getTranslation('history_footer', language)}
-                        </p>
+                <div className="relative flex items-center justify-between gap-3 px-6 pb-3 pt-5">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-indigo-100/80 via-violet-50/50 to-transparent" aria-hidden="true" />
+                    <div className="relative flex items-center gap-3">
+                        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-200">
+                            <HistoryStackIcon className="h-6 w-6" />
+                        </span>
+                        <div>
+                            <h2 id="history-dialog-title" className="text-lg font-semibold text-slate-900">
+                                {getTranslation('history_title', language)}
+                            </h2>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                                {getTranslation('history_footer', language)}
+                            </p>
+                        </div>
                     </div>
                     <button
                         data-dialog-initial-focus
                         onClick={onClose}
-                        className="flex h-[44px] w-[44px] items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                        className="relative flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-white hover:text-slate-900"
                         title={getTranslation('history_close', language)}
                         aria-label={getTranslation('history_close', language)}
                     >
@@ -245,92 +279,117 @@ export const HistoryPanel: React.FC = () => {
                 </div>
 
                 {/* Search */}
-                {reports.length > 2 && (
-                    <div className="border-b border-slate-100 px-5 py-3">
+                <div className="px-6 pb-3">
+                    <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 shadow-sm transition focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100">
+                        <HistorySearchIcon className="h-4 w-4 flex-shrink-0 text-slate-400" />
                         <input
                             type="text"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder={getTranslation('history_search_placeholder', language)}
-                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
+                            aria-label={getTranslation('history_search_placeholder', language)}
+                            className="min-h-[44px] w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none"
                         />
-                    </div>
-                )}
+                    </label>
+                </div>
 
-                {/* Sort controls + storage bar */}
-                {(reports.length > 2 || true) && (
-                    <div className="flex items-center justify-between border-b border-slate-100 px-5 py-2">
-                        {reports.length > 2 ? (
-                            <div className="flex items-center gap-1 text-[11px]">
-                                <span className="text-slate-400 mr-1">{getTranslation('history_sort', language)}</span>
-                                {([
-                                    ['updatedAt', getTranslation('history_sort_modified', language)],
-                                    ['createdAt', getTranslation('history_sort_created', language)],
-                                    ['filename', getTranslation('history_sort_name', language)],
-                                ] as [SortField, string][]).map(([field, label]) => (
-                                    <button
-                                        key={field}
-                                        onClick={() => toggleSort(field)}
-                                        className={`rounded px-1.5 py-0.5 transition-colors ${sortField === field ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-500 hover:bg-slate-100'}`}
-                                    >
-                                        {label}
-                                        {sortField === field && (
-                                            <span className="ml-0.5">{sortDirection === 'desc' ? '↓' : '↑'}</span>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        ) : <div />}
-                        <div className="flex items-center gap-2">
-                            {storageError ? (
-                                <div role="alert" className="flex items-center gap-2 text-xs text-amber-800">
-                                    <span>{getTranslation('history_storage_unavailable', language)}</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => void refreshStorageInfo()}
-                                        className="min-h-[44px] rounded px-2 font-semibold text-blue-700 hover:bg-blue-50"
-                                    >
-                                        {getTranslation('history_storage_retry', language)}
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => setShowStorageInspector(prev => !prev)}
-                                    className="flex min-h-[44px] items-center gap-1.5 rounded-md px-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                                    title={storageInfo
-                                        ? getTranslation('history_storage_inspect_title', language, { size: storageInfo.idbLabel })
-                                        : getTranslation('history_storage_loading', language)}
-                                    disabled={!storageInfo}
-                                >
-                                    {storageInfo ? (
-                                        <>
-                                            <span>{getTranslation('history_storage_label', language)}</span>
-                                            <span aria-hidden="true">·</span>
-                                            <span>{storageInfo.idbLabel}</span>
-                                        </>
-                                    ) : <span>{getTranslation('history_storage_loading', language)}</span>}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" className={`h-3 w-3 transition-transform ${showStorageInspector ? '' : '-rotate-90'}`}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 8l4 4 4-4" />
-                                    </svg>
-                                </button>
-                            )}
+                {/* Tabs + sort + clear all */}
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-slate-100 px-6 pb-2">
+                    <div role="tablist" aria-label={getTranslation('history_filter_label', language)} className="flex flex-wrap items-center gap-1.5">
+                        {tabs.map(([id, label]) => (
                             <button
-                                onClick={() => void handlePurge()}
-                                disabled={isPurging}
-                                className="min-h-[44px] rounded-md px-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-wait disabled:opacity-50"
-                                title={getTranslation('history_clear_all_title', language)}
+                                key={id}
+                                type="button"
+                                role="tab"
+                                aria-selected={tab === id}
+                                onClick={() => setTab(id)}
+                                className={`min-h-[36px] rounded-full px-3.5 text-xs font-semibold transition-colors ${
+                                    tab === id
+                                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm'
+                                        : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
+                                }`}
                             >
-                                {isPurging
-                                    ? getTranslation('history_clearing', language)
-                                    : getTranslation('history_clear_all', language)}
+                                {label} ({tabCounts[id]})
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <span>{getTranslation('history_sort', language)}</span>
+                            <span className="relative">
+                                <select
+                                    value={sortField}
+                                    onChange={e => { setSortField(e.target.value as SortField); setSortDirection(e.target.value === 'filename' ? 'asc' : 'desc'); }}
+                                    aria-label={getTranslation('history_sort_aria', language)}
+                                    className="min-h-[36px] cursor-pointer appearance-none rounded-lg bg-transparent py-1 pl-1.5 pr-6 text-xs font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                >
+                                    <option value="updatedAt">{getTranslation('history_sort_modified', language)}</option>
+                                    <option value="createdAt">{getTranslation('history_sort_created', language)}</option>
+                                    <option value="filename">{getTranslation('history_sort_name', language)}</option>
+                                </select>
+                                <HistoryChevronIcon className="pointer-events-none absolute right-1 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                            </span>
+                        </label>
+                        <button
+                            type="button"
+                            onClick={() => setSortDirection(prev => prev === 'desc' ? 'asc' : 'desc')}
+                            title={getTranslation('history_sort_direction', language)}
+                            aria-label={getTranslation('history_sort_direction', language)}
+                            className="flex h-9 w-9 items-center justify-center rounded-lg text-sm text-slate-500 hover:bg-slate-100"
+                        >
+                            <span aria-hidden="true">{sortDirection === 'desc' ? '↓' : '↑'}</span>
+                        </button>
+                        <button
+                            onClick={() => void handlePurge()}
+                            disabled={isPurging}
+                            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-wait disabled:opacity-50"
+                            title={getTranslation('history_clear_all_title', language)}
+                        >
+                            <HistoryTrashIcon className="h-4 w-4" />
+                            {isPurging
+                                ? getTranslation('history_clearing', language)
+                                : getTranslation('history_clear_all', language)}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Storage usage */}
+                <div className="flex items-center justify-between px-6 py-1.5">
+                    {storageError ? (
+                        <div role="alert" className="flex items-center gap-2 text-xs text-amber-800">
+                            <span>{getTranslation('history_storage_unavailable', language)}</span>
+                            <button
+                                type="button"
+                                onClick={() => void refreshStorageInfo()}
+                                className="min-h-[44px] rounded px-2 font-semibold text-indigo-700 hover:bg-indigo-50"
+                            >
+                                {getTranslation('history_storage_retry', language)}
                             </button>
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <button
+                            onClick={() => setShowStorageInspector(prev => !prev)}
+                            className="flex min-h-[36px] items-center gap-1.5 rounded-md px-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+                            title={storageInfo
+                                ? getTranslation('history_storage_inspect_title', language, { size: storageInfo.idbLabel })
+                                : getTranslation('history_storage_loading', language)}
+                            disabled={!storageInfo}
+                        >
+                            {storageInfo ? (
+                                <>
+                                    <span>{getTranslation('history_storage_label', language)}</span>
+                                    <span aria-hidden="true">·</span>
+                                    <span>{storageInfo.idbLabel}</span>
+                                </>
+                            ) : <span>{getTranslation('history_storage_loading', language)}</span>}
+                            <HistoryChevronIcon className={`h-3 w-3 transition-transform ${showStorageInspector ? '' : '-rotate-90'}`} />
+                        </button>
+                    )}
+                </div>
 
                 {/* Storage Inspector (expandable) */}
                 {showStorageInspector && (
-                    <div className="border-b border-slate-100 px-5 py-3 bg-slate-50/50">
+                    <div className="border-y border-slate-100 bg-slate-50/60 px-6 py-3">
                         <StorageBreakdown
                             activeSessionId={currentSessionId}
                             onStorageChanged={() => void refreshStorageInfo()}
@@ -339,17 +398,17 @@ export const HistoryPanel: React.FC = () => {
                 )}
 
                 {/* Report list */}
-                <div className="flex-grow overflow-y-auto">
+                <div className="flex-grow overflow-y-auto px-4 pb-4">
                     {filteredGroups.length === 0 ? (
                         <div className="flex items-center justify-center h-full px-5">
                             <p className="text-sm text-slate-500">
-                                {search
+                                {search || tab !== 'all'
                                     ? getTranslation('history_no_results', language)
                                     : getTranslation('history_empty', language)}
                             </p>
                         </div>
                     ) : (
-                        <ul className="divide-y divide-slate-100">
+                        <ul className="space-y-2.5">
                             {filteredGroups.map(group => (
                                 <HistoryReportRow
                                     key={group.latest.id}
@@ -376,7 +435,7 @@ export const HistoryPanel: React.FC = () => {
 
                 {/* Inline confirmation overlay */}
                 {confirmLoadId && (
-                    <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-slate-900/40 backdrop-blur-[2px]">
+                    <div className="absolute inset-0 z-30 flex items-center justify-center rounded-3xl bg-slate-900/40 backdrop-blur-[2px]">
                         <div className="mx-6 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
                             <h3 className="text-sm font-semibold text-slate-800">
                                 {getTranslation('history_switch_session', language)}
@@ -393,7 +452,7 @@ export const HistoryPanel: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => void doLoad(confirmLoadId)}
-                                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+                                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-700"
                                 >
                                     {getTranslation('history_switch_confirm', language)}
                                 </button>

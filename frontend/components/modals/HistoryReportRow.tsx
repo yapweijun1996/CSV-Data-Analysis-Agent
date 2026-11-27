@@ -4,20 +4,7 @@ import { getTranslation } from '../../utils/localization';
 import { HistoryOverflowMenu } from './HistoryOverflowMenu';
 import type { ReportListItem } from '../../types';
 import { isUsableReportTitle } from '../../services/agent/reportContext';
-
-// ── Inline icons ───────────────────────────────────────────────────────
-
-const FileIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-    </svg>
-);
-
-const ChevronIcon: React.FC<{ open: boolean }> = ({ open }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" className={`h-3.5 w-3.5 transition-transform ${open ? '' : '-rotate-90'}`}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 8l4 4 4-4" />
-    </svg>
-);
+import { CsvFileIcon, csvToneFor, HistoryChartIcon, HistoryPlayIcon, HistoryChevronIcon } from './HistoryIcons';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -65,34 +52,37 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
     const displayTitle = latestTitle ?? group.filename;
     const dualDates = showDualDates(latest.createdAt, latest.updatedAt);
 
-    const renderActionButton = (report: ReportListItem, isCurrent: boolean, compact?: boolean) => (
-        <button
-            onClick={() => isCurrent ? void onOpenReport(report.id) : void onLoad(report.id)}
-            disabled={loadingId !== null}
-            className={`min-h-[44px] rounded-lg border border-slate-200 bg-white text-xs font-medium transition-colors ${
-                compact ? 'rounded-md px-2 py-1' : 'px-3 py-1.5'
-            } ${loadingId === report.id ? 'text-slate-400 cursor-wait' : 'text-slate-700 hover:border-slate-300 hover:bg-slate-50'} ${
-                loadingId !== null && loadingId !== report.id ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-        >
-            {loadingId === report.id
-                ? (getTranslation('history_loading', language) ?? 'Loading...')
-                : isCurrent
-                    ? getTranslation('history_open_report', language)
-                    : getTranslation('history_load_session', language)}
-        </button>
-    );
+    const renderActionButton = (report: ReportListItem, isCurrent: boolean, compact?: boolean) => {
+        const busy = loadingId === report.id;
+        const ActionIcon = isCurrent ? HistoryChartIcon : HistoryPlayIcon;
+        return (
+            <button
+                onClick={() => isCurrent ? void onOpenReport(report.id) : void onLoad(report.id)}
+                disabled={loadingId !== null}
+                className={`inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap rounded-xl border bg-white text-xs font-semibold transition-colors ${
+                    compact ? 'px-2.5 py-1' : 'px-3.5 py-1.5'
+                } ${busy ? 'cursor-wait border-slate-200 text-slate-400' : 'border-indigo-200 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50'} ${
+                    loadingId !== null && !busy ? 'cursor-not-allowed opacity-50' : ''
+                }`}
+            >
+                {!busy && <ActionIcon className="h-4 w-4" />}
+                {busy
+                    ? (getTranslation('history_loading', language) ?? 'Loading...')
+                    : isCurrent
+                        ? getTranslation('history_open_report', language)
+                        : getTranslation('history_load_session', language)}
+            </button>
+        );
+    };
 
     return (
-        <li className="group/row">
+        <li className={`group/row overflow-hidden rounded-2xl border shadow-sm transition-shadow hover:shadow-md ${isCurrent ? 'border-indigo-200 bg-gradient-to-r from-indigo-50 to-violet-50/60' : 'border-slate-200/80 bg-white'}`}>
             {/* Primary entry */}
-            <div className={`flex items-start gap-3 px-5 py-3 transition-colors hover:bg-slate-50 ${isCurrent ? 'bg-blue-50/50' : ''}`}>
-                <div className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${isCurrent ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
-                    <FileIcon />
-                </div>
-                <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-start gap-x-3 gap-y-2 px-4 py-3 sm:flex-nowrap">
+                <CsvFileIcon tone={csvToneFor(group.filename)} className="mt-0.5 h-11 w-9 flex-shrink-0" />
+                <div className="min-w-0 flex-1 basis-[calc(100%-3.5rem)] sm:basis-auto">
                     {/* Title */}
-                    <p className="truncate text-sm font-medium text-slate-800">
+                    <p className="truncate text-sm font-semibold text-slate-900">
                         {displayTitle}
                     </p>
                     {/* Filename subtitle (only when title exists and differs from filename) */}
@@ -114,7 +104,7 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                                 <span className="text-[11px] text-slate-400">
                                     {getTranslation('history_created_label', language)}: {formatDate(latest.createdAt)}
                                 </span>
-                                <span className="text-[11px] text-slate-300">&middot;</span>
+                                <span className="hidden text-[11px] text-slate-300 sm:inline">&middot;</span>
                                 <span className="text-[11px] text-slate-400">
                                     {getTranslation('history_modified_label', language)}: {formatDate(latest.updatedAt)}
                                 </span>
@@ -125,22 +115,22 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                             </span>
                         )}
                         {isCurrent && (
-                            <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+                            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
                                 {getTranslation('history_current_badge', language)}
                             </span>
                         )}
                         {older.length > 0 && (
                             <button
                                 onClick={() => onToggleExpand(group.filename)}
-                                className="inline-flex items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 transition-colors hover:bg-slate-200"
+                                className="inline-flex items-center gap-0.5 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50"
                             >
-                                <ChevronIcon open={isGroupExpanded} />
+                                <HistoryChevronIcon className={`h-3.5 w-3.5 transition-transform ${isGroupExpanded ? '' : '-rotate-90'}`} />
                                 {getTranslation('history_older_versions', language, { count: older.length })}
                             </button>
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                <div className="flex w-full flex-shrink-0 items-center justify-end gap-1 sm:w-auto">
                     {renderActionButton(latest, isCurrent)}
                     <HistoryOverflowMenu
                         reportId={latest.id}
@@ -172,7 +162,7 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                                             <span className="text-[11px] text-slate-400">
                                                 {getTranslation('history_created_label', language)}: {formatDate(entry.createdAt)}
                                             </span>
-                                            <span className="text-[11px] text-slate-300">&middot;</span>
+                                            <span className="hidden text-[11px] text-slate-300 sm:inline">&middot;</span>
                                             <span className="text-[11px] text-slate-400">
                                                 {getTranslation('history_modified_label', language)}: {formatDate(entry.updatedAt)}
                                             </span>

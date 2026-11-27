@@ -28,13 +28,13 @@ export const HistoryOverflowMenu: React.FC<HistoryOverflowMenuProps> = ({
     <div className="relative" ref={isOpen ? overflowRef : undefined}>
         <button
             onClick={(e) => { e.stopPropagation(); onToggle(isOpen ? null : reportId); }}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600"
             title={getTranslation('history_more_actions', language)}
         >
             <MoreDotsIcon />
         </button>
         {isOpen && (
-            <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-slate-200 bg-white py-1 shadow-xl">
+            <div className="absolute right-0 z-20 mt-1 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
                 <button
                     onClick={() => { onOpenReport(reportId); onToggle(null); }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
