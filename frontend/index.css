@@ -158,12 +158,14 @@
         --info-900: 12 74 110;
         --info-950: 8 47 73;
         --surface: 255 255 255;
+        --scrim: 2 6 23;
     }
 
     /* DARK MODE: tints flip dark, strong text steps flip light; 400-600 stay for buttons. */
     :root[data-theme="dark"] {
         color-scheme: dark;
         --surface: 15 23 42;
+        --scrim: 0 0 0;
     }
     :root[data-theme="dark"] {
         --neutral-50: 2 6 23;

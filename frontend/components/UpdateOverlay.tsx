@@ -55,7 +55,7 @@ export const UpdateOverlay: React.FC = () => {
     return (
         <div
             data-update-overlay="true"
-            className="fixed inset-0 z-[9800] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[9800] flex items-center justify-center bg-scrim/75 p-4 backdrop-blur-sm"
             aria-busy="true"
         >
             <div

@@ -101,7 +101,7 @@ export const DebugLogEntryCard: React.FC<DebugLogEntryCardProps> = ({
         {isSnapshotExpanded && (
             <div className="mt-3">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Payload snapshot</p>
-                <pre className="overflow-x-auto rounded-card border border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">
+                <pre className="overflow-x-auto rounded-card border border-slate-200 bg-ink-950 p-3 text-xs text-ink-100">
                     {formatJson(entry.payloadSnapshot)}
                 </pre>
             </div>

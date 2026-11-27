@@ -146,7 +146,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
                                 <p>
                                     {msg.queryTrace.returnedRows}/{msg.queryTrace.totalMatchedRows} rows · {msg.queryTrace.durationMs}ms
                                 </p>
-                                <pre className="max-h-56 overflow-auto rounded bg-slate-950 p-2 text-[11px] leading-5 text-slate-100">
+                                <pre className="max-h-56 overflow-auto rounded bg-ink-950 p-2 text-[11px] leading-5 text-ink-100">
                                     <code>{msg.queryTrace.sqlPreview}</code>
                                 </pre>
                             </div>

@@ -1,5 +1,5 @@
 import { ChartConfigProps } from './types';
-import { COLORS, BORDER_COLORS, BG_COLORS, getCommonOptions, getPivotTooltipCallbacks, tickColor, gridColor } from './common';
+import { COLORS, BORDER_COLORS, BG_COLORS, getCommonOptions, getPivotTooltipCallbacks, tickColor, gridColor, readSurface, pointLabelColor } from './common';
 import { parseNullableNumericValue } from '../dataHelpers';
 
 export const createRadarChartConfig = ({ data, plan, selectedIndices, onElementClick, disableAnimation, showDataLabels }: ChartConfigProps): any => {
@@ -22,8 +22,8 @@ export const createRadarChartConfig = ({ data, plan, selectedIndices, onElementC
                 backgroundColor: BG_COLORS[0],
                 borderColor: BORDER_COLORS[0],
                 pointBackgroundColor: COLORS[0],
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
+                pointBorderColor: readSurface(),
+                pointHoverBackgroundColor: readSurface(),
                 pointHoverBorderColor: COLORS[0],
                 borderWidth: 2
             }]
@@ -53,7 +53,7 @@ export const createRadarChartConfig = ({ data, plan, selectedIndices, onElementC
                         color: gridColor()
                     },
                     pointLabels: {
-                        color: '#334155',
+                        color: pointLabelColor(),
                         font: {
                             size: 12
                         }

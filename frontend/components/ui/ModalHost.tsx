@@ -16,7 +16,7 @@ export const ModalHost: React.FC = () => {
     const confirmClass = active.tone === 'danger' ? 'bg-danger-600 hover:bg-danger-700' : 'bg-accent-600 hover:bg-accent-700';
     return (
         <div
-            className="fixed inset-0 z-[9500] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[9500] flex items-center justify-center bg-scrim/60 p-4 backdrop-blur-sm"
             onClick={cancel}
         >
             <div

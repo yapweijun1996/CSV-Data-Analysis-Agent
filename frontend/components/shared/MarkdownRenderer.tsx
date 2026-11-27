@@ -186,7 +186,7 @@ const MarkdownRendererComponent: React.FC<MarkdownRendererProps> = ({ content = 
                     return (
                         <pre
                             key={`code-${index}`}
-                            className="bg-slate-950/90 text-slate-100 rounded-card p-4 text-sm overflow-x-auto"
+                            className="bg-ink-950/90 text-ink-100 rounded-card p-4 text-sm overflow-x-auto"
                         >
                             <code>{block.text}</code>
                         </pre>

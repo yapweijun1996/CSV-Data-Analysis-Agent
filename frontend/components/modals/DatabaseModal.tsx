@@ -450,7 +450,7 @@ const DatabaseModalContent: React.FC = () => {
     );
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 z-50 bg-scrim/45 backdrop-blur-sm" onClick={onClose}>
             <div
                 ref={dialogRef}
                 role="dialog"
@@ -625,7 +625,7 @@ const DatabaseModalContent: React.FC = () => {
                                 </details>
                                 <details className="border-b border-slate-200 px-4 py-3">
                                     <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">{getTranslation('explorer_technical_query_details', language)}</summary>
-                                    <div className="mt-3 overflow-hidden rounded-card border border-slate-200 bg-slate-950 text-sm text-slate-100">
+                                    <div className="mt-3 overflow-hidden rounded-card border border-slate-200 bg-ink-950 text-sm text-ink-100">
                                         <pre className="max-h-[220px] overflow-auto px-3 py-2.5 whitespace-pre-wrap break-words">
                                             {resolvedQueryActivity?.sqlPreview ?? 'No SQL preview available yet. Run an explorer template or select a query trace from history.'}
                                         </pre>

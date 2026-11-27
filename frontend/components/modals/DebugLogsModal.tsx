@@ -261,7 +261,7 @@ const OpenDebugLogsModal: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm" onClick={closeModal}>
+        <div className="fixed inset-0 z-50 bg-scrim/70 backdrop-blur-sm" onClick={closeModal}>
             <div
                 ref={dialogRef}
                 role="dialog"
@@ -340,7 +340,7 @@ const OpenDebugLogsModal: React.FC = () => {
                                                     <div><dt className="font-semibold text-slate-900">Reason</dt><dd className="break-all">{record.reasonCode ?? 'N/A'}</dd></div>
                                                     <div><dt className="font-semibold text-slate-900">Expires</dt><dd>{record.expiresAt}</dd></div>
                                                 </dl>
-                                                <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify(record.payload, null, 2)}</pre>
+                                                <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded bg-ink-950 p-3 text-xs text-ink-100">{JSON.stringify(record.payload, null, 2)}</pre>
                                             </details>
                                         ))}
                                     </div>

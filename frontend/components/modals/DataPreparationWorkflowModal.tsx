@@ -264,7 +264,7 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-950/70" onClick={closeModal}>
+        <div className="fixed inset-0 z-50 bg-scrim/70" onClick={closeModal}>
             <div
                 ref={dialogRef}
                 role="dialog"
@@ -349,7 +349,7 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleOpenWorkspace}
-                                className="min-h-[44px] rounded-card bg-slate-950 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
+                                className="min-h-[44px] rounded-card bg-ink-950 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-ink-800"
                             >
                                 Open Artifacts
                             </button>

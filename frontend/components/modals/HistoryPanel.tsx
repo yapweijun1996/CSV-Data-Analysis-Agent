@@ -254,7 +254,7 @@ export const HistoryPanel: React.FC = () => {
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4 backdrop-blur-[2px]" onClick={onClose}>
             <div
                 ref={dialogRef}
                 role="dialog"
@@ -448,7 +448,7 @@ export const HistoryPanel: React.FC = () => {
 
                 {/* Inline confirmation overlay */}
                 {confirmLoadId && (
-                    <div className="absolute inset-0 z-30 flex items-center justify-center rounded-3xl bg-slate-900/40 backdrop-blur-[2px]">
+                    <div className="absolute inset-0 z-30 flex items-center justify-center rounded-3xl bg-scrim/40 backdrop-blur-[2px]">
                         <div className="mx-6 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
                             <h3 className="text-sm font-semibold text-slate-800">
                                 {getTranslation('history_switch_session', language)}

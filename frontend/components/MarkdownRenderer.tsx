@@ -77,8 +77,8 @@ const TONE_CLASSES: Record<Tone, {
         tableHead: 'bg-slate-100 text-slate-600',
         tableRow: 'border-t border-slate-200',
         tableCell: 'text-slate-700',
-        codeShell: 'bg-slate-950/90 text-slate-100',
-        codeLabel: 'border-b border-slate-800 bg-slate-900/80 text-slate-300',
+        codeShell: 'bg-ink-950/90 text-ink-100',
+        codeLabel: 'border-b border-ink-800 bg-ink-900/80 text-ink-300',
     },
     inverse: {
         root: 'text-white/90',
@@ -89,8 +89,8 @@ const TONE_CLASSES: Record<Tone, {
         tableHead: 'bg-white/10 text-white/80',
         tableRow: 'border-t border-white/15',
         tableCell: 'text-white/90',
-        codeShell: 'bg-slate-950/90 text-slate-100',
-        codeLabel: 'border-b border-slate-800 bg-slate-900/80 text-slate-300',
+        codeShell: 'bg-ink-950/90 text-ink-100',
+        codeLabel: 'border-b border-ink-800 bg-ink-900/80 text-ink-300',
     },
 };
 

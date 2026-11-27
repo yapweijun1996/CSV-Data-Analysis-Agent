@@ -85,7 +85,7 @@ export const DebugLogsToolbar: React.FC<DebugLogsToolbarProps> = ({
                 </button>
                 <button
                     onClick={onOpenWorkspace}
-                    className="rounded-card bg-slate-950 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
+                    className="rounded-card bg-ink-950 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-ink-800"
                 >
                     Artifacts
                 </button>

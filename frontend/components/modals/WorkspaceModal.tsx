@@ -157,7 +157,7 @@ export const WorkspaceModal: React.FC = () => {
     }
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-900/25 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 z-50 bg-scrim/25 backdrop-blur-sm" onClick={onClose}>
             <div
                 ref={dialogRef}
                 role="dialog"

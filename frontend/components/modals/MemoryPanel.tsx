@@ -342,7 +342,7 @@ export const MemoryPanel: React.FC = () => {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-2 backdrop-blur-sm sm:p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-2 backdrop-blur-sm sm:p-4"
             onClick={onClose}
         >
             <div

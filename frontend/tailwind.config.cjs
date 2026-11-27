@@ -30,6 +30,8 @@ module.exports = {
             '3xl': ['24px', { lineHeight: '32px' }],    /* hero (rarely used) */
         },
         extend: {
+            gradientColorStops: { white: 'rgb(var(--surface) / <alpha-value>)' },
+            ringOffsetColor: { white: 'rgb(var(--surface) / <alpha-value>)' },
             backgroundColor: { white: 'rgb(var(--surface) / <alpha-value>)' },
             borderColor: { white: 'rgb(var(--surface) / <alpha-value>)' },
             borderRadius: {
@@ -37,6 +39,15 @@ module.exports = {
             },
             colors: {
                 accent,
+                scrim: 'rgb(var(--scrim) / <alpha-value>)',
+                ink: {
+                    100: 'rgb(241 245 249 / <alpha-value>)',
+                    200: 'rgb(226 232 240 / <alpha-value>)',
+                    300: 'rgb(203 213 225 / <alpha-value>)',
+                    800: 'rgb(30 41 59 / <alpha-value>)',
+                    900: 'rgb(15 23 42 / <alpha-value>)',
+                    950: 'rgb(2 6 23 / <alpha-value>)',
+                },
                 /* Legacy utility names resolve to the themed accent so existing classes follow the palette. */
                 blue: accent,
                 indigo: accent,

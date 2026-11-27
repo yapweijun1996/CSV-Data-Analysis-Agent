@@ -99,7 +99,7 @@ export const ColumnPicker: React.FC<{
                                 onClick={() => onToggle(column)}
                                 className={`min-h-[44px] rounded-full px-3 py-2 text-sm font-medium transition ${
                                     isSelected
-                                        ? 'bg-slate-900 text-white'
+                                        ? 'bg-ink-900 text-white'
                                         : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                                 }`}
                             >

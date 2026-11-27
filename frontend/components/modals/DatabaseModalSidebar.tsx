@@ -172,7 +172,7 @@ export const DatabaseModalSidebar: React.FC<DatabaseModalSidebarProps> = ({
                         disabled={!canLoadWorkspaceTemplate}
                         className={`min-h-[44px] rounded-card px-3 py-2 text-sm font-medium transition ${
                             canLoadWorkspaceTemplate
-                                ? 'bg-slate-900 text-white hover:bg-slate-800'
+                                ? 'bg-ink-900 text-white hover:bg-ink-800'
                                 : 'cursor-not-allowed bg-slate-100 text-slate-400'
                         }`}
                     >
@@ -219,7 +219,7 @@ export const DatabaseModalSidebar: React.FC<DatabaseModalSidebarProps> = ({
                                 }`}
                             >
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
+                                    <span className="rounded-full bg-ink-900 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
                                         {activity.source === 'active'
                                             ? getTranslation('explorer_current_query', language)
                                             : formatOriginLabel(activity.origin, language)}

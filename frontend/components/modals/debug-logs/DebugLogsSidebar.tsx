@@ -89,7 +89,7 @@ export const DebugLogsSidebar: React.FC<DebugLogsSidebarProps> = ({
                         key={view}
                         onClick={() => onViewChange(view)}
                         className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                            activeView === view ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100'
+                            activeView === view ? 'border-ink-900 bg-ink-900 text-white' : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100'
                         }`}
                     >
                         {view}

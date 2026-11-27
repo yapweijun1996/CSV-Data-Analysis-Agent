@@ -158,7 +158,7 @@ export const TaskInspectionView: React.FC<{ onReturnToChat?: () => void; onOpenR
 const TaskInspectionDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const ref = useDialogAccessibility<HTMLDivElement>(true, onClose);
     const { openWorkspace } = useInspection();
-    return createPortal(<div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-900/40 sm:items-center sm:p-4" onClick={onClose}>
+    return createPortal(<div className="fixed inset-0 z-[70] flex items-end justify-center bg-scrim/40 sm:items-center sm:p-4" onClick={onClose}>
         <div ref={ref} role="dialog" aria-modal="true" aria-labelledby="task-inspection-title" tabIndex={-1}
             className="flex h-[75dvh] max-h-[80dvh] w-full min-w-0 flex-col overflow-hidden rounded-t-xl bg-white shadow-xl sm:h-[80dvh] sm:max-w-4xl sm:rounded-xl" onClick={e => e.stopPropagation()}>
             <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 p-3">

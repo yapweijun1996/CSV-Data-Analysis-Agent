@@ -83,7 +83,7 @@ export const AgentMonitorModal: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60" onClick={closeModal}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/60" onClick={closeModal}>
             <div
                 ref={dialogRef}
                 role="dialog"

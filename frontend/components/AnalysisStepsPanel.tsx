@@ -102,7 +102,7 @@ export const AnalysisStepsPanel: React.FC<AnalysisStepsPanelProps> = ({ session,
                     <div key={entry.stepId} className="rounded-card border border-slate-200 bg-slate-50/70 p-4">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-ink-900 text-xs font-semibold text-white">
                                     {entry.stepIndex}
                                 </div>
                                 <div>

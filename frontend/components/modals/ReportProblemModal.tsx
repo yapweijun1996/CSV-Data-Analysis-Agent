@@ -81,7 +81,7 @@ const OpenReportProblemModal: React.FC = () => {
     const secondary = 'min-h-[44px] rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50';
 
     return (
-        <div className="fixed inset-0 z-[9400] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={closeProblemReport}>
+        <div className="fixed inset-0 z-[9400] flex items-end justify-center bg-scrim/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={closeProblemReport}>
             <div
                 ref={dialogRef}
                 role="dialog"
@@ -130,7 +130,7 @@ const OpenReportProblemModal: React.FC = () => {
                     <p className="text-xs text-slate-500">{t('report_problem_privacy')}</p>
                     <details>
                         <summary className="cursor-pointer text-xs font-semibold text-slate-700">{t('report_problem_preview')}</summary>
-                        <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded bg-slate-950 p-3 text-xs text-slate-100" data-testid="report-problem-json">{json}</pre>
+                        <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded bg-ink-950 p-3 text-xs text-ink-100" data-testid="report-problem-json">{json}</pre>
                     </details>
                 </div>
                 <div className="flex flex-col-reverse gap-2 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end">

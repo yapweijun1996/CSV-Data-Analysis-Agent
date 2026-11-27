@@ -110,7 +110,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
     // Do not present positional header guesses or role suggestions as trusted repair evidence.
     // Compacted headers may also have no provisional boundary; local review must remain reachable.
     if (!reportStructureResolution || repairRequired) return rawIntakeIr ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={handleClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4" onClick={handleClose}>
             <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="repair-review-title" tabIndex={-1}
                 onClick={event => event.stopPropagation()} className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto p-6 space-y-4">
                 <h2 id="repair-review-title" className="text-base font-semibold">{reportStructureResolution ? t('guided_repair_title') : 'Review structural interpretations'}</h2>
@@ -251,7 +251,7 @@ export const ReportBoundaryConfirmModal: React.FC = () => {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 p-4"
             onClick={handleClose}
         >
             {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}

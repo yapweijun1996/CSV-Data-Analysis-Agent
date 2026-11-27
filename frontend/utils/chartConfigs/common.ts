@@ -47,15 +47,19 @@ export const BG_COLORS: string[] = COLORS.map(c => hexToRgba(c, 0.5));
 export let HIGHLIGHT_COLOR = '#3b82f6';
 export let HIGHLIGHT_BORDER_COLOR = '#2563eb';
 
+export const readSurface = (): string => readToken('--surface', '#ffffff');
+export const pointLabelColor = (): string => readToken('--neutral-700', '#334155');
 export const tickColor = (): string => readToken('--neutral-500', '#64748b');
 export const gridColor = (): string => readToken('--neutral-200', '#e2e8f0');
 
 /** Re-reads every chart colour token. Call before building a chart config. */
 export const refreshChartTheme = (): void => {
+    const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
     COLORS.forEach((_, index) => { COLORS[index] = tokenHex(`--chart-${index + 1}`, FALLBACK_COLORS[index]); });
     COLORS.forEach((color, index) => {
-        BORDER_COLORS[index] = hexToRgba(color, 0.7);
-        BG_COLORS[index] = hexToRgba(color, 0.5);
+        // Fills need more opacity on a dark surface or they read as muddy.
+        BORDER_COLORS[index] = hexToRgba(color, isDark ? 0.95 : 0.7);
+        BG_COLORS[index] = hexToRgba(color, isDark ? 0.8 : 0.5);
     });
     HIGHLIGHT_COLOR = tokenHex('--accent-500', '#3b82f6');
     HIGHLIGHT_BORDER_COLOR = tokenHex('--accent-600', '#2563eb');
