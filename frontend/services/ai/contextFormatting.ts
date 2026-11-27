@@ -16,6 +16,7 @@ import { getDataQueryTraceLabel } from '../agent/execution/dataQueryContract';
 import { evaluateAutoAnalysisCards } from '../agent/autoAnalysisEvaluation';
 import { resolveLongSessionContextPolicy, resolveToolOutputCutoff } from '../agent/runtime/runtimePolicySettings';
 import { truncateContextText } from './contextManager';
+import { excludeRetriedTurn } from '../../utils/replyVersions';
 import { buildDataQueryResultDigest } from '../agent/execution/dataQueryResultDigest';
 
 export const normalizeText = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
@@ -443,7 +444,7 @@ const formatRecentQueryEvidence = (
 };
 
 const buildVisibleEvidenceState = (
-    state: Partial<VisibleEvidenceState>,
+    state: Partial<VisibleEvidenceState> & { pendingReplyRetryId?: string | null },
 ): VisibleEvidenceState => ({
     contextualSummary: state.contextualSummary ?? null,
     activeDataQuery: state.activeDataQuery ?? null,
@@ -451,7 +452,7 @@ const buildVisibleEvidenceState = (
     activeSpreadsheetFilter: state.activeSpreadsheetFilter ?? null,
     analysisCards: state.analysisCards ?? [],
     queryHistory: state.queryHistory ?? [],
-    chatHistory: state.chatHistory ?? [],
+    chatHistory: excludeRetriedTurn(state.chatHistory ?? [], state.pendingReplyRetryId),
     cleaningRun: state.cleaningRun ?? null,
     activeTurn: state.activeTurn ?? null,
 });

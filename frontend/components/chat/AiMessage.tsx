@@ -70,7 +70,7 @@ export const AiMessage: React.FC<AiMessageProps> = ({
         : null;
     const displayText = sanitizeAssistantDisplayText(msg.text);
     const isOperationalMessage = msg.type === 'ai_cleaning_step' || msg.type === 'ai_query_trace';
-    const showReplyActions = !isOperationalMessage && !isActiveError && !msg.resolved && (msg.type ?? 'ai_message') === 'ai_message';
+    const showReplyActions = !isOperationalMessage && !isActiveError && !msg.resolved && !msg.isRunSummary && (msg.type ?? 'ai_message') === 'ai_message';
     const titleKey = isActiveError
         ? 'chat_error'
         : msg.resolved

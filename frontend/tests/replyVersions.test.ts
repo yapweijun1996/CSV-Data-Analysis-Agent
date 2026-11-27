@@ -20,3 +20,19 @@ describe('reply versions', () => {
         expect(selectReplyVersion(back, 5)).toBe(back);
     });
 });
+
+import { excludeRetriedTurn } from '../utils/replyVersions';
+describe('excludeRetriedTurn', () => {
+    const u1: ChatMessage = { id: 'u1', sender: 'user', type: 'user_message', text: 'q1', timestamp: new Date(0) };
+    const a1: ChatMessage = { ...base, id: 'a1' };
+    const u2: ChatMessage = { id: 'u2', sender: 'user', type: 'user_message', text: 'q2', timestamp: new Date(0) };
+    const a2: ChatMessage = { ...base, id: 'a2', text: 'second' };
+    it('drops only the retried question and its answer', () => {
+        expect(excludeRetriedTurn([u1, a1, u2, a2], 'a2').map(m => m.id)).toEqual(['u1', 'a1']);
+    });
+    it('is a no-op without a retry target', () => {
+        const history = [u1, a1];
+        expect(excludeRetriedTurn(history, null)).toBe(history);
+        expect(excludeRetriedTurn(history, 'missing')).toBe(history);
+    });
+});

@@ -35,7 +35,7 @@ export const ReplyActionBar: React.FC<{ msg: ChatMessage; copyText: string }> = 
         const history = state.chatHistory;
         const index = history.findIndex(m => m.id === msg.id);
         if (index < 0) return false;
-        const newer = history.slice(index + 1).some(m => m.sender === 'ai' && (m.type ?? 'ai_message') === 'ai_message');
+        const newer = history.slice(index + 1).some(m => m.sender === 'ai' && !m.isRunSummary && (m.type ?? 'ai_message') === 'ai_message');
         return !newer && history.slice(0, index).some(m => m.sender === 'user' && m.type === 'user_message');
     });
     const [confirmDelete, setConfirmDelete] = useState(false);

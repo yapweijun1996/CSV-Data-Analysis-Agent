@@ -1,4 +1,5 @@
 /** Project bounded app evidence into the browser Pi turn prompt. */
+import { excludeRetriedTurn } from '../../../../utils/replyVersions';
 import { resolveAvailableSkills } from '../../skills/skillRegistry';
 import { buildSkillsPromptSection } from '../../skills/skillsPrompt';
 import { resolveCardTrustDecision } from '../../cardTrustDecision';
@@ -73,7 +74,7 @@ const formatCardEvidence = (
 
 const formatRecentTurns = (
     state: ReturnType<StoreApi['getState']>,
-): string => (state.chatHistory ?? [])
+): string => excludeRetriedTurn(state.chatHistory ?? [], state.pendingReplyRetryId)
     .filter(message =>
         (message.sender === 'user' || message.sender === 'ai')
         && message.type !== 'ai_thought'

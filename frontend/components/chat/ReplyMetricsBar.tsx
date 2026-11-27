@@ -23,6 +23,7 @@ export const ReplyMetricsBar: React.FC<{ telemetry: ReplyTelemetry }> = ({ telem
                 className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-xl px-3 py-1.5 text-left md:min-h-0"
             >
                 <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                    {telemetry.scope === 'coordinator' && <span className="font-medium text-slate-500" title="Tokens and speed count only the coordinator model calls. Stage tools run separate model calls that are not included.">Coordinator</span>}
                     {items.map(([label, value], index) => (
                         <React.Fragment key={label}>
                             {index > 0 && <span aria-hidden="true" className="text-slate-300">·</span>}

@@ -326,7 +326,7 @@ export const createChatSlice: StateCreator<AppStore, [], [], IChatSlice> = (set,
             const index = history.findIndex(m => m.id === messageId);
             if (index < 0) return;
             // Retry only the newest answer: the model context after it would otherwise be inconsistent.
-            if (history.slice(index + 1).some(m => m.sender === 'ai' && (m.type ?? 'ai_message') === 'ai_message')) return;
+            if (history.slice(index + 1).some(m => m.sender === 'ai' && !m.isRunSummary && (m.type ?? 'ai_message') === 'ai_message')) return;
             const prompt = [...history.slice(0, index)].reverse().find(m => m.sender === 'user' && m.type === 'user_message');
             if (!prompt?.text.trim()) return;
             set({ pendingReplyRetryId: messageId });
