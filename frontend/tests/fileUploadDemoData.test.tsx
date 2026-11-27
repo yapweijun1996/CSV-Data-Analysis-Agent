@@ -310,7 +310,7 @@ describe('demo dataset gallery layout contract', () => {
         const card = container.querySelector('[data-demo-dataset-card="sg-demo-0"]')!;
         expect(card.classList).toContain('h-full');
         expect(card.classList).toContain('min-w-0');
-        expect(card.querySelector('h4')!.classList).toContain('line-clamp-2');
+        expect(card.querySelector('h4')!.classList).toContain('sm:line-clamp-2');
 
         const buttons = within(gallery as HTMLElement).getAllByRole('button');
         for (const button of buttons) {
@@ -325,44 +325,44 @@ describe('demo dataset gallery layout contract', () => {
         const dropZone = container.firstElementChild!;
         expect(dropZone.classList).toContain('min-h-full');
         expect(dropZone.classList).not.toContain('h-full');
-        expect(dropZone.classList).toContain('p-4');
-        expect(dropZone.classList).toContain('sm:p-8');
+        expect(dropZone.classList).toContain('p-3');
+        expect(dropZone.classList).toContain('sm:p-4');
     });
 
-    it('shows 3 cards on small screens and 6 on desktop until "Show all" is pressed', async () => {
-        stubFetch(catalog(7));
+    it('shows 2 cards by default and reveals more on roomier viewports until "Show all" is pressed', async () => {
+        stubFetch(catalog(10));
         render(<FileUpload />);
 
         const items = within(await screen.findByRole('list')).getAllByRole('listitem', { hidden: true });
-        expect(items.map(item => item.className.replace('min-w-0 ', ''))).toEqual([
-            'flex', 'flex', 'flex',
-            'hidden lg:flex', 'hidden lg:flex', 'hidden lg:flex',
-            'hidden',
-        ]);
+        const classes = items.map(item => item.className.replace('min-w-0 ', ''));
+        expect(classes.slice(0, 2)).toEqual(['flex', 'flex']);
+        expect(classes.slice(2).every(value => value.startsWith('hidden '))).toBe(true);
+        expect(classes[2]).toContain('lg:flex');
+        expect(classes[3]).toContain('min-height:800px');
+        expect(classes[9]).toContain('min-height:900px');
 
-        const toggle = screen.getByRole('button', { name: 'Show all 7 datasets' });
+        const toggle = screen.getByRole('button', { name: 'Show all 10 datasets' });
         expect(toggle).toHaveAttribute('aria-expanded', 'false');
-        expect(toggle.parentElement!.classList).not.toContain('lg:hidden');
 
         fireEvent.click(toggle);
         expect(screen.getByRole('button', { name: 'Show fewer datasets' })).toHaveAttribute('aria-expanded', 'true');
         expect(items.every(item => item.classList.contains('flex') && !item.classList.contains('hidden'))).toBe(true);
     });
 
-    it('hides the toggle on desktop when every dataset already fits', async () => {
+    it('hides the toggle on tall desktops when every dataset already fits', async () => {
         stubFetch(catalog(5));
         render(<FileUpload />);
 
         await screen.findByRole('list');
-        expect(screen.getByRole('button', { name: 'Show all 5 datasets' }).parentElement!.classList).toContain('lg:hidden');
+        expect(screen.getByRole('button', { name: 'Show all 5 datasets' }).parentElement!.className).toContain('min-height:900px');
     });
 
-    it('omits the toggle when three or fewer datasets exist', async () => {
-        stubFetch(catalog(3));
+    it('omits the toggle when two or fewer datasets exist', async () => {
+        stubFetch(catalog(2));
         render(<FileUpload />);
 
         await screen.findByRole('list');
         expect(screen.queryByRole('button', { name: /Show all/ })).not.toBeInTheDocument();
-        expect(getDemoCardVisibilityClass(2, false)).toBe('flex');
+        expect(getDemoCardVisibilityClass(1, false)).toBe('flex');
     });
 });

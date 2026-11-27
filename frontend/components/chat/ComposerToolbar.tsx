@@ -4,6 +4,8 @@ import { getTranslation } from '../../utils/localization';
 import { GOOGLE_MODELS, OPENAI_MODELS, ANTHROPIC_MODELS, OPENROUTER_MODELS } from '../../config/modelDefaults';
 import { DEFAULT_GATEWAY_MODEL } from '../../config/defaultGatewayConfig';
 import type { Settings } from '../../types';
+import { IconBrain } from '../../icons/IconDemoGallery';
+import { IconCode } from '../../icons/IconCode';
 
 const EFFORT_LEVELS: NonNullable<Settings['reasoningEffort']>[] = ['off', 'low', 'medium', 'high', 'xhigh'];
 /** Level restored when Reasoning is switched back on after being off. */
@@ -53,7 +55,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({ language, disa
                 title="Allow the agent to use external (MCP) tools"
                 className={`${chipBase} ${toolsOn ? chipOn : chipOff}`}
             >
-                <span aria-hidden="true" className="font-mono">&lt;/&gt;</span>Tools
+                <IconCode className="h-3.5 w-3.5" />Tools
             </button>
             <button
                 type="button"
@@ -62,7 +64,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({ language, disa
                 title={getTranslation('settings_reasoning_effort_hint', language)}
                 className={`${chipBase} ${reasoningOn ? chipOn : chipOff}`}
             >
-                <span aria-hidden="true">🧠</span>Reasoning
+                <IconBrain className="h-3.5 w-3.5" />Reasoning
             </button>
             <span className="flex w-full min-w-0 items-center gap-1.5">
                 <select

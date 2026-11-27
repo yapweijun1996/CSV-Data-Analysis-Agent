@@ -203,7 +203,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
             onDragOver={handleDrag}
             onDrop={handleDrop}
             aria-busy={isWorkspaceRestoring}
-            className={`flex min-h-full flex-col items-center justify-center rounded-card border-2 border-dashed p-4 transition-colors duration-300 sm:p-8 ${
+            className={`flex min-h-full flex-col items-center justify-center rounded-card border-2 border-dashed p-3 transition-colors duration-300 sm:p-4 ${
                 isWorkspaceRestoring
                     ? 'border-slate-300 bg-slate-50'
                     : dragActive
@@ -255,20 +255,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
                 </div>
             )}
             <CsvSourceScanPanel />
-            <IconFileUpload />
-            <h2 className="mb-2 text-2xl font-bold tracking-tight text-slate-900">
+            <IconFileUpload className="mb-1 h-10 w-10 shrink-0 text-slate-400 [@media(min-height:880px)]:mb-2 [@media(min-height:880px)]:h-14 [@media(min-height:880px)]:w-14" />
+            <h2 className="mb-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                 {getTranslation('file_upload_title', language)}
             </h2>
-            <p className="mb-5 max-w-xl text-center text-sm leading-6 text-slate-600">
+            <p className="mb-3 max-w-xl text-center text-sm leading-5 text-slate-600 [@media(max-height:760px)]:hidden">
                 {getTranslation('file_upload_outcome', language)}
             </p>
-            <p className="mb-2 text-lg text-slate-500">{getTranslation('file_upload_drag_drop', language)}</p>
-            <p className="text-slate-600">{getTranslation('file_upload_or', language)}</p>
+            <p className="mb-0.5 text-base text-slate-500">{getTranslation('file_upload_drag_drop', language)}</p>
+            <p className="text-sm text-slate-600">{getTranslation('file_upload_or', language)}</p>
             <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadUnavailable}
-                className={`mt-4 inline-flex min-h-[44px] items-center justify-center rounded-card px-4 py-2 text-sm font-bold text-white transition-colors ${
+                className={`mt-2 inline-flex min-h-[44px] items-center justify-center rounded-card px-4 py-2 text-sm font-bold text-white transition-colors ${
                     isUploadUnavailable
                         ? 'cursor-wait bg-slate-400'
                         : 'cursor-pointer bg-blue-600 hover:bg-blue-700'
@@ -280,7 +280,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ isWorkspaceRestoring = f
             </button>
             <input ref={fileInputRef} id="file-upload" type="file" accept=".csv" onChange={handleChange} className="hidden" disabled={isUploadUnavailable} tabIndex={-1} />
 
-            <p className="mt-4 max-w-sm text-center text-sm leading-5 text-slate-500">{getTranslation('data_privacy_note', language)}</p>
+            <p className="mt-2 max-w-md text-center text-xs leading-4 text-slate-500">{getTranslation('data_privacy_note', language)}</p>
 
             {!datasetBundle && (
                 <DemoDatasetGallery
