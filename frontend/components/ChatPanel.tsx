@@ -1,4 +1,5 @@
 
+import { resolveProgressText } from '../utils/progressText';
 import React, { useEffect, useRef, useMemo, useCallback, useState, lazy, Suspense } from 'react';
 import { shallow } from 'zustand/shallow';
 import { useAppStore } from '../store/useAppStore';
@@ -127,7 +128,7 @@ const ThinkingIndicator: React.FC<{ isVisible: boolean }> = React.memo(({ isVisi
                                     : msg.type === 'warning' ? 'text-amber-500'
                                         : 'text-slate-500'
                             }>
-                                {msg.text}
+                                {resolveProgressText(msg, language)}
                             </span>
                         </div>
                     ))}
@@ -247,7 +248,7 @@ export const ChatPanel: React.FC = React.memo(() => {
         // PERF-305: Lazy read via getState() — no subscription, no re-render.
         // Progress text is best-effort display; ThinkingIndicator already shows
         // real-time progress independently.
-        const latestText = useAppStore.getState().progressMessages.slice(-1)[0]?.text ?? null;
+        const latestText = resolveProgressText(useAppStore.getState().progressMessages.slice(-1)[0], language);
         return getComposerBusyState({
             currentView,
             isBusy,
@@ -441,7 +442,7 @@ export const ChatPanel: React.FC = React.memo(() => {
     }, []);
 
     return (
-        <div className="flex h-full flex-col rounded-card bg-slate-100 md:rounded-none">
+        <div data-chat-panel="true" className="flex h-full flex-col rounded-card bg-slate-100 md:rounded-none">
             <Suspense fallback={null}>
                 {isPiBrowserLabOpen && isDebugModeEnabled() && <PiBrowserLab onClose={() => setIsPiBrowserLabOpen(false)} />}
             </Suspense>
@@ -515,7 +516,8 @@ export const ChatPanel: React.FC = React.memo(() => {
                         )}
                         {renderedTimeline}
                         <StreamingBubble />
-                        <ThinkingIndicator isVisible={isAssistantBusy} />
+                        {/* In the empty state the composer status card already shows progress; a lone "Processing…" row above it looks orphaned. */}
+                        <ThinkingIndicator isVisible={isAssistantBusy && timeline.length > 0} />
                     </div>
                 </div>
                 {showScrollToBottom && (

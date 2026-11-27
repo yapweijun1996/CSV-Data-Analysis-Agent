@@ -234,12 +234,12 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
     const sendButtonTitle = showQueueSendButton
         ? getTranslation('chat_send_next', language)
         : primaryActsAsCancel
-            ? getTranslation('cancel_run', language)
+            ? `${getTranslation('cancel_run', language)} (Esc)`
             : composerBusyState
                 ? composerBusyState.detail
                 : isAssistantBusy
                     ? getTranslation('chat_send_locked_hint', language)
-                    : getTranslation('send_message', language);
+                    : `${getTranslation('send_message', language)} (Enter)`;
     const sendButtonDisabled = showQueueSendButton
         ? isSendDisabled
         : primaryActsAsCancel
@@ -340,11 +340,28 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
             // CardMentionPopup captures these via document keydown listener
             return;
         }
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
             e.preventDefault();
             handleSend(e);
+        } else if (e.key === 'Escape' && canCancelActiveTurn && !isCancellationPending) {
+            e.preventDefault();
+            onCancelActiveTurn();
         }
     };
+
+    // Esc also stops a running turn when focus has left the textarea, unless a dialog owns the key.
+    useEffect(() => {
+        if (!canCancelActiveTurn || isCancellationPending) return undefined;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape' || event.defaultPrevented) return;
+            const target = event.target as HTMLElement | null;
+            if (target && target !== document.body && !target.closest('[data-chat-panel]')) return;
+            if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
+            onCancelActiveTurn();
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [canCancelActiveTurn, isCancellationPending, onCancelActiveTurn]);
 
     return (
         <div className="px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 md:pb-3">
@@ -491,6 +508,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
                                 placeholder={placeholder}
                                 disabled={isComposerDisabled}
                                 aria-describedby={disclaimerTextId}
+                                aria-keyshortcuts="Enter Escape"
                                 className={`composer-textarea ${isExpanded ? 'min-h-[160px] max-h-[360px]' : 'min-h-[24px] max-h-[200px]'} w-full resize-none bg-transparent pl-1 pr-9 py-2 text-base leading-6 placeholder-slate-400/60 outline-none disabled:cursor-not-allowed disabled:text-slate-400 ${
                                     mentionCount > 0 ? 'text-transparent caret-slate-900' : 'text-slate-900'
                                 }`}
@@ -504,7 +522,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
                                     type="button"
                                     onClick={onCancelActiveTurn}
                                     disabled={isCancellationPending}
-                                    title={getTranslation('cancel_run', language)}
+                                    title={`${getTranslation('cancel_run', language)} (Esc)`}
                                     aria-label={isCancellationPending ? getTranslation('cancelling_run', language) : getTranslation('cancel_run', language)}
                                     className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600 transition hover:bg-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300 md:h-8 md:min-h-0 md:min-w-0 md:w-8"
                                 >

@@ -453,7 +453,7 @@ export async function* processAndCleanFile(file: File, store: StoreApi): AsyncGe
             issues,
         });
         const userSummary = summarizeDataQualityForEndUser(issues, store.getState().settings.language)?.userSummary;
-        yield { type: 'progress', message: userSummary || modelSummary, messageType: 'warning' };
+        yield { type: 'progress', message: userSummary || modelSummary, messageType: 'warning', localize: { kind: 'data_quality', issues } };
     }
 
     const dataPrepPlan: DataPreparationPlan = {
