@@ -149,7 +149,7 @@ export const AppHeader: React.FC = () => {
             wrap to a second row there instead of covering the title. */}
         <header
             data-app-header-root="true"
-            className="flex min-w-0 flex-row flex-wrap items-center gap-2 overflow-hidden px-0 py-2 md:flex-nowrap"
+            className="flex min-w-0 flex-row flex-wrap items-center gap-2 overflow-hidden px-0 py-2 lg:flex-nowrap"
         >
             <div className="shrink-0">
                 <h1 className="whitespace-nowrap text-xl font-extrabold leading-tight text-slate-900">AI Analysis</h1>
@@ -162,7 +162,7 @@ export const AppHeader: React.FC = () => {
             )}
             <nav
                 aria-label={getTranslation('header_analysis_actions', language)}
-                className="ml-auto flex w-full min-w-0 flex-nowrap items-center justify-between gap-0.5 overflow-visible md:w-auto md:justify-end md:gap-1.5"
+                className="ml-auto flex w-full min-w-0 flex-nowrap items-center justify-between gap-0.5 overflow-visible px-1 md:justify-end md:gap-1.5 lg:w-auto"
             >
                 {showNewSessionButton && (showAnalysisTools || hasPendingRestore) && (
                     <button

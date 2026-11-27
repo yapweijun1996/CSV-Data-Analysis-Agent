@@ -136,7 +136,7 @@ const DemoDatasetCard: React.FC<DemoDatasetCardProps> = ({ dataset, language, di
                     className={`inline-flex min-h-[44px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-card border-2 border-blue-600 bg-white px-3 py-1 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white disabled:hover:text-blue-600 [@media(pointer:fine)]:min-h-[36px] ${focusRing}`}
                 >
                     {loading ? <IconLoadingSpinner className="h-4 w-4" /> : <IconSparkChart className="h-4 w-4 shrink-0" />}
-                    <span className="truncate">{getTranslation(loading ? 'demo_gallery_loading_dataset' : 'demo_gallery_analyse', language)}</span>
+                    <span className="min-w-0 whitespace-normal text-center leading-tight">{getTranslation(loading ? 'demo_gallery_loading_dataset' : 'demo_gallery_analyse', language)}</span>
                 </button>
                 <a
                     href={dataset.source.url}
