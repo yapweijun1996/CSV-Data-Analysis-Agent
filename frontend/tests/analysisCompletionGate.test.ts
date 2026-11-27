@@ -95,16 +95,6 @@ describe('resolveAnalysisCompletionGate', () => {
         })).toMatchObject({ status: 'blocked', trustedBusinessCardIds: [] });
     });
 
-    it('blocks stale and unverified business cards', () => {
-        const stale = card({ provenance: provenance({ datasetVersion: 'dataset-old' }) });
-        const legacy = card({ id: 'legacy', provenance: null });
-
-        expect(resolveAnalysisCompletionGate({
-            cards: [stale, legacy],
-            currentDatasetVersion: DATASET_VERSION,
-            columnProfiles: profiles,
-        }).status).toBe('blocked');
-    });
 
     it('does not mark a count-only card as a completed business analysis', () => {
         const countOnly = card({

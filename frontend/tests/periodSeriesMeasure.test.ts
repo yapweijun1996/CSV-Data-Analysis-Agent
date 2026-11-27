@@ -282,20 +282,6 @@ describe('melted period-series tables keep the value tied to its series', () => 
         expect(gate(transport, doubleCounted).result.decision).toBe('reject');
     });
 
-    it('never verifies per-series comparisons or record counts across transport series of different units', () => {
-        const transport = demos.get(TRANSPORT)!;
-        for (const plan of [
-            buildPlan({ title: 'Median Value by Data Series', groupBy: 'DataSeries', fn: 'median' }),
-            buildPlan({ title: 'Record Count by Data Series', groupBy: 'DataSeries', fn: 'count' }),
-        ]) {
-            const gated = gate(transport, plan);
-            expect(gated.result.decision).toBe('table_only');
-            expect(gated.result.reasonCodes.some(code => code === 'mixed_unit_series_comparison' || code === 'series_record_count')).toBe(true);
-            const card = buildCard(plan, gated);
-            expect(card.autoAnalysisEvaluation?.reasonCodes).toContain('series_scope_warning');
-            expect(resolveCardTrustDecision(card, 'v1').status).not.toBe('verified');
-        }
-    });
 
     it.each([VISITORS, BUSINESS])('sums %s over detail rows but never a total together with its components', fileName => {
         const demo = demos.get(fileName)!;

@@ -121,6 +121,15 @@ const createStore = () => {
     };
 };
 
+
+const finalTextStream = (model: Parameters<StreamFn>[0], text: string) => {
+    const output = createAssistantMessageEventStream();
+    const message = { role: 'assistant', content: [{ type: 'text', text }], api: model.api, provider: model.provider, model: model.id,
+        usage, stopReason: 'stop', timestamp: Date.now() } as AssistantMessage;
+    output.push({ type: 'start', partial: message });
+    output.push({ type: 'done', reason: 'stop', message });
+    return output;
+};
 describe('Pi production runtime', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -247,7 +256,10 @@ describe('Pi production runtime', () => {
                 artifacts: { createdCardId: 'created-card' },
             };
         });
+        let cardStreamCalls = 0;
         const stream: StreamFn = model => {
+            // The model stops on its own after the card tool result; nothing ends the turn for it.
+            if (cardStreamCalls++ > 0) return finalTextStream(model, 'Card created.');
             const output = createAssistantMessageEventStream();
             const message: AssistantMessage = {
                 role: 'assistant',
@@ -325,7 +337,10 @@ describe('Pi production runtime', () => {
             });
             return { status: 'success', message: 'Created analysis card.', artifacts: { createdCardId: 'created-card' } };
         });
+        let cardStreamCalls = 0;
         const stream: StreamFn = model => {
+            // The model stops on its own after the card tool result; nothing ends the turn for it.
+            if (cardStreamCalls++ > 0) return finalTextStream(model, 'Card created.');
             const output = createAssistantMessageEventStream();
             const message: AssistantMessage = {
                 role: 'assistant',

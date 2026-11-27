@@ -212,7 +212,7 @@ export const runPiFollowUpTurn = async (
     const isBatchAnalysis = request.intentFindings?.intent === 'batch_analysis';
     // Card creation is always offered; the model decides whether a card is useful. Never required.
     const allowCardCreation = true;
-    const cardTarget = isBatchAnalysis ? BATCH_ANALYSIS_CARD_TARGET : 1;
+    const cardTarget = Number.POSITIVE_INFINITY;
     try {
         logicalTask = (await preparePiExecutor(store, {entryPoint:'follow_up',goal:request.message,continuation:request.taskContinuation})).task;
         await logicalTask.resolveScope(answerScope);

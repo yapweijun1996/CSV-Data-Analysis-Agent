@@ -110,16 +110,6 @@ describe('AnalysisCardHeader', () => {
         expect(screen.getByText('Compare Value by Group.')).toBeInTheDocument();
     });
 
-    it('shows explicit stale, degraded, and unverified evidence states', () => {
-        const { rerender } = render(<AnalysisCardHeader {...baseProps} trustStatus="stale" />);
-        expect(screen.getByText('Stale evidence')).toBeInTheDocument();
-
-        rerender(<AnalysisCardHeader {...baseProps} trustStatus="caveated" />);
-        expect(screen.getByText('Needs review')).toBeInTheDocument();
-
-        rerender(<AnalysisCardHeader {...baseProps} trustStatus="unverified" />);
-        expect(screen.getByText('Unverified')).toBeInTheDocument();
-    });
 
     it('removes closed menus from the accessibility tree', () => {
         render(<AnalysisCardHeader {...baseProps} />);
@@ -129,13 +119,4 @@ describe('AnalysisCardHeader', () => {
         expect(screen.queryByRole('menuitemradio')).not.toBeInTheDocument();
     });
 
-    it('keeps exploration actions out of the simple results presentation', () => {
-        render(<AnalysisCardHeader {...baseProps} showActions={false} />);
-
-        expect(screen.getByText('Spend by Group')).toBeInTheDocument();
-        expect(screen.getByText('Verified')).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /chart type/i })).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /export/i })).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /more actions/i })).not.toBeInTheDocument();
-    });
 });

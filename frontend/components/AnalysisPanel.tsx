@@ -373,32 +373,6 @@ const AnalysisPanelComponent: React.FC = () => {
                         <ResearchRunSummary session={latestAnalysisSession} />
                     )}
 
-                    {/* 3. Single global credibility status (after analysis completes) */}
-                    {showHeadlineSections && credibilitySummary && (
-                        <CredibilityBanner
-                            overallVerdict={credibilitySummary.overallVerdict}
-                            trustedCount={credibilitySummary.trustedCount}
-                            caveatedCount={credibilitySummary.caveatedCount}
-                            weakCount={credibilitySummary.weakCount}
-                            hasRunCaveats={initialAnalysisStatus === 'degraded'}
-                            questionCount={researchTally?.total ?? 0}
-                            answeredQuestionCount={researchTally?.supported ?? 0}
-                            unsupportedQuestionCount={researchTally?.notSupported ?? 0}
-                            language={language}
-                            // The simple view lists verified cards only. With none verified it
-                            // would show an empty page under a hint that says "review these cards".
-                            {...(resultsViewMode === 'simple' && simpleCardIds.length === 0 && cards.length > 0 ? {
-                                reviewActionLabel: reviewCardCount > 0
-                                    ? getTranslation(
-                                        reviewCardCount === 1 ? 'credibility_review_cards_button_one' : 'credibility_review_cards_button_many',
-                                        language,
-                                        { count: String(reviewCardCount) },
-                                    )
-                                    : getTranslation('credibility_show_all_cards', language),
-                                onReviewAction: () => handleResultsViewChange('explore'),
-                            } : {})}
-                        />
-                    )}
 
                     {/* 4. Final summary + executive KPIs */}
                     {showHeadlineSections && finalSummary && (

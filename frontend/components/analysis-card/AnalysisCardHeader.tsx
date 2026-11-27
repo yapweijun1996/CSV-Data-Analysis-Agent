@@ -234,22 +234,6 @@ const AnalysisCardHeaderComponent: React.FC<AnalysisCardHeaderProps> = ({
                             <ChartTypeIcon type={displayChartType} className="h-3.5 w-3.5" />
                         </span>
                         <h3 className="text-lg font-semibold leading-snug text-slate-800">{displayTitle}</h3>
-                        <button
-                            type="button"
-                            onClick={onVerdictClick}
-                            className={`inline-flex min-h-[44px] items-center rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors cursor-pointer md:min-h-0 ${
-                                trustStatus === 'verified'
-                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                                    : trustStatus === 'caveated'
-                                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                                        : trustStatus === 'unverified'
-                                            ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                            : 'bg-red-100 text-red-700 hover:bg-red-200'
-                            }`}
-                            title={getTranslation('verdict_explainer_click_hint', language)}
-                        >
-                            {getTranslation(`card_trust_${trustStatus}`, language)}
-                        </button>
                     </div>
                     {grainSubtitle && (
                         <p className="mt-0.5 pl-7 text-xs text-slate-400">{grainSubtitle}</p>

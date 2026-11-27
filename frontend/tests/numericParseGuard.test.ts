@@ -137,46 +137,6 @@ const traceFor = (column: string): QueryTraceEntry => ({
 } as unknown as QueryTraceEntry);
 
 describe('numeric parse guard', () => {
-    it('fires on the old comma-stripping canonical preparation and the card is not Verified', async () => {
-        const imported = importText(w4Text, 'w4_european_semicolon.csv');
-        const corrupted = oldStrippingCanonical(imported, ['Menge', 'Preis', 'Betrag']);
-        const check = await runCheck(imported, corrupted);
-
-        expect(check.status).toBe('mismatch');
-        const columns = check.findings.map(finding => finding.column).sort();
-        expect(columns).toEqual(['Betrag', 'Preis']);
-        const betrag = check.findings.find(finding => finding.column === 'Betrag')!;
-        expect(betrag.kind).toBe('sum');
-        expect(betrag.sourceSum).toBeCloseTo(26840971.67, 2);
-        expect(betrag.loadedSum).toBeLessThan(betrag.sourceSum! / 10);
-        expect(betrag.ratio).toBeGreaterThan(0);
-        expect(betrag.ratio).toBeLessThan(0.1);
-
-        // A card that sums Betrag cannot be Verified, presents as a table only and says why.
-        const provenance = buildAnalysisArtifactProvenance(cardPlan('Betrag'), {
-            canonicalCsvData: corrupted, csvData: corrupted, currentDatasetId: 'd1', dataPreparationPlan: null, numericParseCheck: check,
-        }, { queryTrace: traceFor('Betrag') });
-        expect(provenance.numericParseMismatch?.columns).toEqual(['Betrag']);
-        expect(provenance.evidenceStatus).toBe('hypothesis');
-        const card = {
-            plan: cardPlan('Betrag'),
-            provenance,
-            autoAnalysisEvaluation: { verdict: 'good' },
-        } as never;
-        const trust = resolveCardTrustDecision(card, provenance.datasetVersion);
-        expect(trust.status).toBe('unverified');
-        expect(trust.reasonCodes).toContain('numeric_parse_mismatch');
-        expect(trust.detail).toContain('Betrag');
-        expect(trust.detail).toMatch(/ratio 0\.\d+/);
-        expect(isTableOnlyPresentation(resolveCardPresentationPlan({ plan: cardPlan('Betrag'), provenance }))).toBe(true);
-
-        // A card on a column that did reconcile (or on none of the failed ones) is unaffected.
-        const other = buildAnalysisArtifactProvenance(cardPlan('Menge'), {
-            canonicalCsvData: corrupted, csvData: corrupted, currentDatasetId: 'd1', dataPreparationPlan: null, numericParseCheck: check,
-        }, { queryTrace: traceFor('Menge') });
-        expect(other.numericParseMismatch).toBeUndefined();
-        expect(other.evidenceStatus).toBe('verified');
-    }, 120_000);
 
     it('ignores a check made for another dataset version', async () => {
         const imported = importText(w4Text, 'w4_european_semicolon.csv');

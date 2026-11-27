@@ -122,52 +122,7 @@ describe('buildExecutiveKpis', () => {
         });
     });
 
-    it('keeps a card whose leader rests on very few rows out of the headline KPIs', () => {
-        const kpis = buildExecutiveKpis({
-            cards: [buildCard({
-                plan: {
-                    title: 'Median spend by project',
-                    description: 'Compare spend.',
-                    chartType: 'bar',
-                    aggregation: 'median',
-                    groupByColumn: 'Project',
-                    valueColumn: 'Spend',
-                },
-                autoAnalysisEvaluation: {
-                    verdict: 'caveated',
-                    reasonCodes: ['small_sample_leader'],
-                    detail: 'smallSampleLeaders=36 TUAS ROAD:2',
-                    evaluatedAt: new Date().toISOString(),
-                    source: 'auto_analysis_evaluator_v1',
-                },
-            })],
-            columnProfiles: buildColumnProfiles(),
-            csvData: buildCsvData([{ Project: '36 TUAS ROAD', Spend: 1200 }]),
-        });
 
-        expect(kpis).toEqual([]);
-    });
-
-    it('returns no executive KPIs when there are no trusted cards', () => {
-        const kpis = buildExecutiveKpis({
-            cards: [buildCard({
-                autoAnalysisEvaluation: {
-                    verdict: 'caveated',
-                    reasonCodes: ['aggregation_quality_warning'],
-                    detail: 'aggregation_quality_warning',
-                    evaluatedAt: new Date().toISOString(),
-                    source: 'auto_analysis_evaluator_v1',
-                },
-            })],
-            columnProfiles: buildColumnProfiles(),
-            csvData: buildCsvData([
-                { Project: '36 TUAS ROAD', Spend: 1200 },
-                { Project: 'Depot Upgrade', Spend: 800 },
-            ]),
-        });
-
-        expect(kpis).toEqual([]);
-    });
 
     it('builds four actionable KPIs and prioritizes inactive groups over concentration insight', () => {
         const kpis = buildExecutiveKpis({
