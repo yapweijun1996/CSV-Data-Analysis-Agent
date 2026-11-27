@@ -464,6 +464,7 @@ export interface RuntimeOutcomeEnvelope {
     assistantMessage?: string | null;
     assistantMessageIsError?: boolean;
     assistantCardId?: string | null;
+    assistantTelemetry?: import('./chat').ReplyTelemetry | null;
     shouldDrainQueue?: boolean;
     taskOutputs?: RuntimeTaskOutputVerdict;
 }

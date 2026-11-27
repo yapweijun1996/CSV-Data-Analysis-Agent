@@ -151,6 +151,7 @@ const GEMINI_THINKING_BUDGET_BY_EFFORT: Record<NonNullable<Settings['reasoningEf
     low: 1024,
     medium: 8192,
     high: 24576,
+    xhigh: 32768,
 };
 
 // OpenAI/gateway Responses-API reasoning effort uses the SDK's own enum directly.
@@ -159,6 +160,8 @@ const OPENAI_REASONING_EFFORT_BY_EFFORT: Record<NonNullable<Settings['reasoningE
     low: 'low',
     medium: 'medium',
     high: 'high',
+    // The AI SDK enum has no xhigh; the Pi runtime clamps xhigh per model, this path uses its ceiling.
+    xhigh: 'high',
 };
 
 // Anthropic extended thinking takes a raw token budget (minimum 1024), like Gemini.

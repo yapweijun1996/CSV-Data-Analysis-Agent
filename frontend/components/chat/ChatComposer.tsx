@@ -4,6 +4,7 @@ import { IconStop } from '../../icons/IconStop';
 import { getTranslation } from '../../utils/localization';
 import { resolveSuggestedActionPrompt } from '../../utils/suggestedActions';
 import { useAppStore } from '../../store/useAppStore';
+import { ComposerToolbar } from './ComposerToolbar';
 import { CardMentionPopup, type CardMentionItem } from './CardMentionPopup';
 import { resolveDisplayPlanTitle } from '../../services/dashboard/businessLabelResolver';
 
@@ -155,6 +156,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
     const onScrollNeededRef = useRef(onScrollNeeded);
     onScrollNeededRef.current = onScrollNeeded;
     const disclaimerTextId = 'chat-composer-disclaimer';
+    const [isExpanded, setIsExpanded] = useState(false);
 
     // --- @ Card Mention ---
     const [mentionState, setMentionState] = useState<{ isOpen: boolean; query: string; startIndex: number } | null>(null);
@@ -191,6 +193,20 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
             textareaRef.current?.focus();
         });
     }, [input, mentionState]);
+
+    // The "+" button inserts "@" at the caret, which opens the same card-mention popup as typing it.
+    const handleAddMention = useCallback(() => {
+        const el = textareaRef.current;
+        const pos = el?.selectionStart ?? input.length;
+        const needsSpace = pos > 0 && !/\s/.test(input[pos - 1]);
+        const insert = `${needsSpace ? ' ' : ''}@`;
+        setInput(input.slice(0, pos) + insert + input.slice(pos));
+        setMentionState({ isOpen: true, query: '', startIndex: pos + insert.length - 1 });
+        requestAnimationFrame(() => {
+            el?.focus();
+            el?.setSelectionRange(pos + insert.length, pos + insert.length);
+        });
+    }, [input]);
 
     const handleMentionClose = useCallback(() => setMentionState(null), []);
 
@@ -441,10 +457,24 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
                         {/* Highlight overlay + textarea stack — overlay renders @mentions in blue,
                              textarea handles input with transparent text so caret stays visible */}
                         <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setIsExpanded(v => !v)}
+                                aria-pressed={isExpanded}
+                                aria-label={isExpanded ? 'Collapse input' : 'Expand input'}
+                                title={isExpanded ? 'Collapse input' : 'Expand input'}
+                                className="absolute right-0 top-0 z-10 inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                    {isExpanded
+                                        ? <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0v4m0-4h4m7 5l5-5m0 0v4m0-4h-4M9 15l-5 5m0 0v-4m0 4h4m7-5l5 5m0 0v-4m0 4h-4" />
+                                        : <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" />}
+                                </svg>
+                            </button>
                             {mentionCount > 0 && (
                                 <div
                                     aria-hidden="true"
-                                    className="pointer-events-none absolute inset-0 whitespace-pre-wrap break-words px-1 py-2 text-base leading-6"
+                                    className="pointer-events-none absolute inset-0 whitespace-pre-wrap break-words pl-1 pr-9 py-2 text-base leading-6"
                                     style={{ color: 'transparent' }}
                                 >
                                     {renderHighlightedInput(input, mentionMapRef.current)}
@@ -461,13 +491,14 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
                                 placeholder={placeholder}
                                 disabled={isComposerDisabled}
                                 aria-describedby={disclaimerTextId}
-                                className={`composer-textarea min-h-[24px] max-h-[200px] w-full resize-none bg-transparent px-1 py-2 text-base leading-6 placeholder-slate-400/60 outline-none disabled:cursor-not-allowed disabled:text-slate-400 ${
+                                className={`composer-textarea ${isExpanded ? 'min-h-[160px] max-h-[360px]' : 'min-h-[24px] max-h-[200px]'} w-full resize-none bg-transparent pl-1 pr-9 py-2 text-base leading-6 placeholder-slate-400/60 outline-none disabled:cursor-not-allowed disabled:text-slate-400 ${
                                     mentionCount > 0 ? 'text-transparent caret-slate-900' : 'text-slate-900'
                                 }`}
                             />
                         </div>
                         {/* Buttons always in their own right-aligned row — avoids layout oscillation from width/scrollHeight feedback loop */}
-                        <div className="flex flex-shrink-0 items-center justify-end gap-2">
+                        <div className="flex flex-shrink-0 items-end justify-end gap-2">
+                            <ComposerToolbar language={language} disabled={isComposerDisabled} onAddMention={handleAddMention} />
                             {showSecondaryCancelButton && (
                                 <button
                                     type="button"

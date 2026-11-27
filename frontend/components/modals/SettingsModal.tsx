@@ -69,7 +69,7 @@ const PROVIDER_BUTTONS: { id: Settings['provider']; label: string | null }[] = [
     { id: 'openrouter', label: 'OpenRouter' },
 ];
 const numericSettingNames = new Set<keyof Pick<Settings, 'maxAgentTurns' | 'toolOutputCutoff'>>(['maxAgentTurns', 'toolOutputCutoff']);
-const reasoningEffortLevels: NonNullable<Settings['reasoningEffort']>[] = ['off', 'low', 'medium', 'high'];
+const reasoningEffortLevels: NonNullable<Settings['reasoningEffort']>[] = ['off', 'low', 'medium', 'high', 'xhigh'];
 
 
 export const SettingsModal: React.FC = () => {

@@ -120,6 +120,20 @@ export interface QueuedChatTurn {
 
 export type TranscriptVisibility = 'full' | 'summarized' | 'hidden';
 
+/** Measured per-reply metrics shown under an assistant answer. Missing values mean "not reported". */
+export interface ReplyTelemetry {
+    model?: string;
+    reasoningEffort?: string;
+    ttftMs?: number;
+    durationMs?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    costUsd?: number;
+    /** Output tokens per second, measured from first token to last token. */
+    tps?: number;
+}
+
 export interface ChatMessage {
     id: string;
     sender: 'user' | 'ai';
@@ -142,6 +156,7 @@ export interface ChatMessage {
     resolved?: boolean;
     contextVisibility?: TranscriptVisibility;
     modelText?: string | null;
+    telemetry?: ReplyTelemetry;
 }
 
 export interface StreamingMessage {

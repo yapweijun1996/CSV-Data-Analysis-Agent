@@ -40,6 +40,7 @@ import { createPiAppTools } from './piAppTools';
 import { type PiTaskContinuation } from './piCodingTask';
 import { gatePiCreatedCards, type PiCardGateRejection } from './piCardEvidenceGate';
 import { createPiFollowUpSystemPrompt } from './piContext';
+import { createReplyTelemetryTracker } from '../../../../utils/replyTelemetry';
 import { createPiCompactionTelemetry, createPiProviderContextTransform, createPiProviderStream, resolvePiModel, resolvePiThinkingLevel } from './piProvider';
 import {
     buildGroundedCompleteQueryReply,
@@ -173,6 +174,7 @@ export const runPiFollowUpTurn = async (
     let groundingVerdict: import('./queryEvidence').QueryGroundingVerdict | undefined;
     let agent: Agent | null = null;
     let unsubscribe: (() => void) | undefined;
+    const telemetry = createReplyTelemetryTracker();
     let status: PiFollowUpResult['status'] = 'failed';
     let text = '';
     let pendingMutation: Record<string, unknown> | null = null;
@@ -315,6 +317,7 @@ export const runPiFollowUpTurn = async (
                 if ((event.type === 'message_start' || event.type === 'message_update' || event.type === 'message_end')
                     && event.message.role === 'assistant' && event.message.content.some(part => part.type === 'toolCall' && part.name.startsWith('mcp_'))) mcpAttempted = true;
                 if (mcpAttempted && !hadMcpAttempt) store.setState({streamingMessage:null});
+                telemetry.observe(event);
                 const partial = readAssistantText(event);
                 if (partial && !mcpAttempted) store.getState().setStreamingMessage?.(partial);
             });
@@ -568,6 +571,7 @@ export const runPiFollowUpTurn = async (
                     taskOutputs,
                     assistantMessage: status === 'cancelled' || pendingMutation || pendingClarification?.resumeContext?.piCandidateApproval ? null : text,
                     assistantMessageIsError: status === 'failed',
+                    assistantTelemetry: telemetry.snapshot(state.settings.reasoningEffort),
                     assistantCardId: status === 'completed' ? (createdCardIds[createdCardIds.length - 1] ?? null) : null,
                 },
             });
