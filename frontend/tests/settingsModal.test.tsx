@@ -3,6 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsModal } from '../components/modals/SettingsModal';
 
 const clearAllLocalBrowserDataMock = vi.hoisted(() => vi.fn());
+const generateTextMock = vi.hoisted(() => vi.fn());
+
+vi.mock('ai', async importOriginal => ({
+    ...(await importOriginal<typeof import('ai')>()),
+    generateText: generateTextMock,
+}));
 
 vi.mock('../services/storageService', () => ({
     clearAllLocalBrowserData: clearAllLocalBrowserDataMock,
@@ -157,5 +163,66 @@ describe('SettingsModal', () => {
             'ローカルデータを完全に消去できませんでした。他のアプリタブを閉じて再試行してください。',
         );
         expect(screen.getByRole('alert')).toHaveTextContent('完全に消去されなかった保存領域：キャッシュストレージ。');
+    });
+
+    it('has a labelled close button, a header title and a 90dvh scroll body', () => {
+        render(<SettingsModal />);
+        const dialog = screen.getByRole('dialog', { name: 'Settings' });
+        expect(dialog.className).toContain('max-h-[90dvh]');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Close settings' }));
+        expect(modalState.setIsSettingsModalOpen).toHaveBeenCalledWith(false);
+    });
+
+    it('marks exactly one provider as selected', () => {
+        render(<SettingsModal />);
+        const pressed = () => screen.getAllByRole('button', { pressed: true }).map(b => b.textContent?.trim());
+        expect(pressed().filter(label => ['Google Gemini', 'OpenAI', 'Anthropic', 'OpenRouter'].includes(label ?? ''))).toEqual(['Google Gemini']);
+        fireEvent.click(screen.getByRole('button', { name: 'Anthropic' }));
+        const selected = ['Google Gemini', 'OpenAI', 'Anthropic', 'OpenRouter']
+            .filter(name => screen.getByRole('button', { name }).getAttribute('aria-pressed') === 'true');
+        expect(selected).toEqual(['Anthropic']);
+    });
+
+    it('masks the API key by default and toggles visibility', () => {
+        modalState.settings = { ...modalState.settings, geminiApiKey: 'secret-key' };
+        render(<SettingsModal />);
+        const input = screen.getByLabelText('Gemini API Key') as HTMLInputElement;
+        expect(input.type).toBe('password');
+        fireEvent.click(screen.getByRole('button', { name: 'Show API key' }));
+        expect(input.type).toBe('text');
+        fireEvent.click(screen.getByRole('button', { name: 'Hide API key' }));
+        expect(input.type).toBe('password');
+    });
+
+    it('shows loading then success for a connection test and ignores duplicate clicks', async () => {
+        modalState.settings = { ...modalState.settings, geminiApiKey: 'test-gemini-key' };
+        let resolve!: (value: { text: string }) => void;
+        generateTextMock.mockReset();
+        generateTextMock.mockReturnValue(new Promise(r => { resolve = r; }));
+        render(<SettingsModal />);
+
+        const button = screen.getByRole('button', { name: 'Test Connection' });
+        fireEvent.click(button);
+        const busy = await screen.findByRole('button', { name: 'Testing...' });
+        expect(busy).toBeDisabled();
+        fireEvent.click(busy);
+        expect(generateTextMock).toHaveBeenCalledTimes(1);
+
+        resolve({ text: 'OK' });
+        expect(await screen.findByText('Connection OK')).toBeInTheDocument();
+    });
+
+    it('shows an error state when the connection test fails and clears it after editing the key', async () => {
+        modalState.settings = { ...modalState.settings, geminiApiKey: 'bad-key' };
+        generateTextMock.mockReset();
+        generateTextMock.mockRejectedValue(new Error('401 unauthorized'));
+        render(<SettingsModal />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Test Connection' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent('401 unauthorized');
+        expect(screen.getByText('Connection failed')).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('Gemini API Key'), { target: { name: 'geminiApiKey', value: 'new-key' } });
+        expect(screen.queryByText('Connection failed')).not.toBeInTheDocument();
     });
 });

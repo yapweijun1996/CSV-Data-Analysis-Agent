@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { IconChevronDown } from '../../icons/IconSettingsGlyphs';
 
 type ComboboxProps = {
     id: string;
@@ -150,7 +151,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
                 }}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500"
             >
-                <span className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                <IconChevronDown className={`h-5 w-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
             </button>
             {isOpen && filteredOptions.length > 0 && (
                 <ul
