@@ -1,10 +1,11 @@
 import type { LanguageModelV3 } from '@ai-sdk/provider';
 
 /**
- * A model that downloads its provider SDK on the first request, so provider
- * packages stay out of the startup bundle while model construction stays
- * synchronous. Middleware wrapped around this model (consent included) runs
- * before the SDK is loaded or any request is sent.
+ * A model that downloads its provider SDK on first use, so provider packages
+ * stay out of the startup bundle while model construction stays synchronous.
+ * The same-origin SDK chunk may be fetched before the consent gate runs (the AI
+ * SDK reads `supportedUrls` while preparing a call); wrapped consent middleware
+ * still runs before any request reaches the provider.
  *
  * `provider` and `modelId` must match what the real SDK model reports.
  */

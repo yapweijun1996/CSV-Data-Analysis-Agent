@@ -13,7 +13,7 @@ The owner authorized focused verification, main push and the existing manual Pag
 
 ### 2026-11-27 — Provider SDKs load on first request (branch `perf/lazy-ai-sdk`)
 
-- `services/ai/lazyLanguageModel.ts` keeps `createProviderModel` synchronous while OpenAI, Gemini, Anthropic and OpenRouter SDK packages load on the first model request. Do not import those packages statically; each has a named `vendor-ai-*` chunk.
+- `services/ai/lazyLanguageModel.ts` keeps `createProviderModel` synchronous while OpenAI, Gemini, Anthropic and OpenRouter SDK packages load on first model use (the chunk may be fetched before the consent gate; no provider request is sent until consent passes). Do not import those packages statically; each has a named `vendor-ai-*` chunk.
 - Measured: `bundle:check` passes (`vendor-ai-sdk` 1,092,292 to 749,305 bytes); cold start in Chrome fell from 18 JS requests / 11,884,586 bytes to 16 / 10,774,487. Default gateway bodies were identical, and mocked browser runs for all five provider settings sent requests without page errors. No live provider was called.
 - Verified: typecheck, lint, stage-pages tests, build, reattach 8/8. Vitest 5,680 of 5,681 passed; `npm run e2e` passed unit-guard and production-startup.
 - Pre-existing on `main` (reproduced without this change): the `endUserMode.ui.test.tsx` header test, and the `local-preview` and `upload-review-privacy` e2e scripts.
