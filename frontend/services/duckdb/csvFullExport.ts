@@ -1,6 +1,6 @@
 import * as Papa from 'papaparse';
 import type { CsvData, CsvRow } from '../../types';
-import { CSV_BOM } from '../../utils/csvExport';
+import { CSV_BOM, type CsvSink } from '../../utils/csvExport';
 import { executeRawSqlQuery } from './queryEngine';
 
 const TABLE_NAME = 'session_clean_dataset';
@@ -47,10 +47,11 @@ const quoteIdentifier = (name: string): string => `"${name.replace(/"/g, '""')}"
  * through the same admitted-SQL path as other queries (5,000-row / 2 MB per-result limits),
  * so the page size shrinks automatically for wide tables.
  */
-export const exportBackedDatasetToCsvBlob = async (dataset: CsvData, options: FullCsvExportOptions = {}): Promise<Blob> => {
+/** Writes the whole table into `sink`. The caller owns the sink lifecycle (close/abort). */
+export const exportBackedDatasetToCsv = async (dataset: CsvData, sink: CsvSink, options: FullCsvExportOptions = {}): Promise<void> => {
     const total = dataset.backing?.rowCount ?? 0;
     if (!dataset.backing || total <= 0) throw new Error('csv_export_no_backing');
-    const parts: BlobPart[] = [CSV_BOM];
+    await sink.write(CSV_BOM);
     let columns: string[] | null = null;
     let pageSize = Math.min(MAX_PAGE_ROWS, 2000);
     let offset = 0;
@@ -69,7 +70,7 @@ export const exportBackedDatasetToCsvBlob = async (dataset: CsvData, options: Fu
             if (!columns) {
                 columns = execution.result.selectedColumns.filter(column => column !== RID_ALIAS);
                 const fields = columns.map(column => options.labels?.[column] ?? column);
-                parts.push(Papa.unparse({ fields, data: [[]] as unknown[][] }, { header: true }).split(CRLF)[0], CRLF);
+                await sink.write(Papa.unparse({ fields, data: [[]] as unknown[][] }, { header: true }).split(CRLF)[0] + CRLF);
             }
         } catch (error) {
             if (options.signal?.aborted) throw new CsvExportCancelledError();
@@ -82,7 +83,7 @@ export const exportBackedDatasetToCsvBlob = async (dataset: CsvData, options: Fu
         if (rows.length === 0 && !sortColumn) { offset += pageSize; continue; }
         if (rows.length === 0) break;
         const cols = columns!;
-        parts.push(Papa.unparse({ fields: cols, data: rows.map(row => cols.map(column => row[column])) }, { header: false }), CRLF);
+        await sink.write(Papa.unparse({ fields: cols, data: rows.map(row => cols.map(column => row[column])) }, { header: false }) + CRLF);
         if (sortColumn) {
             const last = rows[rows.length - 1];
             cursor = { value: last[sortColumn] ?? null, rowid: Number(last[RID_ALIAS]) };
@@ -91,5 +92,4 @@ export const exportBackedDatasetToCsvBlob = async (dataset: CsvData, options: Fu
         options.onProgress?.(Math.min(offset, total), total);
         await new Promise<void>(resolve => setTimeout(resolve, 0));
     }
-    return new Blob(parts, { type: 'text/csv;charset=utf-8;' });
 };

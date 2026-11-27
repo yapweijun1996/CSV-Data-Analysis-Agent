@@ -13,8 +13,8 @@ import { isPreviewDataQuery } from '../services/agent/execution/dataQueryContrac
 import { GroupByTest, ViewModeToggle } from './spreadsheet/GroupByTest';
 import { IconDownload } from '../icons/IconDownload';
 import { exportRowsToCsvAsync } from '../utils/exportUtils';
-import { buildCsvFileName, downloadBlob, sortRowsForExport, type CsvSortState } from '../utils/csvExport';
-import { CsvExportCancelledError, exportBackedDatasetToCsvBlob } from '../services/duckdb/csvFullExport';
+import { buildCsvFileName, saveCsv, sortRowsForExport, type CsvSortState } from '../utils/csvExport';
+import { CsvExportCancelledError, exportBackedDatasetToCsv } from '../services/duckdb/csvFullExport';
 import { toast } from '../services/ui/toastService';
 import type { UserColumnAnnotation } from '../types';
 
@@ -143,7 +143,9 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
                 labels: displayColumnLabels,
                 suffix,
             });
-            if (result.success) {
+            if (result.success && result.cancelled) {
+                // Save dialog dismissed: nothing to report.
+            } else if (result.success) {
                 toast.success(getTranslation('export_csv_success', language, { count: result.rowCount.toLocaleString(), file: result.fileName }), { id: 'export-csv-done' });
             } else {
                 toast.error(getTranslation('export_format_failed', language, { format: 'CSV' }), { id: 'export-failed', detail: result.error });
@@ -156,6 +158,7 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
     const canExportFull = Boolean(largeDatasetBacking && preferredDataset && viewMode !== 'raw' && !activeDataQuery);
     const handleExportFullCsv = async () => {
         if (isExportingCsv || !canExportFull || !preferredDataset || !largeDatasetBacking) return;
+        const fileName = buildCsvFileName(activeDataset.fileName, 'full');
         const controller = new AbortController();
         fullExportAbortRef.current = controller;
         setIsExportingCsv(true);
@@ -165,17 +168,17 @@ export const SpreadsheetPanel: React.FC<SpreadsheetPanelProps> = ({ isVisible })
             getTranslation('export_csv_progress', language, { done: done.toLocaleString(), total: total.toLocaleString() }),
             { id: progressId, duration: 0, actions: [{ label: getTranslation('export_csv_cancel', language), onClick: () => controller.abort() }] },
         );
-        showProgress(0);
         try {
-            const blob = await exportBackedDatasetToCsvBlob(preferredDataset, {
+            const exportOptions = {
                 labels: displayColumnLabels,
                 sort: tableSort,
                 signal: controller.signal,
-                onProgress: done => showProgress(done),
-            });
-            const fileName = buildCsvFileName(activeDataset.fileName, 'full');
-            downloadBlob(blob, fileName);
+                onProgress: (done: number) => showProgress(done),
+            };
+            // The save dialog opens first (needs the click's user activation); output then streams to disk where supported.
+            const saved = await saveCsv(fileName, sink => { showProgress(0); return exportBackedDatasetToCsv(preferredDataset, sink, exportOptions); });
             toast.dismiss(progressId);
+            if (!saved) return;
             toast.success(getTranslation('export_csv_success', language, { count: total.toLocaleString(), file: fileName }), { id: 'export-csv-done' });
         } catch (error) {
             toast.dismiss(progressId);

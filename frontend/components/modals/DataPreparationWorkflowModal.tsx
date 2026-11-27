@@ -12,6 +12,7 @@ import { DataPreparationWorkflowContent } from '../data-preparation/DataPreparat
 import { pickDataPreparationWorkflowState } from '../data-preparation/workflowStore';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 import { exportDatasetToCsv, type ExportResult } from '../../utils/exportUtils';
+import { buildCsvFileName, saveCsv } from '../../utils/csvExport';
 import { getTranslation } from '../../utils/localization';
 import { buildPublicBetaSupportBundle } from '../../services/support/publicBetaSupportBundle';
 import { downloadDatasetBundleZip } from '../../services/data/datasetBundleExport';
@@ -149,23 +150,26 @@ const OpenDataPreparationWorkflowModal: React.FC = () => {
 
         let result: ExportResult = { success: false, error: 'Dataset export failed.' };
         if (dataset.backing?.opfsPath) {
-            const sourceFile = await readDatasetFileFromOpfs(dataset.backing.opfsPath);
-            if (sourceFile) {
-                const url = URL.createObjectURL(sourceFile);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `cleaned_${dataset.fileName}`;
-                link.click();
-                URL.revokeObjectURL(url);
-                result = { success: true };
+            // Open the save destination first (needs the click's user activation), then stream the stored file into it.
+            const opfsPath = dataset.backing.opfsPath;
+            try {
+                const saved = await saveCsv(buildCsvFileName(`cleaned_${dataset.fileName}`), async sink => {
+                    const sourceFile = await readDatasetFileFromOpfs(opfsPath);
+                    if (!sourceFile) throw new Error('The temporary source file is unavailable. Re-import the original CSV.');
+                    await sink.writeBlob(sourceFile);
+                });
+                result = { success: true, cancelled: !saved };
+            } catch (error) {
+                result = { success: false, error: error instanceof Error ? error.message : 'Dataset export failed.' };
             }
         } else {
-            result = exportDatasetToCsv(dataset.data, `cleaned_${dataset.fileName}`);
+            result = await exportDatasetToCsv(dataset.data, `cleaned_${dataset.fileName}`);
         }
         if (!result.success) {
             setCopyStatus('error');
             return;
         }
+        if (result.cancelled) return;
         setCopyStatus('download');
         logAgentToolUsage({
             tool: 'workspace_builder',

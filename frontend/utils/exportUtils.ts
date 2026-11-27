@@ -1,7 +1,7 @@
 import { CsvRow } from '../types';
 import { toPng } from 'html-to-image';
 import * as Papa from 'papaparse';
-import { CSV_BOM, buildCsvBlob, buildCsvFileName, downloadBlob, type CsvBlobOptions } from './csvExport';
+import { CSV_BOM, buildCsvFileName, saveCsv, writeCsvRows, type CsvWriteOptions } from './csvExport';
 
 // --- Export theme constants ---
 
@@ -70,6 +70,8 @@ const hideExportExcluded = (root: HTMLElement, attr = 'data-export-exclude'): ((
 
 export interface ExportResult {
   success: boolean;
+  /** True when the person dismissed the save dialog; nothing was written. */
+  cancelled?: boolean;
   error?: string;
 }
 
@@ -234,28 +236,29 @@ export const exportToPng = async (element: HTMLElement, title: string, options?:
   }
 };
 
-export const exportToCsv = (
+export const exportToCsv = async (
   data: CsvRow[],
   title: string,
   metadata?: AnalysisExportMetadata,
-): ExportResult => {
+): Promise<ExportResult> => {
   try {
-    const csv = Papa.unparse(withExportMetadataColumns(data, metadata));
-    const blob = new Blob([CSV_BOM, csv], { type: 'text/csv;charset=utf-8;' });
-    triggerBlobDownload(blob, buildCsvFileName(title || 'analysis_export'));
-    return { success: true };
+    // Open the destination before any other await: the save dialog needs the click's user activation.
+    const saved = await saveCsv(buildCsvFileName(title || 'analysis_export'), async sink => {
+      await sink.write(CSV_BOM + Papa.unparse(withExportMetadataColumns(data, metadata)));
+    });
+    return { success: true, cancelled: !saved };
   } catch (error) {
     console.error('Error exporting to CSV:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown export error' };
   }
 };
 
-export const exportDatasetToCsv = (data: CsvRow[], fileName: string): ExportResult => {
+export const exportDatasetToCsv = async (data: CsvRow[], fileName: string): Promise<ExportResult> => {
   try {
-    const csv = Papa.unparse(data);
-    const blob = new Blob([CSV_BOM, csv], { type: 'text/csv;charset=utf-8;' });
-    triggerBlobDownload(blob, buildCsvFileName(fileName));
-    return { success: true };
+    const saved = await saveCsv(buildCsvFileName(fileName), async sink => {
+      await sink.write(CSV_BOM + Papa.unparse(data));
+    });
+    return { success: true, cancelled: !saved };
   } catch (error) {
     console.error('Error exporting dataset to CSV:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown export error' };
@@ -266,12 +269,12 @@ export const exportDatasetToCsv = (data: CsvRow[], fileName: string): ExportResu
 export const exportRowsToCsvAsync = async (
   rows: readonly CsvRow[],
   fileName: string,
-  options: CsvBlobOptions & { suffix?: string } = {},
+  options: CsvWriteOptions & { suffix?: string } = {},
 ): Promise<ExportResult & { rowCount: number; fileName: string }> => {
   const outName = buildCsvFileName(fileName, options.suffix);
   try {
-    downloadBlob(await buildCsvBlob(rows, options), outName);
-    return { success: true, rowCount: rows.length, fileName: outName };
+    const saved = await saveCsv(outName, sink => writeCsvRows(sink, rows, options));
+    return { success: true, cancelled: !saved, rowCount: rows.length, fileName: outName };
   } catch (error) {
     console.error('Error exporting rows to CSV:', error);
     return { success: false, rowCount: 0, fileName: outName, error: error instanceof Error ? error.message : 'Unknown export error' };

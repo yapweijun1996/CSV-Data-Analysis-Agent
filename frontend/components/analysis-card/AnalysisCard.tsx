@@ -181,7 +181,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
             switch (format) {
                 case 'png': result = await exportToPng(cardRef.current, title, { metadata: exportMetadata }); break;
                 case 'png_full': result = await exportToPng(cardRef.current, title, { includeTable: true, metadata: exportMetadata }); break;
-                case 'csv': result = exportToCsv(tableDataForDisplay, title, exportMetadata); break;
+                case 'csv': result = await exportToCsv(tableDataForDisplay, title, exportMetadata); break;
                 case 'html': result = await exportToHtml(
                     cardRef.current,
                     title,
@@ -190,7 +190,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = React.memo(({ cardId, i
                     exportMetadata,
                 ); break;
             }
-            if (result?.success && format === 'csv') {
+            if (result?.success && !result.cancelled && format === 'csv') {
                 toast.success(getTranslation('export_csv_success', language, { count: tableDataForDisplay.length.toLocaleString(), file: 'CSV' }), { id: 'export-csv-done' });
             }
             if (result && !result.success) {

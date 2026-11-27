@@ -4,10 +4,16 @@ import type { CsvData } from '../types';
 const executeRawSqlQuery = vi.hoisted(() => vi.fn());
 vi.mock('../services/duckdb/queryEngine', () => ({ executeRawSqlQuery }));
 
-import { CsvExportCancelledError, exportBackedDatasetToCsvBlob } from '../services/duckdb/csvFullExport';
-import { sortRowsForExport } from '../utils/csvExport';
+import { CsvExportCancelledError, exportBackedDatasetToCsv, type FullCsvExportOptions } from '../services/duckdb/csvFullExport';
+import { sortRowsForExport, type CsvSink } from '../utils/csvExport';
 
 const dataset = { fileName: 'big.csv', data: [], backing: { mode: 'duckdb_file', rowCount: 5, loadVersion: 'v1' } } as unknown as CsvData;
+const exportBackedDatasetToCsvBlob = async (data: CsvData, options: FullCsvExportOptions = {}): Promise<Blob> => {
+    const parts: BlobPart[] = [];
+    const sink: CsvSink = { write: t => { parts.push(t); }, writeBlob: b => { parts.push(b); }, close: () => undefined, abort: () => undefined };
+    await exportBackedDatasetToCsv(data, sink, options);
+    return new Blob(parts);
+};
 const readText = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
@@ -55,3 +61,4 @@ describe('sortRowsForExport', () => {
         expect(rows[0].v).toBe('10');
     });
 });
+

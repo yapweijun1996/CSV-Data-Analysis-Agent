@@ -62,8 +62,8 @@ describe('analysis exports', () => {
     });
 
     it('adds the same scope, trust, dataset version, and card id to card CSV exports', async () => {
-        expect(exportToCsv([{ Town: 'WOODLANDS', Total: 100 }], 'Town total', metadata))
-            .toEqual({ success: true });
+        expect(await exportToCsv([{ Town: 'WOODLANDS', Total: 100 }], 'Town total', metadata))
+            .toMatchObject({ success: true });
 
         const csv = await readBlob(downloadedBlobs[0]);
         expect(csv).toContain('_export_scope');
@@ -77,10 +77,10 @@ describe('analysis exports', () => {
     });
 
     it('downloads the complete prepared dataset without adding card metadata columns', async () => {
-        expect(exportDatasetToCsv(
+        expect(await exportDatasetToCsv(
             [{ Row: 1 }, { Row: 2 }, { Row: 3 }],
             'cleaned_source.csv',
-        )).toEqual({ success: true });
+        )).toMatchObject({ success: true });
 
         const csv = await readBlob(downloadedBlobs[0]);
         expect(csv).toContain('Row');
@@ -100,6 +100,24 @@ describe('analysis exports', () => {
         expect(clickedDownloads[0]).toMatch(/^sales_filtered_\d{4}-\d{2}-\d{2}\.csv$/);
     });
 
+    it('streams straight to disk when the File System Access API is available and skips output on dismiss', async () => {
+        const written: Uint8Array[] = [];
+        const close = vi.fn();
+        const picker = vi.fn(async () => ({ createWritable: async () => ({ write: async (d: Uint8Array) => { written.push(d); }, close, abort: vi.fn() }) }));
+        (window as unknown as { showSaveFilePicker?: unknown }).showSaveFilePicker = picker;
+        try {
+            expect(await exportToCsv([{ a: '中' }], 'disk')).toEqual({ success: true, cancelled: false });
+            expect(picker).toHaveBeenCalledWith(expect.objectContaining({ suggestedName: expect.stringMatching(/^disk_\d{4}-\d{2}-\d{2}\.csv$/) }));
+            expect(Array.from(written[0].slice(0, 3))).toEqual([0xef, 0xbb, 0xbf]);
+            expect(close).toHaveBeenCalledTimes(1);
+            expect(downloadedBlobs).toHaveLength(0);
+            picker.mockRejectedValueOnce(new DOMException('dismissed', 'AbortError'));
+            expect(await exportToCsv([{ a: 1 }], 'disk')).toEqual({ success: true, cancelled: true });
+        } finally {
+            delete (window as unknown as { showSaveFilePicker?: unknown }).showSaveFilePicker;
+        }
+    });
+
     it('embeds provenance in HTML and safely escapes report values', async () => {
         const root = document.createElement('div');
         const result = await exportToHtml(
@@ -110,7 +128,7 @@ describe('analysis exports', () => {
             metadata,
         );
 
-        expect(result).toEqual({ success: true });
+        expect(result).toMatchObject({ success: true });
         const html = await readBlob(downloadedBlobs[0]);
         expect(html).toContain('Export provenance');
         expect(html).toContain('version-current');
@@ -122,7 +140,7 @@ describe('analysis exports', () => {
         const root = document.createElement('div');
         root.textContent = 'Card';
 
-        expect(await exportToPng(root, 'Card', { metadata })).toEqual({ success: true });
+        expect(await exportToPng(root, 'Card', { metadata })).toMatchObject({ success: true });
 
         expect(toPngMock).toHaveBeenCalledTimes(1);
         const capturedRoot = toPngMock.mock.calls[0][0] as HTMLElement;
@@ -142,7 +160,7 @@ describe('analysis exports', () => {
             return 'data:image/png;base64,export';
         });
 
-        expect(await exportToPng(root, 'All Towns')).toEqual({ success: true });
+        expect(await exportToPng(root, 'All Towns')).toMatchObject({ success: true });
         expect(chartScroll.style.maxHeight).toBe('');
         expect(chartScroll.style.overflowY).toBe('');
     });
