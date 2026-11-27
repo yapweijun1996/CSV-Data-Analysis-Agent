@@ -1,4 +1,5 @@
 import type { AgentMemoryRun } from '../../types';
+import { pruneSourceFiles } from './sourceFiles';
 import { CURRENT_SESSION_KEY, DATASET_LINEAGE_STORE_NAME, MEMORY_STORE_NAME, ORIGINAL_DATA_STORE_NAME, REPORTS_STORE_NAME, REPORT_ARTIFACTS_STORE_NAME, VECTOR_MEMORY_STORE_NAME, getDb } from './connection';
 import { deleteReportWithCascade, getCanonicalReportId } from './reportCascade';
 import { REPORTS_INDEX_CACHE_KEY } from './reportIndexCache';
@@ -137,6 +138,7 @@ export const evictOrphanedArtifacts = async (): Promise<{
         // Collect all sessionIds that are still referenced by existing reports.
         const liveSessionIds = new Set<string>();
         const liveCanonicalReportIds = new Set<string>();
+        const liveSourceFingerprints = new Set<string>();
         for (const reportKey of reportKeys) {
             // The report key itself could be a sessionId reference.
             liveSessionIds.add(reportKey as string);
@@ -146,6 +148,8 @@ export const evictOrphanedArtifacts = async (): Promise<{
                 if (report) {
                     liveCanonicalReportIds.add(getCanonicalReportId(report));
                 }
+                const sourceFingerprint = report?.appState?.datasetBundle?.source?.fingerprint;
+                if (sourceFingerprint) liveSourceFingerprints.add(sourceFingerprint);
                 if (report?.appState?.sessionId) {
                     liveSessionIds.add(report.appState.sessionId);
                 }
@@ -156,6 +160,8 @@ export const evictOrphanedArtifacts = async (): Promise<{
             const tabSessionId = sessionStorage.getItem('csv_agent_tab_session_id');
             if (tabSessionId) liveSessionIds.add(tabSessionId);
         } catch { /* non-fatal */ }
+
+        await pruneSourceFiles(liveSourceFingerprints);
 
         const allOriginalDataKeys = await db.getAllKeys(ORIGINAL_DATA_STORE_NAME);
         for (const key of allOriginalDataKeys) {
@@ -376,6 +382,15 @@ export const purgeAllStorage = async (activeSessionId?: string): Promise<{ delet
             await db.delete(ORIGINAL_DATA_STORE_NAME, key);
         }
     }
+
+    // 3b. Keep stored source files only for the reports that remain.
+    const remainingFingerprints = new Set<string>();
+    for (const key of await db.getAllKeys(REPORTS_STORE_NAME)) {
+        const remaining = await db.get(REPORTS_STORE_NAME, key);
+        const fingerprint = remaining?.appState?.datasetBundle?.source?.fingerprint;
+        if (fingerprint) remainingFingerprints.add(fingerprint);
+    }
+    await pruneSourceFiles(remainingFingerprints);
 
     // 4. Clear lineage except for the active/current session.
     const allLineageRecords = await db.getAll(DATASET_LINEAGE_STORE_NAME);

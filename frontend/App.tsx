@@ -226,7 +226,7 @@ const App: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => useAppStore.setState({ currentView: 'file_upload' })}
-                            className="min-h-[44px] rounded-xl border border-amber-400 bg-white px-4 text-sm font-semibold text-amber-950 hover:bg-amber-100"
+                            className="min-h-[44px] shrink-0 whitespace-nowrap rounded-xl border border-amber-400 bg-white px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-100"
                         >
                             {getTranslation('restored_view_action', language)}
                         </button>

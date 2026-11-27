@@ -31,14 +31,14 @@ const {
     getStorageBreakdown,
 } = await import('../services/storageService');
 
-describe('IndexedDB v13 recovery retention migration', () => {
-    it('opens the existing database at version 13', async () => {
+describe('IndexedDB v14 source file store migration', () => {
+    it('opens the existing database at version 14', async () => {
         await getStorageBreakdown();
 
-        expect(STORAGE_DB_VERSION).toBe(13);
+        expect(STORAGE_DB_VERSION).toBe(14);
         expect(openDBMock).toHaveBeenCalledWith(
             'csv-ai-assistant-db',
-            13,
+            14,
             expect.objectContaining({ upgrade: expect.any(Function) }),
         );
     });

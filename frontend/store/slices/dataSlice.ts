@@ -50,6 +50,8 @@ export interface IDataSlice {
     handleInitialAnalysis: (dataForAnalysis: CsvData, goal: string, options?: { trigger?: 'automatic' | 'manual' }) => Promise<InitialAnalysisOutcome>;
     proposeAnalysisGoals: (dataForAnalysis: CsvData) => Promise<void>;
     handleFileUpload: (file: File) => Promise<void>;
+    /** Re-run the restore pipeline from the original file kept in IndexedDB. Resolves false when none is stored. */
+    restoreSavedSource: () => Promise<boolean>;
     ingestExternalCsvPayload: (event: ExternalCsvPayloadEvent) => Promise<void>;
     regenerateAnalyses: (newData: CsvData) => Promise<void>;
     resumeCleaningRun: () => Promise<void>;
@@ -426,6 +428,13 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
                         break;
                 }
             }
+            // Keep the original file so History can restore the full dataset without re-selecting it.
+            const savedFingerprint = get().datasetBundle?.source.fingerprint;
+            if (savedFingerprint && get().csvData?.data?.length) {
+                void import('../../services/storageService')
+                    .then(storage => storage.saveSourceFile(savedFingerprint, file))
+                    .catch(() => undefined);
+            }
         } catch (error) {
             if (generation !== uploadGeneration || !ownsSessionScope(storeApi, scope)) return;
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -462,6 +471,29 @@ export const createDataSlice: StateCreator<AppStore, [], [], IDataSlice> = (set,
             return proposeGoals(dataForAnalysis, ownedStore);
         },
         handleFileUpload: runFilePipeline,
+        restoreSavedSource: async () => {
+            const bundle = resolvePendingDatasetBundleRestore(get());
+            // Committed coding transformations need verified program replay, which the file pipeline refuses here.
+            if (!bundle?.source.fingerprint || bundle.acceptedCommit) return false;
+            try {
+                const { getSourceFile } = await import('../../services/storageService');
+                const file = await getSourceFile(bundle.source.fingerprint, {
+                    fileName: bundle.source.fileName,
+                    byteSize: bundle.source.byteSize,
+                });
+                if (!file || resolvePendingDatasetBundleRestore(get()) !== bundle) return false;
+                await runFilePipeline(file);
+                const after = get();
+                if (!after.csvData && after.datasetBundle && ((after.analysisCards?.length ?? 0) > 0 || after.finalSummary)) {
+                    // Automatic restore failed: fall back to the read-only saved analysis instead of the upload screen.
+                    set({ currentView: 'analysis_dashboard', isBusy: false });
+                }
+                return true;
+            } catch (error) {
+                console.warn('[FileProcessor] Saved source restore failed.', error);
+                return false;
+            }
+        },
 
         ingestExternalCsvPayload: async (event) => {
             if (!event || !event.payload || typeof event.payload.csv !== 'string') {

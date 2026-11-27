@@ -463,6 +463,11 @@ export const useAppStore = createWithEqualityFn<AppStore>()((set, get, store) =>
         } finally {
             set({ isAppInitializing: false });
         }
+        // A reload keeps lineage but not rows: restore the dataset from the stored original file when present.
+        if (!get().csvData && get().datasetBundle) {
+            const restored = await get().restoreSavedSource?.();
+            if (restored) return;
+        }
         // Resume a Pi stage checkpoint only after app state and DuckDB are restored.
         if (get().csvData || get().datasetBundle) {
             const recoveryScope = captureSessionScope(store);

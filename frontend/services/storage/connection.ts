@@ -4,13 +4,15 @@ import { DATASET_COMMITS_STORE, type DatasetCommitRecord } from '../../types/dat
 import { DATASET_RETENTION_STORE, type DatasetRetainedArtifact } from '../data/datasetRecoveryContract';
 
 export const DB_NAME = 'csv-ai-assistant-db';
-export const STORAGE_DB_VERSION = 13;
+export const STORAGE_DB_VERSION = 14;
 export const REPORTS_STORE_NAME = 'reports';
 export const MEMORY_STORE_NAME = 'agent_memory_runs';
 export const SETTINGS_STORE_NAME = 'settings';
 export const CLOUD_AI_CONSENTS_STORE_NAME = 'ai_consents';
 export const REPORT_ARTIFACTS_STORE_NAME = 'report_artifacts';
 export const ORIGINAL_DATA_STORE_NAME = 'original_data';
+/** Original CSV file bytes keyed by source fingerprint, so History can restore full data without re-selecting the file. */
+export const SOURCE_FILES_STORE_NAME = 'source_files';
 export const VECTOR_MEMORY_STORE_NAME = 'vector_memory';
 export const DATASET_LINEAGE_STORE_NAME = 'dataset_lineage';
 export const LOCAL_DIAGNOSTICS_STORE_NAME = 'local_diagnostics';
@@ -66,6 +68,10 @@ export interface MyDB extends DBSchema {
       datasetId?: string;
       originalVersionId?: string;
     };
+  };
+  [SOURCE_FILES_STORE_NAME]: {
+    key: string;
+    value: { fingerprint: string; fileName: string; byteSize: number; mimeType: string; lastModified: number; blob: Blob; savedAt: number };
   };
   [VECTOR_MEMORY_STORE_NAME]: {
     key: string;
@@ -187,6 +193,9 @@ export const openStorageDatabase = (name = DB_NAME): Promise<StorageDatabase> =>
         }
         if (!db.objectStoreNames.contains(ORIGINAL_DATA_STORE_NAME)) {
             db.createObjectStore(ORIGINAL_DATA_STORE_NAME, { keyPath: 'sessionId' });
+        }
+        if (!db.objectStoreNames.contains(SOURCE_FILES_STORE_NAME)) {
+            db.createObjectStore(SOURCE_FILES_STORE_NAME, { keyPath: 'fingerprint' });
         }
         if (!db.objectStoreNames.contains(VECTOR_MEMORY_STORE_NAME)) {
             db.createObjectStore(VECTOR_MEMORY_STORE_NAME, { keyPath: 'key' });

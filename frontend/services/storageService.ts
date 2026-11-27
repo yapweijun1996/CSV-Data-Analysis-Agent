@@ -7,6 +7,7 @@ export { getCloudAiConsent, saveCloudAiConsent, pruneExpiredLocalDiagnostics, sa
 export { clearAllLocalBrowserData, __resetStorageClearStateForTests } from './storage/localDataClear';
 export type { IncompleteLocalDataStore, ClearAllLocalBrowserDataResult } from './storage/localDataClear';
 export { saveOriginalData, getOriginalData, deleteOriginalData, getDatasetLineage, getDatasetVersionSnapshot } from './storage/originalData';
+export { saveSourceFile, getSourceFile, pruneSourceFiles } from './storage/sourceFiles';
 export { writeReportProjection, saveReport, getReport, getReportsList, deleteReport } from './storage/reports';
 export { getDefaultSettings, saveSettings, getSettings } from './storage/settings';
 export { clearAllCacheStorage, getStorageEstimate } from './storage/storageEstimate';

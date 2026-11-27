@@ -267,6 +267,10 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
                 }));
             }
             get().addProgress(`Report "${report.filename}" loaded.`);
+            // History keeps lineage, not rows: restore the full dataset from the stored original file.
+            if (!normalizedAppState.csvData && ownsSessionScope(store, restoredScope)) {
+                void get().restoreSavedSource?.();
+            }
         } else {
             set({ isBusy: false });
             get().addProgress(`Failed to load report ${id}.`, 'error');
