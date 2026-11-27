@@ -11,7 +11,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const demoDir = path.join(repoRoot, 'demo-data');
 const catalogPath = path.join(demoDir, 'catalog.json');
 
-const LANGUAGES = ['English', 'Mandarin', 'Malay', 'Japanese'] as const;
+const LANGUAGES = ['English', 'Mandarin', 'Malay', 'Japanese', 'Vietnamese'] as const;
 const THEMES = ['housing', 'jobs', 'business', 'transport', 'tourism', 'environment', 'population'];
 const SPEEDS = ['fast', 'slow'];
 const ENTRY_KEYS = ['columns', 'description', 'file', 'id', 'rows', 'sizeBytes', 'source', 'speed', 'suggestedQuestion', 'theme', 'title'];
