@@ -1,5 +1,10 @@
 ## Current Work Context
 
+### 2026-11-27 — Pages deployment of c552a1d (includes lazy provider SDKs)
+
+- Pages run 45937712950 (already dispatched outside this session) succeeded for `c552a1d`, which contains `2ec86c6` plus two later `main` commits (`841d397`, `c552a1d`) not reviewed here. Live build `1.0.0-8eb4c69847a9` matches a local build of the same commit.
+- Live check with synthetic data and the AI gateway mocked: no provider chunk at startup, local-only preview returned 3 rows, the cloud flow sent 4 requests without `max_output_tokens`, no page errors or failed site responses. No live provider was called. The OpenAI provider chunk was also fetched in the local-only flow; no request reached the gateway.
+
 ### 2026-11-27 — Anthropic and OpenRouter providers
 - `Settings.provider` now includes `anthropic` and `openrouter` (keys `anthropicApiKey`/`openRouterApiKey`, optional for old stored settings). Settings modal uses a provider table for key fields, model lists (`ANTHROPIC_MODELS`, `OPENROUTER_MODELS`, free-text ids allowed), defaults and fallbacks; Test Connection runs the same AI SDK health call. AI SDK paths use `@ai-sdk/anthropic` (browser opt-in header, `thinking` budget or `disabled`) and `@openrouter/ai-sdk-provider` (`reasoning.effort`); Pi uses pi-ai's `anthropic` and `openrouter` catalogs with family-model fallback for unknown ids. New `tests/anthropicOpenRouterProviders.test.ts` inspects the real serialized requests. Full Vitest: 543 files pass, 1 pre-existing failure (`duckDbSqlSecurity` needs `public/duckdb` binaries absent from this clone). Checked-in root bundle (`assets/`) was NOT rebuilt; no live Anthropic/OpenRouter key was available, so live API calls and Pi live runs are unverified.
 
