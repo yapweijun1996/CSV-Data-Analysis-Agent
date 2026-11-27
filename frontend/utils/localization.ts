@@ -27,6 +27,7 @@
  */
 import { AppLanguage, Settings } from '../types';
 import { reviewTrustTranslations } from './localizationReviewTrust';
+import { vietnameseTranslations } from './localizationVietnamese';
 
 type Language = AppLanguage | 'Spanish' | 'French';
 
@@ -37,6 +38,24 @@ const translations: Record<string, Partial<Record<Language, string>> & { English
         'Mandarin': '分析操作',
         'Japanese': '分析操作',
         'Malay': 'Tindakan analisis',
+    },
+    'header_language': {
+        'English': 'Language',
+        'Mandarin': '语言',
+        'Japanese': '言語',
+        'Malay': 'Bahasa',
+    },
+    'header_language_title': {
+        'English': 'Change interface language',
+        'Mandarin': '切换界面语言',
+        'Japanese': '表示言語を変更',
+        'Malay': 'Tukar bahasa antara muka',
+    },
+    'header_language_menu': {
+        'English': 'Choose a language',
+        'Mandarin': '选择语言',
+        'Japanese': '言語を選択',
+        'Malay': 'Pilih bahasa',
     },
     'header_new': {
         'English': 'New',
@@ -5706,7 +5725,11 @@ export const getTranslation = (
     const singular = countValue === 1 && (lang === 'English' || !translations[key]?.[lang])
         ? ENGLISH_SINGULAR_WORDING[key]
         : undefined;
-    const template = singular || translations[key]?.[lang] || translations[key]?.['English'] || key;
+    const template = singular
+        || translations[key]?.[lang]
+        || (lang === 'Vietnamese' ? vietnameseTranslations[key] : undefined)
+        || translations[key]?.['English']
+        || key;
     if (!params) {
         return template;
     }

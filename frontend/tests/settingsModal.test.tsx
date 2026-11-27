@@ -60,7 +60,7 @@ describe('SettingsModal', () => {
         // always in the DOM and would otherwise leak into an unscoped query.
         const listbox = screen.getByRole('listbox');
         const options = within(listbox).getAllByRole('option').map(option => option.textContent);
-        expect(options).toEqual(['English', 'Mandarin', 'Malay', 'Japanese']);
+        expect(options).toEqual(['English', 'Mandarin', 'Malay', 'Vietnamese', 'Japanese']);
         expect(within(listbox).queryByRole('option', { name: 'Spanish' })).not.toBeInTheDocument();
         expect(within(listbox).queryByRole('option', { name: 'French' })).not.toBeInTheDocument();
     });

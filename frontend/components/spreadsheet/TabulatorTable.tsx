@@ -125,6 +125,7 @@ const localeKeyByLanguage: Record<Settings['language'], string> = {
     English: 'en',
     Mandarin: 'zh-cn',
     Malay: 'ms',
+    Vietnamese: 'en',
     Japanese: 'ja',
 };
 

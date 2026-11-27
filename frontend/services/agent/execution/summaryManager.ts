@@ -33,6 +33,7 @@ const getSummaryLocale = (language: LocalizedText['language']): string => {
     if (language === 'Mandarin') return 'zh-CN';
     if (language === 'Japanese') return 'ja-JP';
     if (language === 'Malay') return 'ms-MY';
+    if (language === 'Vietnamese') return 'vi-VN';
     return 'en-SG';
 };
 

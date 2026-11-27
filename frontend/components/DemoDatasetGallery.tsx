@@ -33,6 +33,7 @@ const NUMBER_LOCALES: Record<string, string> = {
     English: 'en-SG',
     Mandarin: 'zh-SG',
     Malay: 'ms-SG',
+    Vietnamese: 'vi-VN',
     Japanese: 'ja-JP',
 };
 

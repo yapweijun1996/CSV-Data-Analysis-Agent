@@ -21,6 +21,7 @@ import { useAppStore, AppStore } from '../store/useAppStore';
 import { getTranslation } from '../utils/localization';
 import { useDialogAccessibility } from '../hooks/useDialogAccessibility';
 import { PwaUpdateButton } from './PwaUpdateButton';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 export const AppHeader: React.FC = () => {
     const primaryButtonClass = 'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium leading-none transition-colors md:min-h-0 md:min-w-0 md:py-1.5';
@@ -171,6 +172,7 @@ export const AppHeader: React.FC = () => {
                 aria-label={getTranslation('header_analysis_actions', language)}
                 className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-visible"
             >
+                <LanguageSwitcher buttonClassName={secondaryButtonClass} />
                 {showNewSessionButton && (showAnalysisTools || hasPendingRestore) && (
                     <button
                         onClick={() => setIsNewSessionConfirmOpen(true)}

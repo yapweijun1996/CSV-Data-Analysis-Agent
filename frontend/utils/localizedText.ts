@@ -7,7 +7,7 @@ const LEGACY_LANGUAGE_FALLBACKS: Record<string, AppLanguage> = {
 
 const SUMMARY_SEPARATOR = '\n---\n';
 
-export const SUPPORTED_APP_LANGUAGES: AppLanguage[] = ['English', 'Mandarin', 'Malay', 'Japanese'];
+export const SUPPORTED_APP_LANGUAGES: AppLanguage[] = ['English', 'Mandarin', 'Malay', 'Vietnamese', 'Japanese'];
 
 export const normalizeAppLanguage = (value: unknown, fallback: AppLanguage = 'English'): AppLanguage => {
     if (typeof value !== 'string') {

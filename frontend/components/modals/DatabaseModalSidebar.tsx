@@ -20,6 +20,7 @@ const languageLocales: Record<string, string> = {
     English: 'en',
     Mandarin: 'zh-CN',
     Malay: 'ms',
+    Vietnamese: 'vi',
     Japanese: 'ja',
 };
 
