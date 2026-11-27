@@ -8,8 +8,9 @@ const base = process.argv[2] ?? 'http://127.0.0.1:4199';
 assert.equal(new URL(base).hostname, '127.0.0.1');
 const assets = await readdir(new URL('../dist/assets/', import.meta.url));
 const agent = assets.find(name => /^csv_data_analysis_app-agent-.*\.js$/.test(name));
-const index = assets.find(name => /^csv_data_analysis_index-.*\.js$/.test(name));
-assert.ok(agent && index, 'build assets missing');
+// The app store has moved between the entry and app-agent chunks across builds.
+const storeChunks = assets.filter(file => /^csv_data_analysis_(index|app-agent)-.*\.js$/.test(file));
+assert.ok(agent && storeChunks.length, 'build assets missing');
 const alias = /piCandidateApprovalQualification as (\w+)/.exec(await readFile(new URL(`../dist/assets/${agent}`, import.meta.url), 'utf8'))?.[1];
 assert.ok(alias, 'query qualification entry missing');
 const browser = await chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : existsSync('/snap/chromium/current/usr/lib/chromium-browser/chrome') ? { executablePath: '/snap/chromium/current/usr/lib/chromium-browser/chrome' } : {}), headless: true, args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
@@ -23,7 +24,13 @@ async function scenario(name, csv, plans, check) {
         await page.goto(base);
         await page.getByText('Select a file', { exact: true }).first().waitFor({ timeout: 60000 });
         await page.getByText('Preparing your analysis workspace', { exact: false }).waitFor({ state: 'hidden', timeout: 90000 });
-        await page.evaluate(async indexAsset => { window.smokeStore = (await import(`/assets/${indexAsset}`)).u; }, index);
+        await page.evaluate(async chunks => {
+        for (const chunk of chunks) {
+            // Match by shape: export aliases change between builds.
+            globalThis.smokeStore ??= Object.values(await import(`/assets/${chunk}`))
+                .find(value => typeof value?.getState === 'function' && 'isAppInitializing' in value.getState());
+        }
+    }, storeChunks);
         await page.waitForFunction(() => !window.smokeStore.getState().isAppInitializing, null, { timeout: 90000 });
         await page.locator('#file-upload').setInputFiles({ name: `${name}.csv`, mimeType: 'text/csv', buffer: Buffer.from(csv) });
         await page.waitForFunction(() => {

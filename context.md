@@ -1,5 +1,12 @@
 ## Current Work Context
 
+### 2026-11-27 — Repair failing tests and e2e on main (branch `fix/main-test-and-e2e-failures`)
+
+- Test tooling only, no application source changed. Causes: the qualification preflight parsed numeric task limits that became `UNBOUNDED_TASK_LIMIT`; smoke scripts read the store through a bundler export alias; the scan panel now needs `?debug_yn=y`; a chat reply button also named Retry made `local-preview` intermittently click the wrong one; a CDP `Storage.clearDataForOrigin` between stream scenarios made the second one fail with `InvalidStateError` in either order (mechanism not established; whether the app's own Clear all local data has a similar effect is unverified).
+- The preflight now records the real unbounded limits (`Number.MAX_SAFE_INTEGER`). Paid live evaluation therefore has no runtime ceiling from the app; existing launch blockers are unchanged.
+- Verified: typecheck, lint, stage-pages tests, build, bundle budget, Vitest 560 files / 5,600 tests, `npm run e2e -- --full` 5/5 twice, reattach 8/8 (before the final Retry-locator edit).
+- Not repaired: other manual smoke scripts still read the store through `.u` (for example spill-commit, pi-dual-grain, pi-large-coordinator); they are not part of `npm run e2e`. The `upload-review-privacy` multi-section check still reports NOT_REACHED.
+
 ### 2026-11-27 — Pages deployment of c552a1d (includes lazy provider SDKs)
 
 - Pages run 45937712950 (already dispatched outside this session) succeeded for `c552a1d`, which contains `2ec86c6` plus two later `main` commits (`841d397`, `c552a1d`) not reviewed here. Live build `1.0.0-8eb4c69847a9` matches a local build of the same commit.

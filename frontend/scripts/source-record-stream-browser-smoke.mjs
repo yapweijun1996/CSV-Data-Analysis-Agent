@@ -29,7 +29,8 @@ try {
         page.on('pageerror', error => evidence.pageErrors.push(error.message));
         page.on('worker', () => evidence.workerCount++);
         const cdp = await context.newCDPSession(page);
-        await cdp.send('Storage.clearDataForOrigin', { origin: new URL(base).origin, storageTypes: 'all' });
+        // Do not clear origin storage between scenarios: a CDP Storage.clearDataForOrigin here made the second
+        // scenario fail (InvalidStateError); the mechanism is not established. The profile already starts empty.
         await page.goto(base);
         const fixture = `${profile}/synthetic-${rows}.csv`;
         await writeFile(fixture, 'key,payload,value\r\n' + Array.from({ length: rows }, (_, i) =>

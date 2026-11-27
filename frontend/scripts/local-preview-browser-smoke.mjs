@@ -8,7 +8,8 @@ const base = process.argv[2] ?? 'http://127.0.0.1:4191';
 assert.equal(new URL(base).hostname, '127.0.0.1');
 const output = process.argv[3] ?? await mkdtemp('/tmp/local-preview-browser-');
 const assets = await readdir(new URL('../dist/assets/', import.meta.url));
-const index = assets.find(n => /^csv_data_analysis_index-.*\.js$/.test(n));
+// The app store has moved between the entry and app-agent chunks across builds.
+const storeChunks = assets.filter(file => /^csv_data_analysis_(index|app-agent)-.*\.js$/.test(file));
 const sw = await readFile(new URL('../dist/service-worker.js', import.meta.url), 'utf8');
 const evidence = { build: /const BUILD_VERSION = '([^']+)'/.exec(sw)?.[1], scenarios: [], pageErrors: [], externalAttempts: [], workers: [] };
 const invoice = 'Invoice,Date,Customer,Product,Amount\nINV-A,2026-01-01,Alpha,Widget,123.45\nINV-B,2026-01-02,Beta,Part,67.89\nINV-C,2026-01-03,Gamma,Kit,10.00';
@@ -61,7 +62,13 @@ async function open(label, { width = 1365, height = 900, language = 'English', b
     await page.getByText(/Select a file|选择文件/, { exact: true }).first().waitFor();
     assert.equal(await (await page.request.get(`${base}/service-worker.js`)).text(), sw);
     // Read-only observation of production state; no replacement actions or synthetic outcomes.
-    await page.evaluate(async index => { globalThis.previewRoot = (await import(`/assets/${index}`)).u; }, index);
+    await page.evaluate(async chunks => {
+        for (const chunk of chunks) {
+            // Match by shape: export aliases change between builds.
+            globalThis.previewRoot ??= Object.values(await import(`/assets/${chunk}`))
+                .find(value => typeof value?.getState === 'function' && 'isAppInitializing' in value.getState());
+        }
+    }, storeChunks);
     await page.waitForFunction(() => !globalThis.previewRoot.getState().isAppInitializing);
     const renderer = await page.evaluate(() => {
         const gl = document.createElement('canvas').getContext('webgl'), ext = gl?.getExtension('WEBGL_debug_renderer_info');
@@ -211,11 +218,13 @@ try {
     {
         const { page, context } = await open('engine-error', { blockEngine: true });
         await upload(page); await page.getByRole('button', { name: localButton }).click();
-        await page.getByRole('button', { name: 'Retry', exact: true }).waitFor({ timeout: 90000 });
+        // Scoped to the explorer: chat replies also have a (disabled) button named Retry.
+        const retry = page.getByRole('dialog').getByRole('button', { name: 'Retry', exact: true });
+        await retry.waitFor({ timeout: 90000 });
         const failed = await snapshot(page); assert.equal(failed.query, null); assert.equal(failed.queries, 0);
         await page.screenshot({ path: `${output}/after-local-query-error.png`, fullPage: true });
         await context.unroute('**/duckdb/**');
-        await page.getByRole('button', { name: 'Retry', exact: true }).click();
+        await retry.click();
         await page.getByRole('status').filter({ hasText: /Query completed/ }).waitFor({ timeout: 90000 });
         const recovered = await snapshot(page); assert.equal(recovered.query.result.returnedRows, 3);
         evidence.scenarios.push({ label: 'real-local-engine-network-failure-visible-and-explicit-retry', failed, recovered });

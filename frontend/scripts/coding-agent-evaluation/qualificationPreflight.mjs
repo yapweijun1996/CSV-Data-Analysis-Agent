@@ -112,9 +112,14 @@ const candidateConfiguration = async root => {
   const defaults = await read(root, 'frontend/services/storage/settings.ts');
   const budget = await read(root, 'frontend/services/agent/runtime/pi/piTaskBudget.ts');
   const context = await read(root, 'frontend/config/agentDefaults.ts');
-  const limits = Object.fromEntries(['toolCalls', 'skillReads', 'providerTurns', 'transformationAttempts'].map(key =>
-    [key, Number(literal(budget, new RegExp(`${key}: ([0-9]+)`)))]));
-  limits.activeMs = Number(literal(budget, /activeMs: ([0-9]+) \* 60_000/)) * 60_000;
+  // The source declares each limit as a number, minutes (`N * 60_000`) or the
+  // explicit unbounded constant. Record what the runtime really uses.
+  const unbounded = /UNBOUNDED_TASK_LIMIT = Number\.MAX_SAFE_INTEGER;/.test(budget);
+  const limits = Object.fromEntries(['toolCalls', 'skillReads', 'providerTurns', 'transformationAttempts', 'activeMs'].map(key => {
+    const declared = literal(budget, new RegExp(`${key}: (UNBOUNDED_TASK_LIMIT|[0-9]+ \\* 60_000|[0-9]+)`));
+    if (declared === 'UNBOUNDED_TASK_LIMIT') return [key, unbounded ? Number.MAX_SAFE_INTEGER : NaN];
+    return [key, declared.split(' * ').reduce((total, factor) => total * Number(factor.replaceAll('_', '')), 1)];
+  }));
   if (Object.values(limits).some(value => !Number.isSafeInteger(value) || value <= 0)) fail('task_limits_invalid');
   const contextCap = Number(literal(context, /PROVIDER_CONTEXT_WINDOW_CAP = ([0-9_]+)/).replaceAll('_', ''));
   const compaction = Number(literal(context, /PI_CONTEXT_COMPACTION_TRIGGER_RATIO = ([0-9.]+)/));

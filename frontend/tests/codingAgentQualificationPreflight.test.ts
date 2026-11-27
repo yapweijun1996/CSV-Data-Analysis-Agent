@@ -54,8 +54,10 @@ describe.skipIf(!hasDeploymentBuild)('CA-173 offline qualification preflight', (
         // Every checksum-verified deployment file is pinned; derive the count so new demo data does not need a manual bump.
         const deploymentEntries = (await readFile(path.join(repository, 'frontend/dist/SHA256SUMS.txt'), 'utf8')).split('\n').filter(line => line.trim()).length;
         expect(manifest.pins.deployment).toHaveLength(deploymentEntries);
-        expect(manifest.candidate.settings.taskLimits).toEqual({ toolCalls: 40, skillReads: 8,
-            providerTurns: 32, transformationAttempts: 3, activeMs: 900000 });
+        // The runtime no longer caps task dimensions; the manifest must say so rather than keep old ceilings.
+        const unbounded = Number.MAX_SAFE_INTEGER;
+        expect(manifest.candidate.settings.taskLimits).toEqual({ toolCalls: unbounded, skillReads: unbounded,
+            providerTurns: unbounded, transformationAttempts: unbounded, activeMs: unbounded });
     });
 
     it('makes no fetch call and does not consult credential environment variables', async () => {

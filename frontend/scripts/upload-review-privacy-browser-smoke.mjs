@@ -9,8 +9,9 @@ const output = process.argv[3] ?? '/tmp/upload-review-privacy-evidence.json';
 const sentinel = 'PRIVATE_CELL_SENTINEL';
 const evidence = { base, checks: [], pageErrors: [], externalAttempts: [] };
 const allowCodes = new Set(['boundary_incomplete', 'header_shape_drift', 'stacked_sections_set_aside', 'not_delimited_text', 'runtime_boundary_ambiguous', 'runtime_boundary_rejected', 'repeated_header_leakage', 'repeated_header_leakage_rate', 'low_structure_confidence', 'structure_proposal_verification_failed', 'complex_report_requires_confirmation', 'empty_dataset_guard', 'raw_inspection_completed', 'dominant_block_resolved', 'mixed_report_block_resolution', 'label_layer_retention_complete', 'multi_header_layer_retention_rate', 'wide_reshape_contract_complete', 'summary_like_series_key_leakage', 'summary_series_exclusion_rate', 'suspicious_collapse_score', 'hierarchy_depth_retention_rate', 'noise_leakage_rate', 'numeric_parse_rate', 'detail_series_coverage_rate', 'descriptor_preservation_rate', 'header_band_resolved', 'fact_key_uniqueness_rate', 'needs_structure_review', 'structure_outcome_unavailable', 'canonicalization_missing', 'shape_verification_failed', 'cleaning_failed', 'blocked_by_intake', 'parse_errors', 'intake_structure_uncertain', 'intake_diagnostics_missing', 'sql_precheck_pending', 'unknown_diagnostic']);
-const indexAsset = (await readdir(new URL('../dist/assets/', import.meta.url))).find(name => /^csv_data_analysis_index-.*\.js$/.test(name));
-assert.ok(indexAsset, 'built app index asset missing');
+// The app store has moved between the entry and app-agent chunks across builds.
+const storeChunks = (await readdir(new URL('../dist/assets/', import.meta.url))).filter(file => /^csv_data_analysis_(index|app-agent)-.*\.js$/.test(file));
+assert.ok(storeChunks.length, 'built app assets missing');
 let browser;
 async function open(label, failClear = false) {
     const context = await browser.newContext({ viewport: { width: 1365, height: 1000 }, serviceWorkers: 'block' });
@@ -32,10 +33,17 @@ async function open(label, failClear = false) {
     });
     const page = await context.newPage();
     page.on('pageerror', error => evidence.pageErrors.push({ check: label, error: error.message }));
-    await page.goto(base);
+    // The full-source scan panel is developer-only and renders only with this flag.
+    await page.goto(new URL('?debug_yn=y', base).href);
     await page.getByText('Select a file', { exact: true }).first().waitFor({ timeout: 60000 });
     await page.getByText('Preparing your analysis workspace', { exact: false }).waitFor({ state: 'hidden', timeout: 90000 });
-    await page.evaluate(async index => { window.__smokeStore = (await import(`/assets/${index}`)).u; }, indexAsset);
+    await page.evaluate(async chunks => {
+        for (const chunk of chunks) {
+            // Match by shape: export aliases change between builds.
+            globalThis.__smokeStore ??= Object.values(await import(`/assets/${chunk}`))
+                .find(value => typeof value?.getState === 'function' && 'isAppInitializing' in value.getState());
+        }
+    }, storeChunks);
     await page.waitForFunction(() => !window.__smokeStore.getState().isAppInitializing, null, { timeout: 90000 });
     return { context, page };
 }
