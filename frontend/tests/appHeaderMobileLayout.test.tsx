@@ -25,7 +25,6 @@ describe('AppHeader mobile layout', () => {
             isAsideVisible: false,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: 'Summarize sales.',
-            reproposeAnalysisGoals: vi.fn(),
             csvData: { fileName: 'sales.csv', data: [{ Amount: 1 }] },
             datasetBundle: null,
             settings: { language: 'English' },

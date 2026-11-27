@@ -28,9 +28,11 @@ describe('end user mode UI surfaces', () => {
         vi.clearAllMocks();
         delete window.__CSV_AGENT_CONFIG__;
         __resetRuntimeConfigForTests();
+        window.history.replaceState({}, '', '/?debug_yn=y');
     });
 
     afterEach(() => {
+        window.history.replaceState({}, '', '/');
         cleanup();
         delete window.__CSV_AGENT_CONFIG__;
         __resetRuntimeConfigForTests();
@@ -49,7 +51,6 @@ describe('end user mode UI surfaces', () => {
             isAsideVisible: false,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: 'Goal',
-            reproposeAnalysisGoals: vi.fn(),
             csvData: { fileName: 'sales.csv' },
         };
         useAppStoreMock.mockImplementation((selector: (value: typeof state) => unknown) => selector(state));
@@ -65,6 +66,19 @@ describe('end user mode UI surfaces', () => {
         expect(screen.queryByText('Change Goal')).not.toBeInTheDocument();
     });
 
+    it('hides the Advanced menu unless the URL has debug_yn=y', () => {
+        window.history.replaceState({}, '', '/');
+        const state = {
+            handleNewSession: vi.fn(), loadReportsList: vi.fn(), setIsHistoryPanelOpen: vi.fn(),
+            setIsDatabaseModalOpen: vi.fn(), setIsWorkspaceModalOpen: vi.fn(), setIsDataPreparationModalOpen: vi.fn(),
+            setIsDebugLogsModalOpen: vi.fn(), isAsideVisible: false, setIsAsideVisible: vi.fn(),
+            confirmedAnalysisGoal: 'Goal', csvData: { fileName: 'sales.csv' },
+        };
+        useAppStoreMock.mockImplementation((selector: (value: typeof state) => unknown) => selector(state));
+        render(<AppHeader />);
+        expect(screen.queryByRole('button', { name: 'Advanced' })).not.toBeInTheDocument();
+    });
+
     it('shows the new session button when explicitly re-enabled in runtime config', () => {
         setRuntimeUiConfig({ endUserMode: true, showNewSessionButton: true });
         const state = {
@@ -78,7 +92,6 @@ describe('end user mode UI surfaces', () => {
             isAsideVisible: false,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: 'Goal',
-            reproposeAnalysisGoals: vi.fn(),
             csvData: { fileName: 'sales.csv' },
         };
         useAppStoreMock.mockImplementation((selector: (value: typeof state) => unknown) => selector(state));
@@ -102,7 +115,6 @@ describe('end user mode UI surfaces', () => {
             isAsideVisible: true,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: null,
-            reproposeAnalysisGoals: vi.fn(),
             csvData: { fileName: 'sales.csv' },
             settings: { language: 'English' as const },
         };
@@ -141,7 +153,6 @@ describe('end user mode UI surfaces', () => {
             isAsideVisible: false,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: null,
-            reproposeAnalysisGoals: vi.fn(),
             csvData: null,
             settings: { language: 'English' as const },
         };
@@ -173,7 +184,6 @@ describe('end user mode UI surfaces', () => {
             isAsideVisible: false,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: null,
-            reproposeAnalysisGoals: vi.fn(),
             csvData: null,
             datasetBundle: { bundleId: 'pending-restore' },
             settings: { language: 'English' as const },
@@ -193,7 +203,6 @@ describe('end user mode UI surfaces', () => {
             showDatabaseButton: true,
             showWorkflowButton: true,
             showLogsButton: true,
-            showChangeGoalButton: true,
         });
         const state = {
             handleNewSession: vi.fn(),
@@ -205,7 +214,6 @@ describe('end user mode UI surfaces', () => {
             isAsideVisible: true,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: 'Goal',
-            reproposeAnalysisGoals: vi.fn(),
             csvData: { fileName: 'sales.csv' },
         };
         useAppStoreMock.mockImplementation((selector: (value: typeof state) => unknown) => selector(state));
@@ -234,7 +242,7 @@ describe('end user mode UI surfaces', () => {
         });
         fireEvent.click(advancedButton);
         expect(screen.getByRole('menu', { name: 'Advanced' })).toHaveStyle({ left: '352px', top: '48px', width: '288px' });
-        expect(screen.getByRole('menuitem', { name: 'Change goal' })).toHaveClass('min-h-[44px]');
+        expect(screen.queryByRole('menuitem', { name: 'Change goal' })).not.toBeInTheDocument();
         expect(screen.getByRole('menuitem', { name: /Workflow/ })).toHaveFocus();
 
         fireEvent.keyDown(document, { key: 'Escape' });
@@ -246,7 +254,6 @@ describe('end user mode UI surfaces', () => {
         setRuntimeUiConfig({
             showWorkflowButton: true,
             showLogsButton: true,
-            showChangeGoalButton: true,
         });
         const openWorkflow = vi.fn();
         const state = {
@@ -259,7 +266,6 @@ describe('end user mode UI surfaces', () => {
             isAsideVisible: true,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: 'Goal',
-            reproposeAnalysisGoals: vi.fn(),
             csvData: { fileName: 'sales.csv' },
             settings: { language: 'English' as const },
         };
@@ -296,7 +302,6 @@ describe('end user mode UI surfaces', () => {
             isAsideVisible: true,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: 'Goal',
-            reproposeAnalysisGoals: vi.fn(),
             csvData: { fileName: 'sales.csv' },
             settings: { language },
         };
@@ -311,7 +316,7 @@ describe('end user mode UI surfaces', () => {
         fireEvent.click(screen.getByRole('button', { name: advancedLabel }));
         expect(screen.getByRole('menuitem', { name: new RegExp(workflowLabel) })).toBeInTheDocument();
         expect(screen.getByRole('menuitem', { name: new RegExp(logsLabel) })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: changeGoalLabel })).toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: changeGoalLabel })).not.toBeInTheDocument();
     });
 
     it('hides chat advanced buttons and shows managed placeholder in end user mode', () => {

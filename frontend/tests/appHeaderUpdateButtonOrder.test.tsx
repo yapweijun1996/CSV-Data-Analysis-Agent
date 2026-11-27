@@ -26,7 +26,6 @@ describe('AppHeader update button placement', () => {
             isAsideVisible: true,
             setIsAsideVisible: vi.fn(),
             confirmedAnalysisGoal: null,
-            reproposeAnalysisGoals: vi.fn(),
             csvData: null,
         };
         useAppStoreMock.mockImplementation((selector: (value: typeof state) => unknown) => selector(state));
