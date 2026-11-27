@@ -63,7 +63,7 @@ export interface DemoDatasetCatalogResult {
     origin: 'catalog' | 'fallback';
 }
 
-const APP_LANGUAGES: readonly AppLanguage[] = ['English', 'Mandarin', 'Malay', 'Japanese'];
+const APP_LANGUAGES: readonly AppLanguage[] = ['English', 'Mandarin', 'Malay', 'Vietnamese', 'Japanese'];
 
 // A bare file name keeps every fetch inside `demo-data/`: no directories,
 // no parent traversal, no absolute or cross-origin URLs.

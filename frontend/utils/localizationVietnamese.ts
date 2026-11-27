@@ -6,7 +6,9 @@
  * app stays fully usable while coverage grows. Keep placeholders such as {count}
  * identical to the English entry.
  */
-export const vietnameseTranslations: Readonly<Record<string, string>> = {
+import { vietnameseExtraTranslations } from './localizationVietnameseExtra';
+
+const coreTranslations: Readonly<Record<string, string>> = {
     header_analysis_actions: 'Thao tác phân tích',
     header_new: 'Mới',
     header_new_title: 'Bắt đầu phiên phân tích mới',
@@ -91,4 +93,9 @@ export const vietnameseTranslations: Readonly<Record<string, string>> = {
     history_switch_session_desc: 'Tải phiên này sẽ thay thế không gian làm việc hiện tại. Dữ liệu hiện tại đã được tự động lưu và sẽ không bị mất.',
     history_switch_cancel: 'Hủy',
     history_switch_confirm: 'Tải phiên',
+};
+
+export const vietnameseTranslations: Readonly<Record<string, string>> = {
+    ...vietnameseExtraTranslations,
+    ...coreTranslations,
 };

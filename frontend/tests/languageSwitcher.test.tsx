@@ -35,8 +35,9 @@ describe('LanguageSwitcher', () => {
 });
 
 describe('Vietnamese translations', () => {
-    it('uses the overlay and falls back to English for missing keys', () => {
+    it('uses the overlay and returns the key when nothing is defined', () => {
         expect(getTranslation('header_new', 'Vietnamese')).toBe('Mới');
-        expect(getTranslation('report_header_ai_badge', 'Vietnamese')).toBe(getTranslation('report_header_ai_badge', 'English'));
+        expect(getTranslation('report_header_ai_badge', 'Vietnamese')).toBe('Phân tích AI');
+        expect(getTranslation('no_such_key_for_fallback', 'Vietnamese')).toBe('no_such_key_for_fallback');
     });
 });
