@@ -7,6 +7,14 @@ import { flushPendingVectorMemoryDocs } from '../../services/agent/memory/vector
 import { IconClose } from '../../icons/IconClose';
 import { IconMemory } from '../../icons/IconMemory';
 import { IconDelete } from '../../icons/IconDelete';
+import { IconSearch } from '../../icons/IconSearch';
+import {
+    IconAlertCircle, IconAnalysisCard, IconBookmark, IconCheckCircle, IconCopy,
+    IconDatabase, IconLayers, IconNote, IconSpinner,
+} from '../../icons/IconMemoryDashboard';
+import { getTranslation } from '../../utils/localization';
+import { confirmModal } from '../../services/ui/modalService';
+import { showToast as toast } from '../../services/ui/toastService';
 import { resolveReportMemoryScope } from '../../services/agent/memory/memoryScope';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 
@@ -14,6 +22,107 @@ type SearchResult = {
     text: string;
     score: number;
     origin?: string;
+};
+
+type MemoryKind = 'dataset' | 'analysis' | 'note';
+const COLLAPSE_THRESHOLD = 220;
+
+const detectKind = (text: string): MemoryKind => {
+    if (/^\s*\[Analysis Card\]/i.test(text)) return 'analysis';
+    if (/^\s*Dataset\b/i.test(text)) return 'dataset';
+    return 'note';
+};
+
+/** "session-41ca0d0e-66a1-..." -> "session-41ca0d0e…"; the full id stays in the tooltip and copy action. */
+export const shortenId = (id: string): string => {
+    if (id.length <= 18) return id;
+    const match = /^([A-Za-z]+)-(.+)$/.exec(id);
+    return match ? `${match[1]}-${match[2].slice(0, 8)}…` : `${id.slice(0, 12)}…${id.slice(-4)}`;
+};
+
+const KIND_STYLE: Record<MemoryKind, { icon: React.FC<React.SVGProps<SVGSVGElement>>; tint: string; labelKey: string }> = {
+    dataset: { icon: IconDatabase, tint: 'bg-blue-100 text-blue-600', labelKey: 'memory_type_dataset' },
+    analysis: { icon: IconAnalysisCard, tint: 'bg-indigo-100 text-indigo-600', labelKey: 'memory_type_analysis' },
+    note: { icon: IconNote, tint: 'bg-slate-100 text-slate-600', labelKey: 'memory_type_note' },
+};
+
+const IdValue: React.FC<{ id: string; copyLabel: string; onCopy: (id: string) => void }> = ({ id, copyLabel, onCopy }) => (
+    <span className="inline-flex min-w-0 items-center gap-1">
+        <span className="truncate font-mono text-[12px]" title={id}>{shortenId(id)}</span>
+        <button
+            type="button"
+            onClick={() => onCopy(id)}
+            title={`${copyLabel}: ${id}`}
+            aria-label={`${copyLabel}: ${id}`}
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-white hover:text-blue-600"
+        >
+            <IconCopy />
+        </button>
+    </span>
+);
+
+const MemoryCard: React.FC<{
+    doc: VectorStoreDocument;
+    t: (key: string, params?: Record<string, string | number>) => string;
+    highlighted: boolean;
+    onDelete: (id: string) => void;
+    onCopy: (id: string) => void;
+}> = ({ doc, t, highlighted, onDelete, onCopy }) => {
+    const [expanded, setExpanded] = useState(false);
+    const kind = KIND_STYLE[detectKind(doc.text)];
+    const KindIcon = kind.icon;
+    const collapsible = doc.text.length > COLLAPSE_THRESHOLD;
+    const scope = doc.metadata?.scope;
+    const rows: Array<{ label: string; node: React.ReactNode }> = [
+        { label: t('memory_origin'), node: <span className="break-words">{doc.metadata?.origin?.label ?? t('memory_origin_legacy')}</span> },
+    ];
+    if (scope) {
+        rows.push(
+            { label: t('memory_report'), node: <IdValue id={scope.reportId} copyLabel={t('memory_copy_id')} onCopy={onCopy} /> },
+            { label: t('memory_dataset'), node: <IdValue id={scope.datasetId} copyLabel={t('memory_copy_id')} onCopy={onCopy} /> },
+            { label: t('memory_version'), node: <IdValue id={scope.datasetVersion} copyLabel={t('memory_copy_id')} onCopy={onCopy} /> },
+        );
+    }
+    return (
+        <li
+            id={`memory-doc-${doc.text.substring(0, 30)}`}
+            className={`group flex gap-3 rounded-xl border bg-white p-3 shadow-sm transition-all duration-300 ${highlighted ? 'border-blue-500 ring-2 ring-blue-500' : 'border-slate-200'}`}
+        >
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${kind.tint}`} title={t(kind.labelKey)}>
+                <KindIcon />
+            </span>
+            <div className="min-w-0 flex-1">
+                <p className={`break-words text-sm leading-6 text-slate-800 ${collapsible && !expanded ? 'line-clamp-4' : ''}`}>{doc.text}</p>
+                {collapsible && (
+                    <button
+                        type="button"
+                        onClick={() => setExpanded(value => !value)}
+                        aria-expanded={expanded}
+                        className="mt-0.5 py-1 text-xs font-semibold text-blue-600 hover:underline"
+                    >
+                        {expanded ? t('memory_show_less') : t('memory_show_more')}
+                    </button>
+                )}
+                <dl className="mt-2 grid grid-cols-[auto,minmax(0,1fr)] gap-x-3 gap-y-1 rounded-lg bg-blue-50/70 px-3 py-2 text-xs text-slate-600">
+                    {rows.map(row => (
+                        <React.Fragment key={row.label}>
+                            <dt className="font-medium text-slate-500">{row.label}:</dt>
+                            <dd className="min-w-0 text-slate-700">{row.node}</dd>
+                        </React.Fragment>
+                    ))}
+                </dl>
+            </div>
+            <button
+                type="button"
+                onClick={() => onDelete(doc.id)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-red-100 hover:text-red-600 sm:opacity-50 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                title={t('memory_delete_item')}
+                aria-label={t('memory_delete_item')}
+            >
+                <IconDelete />
+            </button>
+        </li>
+    );
 };
 
 // Soft capacity limit for the visual progress bar (in KB)
@@ -27,9 +136,12 @@ export const MemoryPanel: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
     const [highlightedDocText, setHighlightedDocText] = useState<string | null>(null);
     const [modelStatus, setModelStatus] = useState(vectorStore.getStatus());
     const [modelError, setModelError] = useState(vectorStore.getLastError());
+    const language = useAppStore(state => state.settings.language);
+    const t = useCallback((key: string, params?: Record<string, string | number>) => getTranslation(key, language, params), [language]);
     const dialogRef = useDialogAccessibility<HTMLDivElement>(isOpen, onClose);
 
     const isModelReady = modelStatus === 'ready';
@@ -86,6 +198,7 @@ export const MemoryPanel: React.FC = () => {
             activationTriggered.current = false;
             setSearchQuery('');
             setSearchResults([]);
+            setHasSearched(false);
             setHighlightedDocText(null);
         }
     }, [isOpen, refreshDocuments, syncModelState]);
@@ -95,6 +208,7 @@ export const MemoryPanel: React.FC = () => {
         if (!searchQuery.trim() || modelStatus === 'loading') return;
         setIsSearching(true);
         setHighlightedDocText(null);
+        setHasSearched(true);
         syncModelState();
         const scope = resolveReportMemoryScope(useAppStore.getState());
         if (!scope) {
@@ -112,43 +226,67 @@ export const MemoryPanel: React.FC = () => {
         setIsSearching(false);
     };
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this memory item?')) {
-            await vectorStore.deleteDocument(id);
-            vectorStore.schedulePersist();
-            useAppStore.setState({
-                vectorStoreDocuments: await vectorStore.getDocuments(),
-            });
-            await refreshDocuments();
+    const handleCopy = useCallback(async (id: string) => {
+        try {
+            await navigator.clipboard.writeText(id);
+            toast({ type: 'success', message: t('memory_copied') });
+        } catch {
+            toast({ type: 'error', message: t('memory_copy_failed') });
         }
+    }, [t]);
+
+    const handleDelete = async (id: string) => {
+        const confirmed = await confirmModal({
+            title: t('memory_delete_title'),
+            message: t('memory_delete_message'),
+            confirmLabel: t('memory_delete_confirm'),
+            cancelLabel: t('memory_cancel'),
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+        await vectorStore.deleteDocument(id);
+        vectorStore.schedulePersist();
+        useAppStore.setState({ vectorStoreDocuments: await vectorStore.getDocuments() });
+        await refreshDocuments();
+        toast({ type: 'success', message: t('memory_deleted_toast') });
     };
 
     const handleClearAll = async () => {
-        if (window.confirm('Are you sure you want to clear all memory items for this report and dataset version? This cannot be undone.')) {
-            await Promise.all(documents.map(document =>
-                vectorStore.deleteDocument(document.id)));
-            vectorStore.schedulePersist();
-            useAppStore.setState({
-                vectorStoreDocuments: await vectorStore.getDocuments(),
-            });
-            await refreshDocuments();
-            setSearchResults([]);
-        }
+        const confirmed = await confirmModal({
+            title: t('memory_clear_title'),
+            message: t('memory_clear_message'),
+            confirmLabel: t('memory_clear_report'),
+            cancelLabel: t('memory_cancel'),
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+        await Promise.all(documents.map(document => vectorStore.deleteDocument(document.id)));
+        vectorStore.schedulePersist();
+        useAppStore.setState({ vectorStoreDocuments: await vectorStore.getDocuments() });
+        await refreshDocuments();
+        setSearchResults([]);
+        toast({ type: 'success', message: t('memory_cleared_toast') });
     };
 
     const handleSearchResultClick = (text: string) => {
         setHighlightedDocText(text);
         const element = document.getElementById(`memory-doc-${text.substring(0, 30)}`);
         element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    };
 
     if (!isOpen) return null;
 
     const memoryUsagePercentage = Math.min((memoryUsage / MEMORY_CAPACITY_KB) * 100, 100);
+    // Keep a sliver visible so a tiny but non-zero usage still reads as "some".
+    const barWidth = memoryUsage > 0 ? Math.max(memoryUsagePercentage, 2) : 0;
+    const statusText = modelStatus === 'idle' ? t('memory_model_idle')
+        : modelStatus === 'loading' ? t('memory_model_loading')
+        : modelStatus === 'ready' ? t('memory_model_ready')
+        : `${t('memory_model_error')} ${modelError ?? ''}`.trim();
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-50 p-4 transition-opacity"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-2 backdrop-blur-sm sm:p-4"
             onClick={onClose}
         >
             <div
@@ -157,139 +295,170 @@ export const MemoryPanel: React.FC = () => {
                 aria-modal="true"
                 aria-labelledby="memory-dialog-title"
                 tabIndex={-1}
-                className="flex h-full max-h-[85vh] w-full max-w-4xl flex-col rounded-card border border-slate-200 bg-white p-4 shadow-xl"
+                className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-b from-blue-50/80 via-white to-white shadow-2xl sm:h-[85vh]"
                 onClick={e => e.stopPropagation()}
             >
-                <header className="mb-3 flex shrink-0 items-start justify-between">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700" aria-hidden="true">
+                <header className="shrink-0 px-4 pb-3 pt-4 sm:px-6 sm:pt-5">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-start gap-3">
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600" aria-hidden="true">
                                 <IconMemory />
                             </span>
-                            <h2 id="memory-dialog-title" className="text-2xl font-bold text-slate-900">AI Long-Term Memory</h2>
-                        </div>
-                        <div className="mt-2 pl-12">
-                            <div className="flex items-baseline gap-2 text-sm text-slate-500">
-                                <span>{documents.length} items</span>
-                                <span className="text-slate-300">|</span>
-                                <span>Using ~{memoryUsage.toFixed(2)} KB</span>
-                             </div>
-                            {activeMemoryScope && (
-                                <p className="mt-1 max-w-2xl break-words text-[11px] text-slate-500">
-                                    Active scope: Report {activeMemoryScope.reportId} · Dataset {activeMemoryScope.datasetId} · Version {activeMemoryScope.datasetVersion}
-                                </p>
-                            )}
-                            <div className="mt-1 h-1.5 w-full rounded-full bg-slate-200">
-                                <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${memoryUsagePercentage}%` }}></div>
+                            <div className="min-w-0">
+                                <h2 id="memory-dialog-title" className="text-xl font-bold text-slate-900 sm:text-2xl">{t('memory_title')}</h2>
+                                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-slate-500">
+                                    <span>{t('memory_items_count', { count: documents.length })}</span>
+                                    <span className="text-slate-300" aria-hidden="true">|</span>
+                                    <span>{t('memory_usage', { size: memoryUsage.toFixed(2) })}</span>
+                                </div>
+                                {activeMemoryScope && (
+                                    <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[11px] text-slate-500">
+                                        <span className="font-medium">{t('memory_active_scope')}:</span>
+                                        {[
+                                            [t('memory_report'), activeMemoryScope.reportId],
+                                            [t('memory_dataset'), activeMemoryScope.datasetId],
+                                            [t('memory_version'), activeMemoryScope.datasetVersion],
+                                        ].map(([label, id]) => (
+                                            <span key={label} className="rounded-full bg-white/80 px-2 py-0.5 ring-1 ring-slate-200" title={id}>
+                                                {label} <span className="font-mono">{shortenId(id)}</span>
+                                            </span>
+                                        ))}
+                                    </p>
+                                )}
                             </div>
                         </div>
+                        <button
+                            data-dialog-initial-focus
+                            onClick={onClose}
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                            title={t('memory_close')}
+                            aria-label={t('memory_close')}
+                        >
+                            <IconClose />
+                        </button>
                     </div>
-                    <button
-                        data-dialog-initial-focus
-                        onClick={onClose}
-                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-1 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                        title="Close"
-                        aria-label="Close memory"
+                    <div
+                        className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-200"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={Math.round(memoryUsagePercentage)}
                     >
-                        <IconClose />
-                    </button>
+                        <div className="h-1.5 rounded-full bg-blue-600 transition-all" style={{ width: `${barWidth}%` }} />
+                    </div>
                 </header>
 
-                <div className="grid min-h-0 flex-grow gap-4 md:grid-cols-2">
-                    {/* Left Column: Search */}
-                    <div className="flex flex-col min-h-0">
-                        <div className="mb-4 shrink-0 rounded-card border border-slate-200 bg-slate-50 p-4">
-                            <h3 className="mb-2 font-semibold text-slate-800">Test Similarity Search</h3>
-                            <p className="mb-2 text-xs text-slate-500">
-                                {modelStatus === 'idle' && 'The local memory model will load the first time semantic search runs.'}
-                                {modelStatus === 'loading' && 'Loading the local memory model and WASM assets.'}
-                                {modelStatus === 'ready' && 'Local memory model is ready.'}
-                                {modelStatus === 'error' && `Local memory model failed to load. ${modelError ?? ''}`.trim()}
+                <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6 md:grid-cols-[minmax(0,5fr),minmax(0,7fr)] md:overflow-hidden">
+                    {/* Left: similarity search */}
+                    <section className="flex min-h-0 flex-col md:overflow-y-auto">
+                        <div className="shrink-0 rounded-xl border border-blue-100 bg-white/80 p-4 shadow-sm">
+                            <h3 className="flex items-center gap-2 font-semibold text-slate-800">
+                                <span className="text-blue-600"><IconLayers /></span>
+                                {t('memory_search_title')}
+                            </h3>
+                            <p
+                                className={`mt-2 flex items-start gap-2 text-sm ${modelStatus === 'error' ? 'text-red-600' : 'text-slate-600'}`}
+                                role="status"
+                            >
+                                <span className={`mt-0.5 shrink-0 ${modelStatus === 'ready' ? 'text-green-500' : modelStatus === 'error' ? 'text-red-500' : 'text-slate-400'}`}>
+                                    {modelStatus === 'ready' ? <IconCheckCircle />
+                                        : modelStatus === 'error' ? <IconAlertCircle />
+                                        : modelStatus === 'loading' ? <IconSpinner /> : <IconLayers />}
+                                </span>
+                                <span>{statusText}</span>
                             </p>
-                            <form onSubmit={handleSearch} className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder={isModelReady ? "Enter query to find memories..." : modelStatus === 'loading' ? "Memory model is loading..." : "Run a search to load the memory model"}
-                                    disabled={modelStatus === 'loading' || isSearching}
-                                    className="flex-grow bg-white border border-slate-300 rounded-md py-1.5 px-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
-                                />
-                                <button type="submit" disabled={modelStatus === 'loading' || isSearching || !searchQuery.trim()} className="px-4 py-1.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed">
-                                    {isSearching ? '...' : 'Search'}
+                            <form onSubmit={handleSearch} className="mt-3 flex flex-col gap-2 sm:flex-row">
+                                <label className="relative min-w-0 flex-1">
+                                    <span className="sr-only">{t('memory_search_aria')}</span>
+                                    <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center"><IconSearch /></span>
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder={isModelReady ? t('memory_search_placeholder') : modelStatus === 'loading' ? t('memory_search_placeholder_loading') : t('memory_search_placeholder_idle')}
+                                        disabled={modelStatus === 'loading' || isSearching}
+                                        className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
+                                    />
+                                </label>
+                                <button
+                                    type="submit"
+                                    disabled={modelStatus === 'loading' || isSearching || !searchQuery.trim()}
+                                    className="min-h-[44px] rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                                >
+                                    {isSearching ? '...' : t('memory_search_button')}
                                 </button>
                             </form>
                         </div>
-                        <div className="flex-grow overflow-y-auto pr-2">
-                            {searchResults.length > 0 && (
+                        <div className="mt-4 flex-1">
+                            {searchResults.length > 0 ? (
                                 <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-slate-600">Top Results:</h4>
+                                    <h4 className="text-sm font-medium text-slate-600">{t('memory_top_results')}</h4>
                                     {searchResults.map((result) => (
-                                        <div key={result.text} onClick={() => handleSearchResultClick(result.text)} className="bg-white p-2.5 border border-slate-200 rounded-card text-xs cursor-pointer hover:border-blue-500 hover:ring-1 hover:ring-blue-500">
-                                            <div className="flex justify-between items-center mb-1">
-                                                 <p className="text-slate-700 font-semibold">Match</p>
-                                                 <p className="text-blue-600 font-bold">{(result.score * 100).toFixed(1)}%</p>
-                                            </div>
-                                            <div className="w-full bg-slate-200 rounded-full h-1 mb-2">
-                                                <div className="bg-blue-500 h-1 rounded-full" style={{ width: `${result.score * 100}%`}}></div>
-                                            </div>
-                                            <p className="text-slate-600 italic">"{result.text}"</p>
+                                        <button
+                                            type="button"
+                                            key={result.text}
+                                            onClick={() => handleSearchResultClick(result.text)}
+                                            className="block w-full rounded-xl border border-slate-200 bg-white p-3 text-left text-xs shadow-sm hover:border-blue-500 hover:ring-1 hover:ring-blue-500"
+                                        >
+                                            <span className="mb-1 flex items-center justify-between">
+                                                <span className="font-semibold text-slate-700">{t('memory_match')}</span>
+                                                <span className="font-bold text-blue-600">{(result.score * 100).toFixed(1)}%</span>
+                                            </span>
+                                            <span className="mb-2 block h-1 w-full rounded-full bg-slate-200">
+                                                <span className="block h-1 rounded-full bg-blue-500" style={{ width: `${result.score * 100}%` }} />
+                                            </span>
+                                            <span className="line-clamp-3 block break-words italic text-slate-600">"{result.text}"</span>
                                             {result.origin && (
-                                                <p className="mt-1 text-[11px] text-slate-500">Origin: {result.origin}</p>
+                                                <span className="mt-1 block text-[11px] text-slate-500">{t('memory_origin')}: {result.origin}</span>
                                             )}
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
-                            )}
+                            ) : hasSearched && !isSearching ? (
+                                <p className="text-sm text-slate-500">{t('memory_no_results')}</p>
+                            ) : null}
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Right Column: All Documents */}
-                    <div className="flex flex-col min-h-0">
-                        <div className="mb-2 flex shrink-0 items-center justify-between">
-                            <h3 className="font-semibold text-slate-800">All Stored Memories ({documents.length})</h3>
+                    {/* Right: stored memories */}
+                    <section className="flex min-h-0 flex-col">
+                        <div className="mb-3 flex shrink-0 items-center justify-between gap-2">
+                            <h3 className="flex items-center gap-2 font-semibold text-slate-800">
+                                <span className="text-blue-600"><IconBookmark /></span>
+                                {t('memory_all_title', { count: documents.length })}
+                            </h3>
                             {documents.length > 0 && (
-                                <button onClick={handleClearAll} className="text-xs text-red-600 hover:underline">
-                                    Clear Report Memory
+                                <button
+                                    type="button"
+                                    onClick={handleClearAll}
+                                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                                >
+                                    <IconDelete />
+                                    {t('memory_clear_report')}
                                 </button>
                             )}
                         </div>
-                        <div className="flex-grow overflow-y-auto pr-2 border-t border-slate-200 pt-2">
+                        <div className="min-h-0 flex-1 md:overflow-y-auto md:pr-1">
                             {documents.length === 0 ? (
-                                <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-                                    <p>The AI's memory is currently empty.</p>
+                                <div className="flex h-full min-h-[120px] items-center justify-center text-sm text-slate-500">
+                                    <p>{t('memory_empty')}</p>
                                 </div>
                             ) : (
-                                <ul className="space-y-2">
+                                <ul className="space-y-3">
                                     {documents.map(doc => (
-                                        <li
+                                        <MemoryCard
                                             key={doc.id}
-                                            id={`memory-doc-${doc.text.substring(0, 30)}`}
-                                            className={`p-3 bg-slate-50 rounded-card text-sm text-slate-800 border border-slate-200 flex justify-between items-start group transition-all duration-300 ${highlightedDocText === doc.text ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
-                                            <div className="flex-grow pr-4 break-words">
-                                                <p>{doc.text}</p>
-                                                <p className="mt-2 text-xs text-slate-500">
-                                                    Origin: {doc.metadata?.origin?.label ?? 'Legacy memory (unverified origin)'}
-                                                </p>
-                                                {doc.metadata?.scope && (
-                                                    <p className="mt-0.5 text-[11px] text-slate-400">
-                                                        Report {doc.metadata.scope.reportId} · Dataset {doc.metadata.scope.datasetId} · Version {doc.metadata.scope.datasetVersion}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => handleDelete(doc.id)}
-                                                className="p-1 text-slate-400 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
-                                                title="Delete Memory"
-                                            >
-                                                <IconDelete />
-                                            </button>
-                                        </li>
+                                            doc={doc}
+                                            t={t}
+                                            highlighted={highlightedDocText === doc.text}
+                                            onDelete={handleDelete}
+                                            onCopy={handleCopy}
+                                        />
                                     ))}
                                 </ul>
                             )}
                         </div>
-                    </div>
+                    </section>
                 </div>
             </div>
         </div>
