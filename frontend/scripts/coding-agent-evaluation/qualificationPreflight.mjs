@@ -109,7 +109,7 @@ const dependencyPins = async root => {
 };
 const candidateConfiguration = async root => {
   const gateway = await read(root, 'frontend/config/defaultGatewayConfig.ts');
-  const defaults = await read(root, 'frontend/services/storageService.ts');
+  const defaults = await read(root, 'frontend/services/storage/settings.ts');
   const budget = await read(root, 'frontend/services/agent/runtime/pi/piTaskBudget.ts');
   const context = await read(root, 'frontend/config/agentDefaults.ts');
   const limits = Object.fromEntries(['toolCalls', 'skillReads', 'providerTurns', 'transformationAttempts'].map(key =>
