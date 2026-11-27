@@ -58,7 +58,7 @@ catch {
     page.on('pageerror', e => events.push({ type: 'pageerror', text: e.message.slice(0, 300) }));
     page.on('requestfailed', r => events.push({ type: 'requestfailed', url: r.url(), error: r.failure()?.errorText }));
     await page.route('**/*', route => route.request().url().startsWith('http://127.0.0.1:8769/') ? route.continue() : route.abort());
-    await page.goto('http://127.0.0.1:8769/');
+    await page.goto('http://127.0.0.1:8769/?debug_yn=y');
     await page.waitForFunction(() => document.body.innerText.includes('Select a file'));
     const assets = fs.readdirSync(root + '/assets'), capacity = assets.find(n => /^csv_data_analysis_app-agent-.*\.js$/.test(n));
     if (!capacity)

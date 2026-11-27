@@ -18,6 +18,7 @@ import { ChatComposer, getComposerBusyState } from './chat/ChatComposer';
 import { TERMINAL_CHAT_LIFECYCLE_STATES } from '../types/runtime';
 import { TaskInspectionEntry } from './task/TaskInspection';
 
+import { isDebugModeEnabled } from '../utils/debugMode';
 const PiBrowserLab = lazy(() => import('./modals/PiBrowserLab').then(module => ({ default: module.PiBrowserLab })));
 
 const CHAT_DEBUG_ENABLED = import.meta.env.DEV;
@@ -442,7 +443,7 @@ export const ChatPanel: React.FC = React.memo(() => {
     return (
         <div className="flex h-full flex-col rounded-card bg-slate-100 md:rounded-none">
             <Suspense fallback={null}>
-                {isPiBrowserLabOpen && <PiBrowserLab onClose={() => setIsPiBrowserLabOpen(false)} />}
+                {isPiBrowserLabOpen && isDebugModeEnabled() && <PiBrowserLab onClose={() => setIsPiBrowserLabOpen(false)} />}
             </Suspense>
             <ChatPanelHeader
                 language={language}
@@ -450,14 +451,14 @@ export const ChatPanel: React.FC = React.memo(() => {
                 showMemoryPanel={shouldShowLongTermMemory()}
                 showAgentThinking={shouldShowAgentThinkingModal()}
                 showSettings={shouldShowSettingsButton()}
-                showPiBrowserLab={currentView === 'analysis_dashboard'}
+                showPiBrowserLab={currentView === 'analysis_dashboard' && isDebugModeEnabled()}
                 onOpenMemory={() => setIsMemoryPanelOpen(true)}
                 onOpenAgent={() => setIsAgentModalOpen(true)}
                 onOpenSettings={() => setIsSettingsModalOpen(true)}
                 onOpenPiBrowserLab={() => setIsPiBrowserLabOpen(true)}
                 onHidePanel={() => setIsAsideVisible(false)}
             />
-            <TaskInspectionEntry />
+            {isDebugModeEnabled() && <TaskInspectionEntry />}
             <div className="relative flex-1 min-h-0">
                 <div
                     ref={messagesContainerRef}
