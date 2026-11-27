@@ -19,11 +19,12 @@ interface HistoryOverflowMenuProps {
     onOpenReport: (id: string) => void;
     onExportPdf: (id: string) => void;
     onDelete: (id: string, filename: string) => void;
+    onRename: (id: string) => void;
 }
 
 export const HistoryOverflowMenu: React.FC<HistoryOverflowMenuProps> = ({
     reportId, reportFilename, isOpen, isProtected, language,
-    overflowRef, onToggle, onOpenReport, onExportPdf, onDelete,
+    overflowRef, onToggle, onOpenReport, onExportPdf, onDelete, onRename,
 }) => (
     <div className="relative" ref={isOpen ? overflowRef : undefined}>
         <button
@@ -40,6 +41,12 @@ export const HistoryOverflowMenu: React.FC<HistoryOverflowMenuProps> = ({
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 >
                     {getTranslation('history_open_report', language)}
+                </button>
+                <button
+                    onClick={() => { onRename(reportId); onToggle(null); }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                    {getTranslation('report_rename_action', language)}
                 </button>
                 <button
                     onClick={() => { onExportPdf(reportId); onToggle(null); }}

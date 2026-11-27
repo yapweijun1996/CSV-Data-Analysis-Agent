@@ -176,6 +176,7 @@ export const initialAppState: AppState = {
     queryHistory: [],
     duckDbSessionStatus: createIdleDuckDbSessionStatus(),
     userColumnAnnotations: {},
+    customReportName: null,
 };
 
 // Combine all state and action types into a single AppStore type

@@ -292,6 +292,7 @@ export async function* orchestrateFileUpload(
             canonicalizationStatus: 'idle',
             pipelineOutcome: null,
             reportContextResolution: null,
+            customReportName: options.restoreBundle ? (getState().customReportName ?? null) : null,
             datasetSemanticSnapshot: null,
             semanticStatus: 'idle',
             semanticDatasetVersion: null,

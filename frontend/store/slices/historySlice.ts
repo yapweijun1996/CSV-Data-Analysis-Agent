@@ -1,6 +1,6 @@
 import { resetAgentTelemetryBuffers } from './agentTelemetryHelpers';
 import { captureOutgoingSessionSnapshot, beginSessionTransition, ownsTransition, captureSessionScope, ownsSessionScope, scopeStore } from '../../services/session/sessionOwnership';
-import { drainSessionPersistence, queueSessionWrite } from '../../services/persistence/currentSessionPersistence';
+import { drainSessionPersistence, persistCurrentAppSessionSnapshot, queueSessionWrite } from '../../services/persistence/currentSessionPersistence';
 import { buildPersistedReportRecord, hasSavableSession } from '../../services/persistence/persistedAppState';
 
 
@@ -8,7 +8,7 @@ import { buildPersistedReportRecord, hasSavableSession } from '../../services/pe
 import type { StateCreator } from 'zustand';
 import type { AppStore } from '../useAppStore';
 import { ReportListItem } from '../../types';
-import { getReportsList, saveReport, getReport, deleteReport, deleteOriginalData, purgeAllStorage, CURRENT_SESSION_KEY } from '../../services/storageService';
+import { getReportsList, saveReport, getReport, deleteReport, renameReport, normalizeReportName, deleteOriginalData, purgeAllStorage, CURRENT_SESSION_KEY } from '../../services/storageService';
 import { vectorStore } from '../../services/vectorStore';
 import { disposeDuckDbQueryEngine } from '../../services/duckdb/queryEngine';
 import {
@@ -62,6 +62,7 @@ export interface IHistorySlice {
     loadReportsListIfNeeded: () => Promise<void>;
     handleLoadReport: (id: string) => Promise<void>;
     handleDeleteReport: (id: string) => Promise<void>;
+    handleRenameReport: (id: string, name: string) => Promise<void>;
     handlePurgeStorage: () => Promise<{ deletedReports: number; freedMB: number }>;
     handleNewSession: () => Promise<void>;
     openPersistedReportArtifact: (id: string) => Promise<void>;
@@ -279,6 +280,20 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
             if (assertTransition()) { set({ isBusy: false }); get().addProgress(`Failed to load report: ${error instanceof Error ? error.message : String(error)}`, 'error'); }
         }
     },
+    handleRenameReport: async (id, name) => {
+        const nextName = normalizeReportName(name);
+        try {
+            if (id === get().sessionId) {
+                set({ customReportName: nextName });
+                await persistCurrentAppSessionSnapshot(get());
+            } else {
+                await renameReport(id, nextName);
+            }
+            await get().loadReportsList();
+        } catch (error) {
+            get().addProgress(`Failed to rename report: ${error instanceof Error ? error.message : String(error)}`, 'error');
+        }
+    },
     handleDeleteReport: async (id) => {
         try {
             await deleteReport(id);
@@ -404,6 +419,7 @@ export const createHistorySlice: StateCreator<AppStore, [], [], IHistorySlice> =
                 canonicalizationStatus: 'idle',
                 pipelineOutcome: null,
                 reportContextResolution: null,
+                customReportName: null,
                 datasetSemanticSnapshot: null,
                 semanticStatus: 'idle',
                 semanticDatasetVersion: null,

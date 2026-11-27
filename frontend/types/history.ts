@@ -20,5 +20,7 @@ export interface ReportListItem {
     createdAt: Date;
     updatedAt: Date;
     reportTitle?: string | null;
+    /** Name the user gave the report; takes precedence over every other label. */
+    customName?: string | null;
     reportDescription?: string | null;
 }

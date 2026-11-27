@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { getTranslation } from '../../utils/localization';
 import { HistoryOverflowMenu } from './HistoryOverflowMenu';
 import type { ReportListItem } from '../../types';
+import { RenameReportField } from '../RenameReportField';
 import { isUsableReportTitle } from '../../services/agent/reportContext';
 import { CsvFileIcon, csvToneFor, HistoryChartIcon, HistoryPlayIcon, HistoryChevronIcon } from './HistoryIcons';
 
@@ -26,6 +27,7 @@ interface HistoryReportRowProps {
     onLoad: (id: string) => void;
     onOpenReport: (id: string) => void;
     onDelete: (id: string, filename: string) => void;
+    onRename: (id: string, name: string) => void;
     onExportPdf: (id: string) => void;
     onOverflowToggle: (id: string | null) => void;
     isProtectedReport: (id: string) => boolean;
@@ -42,14 +44,25 @@ const showDualDates = (created: Date | string, updated: Date | string): boolean 
 
 export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
     group, language, loadingId, isGroupExpanded, overflowMenuId, overflowRef,
-    onToggleExpand, onLoad, onOpenReport, onDelete, onExportPdf, onOverflowToggle,
+    onToggleExpand, onLoad, onOpenReport, onDelete, onRename, onExportPdf, onOverflowToggle,
     isProtectedReport, formatDate, formatDateFull,
 }) => {
     const { latest, older, isCurrent } = group;
     // Saved reports from before the title heuristic can carry a period ("From 01-01-2026 To 30-06-2026") as title.
     const latestTitle = latest.reportTitle && isUsableReportTitle(latest.reportTitle) ? latest.reportTitle : null;
-    const hasTitle = Boolean(latestTitle);
-    const displayTitle = latestTitle ?? group.filename;
+    const customName = latest.customName?.trim() || null;
+    const hasTitle = Boolean(customName || latestTitle);
+    const displayTitle = customName ?? latestTitle ?? group.filename;
+    const [renamingId, setRenamingId] = useState<string | null>(null);
+    const renderRenameField = (report: ReportListItem, fallback: string) => (
+        <RenameReportField
+            initialValue={report.customName ?? ''}
+            placeholder={fallback}
+            language={language}
+            onCommit={name => { setRenamingId(null); void onRename(report.id, name); }}
+            onCancel={() => setRenamingId(null)}
+        />
+    );
     const dualDates = showDualDates(latest.createdAt, latest.updatedAt);
 
     const renderActionButton = (report: ReportListItem, isCurrent: boolean, compact?: boolean) => {
@@ -82,9 +95,11 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                 <CsvFileIcon tone={csvToneFor(group.filename)} className="mt-0.5 h-11 w-9 flex-shrink-0" />
                 <div className="min-w-0 flex-1 basis-[calc(100%-3.5rem)] sm:basis-auto">
                     {/* Title */}
-                    <p className="truncate text-sm font-semibold text-slate-900">
-                        {displayTitle}
-                    </p>
+                    {renamingId === latest.id ? renderRenameField(latest, latestTitle ?? group.filename) : (
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                            {displayTitle}
+                        </p>
+                    )}
                     {/* Filename subtitle (only when title exists and differs from filename) */}
                     {hasTitle && (
                         <p className="truncate text-xs text-slate-400 mt-0.5">
@@ -143,6 +158,7 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                         onOpenReport={onOpenReport}
                         onExportPdf={onExportPdf}
                         onDelete={onDelete}
+                        onRename={setRenamingId}
                     />
                 </div>
             </div>
@@ -153,8 +169,10 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                     {older.map(entry => (
                         <div key={entry.id} className="flex items-center gap-3 px-5 py-2 pl-16 transition-colors hover:bg-slate-100/80">
                             <div className="min-w-0 flex-1">
-                                {entry.reportTitle && isUsableReportTitle(entry.reportTitle) && (
-                                    <p className="truncate text-xs text-slate-500">{entry.reportTitle}</p>
+                                {renamingId === entry.id ? renderRenameField(entry, group.filename) : (
+                                    (entry.customName || (entry.reportTitle && isUsableReportTitle(entry.reportTitle))) && (
+                                        <p className="truncate text-xs text-slate-500">{entry.customName || entry.reportTitle}</p>
+                                    )
                                 )}
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                     {showDualDates(entry.createdAt, entry.updatedAt) ? (
@@ -187,6 +205,7 @@ export const HistoryReportRow: React.FC<HistoryReportRowProps> = ({
                                     onOpenReport={onOpenReport}
                                     onExportPdf={onExportPdf}
                                     onDelete={onDelete}
+                                    onRename={setRenamingId}
                                 />
                             </div>
                         </div>

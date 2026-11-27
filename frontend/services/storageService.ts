@@ -8,7 +8,7 @@ export { clearAllLocalBrowserData, __resetStorageClearStateForTests } from './st
 export type { IncompleteLocalDataStore, ClearAllLocalBrowserDataResult } from './storage/localDataClear';
 export { saveOriginalData, getOriginalData, deleteOriginalData, getDatasetLineage, getDatasetVersionSnapshot } from './storage/originalData';
 export { saveSourceFile, getSourceFile, pruneSourceFiles } from './storage/sourceFiles';
-export { writeReportProjection, saveReport, getReport, getReportsList, deleteReport } from './storage/reports';
+export { writeReportProjection, saveReport, getReport, getReportsList, deleteReport, renameReport, normalizeReportName, MAX_REPORT_NAME_LENGTH } from './storage/reports';
 export { getDefaultSettings, saveSettings, getSettings } from './storage/settings';
 export { clearAllCacheStorage, getStorageEstimate } from './storage/storageEstimate';
 export type { StorageEstimate } from './storage/storageEstimate';

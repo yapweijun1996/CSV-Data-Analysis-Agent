@@ -76,7 +76,7 @@ function groupReportsByFilename(
 
 export const HistoryPanel: React.FC = () => {
     const {
-        isOpen, onClose, reports, onLoadReport, onDeleteReport, onPurgeStorage, onOpenReport, onExportPdf,
+        isOpen, onClose, reports, onLoadReport, onDeleteReport, onRenameReport, onPurgeStorage, onOpenReport, onExportPdf,
         currentSessionId, language, hasCsvData,
     } = useAppStore((state: AppStore) => ({
         isOpen: state.isHistoryPanelOpen,
@@ -84,6 +84,7 @@ export const HistoryPanel: React.FC = () => {
         reports: state.reportsList,
         onLoadReport: state.handleLoadReport,
         onDeleteReport: state.handleDeleteReport,
+        onRenameReport: state.handleRenameReport,
         onPurgeStorage: state.handlePurgeStorage,
         onOpenReport: state.openPersistedReportArtifact,
         onExportPdf: state.exportPersistedReportPdf,
@@ -200,7 +201,8 @@ export const HistoryPanel: React.FC = () => {
             if (!search) return true;
             const q = search.toLowerCase();
             const title = g.latest.reportTitle?.toLowerCase() ?? '';
-            return g.filename.toLowerCase().includes(q) || title.includes(q);
+            const custom = g.latest.customName?.toLowerCase() ?? '';
+            return g.filename.toLowerCase().includes(q) || title.includes(q) || custom.includes(q);
         }),
         [groups, search],
     );
@@ -435,6 +437,7 @@ export const HistoryPanel: React.FC = () => {
                                     onLoad={handleLoad}
                                     onOpenReport={id => void onOpenReport(id)}
                                     onDelete={(id, filename) => void handleDelete(id, filename)}
+                                    onRename={(id, name) => void onRenameReport(id, name)}
                                     onExportPdf={id => void onExportPdf(id)}
                                     onOverflowToggle={setOverflowMenuId}
                                     isProtectedReport={isProtectedReport}

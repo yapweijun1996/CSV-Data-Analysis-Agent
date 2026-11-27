@@ -155,6 +155,7 @@ export const buildPersistedAppState = (state: AppStore): AppState => ({
     queryHistory: state.queryHistory,
     duckDbSessionStatus: state.duckDbSessionStatus,
     userColumnAnnotations: state.userColumnAnnotations ?? {},
+    customReportName: state.customReportName ?? null,
 });
 
 /**
@@ -181,6 +182,7 @@ export const buildPersistedAppStateSignature = (state: AppStore): string | null 
     // until the next coincidental signature bump.
     return [
         state.sessionId,
+        state.customReportName ?? '',
         state.currentView,
         // --- cards (track count, IDs, AND content mutations) ---
         state.analysisCards.length,

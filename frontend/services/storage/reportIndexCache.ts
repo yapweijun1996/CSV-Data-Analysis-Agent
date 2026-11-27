@@ -12,6 +12,7 @@ export const updateReportsIndexEntry = (report: Report) => {
         createdAt: report.createdAt,
         updatedAt: report.updatedAt,
         reportTitle: eff?.reportTitle ?? null,
+        customName: report.appState?.customReportName ?? null,
         reportDescription: eff?.reportDescription ?? null,
     };
     if (idx >= 0) {
@@ -32,6 +33,7 @@ export const persistReportsIndex = (items: ReportListItem[]) => {
             createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
             updatedAt: r.updatedAt instanceof Date ? r.updatedAt.toISOString() : r.updatedAt,
             reportTitle: r.reportTitle ?? null,
+            customName: r.customName ?? null,
             reportDescription: r.reportDescription ?? null,
         }));
         localStorage.setItem(REPORTS_INDEX_CACHE_KEY, JSON.stringify(serialized));
@@ -45,7 +47,7 @@ export const readCachedReportsIndex = (): ReportListItem[] | null => {
         if (!raw) return null;
         const parsed = JSON.parse(raw) as Array<{
             id: string; filename: string; createdAt: string; updatedAt: string;
-            reportTitle?: string | null; reportDescription?: string | null;
+            reportTitle?: string | null; customName?: string | null; reportDescription?: string | null;
         }>;
         // One-time cache invalidation: force IDB rescan to populate new fields.
         if (parsed.length > 0 && !('reportTitle' in parsed[0])) return null;
@@ -55,6 +57,7 @@ export const readCachedReportsIndex = (): ReportListItem[] | null => {
             createdAt: new Date(r.createdAt),
             updatedAt: new Date(r.updatedAt),
             reportTitle: r.reportTitle ?? null,
+            customName: r.customName ?? null,
             reportDescription: r.reportDescription ?? null,
         }));
     } catch {

@@ -138,6 +138,7 @@ export const _scanReportsFromIdb = async (): Promise<ReportListItem[]> => {
             items.push({
                 id, filename, createdAt, updatedAt,
                 reportTitle: eff?.reportTitle ?? null,
+                customName: appState?.customReportName ?? null,
                 reportDescription: eff?.reportDescription ?? null,
             });
             cursor = await cursor.continue();
@@ -156,6 +157,24 @@ export const _scanReportsFromIdb = async (): Promise<ReportListItem[]> => {
         console.error('Failed to get reports list from IndexedDB:', error);
         return [];
     }
+};
+
+/** Maximum length of a user-chosen report name. */
+export const MAX_REPORT_NAME_LENGTH = 80;
+
+export const normalizeReportName = (name: string | null | undefined): string | null => {
+    const cleaned = (name ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_REPORT_NAME_LENGTH).trim();
+    return cleaned.length > 0 ? cleaned : null;
+};
+
+/** Persist a user-chosen name on a stored report without touching its modified time. */
+export const renameReport = async (id: string, name: string | null): Promise<void> => {
+    const report = await getReport(id);
+    if (!report) throw new StorageOperationError('renameReport', `Report ${id} was not found`);
+    await saveReport({
+        ...report,
+        appState: { ...report.appState, customReportName: normalizeReportName(name) },
+    });
 };
 
 export const deleteReport = async (id: string): Promise<void> => {

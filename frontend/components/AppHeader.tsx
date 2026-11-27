@@ -22,6 +22,7 @@ import { confirmModal } from '../services/ui/modalService';
 import { PwaUpdateButton } from './PwaUpdateButton';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { PaletteSwitcher } from './PaletteSwitcher';
+import { RenameReportField } from './RenameReportField';
 
 export const AppHeader: React.FC = () => {
     const primaryButtonClass = 'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium leading-none transition-colors md:min-h-0 md:min-w-0 md:py-1.5';
@@ -37,6 +38,8 @@ export const AppHeader: React.FC = () => {
         showAnalysisTools,
         hasPendingRestore,
         fileName,
+        customReportName,
+        onRenameReport,
         language,
     } = useAppStore(
         (state: AppStore) => ({
@@ -53,6 +56,8 @@ export const AppHeader: React.FC = () => {
             showAnalysisTools: Boolean(state.csvData),
             hasPendingRestore: Boolean(state.datasetBundle && !state.csvData),
             fileName: state.csvData?.fileName ?? null,
+            customReportName: state.customReportName ?? null,
+            onRenameReport: (name: string) => state.handleRenameReport(state.sessionId, name),
             language: state.settings?.language ?? 'English',
         }),
         shallow
@@ -63,6 +68,8 @@ export const AppHeader: React.FC = () => {
     const showWorkflowButton = shouldShowWorkflowButton();
     const showLogsButton = shouldShowLogsButton();
     const showAssistantToggleButton = shouldShowAssistantToggleButton();
+    const [isRenaming, setIsRenaming] = useState(false);
+    const displayName = customReportName || fileName;
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const advancedRootRef = useRef<HTMLDivElement>(null);
     const advancedMenuRef = useRef<HTMLDivElement>(null);
@@ -155,10 +162,34 @@ export const AppHeader: React.FC = () => {
             <div className="shrink-0">
                 <h1 className="whitespace-nowrap text-xl font-extrabold leading-tight text-slate-900">AI Analysis</h1>
             </div>
-            {fileName && (
-                <div className="hidden min-w-0 items-center gap-2 border-l border-slate-200 pl-3 text-sm text-slate-600 lg:flex" title={fileName}>
+            {fileName && displayName && (
+                <div className="hidden min-w-0 items-center gap-2 border-l border-slate-200 pl-3 text-sm text-slate-600 lg:flex" title={customReportName ? `${customReportName} (${fileName})` : fileName}>
                     <IconFileUpload className="h-4 w-4 shrink-0 text-slate-400" />
-                    <span className="max-w-[22rem] truncate">{fileName}</span>
+                    {isRenaming ? (
+                        <div className="w-64">
+                            <RenameReportField
+                                initialValue={customReportName ?? ''}
+                                placeholder={fileName}
+                                language={language}
+                                onCommit={name => { setIsRenaming(false); void onRenameReport(name); }}
+                                onCancel={() => setIsRenaming(false)}
+                            />
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            data-rename-report-trigger="true"
+                            onClick={() => setIsRenaming(true)}
+                            title={getTranslation('report_rename_title', language)}
+                            aria-label={`${getTranslation('report_rename_action', language)}: ${displayName}`}
+                            className="group/name flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+                        >
+                            <span className="max-w-[22rem] truncate">{displayName}</span>
+                            <svg className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover/name:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M16.9 3.9a2.1 2.1 0 013 3L8 18.8 4 20l1.2-4L16.9 3.9z" />
+                            </svg>
+                        </button>
+                    )}
                 </div>
             )}
             <nav

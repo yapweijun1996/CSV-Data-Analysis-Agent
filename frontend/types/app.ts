@@ -260,4 +260,6 @@ export interface AppState {
     duckDbSessionStatus: DuckDbSessionStatus;
     /** User-authored column annotations (data dictionary). */
     userColumnAnnotations: Record<string, UserColumnAnnotation>;
+    /** Name the user gave this report; shown instead of the CSV filename. Null/absent means use the default. */
+    customReportName?: string | null;
 }

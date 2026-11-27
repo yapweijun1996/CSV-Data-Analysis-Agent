@@ -803,4 +803,8 @@ export const part05: Record<string, TranslationEntry> = {
         'Japanese': '現在の結果と残る不確実性を確認するための、最も直接的なフォローアップです。',
         'Malay': 'Ini susulan paling langsung berdasarkan hasil semasa dan ketidakpastian yang masih ada.',
     },
+    'report_rename_action': { 'English': 'Rename', 'Mandarin': '重命名', 'Malay': 'Namakan semula', 'Japanese': '名前を変更' },
+    'report_rename_title': { 'English': 'Rename this report so it is easy to find later', 'Mandarin': '重命名此报告，方便日后查找', 'Malay': 'Namakan semula laporan ini supaya mudah dicari kemudian', 'Japanese': 'レポート名を変更して、後で見つけやすくします' },
+    'report_rename_label': { 'English': 'Report name', 'Mandarin': '报告名称', 'Malay': 'Nama laporan', 'Japanese': 'レポート名' },
+    'report_rename_hint': { 'English': 'Enter to save, Esc to cancel. Leave empty to use the default name.', 'Mandarin': '按 Enter 保存，Esc 取消。留空则使用默认名称。', 'Malay': 'Tekan Enter untuk simpan, Esc untuk batal. Biarkan kosong untuk nama lalai.', 'Japanese': 'Enterで保存、Escでキャンセル。空欄の場合は既定の名前を使います。' },
 };
