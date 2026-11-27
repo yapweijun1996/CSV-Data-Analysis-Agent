@@ -176,7 +176,6 @@ export const AppHeader: React.FC = () => {
                        <span className="hidden lg:inline">{getTranslation('header_new', language)}</span>
                     </button>
                 )}
-                <LanguageSwitcher buttonClassName={secondaryButtonClass} />
                 <PwaUpdateButton
                     className={`${primaryButtonClass} border border-transparent text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700`}
                     language={language}
@@ -276,6 +275,7 @@ export const AppHeader: React.FC = () => {
                         <span className="hidden lg:inline">{getTranslation('assistant', language)}</span>
                     </button>
                 )}
+                <LanguageSwitcher buttonClassName={secondaryButtonClass} />
             </nav>
         </header>
         </>
