@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { getTranslation } from '../../utils/localization';
-import { GOOGLE_MODELS, OPENAI_MODELS } from '../../config/modelDefaults';
+import { GOOGLE_MODELS, OPENAI_MODELS, ANTHROPIC_MODELS, OPENROUTER_MODELS } from '../../config/modelDefaults';
 import { DEFAULT_GATEWAY_MODEL } from '../../config/defaultGatewayConfig';
 import type { Settings } from '../../types';
 
@@ -30,7 +30,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({ language, disa
     const isDefaultGateway = settings.provider === 'default';
     const models: string[] = isDefaultGateway
         ? [DEFAULT_GATEWAY_MODEL]
-        : [...(settings.provider === 'google' ? GOOGLE_MODELS : OPENAI_MODELS)];
+        : [...({ google: GOOGLE_MODELS, anthropic: ANTHROPIC_MODELS, openrouter: OPENROUTER_MODELS }[settings.provider as string] ?? OPENAI_MODELS)];
     const currentModel = isDefaultGateway ? DEFAULT_GATEWAY_MODEL : settings.simpleModel;
     const modelOptions = models.includes(currentModel) ? models : [currentModel, ...models];
 

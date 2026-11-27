@@ -169,6 +169,7 @@ const ANTHROPIC_THINKING_BUDGET_BY_EFFORT: Record<Exclude<NonNullable<Settings['
     low: 1024,
     medium: 8192,
     high: 24576,
+    xhigh: 32768,
 };
 
 // OpenRouter's unified `reasoning.effort` parameter; 'none' disables reasoning.
@@ -177,6 +178,7 @@ const OPENROUTER_REASONING_EFFORT_BY_EFFORT: Record<NonNullable<Settings['reason
     low: 'low',
     medium: 'medium',
     high: 'high',
+    xhigh: 'high',
 };
 
 /**
